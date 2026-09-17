@@ -1,0 +1,99 @@
+﻿# AGOT supplies character titles through the get_title saved scope value rather
+# than the base game's government-rank localization. Preserve AGOT's dispatcher
+# for every other government and insert the Dragonlord ranks here.
+set_title_localization_effect = {
+	if = {
+		limit = {
+			$SCOPE$ ?= {
+				OR = {
+					has_government = dragonlord_oligarchy_government
+					liege ?= {
+						has_government = dragonlord_oligarchy_government
+					}
+					top_liege ?= {
+						has_government = dragonlord_oligarchy_government
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				$SCOPE$ ?= {
+					top_liege = this
+					primary_title.tier >= tier_empire
+					is_male = yes
+				}
+			}
+			save_scope_value_as = {
+				name = get_title
+				value = flag:DRAGONLORD_FIRST_LORD_MALE
+			}
+		}
+		else_if = {
+			limit = {
+				$SCOPE$ ?= {
+					top_liege = this
+					primary_title.tier >= tier_empire
+					is_female = yes
+				}
+			}
+			save_scope_value_as = {
+				name = get_title
+				value = flag:DRAGONLORD_FIRST_LORD_FEMALE
+			}
+		}
+		else_if = {
+			limit = {
+				$SCOPE$ ?= {
+					is_independent_ruler = no
+					primary_title.tier = tier_kingdom
+					top_liege = { has_government = dragonlord_oligarchy_government }
+				}
+			}
+			save_scope_value_as = {
+				name = get_title
+				value = flag:DRAGONLORD_GOVERNOR
+			}
+		}
+		else_if = {
+			limit = { $SCOPE$ ?= { is_male = yes } }
+			save_scope_value_as = {
+				name = get_title
+				value = flag:DRAGONLORD_ARCHON_MALE
+			}
+		}
+		else = {
+			save_scope_value_as = {
+				name = get_title
+				value = flag:DRAGONLORD_ARCHON_FEMALE
+			}
+		}
+	}
+	else = {
+		if = {
+			limit = {
+				exists = flag:$KEY$
+				switch = {
+					trigger = flag:$GENDER$
+					flag:male ?= { $SCOPE$ ?= { is_male = yes } }
+					flag:female ?= { $SCOPE$ ?= { is_female = yes } }
+					fallback = { always = yes }
+				}
+			}
+			if = {
+				limit = { $SCOPE$ ?= { is_male = yes } }
+				save_scope_value_as = {
+					name = get_title
+					value = flag:$KEY$
+				}
+			}
+			else_if = {
+				limit = { $SCOPE$ ?= { is_female = yes } }
+				save_scope_value_as = {
+					name = get_title
+					value = flag:$KEY$
+				}
+			}
+		}
+	}
+}

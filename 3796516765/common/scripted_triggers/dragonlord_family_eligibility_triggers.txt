@@ -1,0 +1,99 @@
+﻿# Character scope: admission to a Dragonlord House, not government adoption.
+# Default branches also cover saves without these newly introduced rules.
+dragonlord_meets_family_culture_rule = {
+	OR = {
+		top_liege = { has_realm_law = dragonlord_culture_all_law }
+		AND = {
+			top_liege = { has_realm_law = dragonlord_culture_valyrian_heritage_law }
+			culture = { has_cultural_pillar = heritage_valyrian }
+		}
+		AND = {
+			top_liege = { has_realm_law = dragonlord_culture_high_valyrian_law }
+			culture = culture:high_valyrian
+		}
+		# Before a Dragonlord realm has initialized its noble laws, retain the
+		# configured game rule as the compatibility fallback.
+		AND = {
+			top_liege = {
+				NOR = {
+					has_realm_law = dragonlord_culture_high_valyrian_law
+					has_realm_law = dragonlord_culture_valyrian_heritage_law
+					has_realm_law = dragonlord_culture_all_law
+				}
+			}
+			OR = {
+				has_game_rule = dragonlord_culture_all
+				AND = { has_game_rule = dragonlord_culture_valyrian_heritage culture = { has_cultural_pillar = heritage_valyrian } }
+				AND = { NOR = { has_game_rule = dragonlord_culture_all has_game_rule = dragonlord_culture_valyrian_heritage } culture = culture:high_valyrian }
+			}
+		}
+	}
+}
+
+dragonlord_meets_family_religion_rule = {
+	OR = {
+		top_liege = { has_realm_law = dragonlord_religion_all_law }
+		AND = {
+			top_liege = { has_realm_law = dragonlord_religion_valyrian_law }
+			religion = religion:the_flames_religion
+		}
+		AND = {
+			top_liege = { has_realm_law = dragonlord_religion_fourteen_flames_law }
+			faith = faith:valyrian_pan_freehold
+		}
+		AND = {
+			top_liege = {
+				NOR = {
+					has_realm_law = dragonlord_religion_fourteen_flames_law
+					has_realm_law = dragonlord_religion_valyrian_law
+					has_realm_law = dragonlord_religion_all_law
+				}
+			}
+			OR = {
+				has_game_rule = dragonlord_religion_all
+				AND = { has_game_rule = dragonlord_religion_valyrian religion = religion:the_flames_religion }
+				AND = { NOR = { has_game_rule = dragonlord_religion_all has_game_rule = dragonlord_religion_valyrian } faith = faith:valyrian_pan_freehold }
+			}
+		}
+	}
+}
+
+dragonlord_meets_family_admission_rules = {
+	dragonlord_meets_family_culture_rule = yes
+	dragonlord_meets_family_religion_rule = yes
+}
+
+# Character scope: the independent First Lord. Noble-family dignities are
+# landless titles inside the sub-realm and the Freehold may contain at most 40.
+dragonlord_has_vacant_family_seat_trigger = {
+	top_liege = this
+	government_has_flag = government_is_dragonlord_oligarchy
+	NOT = {
+		any_sub_realm_title = {
+			count >= 40
+			is_noble_family_title = yes
+			has_variable = dragonlord_family_title
+		}
+	}
+}
+
+# Character scope: a direct vassal whose House may be elevated manually or by
+# petition. Dragon and dragon-egg holders may also use this path; the separate
+# automatic admission path remains available for them.
+dragonlord_can_petition_for_family_elevation_trigger = {
+	is_alive = yes
+	is_adult = yes
+	is_ruler = yes
+	is_governor = no
+	is_independent_ruler = no
+	liege = top_liege
+	top_liege = {
+		government_has_flag = government_is_dragonlord_oligarchy
+		dragonlord_has_vacant_family_seat_trigger = yes
+	}
+	NOT = { dragonlord_is_colonial_city_subject_trigger = yes }
+	highest_held_title_tier >= tier_county
+	dragonlord_meets_family_admission_rules = yes
+	exists = house
+	house = { NOT = { has_variable = dragonlord_is_registered_family } }
+}

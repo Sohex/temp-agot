@@ -1,0 +1,109 @@
+﻿agot_growing_dragon_cannibal_trait_chance = {
+	# Chance of cannibal dragon if at least 14 dragons
+	save_scope_as = growing_dragon
+	if = {
+		limit = {
+			scope:growing_dragon = {
+				NOT = { has_trait = dragon_cannibal }
+				NOT = { has_trait = dragon_restrained }
+				NOT = { has_trait = dragon_friendly }
+				OR = {
+					has_trait = dragon_aggressive
+					has_trait = dragon_voracious
+					has_trait = dragon_bloodthirsty
+				}
+			}
+			any_in_global_list = {
+				variable = living_dragons
+				count >= lower_cannibal_dragon_value
+			}
+			trigger_if = {
+				limit = {
+					any_in_global_list = {
+						variable = living_dragons
+						count < upper_cannibal_dragon_value
+					}
+				}
+				any_in_global_list = {
+					variable = living_dragons
+					count < 1
+					has_trait = dragon_cannibal
+				}
+			}
+			trigger_else = {
+				any_in_global_list = {
+					variable = living_dragons
+					count < global_dragon_cannibal_limit
+					has_trait = dragon_cannibal
+				}
+			}
+			any_in_global_list = { # And there is a valid target
+				variable = living_dragons
+				NOT = { this = scope:growing_dragon } # Not the would-be cannibal
+				has_character_flag = owned_dragon # Is owned or tamed
+				location = scope:growing_dragon.location # In the same location
+				NOT = { has_trait = dragon_cannibal } # No cascading cannibalism
+				dragon_combat_effectiveness <= scope:growing_dragon.dragon_combat_effectiveness # Not stronger than the dragon
+			}
+            NOR = { # MDE Modified - Cannibal Instinct Event Odds: Never
+            	AND = {
+            		has_global_variable = mde_cannibal_instinct_odds
+            		global_var:mde_cannibal_instinct_odds = 0
+            	}
+            }
+		}
+		random_list = {
+			80 = {
+				modifier = {
+					add = -30
+					has_trait = dragon_voracious
+				}
+				modifier = {
+					add = -20
+					has_trait = dragon_bloodthirsty
+				}
+				modifier = {
+					add = -10
+					has_trait = dragon_aggressive
+				}
+			}
+			20 = {
+				modifier = {
+					add = cannibal_instinct_odds_val
+				}
+				modifier = {
+					add = -15
+					has_trait = dragon_supporting
+				}
+				modifier = {
+					add = -15
+					has_trait = dragon_calculating
+				}
+				modifier = {
+					factor = 0.3
+					any_in_global_list = {
+						variable = living_dragons
+						has_trait = dragon_cannibal
+					}
+				}
+				random_in_global_list = {
+					variable = living_dragons
+					limit = {
+						has_character_flag = owned_dragon # Is owned or tamed
+						location = scope:growing_dragon.location # In the same location
+						NOT = { has_trait = dragon_cannibal } # No cascading cannibalism
+						dragon_combat_effectiveness <= scope:growing_dragon.dragon_combat_effectiveness # Not stronger than the dragon
+					}
+					save_scope_as = growing_dragon_victim
+				}
+               
+                court_owner = {
+                    trigger_event = {
+                        id = agot_dragon_personality.0015
+                        days = { 20 300 }
+                    }
+                }
+			}
+		}
+	}
+}

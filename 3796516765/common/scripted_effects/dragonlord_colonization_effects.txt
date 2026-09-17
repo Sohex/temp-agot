@@ -1,0 +1,105 @@
+﻿# CB scope. Keep the current defender (including a wartime successor), their
+# crown, domain and vassal hierarchy together. Mark crowns BEFORE changing liege.
+dragonlord_colonization_victory_effect = {
+	scope:defender = {
+		primary_title = { save_scope_as = dragonlord_colonial_city }
+		every_held_title = {
+			limit = { tier = tier_kingdom }
+			set_variable = { name = dragonlord_colonial_free_city value = yes }
+		}
+		save_scope_as = dragonlord_colonial_governor
+		dragonlord_colonization_set_government_effect = yes
+	}
+	create_title_and_vassal_change = {
+		type = swear_fealty
+		save_scope_as = dragonlord_colonial_change
+		add_claim_on_loss = no
+	}
+	scope:defender = {
+		change_liege = { liege = scope:attacker change = scope:dragonlord_colonial_change }
+	}
+	resolve_title_and_vassal_change = scope:dragonlord_colonial_change
+	scope:defender = { dragonlord_colonization_set_government_effect = yes }
+	scope:attacker = {
+		trigger_event = { id = dragonlord_colonization.0001 days = 1 }
+	}
+}
+
+# AGOT uses administrative_government for Free Cities. Preserve specialized
+# Free City governments such as Norvos. Vassal succession uses appointments.
+dragonlord_colonization_set_government_effect = {
+	if = {
+		limit = { NOT = { government_has_flag = government_is_free_city } }
+		change_government = administrative_government
+	}
+	if = {
+		limit = { is_independent_ruler = no }
+		add_realm_law_skip_effects = appointment_succession_law
+	}
+}
+
+# Event root: victorious First Lord; saved city/governor scopes come from CB.
+dragonlord_colonization_replace_governor_effect = {
+	scope:dragonlord_colonial_governor = {
+		capital_county = { save_scope_as = dragonlord_colonial_capital }
+	}
+	create_character = {
+		age = { 25 45 }
+		gender = male
+		culture = culture:high_valyrian
+		faith = root.faith
+		dynasty = generate
+		random_traits = yes
+		trait = education_stewardship_3
+		location = scope:dragonlord_colonial_capital.title_province
+		save_scope_as = dragonlord_colonial_successor
+		after_creation = {
+			# Protect the native family-creation pipeline before the crown arrives.
+			add_character_flag = { flag = dragonlord_colonial_governor_installing days = 3 }
+			remove_trait = dragonrider
+			change_government = administrative_government
+		}
+	}
+	create_title_and_vassal_change = {
+		type = granted
+		save_scope_as = dragonlord_colonial_change
+		add_claim_on_loss = no
+	}
+	scope:dragonlord_colonial_governor = {
+		# Transfer the office's territory, but retain the former governor's own
+		# Noble Family title and estate, as in the existing Free City elections.
+		every_held_title = {
+			limit = { is_noble_family_title = no is_landless_type_title = no }
+			change_title_holder = {
+				holder = scope:dragonlord_colonial_successor
+				change = scope:dragonlord_colonial_change
+				take_baronies = yes
+			}
+		}
+		every_vassal = {
+			change_liege = { liege = scope:dragonlord_colonial_successor change = scope:dragonlord_colonial_change }
+		}
+	}
+	scope:dragonlord_colonial_successor = {
+		change_liege = { liege = root change = scope:dragonlord_colonial_change }
+	}
+	resolve_title_and_vassal_change = scope:dragonlord_colonial_change
+	scope:dragonlord_colonial_successor = {
+		set_primary_title_to = scope:dragonlord_colonial_city
+		set_realm_capital = scope:dragonlord_colonial_capital
+		dragonlord_colonization_set_government_effect = yes
+	}
+	if = {
+		limit = {
+			scope:dragonlord_colonial_governor = {
+				is_ruler = yes
+				highest_held_title_tier < tier_kingdom
+			}
+		}
+		create_title_and_vassal_change = { type = swear_fealty save_scope_as = dragonlord_colonial_change }
+		scope:dragonlord_colonial_governor = {
+			change_liege = { liege = scope:dragonlord_colonial_successor change = scope:dragonlord_colonial_change }
+		}
+		resolve_title_and_vassal_change = scope:dragonlord_colonial_change
+	}
+}

@@ -1,0 +1,962 @@
+﻿story_dragon_alive = {
+	on_setup = {
+
+	}
+
+	on_end = {
+
+	}
+
+	on_owner_death = {
+		if = {
+			limit = {
+				story_owner = {
+					has_variable = pitted_dragon_location
+				}
+			}
+			story_owner = {
+				save_scope_as = dying_dragon
+			}
+			story_owner = {
+				var:pitted_dragon_location = {
+					remove_list_variable = {
+						name = dragons_in_pit
+						target = scope:dying_dragon
+					}
+				}
+			}
+		}
+		story_owner = { agot_remove_wild_dragon_county_modifier = yes }
+		scope:story = { end_story = yes }
+	}
+	effect_group = { # Daily
+		days = 1
+		triggered_effect = { # Make sure there is only one dragon + rider location
+			trigger = {
+				story_owner = {
+					exists = var:current_rider # I have a rider
+					var:current_rider = {
+						is_alive = yes
+					}
+					OR = {
+						AND = { # I am in a location that is not the same as my rider
+							exists = var:current_rider.location
+							NOT = { # MDE Added
+								save_temporary_scope_as = mde_pitted_dragon
+								has_character_flag = in_dragonpit
+								var:pitted_dragon_location.holder ?= {
+									NOT = { this = scope:mde_pitted_dragon.var:current_rider }
+									house ?= scope:mde_pitted_dragon.var:current_rider.house
+									target_is_liege_or_above = scope:mde_pitted_dragon.var:current_rider
+								}
+							}
+							OR = {
+								NOT = { location = var:current_rider.location }
+								AND = {
+									has_character_flag = in_dragonpit
+									NOT = { var:pitted_dragon_location = var:current_rider.location.county }
+								}
+							}
+						}
+						AND = { # I am wandering and my rider is not
+							NOT = { exists = court_owner }
+							exists = var:current_rider.court_owner
+						}
+						AND = { # My rider is wandering and I am not
+							NOT = { exists = var:current_rider.court_owner }
+							exists = court_owner
+						}
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					agot_move_dragon_to_bondee_or_rider_effect = {
+						CURRENT_RIDER_OR_BONDEE = var:current_rider
+					}
+				}
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					NOT = {
+						exists = var:current_rider
+					}
+					any_relation = {
+						type = agot_dragon
+						save_temporary_scope_as = bondee
+					}
+					agot_tamed_or_bonded_dragon_is_away_from_rider = { CURRENT_RIDER_OR_BONDEE = scope:bondee }
+				}
+			}
+			effect = {
+				story_owner = {
+					random_relation = {
+						type = agot_dragon
+						save_scope_as = dragoner
+					}
+					agot_move_dragon_to_bondee_or_rider_effect = {
+						CURRENT_RIDER_OR_BONDEE = scope:dragoner
+					}
+				}
+			}
+		}
+		triggered_effect = { # Apply the story of the dragon at war
+			trigger = {
+				story_owner = { exists = var:current_rider }
+				NOT = { story_owner = { owns_story_of_type = story_dragon_at_war } } # Don't have two stories
+				# The rider is in an army
+				story_owner.var:current_rider = {
+					is_in_army = yes
+					is_current_dragonrider_warfare = yes
+				}
+			}
+			effect = {
+				story_owner = {
+					create_story = story_dragon_at_war
+				}
+			}
+		}
+		triggered_effect = { # Maintainance to make sure the dragonrider is alive else clear vars
+			trigger = {
+				story_owner = {
+					exists = var:current_rider
+					var:current_rider = { is_alive = no }
+				}
+			}
+			effect = {
+				story_owner = {
+					add_to_variable_list = {
+						name = past_riders
+						target = var:current_rider
+					}
+					remove_variable = current_rider
+					clear_variable_list = current_rider_list
+				}
+			}
+		}
+		triggered_effect = { # Maintainance to make sure the dragon remains in a pit if they still have the flags.
+			trigger = {
+				story_owner = {
+					has_character_flag = in_dragonpit
+					exists = var:pitted_dragon_location
+					OR = {
+						NOT = { employer = var:pitted_dragon_location.holder }
+						NOT = {
+							location.county ?= var:pitted_dragon_location
+						}
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					if = {
+						limit = {
+							exists = var:pitted_dragon_location
+							NOT = { employer = var:pitted_dragon_location.holder }
+						}
+						set_employer = var:pitted_dragon_location.holder
+						return_to_court = yes
+					}
+					else_if = {
+						limit = {
+							exists = var:pitted_dragon_location
+							NOT = { location.county ?= var:pitted_dragon_location }
+						}
+						set_location = var:pitted_dragon_location.title_province
+					}
+				}
+			}
+		}
+		triggered_effect = { # Wild dragon maintnance
+			trigger = {
+				story_owner = {
+					NOR = {
+						has_character_flag = in_dragonpit
+						has_character_flag = owned_dragon
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = wild_dragon
+					if = { # Add the proper modifier to the current location
+						limit = {
+							location.county ?= {
+								NOT = { has_county_modifier = agot_wild_dragon_modifier }
+							}
+						}
+						location.county ?= {
+							add_county_modifier = agot_wild_dragon_modifier
+						}
+					}
+
+					if = { # Remove modifier from old location if applicable
+						limit = {
+							exists = location.county
+							NOT = { var:current_location.county ?= location.county }
+							var:current_location.county ?= {
+								has_county_modifier = agot_wild_dragon_modifier
+							}
+
+							# Shouldn't remove if there's another dragon present there
+							NOT = {
+								any_in_global_list = {
+									variable = living_dragons
+									NOT = { this = scope:wild_dragon }
+									AND = {
+										NOT = { has_character_flag = owned_dragon }
+										location.county ?= scope:wild_dragon.location.county
+									}
+								}
+							}
+						}
+						var:current_location.county ?= {
+							remove_county_modifier = agot_wild_dragon_modifier
+						}
+					}
+
+					# I could probably save county instead to cut down on .county
+					# But this makes it slightly more open to other uses
+					set_variable = {
+						name = current_location
+						value = location
+					}
+				}
+			}
+		}
+		triggered_effect = { # If owned or pitted, remove wild dragon modifier
+			trigger = {
+				story_owner = {
+					OR = {
+						has_character_flag = in_dragonpit
+						has_character_flag = owned_dragon
+					}
+					has_variable = current_location
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = owned_dragon
+
+					if = { # Remove modifier from old location if applicable
+						limit = {
+							var:current_location.county ?= {
+								has_county_modifier = agot_wild_dragon_modifier
+							}
+							# Shouldn't remove if there's another dragon present there
+							NOT = {
+								any_in_global_list = {
+									variable = living_dragons
+									NOT = { this = scope:owned_dragon }
+									AND = {
+										NOT = { has_character_flag = owned_dragon }
+										location.county ?= scope:owned_dragon.var:current_location.county
+									}
+								}
+							}
+						}
+						var:current_location.county = {
+							remove_county_modifier = agot_wild_dragon_modifier
+						}
+					}
+
+					remove_variable = current_location # Will get reset when a wild dragon again
+				}
+			}
+		}
+		# Maintenance for very very niche case where dragon ends up in a "ghost pit" because the pitted_dragon_location variable's value no longer returns a geographical county
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					has_character_flag = in_dragonpit
+					has_variable = pitted_dragon_location
+					AND = {
+						# MDE Modified
+						NOT = {
+							employer = {
+								is_landless_adventurer = yes
+								domicile ?= {
+									has_domicile_building_or_higher = dragon_coop_01
+								}
+							}
+						}
+						NOT = { exists = var:pitted_dragon_location.county }
+					}	
+				}
+			}
+			effect = {
+				story_owner = {
+					# The normal effect for this relies on not being such a niche case, so it needs to be done manually
+					remove_character_flag = in_dragonpit
+					remove_character_modifier = agot_dragon_in_dragonpit
+					remove_variable = pitted_dragon_location
+				}
+			}
+		}
+	}
+
+	effect_group = { # Monthly
+		days = 30
+		triggered_effect = { # Apply the dragon's monthly growth if destined
+			trigger = {
+				story_owner = {
+					age < 2 # Don't do this to non-baby dragons
+					has_trait = dragon_destined
+					OR = {
+						NOT = { exists = var:dragon_destined_count }
+						var:dragon_destined_count < 13
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					add_prowess_skill = 3
+					change_dragon_size = {
+						VALUE = 3
+					}
+					if = {
+						limit = { NOT = { exists = var:dragon_destined_count } }
+						set_variable = {
+							name = dragon_destined_count
+							value = 1
+						}
+					}
+					else = {
+						change_variable = {
+							name = dragon_destined_count
+							add = 1
+						}
+					}
+				}
+			}
+		}
+		triggered_effect = { # Apply aesthetic modifier if ugly / majestic
+			trigger = {
+				story_owner = {
+					exists = var:current_rider
+					OR = {
+						has_trait = dragon_ugly
+						has_trait = dragon_majestic
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					if = {
+						limit = { has_trait = dragon_ugly }
+						var:current_rider = {
+							add_character_modifier = {
+								modifier = agot_ugly_dragon_rider
+								days = 30
+							}
+						}
+					}
+					else = {
+						var:current_rider = {
+							add_character_modifier = {
+								modifier = agot_majestic_dragon_rider
+								days = 30
+							}
+						}
+					}
+				}
+			}
+		}
+		triggered_effect = { # Heal from wounds
+			trigger = {
+				story_owner = {
+					OR = {
+						has_trait = dragon_wounded_5
+						has_trait = dragon_wounded_4
+						has_trait = dragon_wounded_3
+						has_trait = dragon_wounded_2
+						has_trait = dragon_wounded_1
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					if = {
+						limit = { has_trait = dragon_wounded_5 }
+						random_list = {
+							90 = {} # Do nothing
+							10 = { # Lower the wound
+								remove_trait = dragon_wounded_5
+								add_trait = dragon_wounded_4
+							}
+						}
+					}
+					else_if = {
+						limit = { has_trait = dragon_wounded_4 }
+						random_list = {
+							80 = {} # Do nothing
+							20 = { # Lower the wound
+								remove_trait = dragon_wounded_4
+								add_trait = dragon_wounded_3
+							}
+						}
+					}
+					else_if = {
+						limit = { has_trait = dragon_wounded_3 }
+						random_list = {
+							70 = {} # Do nothing
+							30 = { # Lower the wound
+								remove_trait = dragon_wounded_3
+								add_trait = dragon_wounded_2
+							}
+						}
+					}
+					else_if = {
+						limit = { has_trait = dragon_wounded_2 }
+						random_list = {
+							60 = {} # Do nothing
+							40 = { # Lower the wound
+								remove_trait = dragon_wounded_2
+								add_trait = dragon_wounded_1
+							}
+						}
+					}
+					else = {
+						random_list = {
+							50 = {} # Do nothing
+							50 = { # Remove the last wound
+								remove_trait = dragon_wounded_1
+								if = {
+									limit = {
+										exists = var:current_rider
+									}
+									save_temporary_scope_as = dragon
+									var:current_rider = {
+										send_interface_toast = {
+											title = agot_dragon_healed.t
+											custom_tooltip = agot_dragon_healed.tt
+											left_icon = scope:dragon
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		triggered_effect = { # Chance to reveal gender, MTTH of 10 years
+			trigger = {
+				story_owner = {
+					has_variable = dragon_gender_hidden
+					age >= 3 # Just to prevent it from happening TOO early
+				}
+			}
+			effect = {
+				random_list = {
+					99 = {}
+					1 = {
+						random_list = { # 0.25% - 1% chance to happen per month, so MTTH is about 10 years when wild
+							75 = {
+								modifier = {
+									factor = 0.5
+									story_owner = {
+										has_character_flag = owned_dragon
+									}
+								}
+								modifier = {
+									factor = 0
+									story_owner = {
+										exists = var:current_rider
+										var:current_rider = { is_current_dragonrider = yes }
+									}
+								}
+							}
+							25 = {
+								story_owner = {
+									save_scope_as = dragon
+									if = {
+										limit = {
+											exists = var:current_rider
+										}
+										if = {
+											limit = {
+												var:current_rider = { is_ruler = yes }
+											}
+											var:current_rider = {
+												trigger_event = {
+													id = agot_dragon.0016
+													days = { 0 20 }
+												}
+											}
+										}
+										if = { # Also notify husband/wife if the rider is married
+											limit = {
+												exists = var:current_rider.primary_spouse
+												var:current_rider.primary_spouse = { is_ruler = yes }
+											}
+											var:current_rider.primary_spouse = {
+												trigger_event = {
+													id = agot_dragon.0016
+													days = { 0 20 }
+												}
+											}
+										}
+										# Also notify parents if the riders parent is landed
+										if = {
+											limit = {
+												exists = var:current_rider.father
+												var:current_rider.father = { is_ruler = yes }
+												NOT = { var:current_rider.father = { this = prev.var:current_rider.primary_spouse } } #....CK3 man, the things I have to check
+											}
+											var:current_rider.father = {
+												trigger_event = {
+													id = agot_dragon.0016
+													days = { 0 20 }
+												}
+											}
+										}
+										if = {
+											limit = {
+												exists = var:current_rider.mother
+												var:current_rider.mother = { is_ruler = yes }
+												NOT = { var:current_rider.mother = { this = prev.var:current_rider.primary_spouse } } #....CK3 man, the things I have to check
+											}
+											var:current_rider.mother = {
+												trigger_event = {
+													id = agot_dragon.0016
+													days = { 0 20 }
+												}
+											}
+										}
+										# Finally, notify children if the rider has any and they are landed
+										var:current_rider = {
+											every_child = {
+												limit = {
+													NOT = { this = prev.primary_spouse }
+													is_ruler = yes
+												}
+												trigger_event = {
+													id = agot_dragon.0016
+													days = { 0 20 }
+												}
+											}
+										}
+									}
+									else = {
+										if = {
+											limit = { # Dragonrider age range is above range of this event
+												agot_dragon_has_young_child_owner = { DRAGON = scope:dragon }
+											}
+											scope:dragon = {
+												random_relation = {
+													type = agot_dragon
+													limit = { # I guess rechecking isn't necessary when only one
+														age <= 10
+														age >= 3
+														is_ruler = no
+													}
+													save_scope_as = child
+												}
+											}
+											court_owner ?= {
+												# If you get here, the child should always reveal honestly
+												trigger_event = {
+													id = agot_dragon.0030
+													days = { 0 20 }
+												}
+												# If this is too high we can even it out with random_list and agot_dragon.0016
+											}
+										}
+										else = {
+											court_owner ?= {
+												trigger_event = {
+													id = agot_dragon.0016
+													days = { 0 20 }
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	effect_group = { # Yearly
+		days = 365
+		triggered_effect = { # Make bonded unlanded AI tame their dragons
+			trigger = {
+				story_owner = {
+					dragon_size > dragon_taming_minimum_size # Is of a size that can be tamed
+					any_relation = { # And has a bonded ai that is unlanded
+						type = agot_dragon
+						is_landed = no
+						is_ai = yes
+						is_human = yes
+						NOT = { has_trait = dragonrider }
+						is_imprisoned = no
+						age >= 10
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = dragon
+					random_relation = {
+						type = agot_dragon
+						limit = {
+							is_landed = no
+							is_ai = yes
+							is_human = yes
+							NOT = { has_trait = dragonrider }
+							is_imprisoned = no
+							age >= 10
+						}
+						save_scope_as = tamer
+						trigger_event = { id = dragon_taming_events.0201 days = { 0 14 } }
+					}
+				}
+			}
+		}
+		triggered_effect = { # Cannibal trait - wild
+			trigger = {
+				story_owner = {
+					has_trait = dragon_cannibal
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = cannibal_dragon
+					random_list = {
+						19 = {
+							modifier = {
+								add = 30
+								NOT = { has_game_rule = agot_silly_mode }
+								location.duchy ?= title:d_dragonstone
+							}
+						}
+						1 = { # Every 20 years on average
+							# Wild v Wild dragon cannibalism
+							location = {
+								duchy = {
+									save_scope_as = hunting_region
+								}
+							}
+							if = {
+								limit = {
+									any_in_global_list = {
+										variable = living_dragons
+										NOT = { this = scope:cannibal_dragon }
+										NOT = { has_character_flag = owned_dragon }
+										location = { duchy = scope:hunting_region }
+										dragon_combat_effectiveness < scope:cannibal_dragon.dragon_combat_effectiveness
+									}
+								}
+								every_in_global_list = {
+									variable = living_dragons
+									limit = {
+										NOT = { this = scope:cannibal_dragon }
+										NOT = { has_character_flag = owned_dragon }
+										location = { duchy = scope:hunting_region }
+										dragon_combat_effectiveness < scope:cannibal_dragon.dragon_combat_effectiveness
+									}
+									save_scope_as = target_dragon
+								}
+								if = {
+									limit = {
+										exists = scope:target_dragon
+									}
+									scope:cannibal_dragon = {
+										random_list = { # Always a risk
+											50 = {}
+											50 = {
+												wound_dragon = yes
+											}
+										}
+										random_list = { # Second chance only if size is big enough
+											50 = {
+												modifier = {
+													add = dragon_combat_effectiveness
+												}
+											}
+											50 = {
+												modifier = {
+													add = scope:target_dragon.dragon_combat_effectiveness
+												}
+												wound_dragon = yes
+											}
+										}
+									}
+									scope:target_dragon = {
+										random_list = {
+											80 = { # Escaped
+												modifier = {
+													has_game_rule = agot_silly_mode
+													add = -30
+												}
+												modifier = {
+													add = {
+														value = 20
+														if = {
+															limit = {
+																has_game_rule = agot_silly_mode
+															}
+															add = 5
+														}
+													}
+													OR = {
+														has_trait = dragon_swift
+														scope:cannibal_dragon = { has_trait = dragon_slow }
+													}
+												}
+												modifier = {
+													add = dragon_combat_effectiveness
+													NOT = { has_game_rule = agot_silly_mode }
+												}
+												random_list = {
+													50 = {
+														# No wounds
+													}
+													30 = {
+														wound_dragon = yes
+													}
+													20 = {
+														wound_dragon = yes
+													}
+												}
+											}
+											20 = { # Eaten
+												modifier = {
+													has_game_rule = agot_silly_mode
+													add = 30
+												}
+												modifier = {
+													add = {
+														value = 20
+														if = {
+															limit = {
+																has_game_rule = agot_silly_mode
+															}
+															add = 5
+														}
+													}
+													OR = {
+														has_trait = dragon_slow
+														scope:cannibal_dragon = { has_trait = dragon_swift }
+													}
+												}
+												modifier = {
+													add = 60
+													NOT = { has_game_rule = agot_silly_mode }
+													can_dragon_chomp = {
+														CHOMPING_DRAGON = scope:cannibal_dragon
+														CHOMPED_DRAGON = scope:target_dragon
+													}
+												}
+												scope:cannibal_dragon = {
+													change_dragon_size = {
+														VALUE = 1 # Yum
+													}
+												}
+												death = {
+													death_reason = death_dragon_ate
+													killer = scope:cannibal_dragon
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		triggered_effect = { # Childhood dragon events
+			trigger = {
+				story_owner = {
+					NOT = { has_character_flag = agot_dragon.0040 }
+					dragon_size >= 10
+					dragon_size <= 15
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = dragon
+					random = {
+						chance = 50
+						if = {
+							limit = {
+								agot_dragon_has_young_child_owner = { DRAGON = scope:dragon }
+							}
+							court_owner ?= {
+								random_courtier_or_guest = {
+									limit = {
+										age <= 10
+										age >= 3
+										any_relation = {
+											type = agot_dragon
+											this = scope:dragon
+										}
+									}
+									save_scope_as = child
+								}
+								trigger_event = {
+									id = agot_dragon.0040
+									days = { 0 20 }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					has_variable = horn_binder
+					has_variable = binding_strength
+				}
+			}
+			effect = {
+				story_owner = {
+					remove_character_flag = recently_rebound
+					trigger_event = {
+						id = agot_decisions_events.0104
+						days = { 1 364 }
+					}
+				}
+			}
+		}
+	}
+}
+
+story_dragon_at_war = {
+	on_setup = {
+		story_owner = {
+			if = {
+				limit = { has_character_flag = in_dragonpit }
+				agot_remove_from_dragonpit_war = { DRAGON = this }
+			}
+		}
+	}
+
+	on_end = {
+		story_owner = {
+			# Return to dragonpit if appropriate
+			if = {
+				limit = { has_variable = return_pitted_dragon_location }
+				agot_send_to_dragonpit_war = { DRAGON = this }
+			}
+			# Remove supporting army modifier
+			remove_character_modifier = dragon_supporting_army
+			# Remove army support from currently supported army
+			if = {
+				limit = {
+					exists = var:supporting_army_of
+					var:supporting_army_of = {
+						is_alive = yes
+					}
+				}
+				var:supporting_army_of = {
+					dragon_army_modifier_calculation = yes
+				}
+				remove_variable = supporting_army_of
+			}
+		}
+	}
+
+	on_owner_death = {
+		scope:story = { end_story = yes }
+	}
+
+	effect_group = {
+		days = 1
+		triggered_effect = {
+			trigger = { # Ending triggers
+				story_owner = {
+					OR = {
+						NOT = { exists = var:current_rider }
+						var:current_rider = { # If the rider dies, stops being the rider, or isn't in an army then end the story
+							OR = {
+								is_alive = no
+								is_in_army = no
+								is_current_dragonrider_warfare = no
+							}
+						}
+					}
+				}
+			}
+			effect = {
+				scope:story = { end_story = yes }
+			}
+		}
+		triggered_effect = { # Apply army modifiers
+			trigger = {
+				story_owner = {
+					exists = var:current_rider
+					var:current_rider = {
+						is_in_army = yes
+						is_current_dragonrider_warfare = yes
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					var:current_rider = {
+						if = {
+							limit = {
+								OR = {
+									exists = commanding_army
+									AND = {
+										exists = knight_army
+										exists = knight_army.army_commander
+									}
+								}
+							}
+							# Get the commander and the army as their own scopes
+							commanding_army ?= {
+								save_scope_as = dragon_army
+							}
+							knight_army ?= {
+								save_scope_as = dragon_army
+							}
+							scope:dragon_army ?= {
+								army_commander = { save_scope_as = dragon_army_commander }
+								# Apply the siege modifier to army commanders
+								if = {
+									limit = {
+										is_army_in_siege = yes
+										is_army_in_combat = no
+									}
+									location = {
+										every_army_in_location = { # Needs to be every army to work in assisting ally army sieges
+											army_commander ?= {
+												if = {
+													add_character_modifier = {
+														modifier = dragon_siege_modifier_passive
+														days = 3 # Short time means it won't help in adjacent sieges only this one
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+							scope:dragon_army_commander ?= {
+								# Apply the modifier to this army commander
+								if = {
+									limit = {
+										NOT = { has_character_flag = calculated_dragon_modifier } # And isn't already being calculated in a battle
+									}
+									dragon_army_modifier_calculation = yes
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

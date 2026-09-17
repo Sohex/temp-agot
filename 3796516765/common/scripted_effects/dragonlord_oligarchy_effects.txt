@@ -1,0 +1,885 @@
+﻿# Gives the selected existing vassal a Dragonlord family dignity. Noble-family
+# titles are hard-coded to require a House head, so a non-head founds a branch
+# of the same name and arms; the old House and its head are not replaced.
+# Root scope: the selected landed representative of the source House.
+
+# Character scope. Records the Houses whose standing predates the restored
+# Freehold: the eight rulers established in Valyria Proper other than the
+# Targaryens and the Laryens of Egrys, together with the named Houses of
+# the Lands of the Long Summer. Once recorded, the legacy follows the House
+# even if its lands later change.
+dragonlord_mark_historical_house_effect = {
+	if = {
+		limit = {
+			exists = house
+			OR = {
+				dynasty = dynasty:dynn_Sonaryen
+				dynasty = dynasty:dynn_Qhaedar
+				dynasty = dynasty:dynn_Paenymion
+				dynasty = dynasty:dynn_Urnebar
+				AND = {
+					exists = capital_province
+					capital_province = {
+						geographical_region = world_valyria_proper
+					}
+					NOT = { dynasty = dynasty:dynn_Targaryen }
+					NOT = { dynasty = dynasty:dynn_Laryen }
+				}
+			}
+		}
+		house = {
+			set_variable = {
+				name = dragonlord_historical_house
+				value = yes
+			}
+		}
+	}
+}
+
+dragonlord_create_noble_family_effect = {
+	save_scope_as = dragonlord_family_source_character
+	house = { save_scope_as = dragonlord_family_source_house }
+	dragonlord_mark_historical_house_effect = yes
+
+	if = {
+		limit = {
+			NOT = { house.house_head = this }
+		}
+		create_cadet_branch = { save_scope_as = dragonlord_new_family_house }
+		# Retain the political identity of the source family while keeping the
+		# original House head and all other existing characters untouched.
+		house = {
+			set_house_name_from_house = scope:dragonlord_family_source_house
+			set_coa = scope:dragonlord_family_source_house
+		}
+	}
+	house = { save_scope_as = dragonlord_new_family_house }
+	house = {
+		set_variable = {
+			name = dragonlord_is_registered_family
+			value = yes
+		}
+		# Every registered Dragonlord House, including county-tier founders,
+		# receives AGOT's existing Dragonrider House status.
+		if = {
+			limit = { NOT = { has_house_modifier = dragonrider_house_modifier } }
+			add_house_modifier = dragonrider_house_modifier
+		}
+	}
+	# A cadet branch created above is a new House scope, so record the legacy on
+	# the actual Dragonlord Family rather than only on its source House.
+	dragonlord_mark_historical_house_effect = yes
+
+	add_character_flag = dragonlord_authorized_family_creation
+	give_noble_family_title = {
+		name = dragonlord_family_name
+		tier = duchy
+		article = DEFAULT_TITLE_NAME_ARTICLE
+		government = dragonlord_oligarchy_government
+		save_scope_as = dragonlord_new_family_title
+	}
+	remove_character_flag = dragonlord_authorized_family_creation
+	add_character_flag = dragonlord_family_head
+
+	scope:dragonlord_new_family_title = {
+		set_variable = {
+			name = dragonlord_family_title
+			value = yes
+		}
+		set_variable = {
+			name = dragonlord_family_source_house
+			value = scope:dragonlord_family_source_house
+		}
+		set_coa = scope:dragonlord_new_family_house
+	}
+
+	# Register the dignity before attempting to make it primary. Administrative
+	# title initialization can otherwise finish after this effect and restore a
+	# territorial duchy as the display title.
+	dragonlord_set_registered_family_primary_title_effect = yes
+}
+
+# Character scope. A registered Dragonlord Family dignity is the political
+# identity of every vassal Dragonlord. The imperial First Archon remains the
+# sole exception because a lower-tier title cannot replace the council empire.
+dragonlord_set_registered_family_primary_title_effect = {
+	if = {
+		limit = {
+			highest_held_title_tier <= tier_duchy
+			any_held_title = {
+				is_noble_family_title = yes
+				has_variable = dragonlord_family_title
+			}
+		}
+		every_held_title = {
+			limit = {
+				is_noble_family_title = yes
+				has_variable = dragonlord_family_title
+			}
+			save_scope_as = dragonlord_family_primary_title
+			holder = {
+				set_primary_title_to = scope:dragonlord_family_primary_title
+			}
+		}
+	}
+}
+
+# Root scope: the independent ruler of a Dragonlord Oligarchy. The Freehold
+# has one constitutional top title. Keep the current primary title (an empire
+# or a hegemony) and dissolve every kingdom and additional empire in the realm.
+dragonlord_enforce_single_high_title_effect = {
+	primary_title = { save_scope_as = dragonlord_constitutional_primary_title }
+
+	every_held_title = {
+		limit = {
+			OR = {
+				tier = tier_kingdom
+				tier = tier_empire
+			}
+			NOT = { this = scope:dragonlord_constitutional_primary_title }
+		}
+		add_to_temporary_list = dragonlord_subordinate_high_titles
+	}
+	every_vassal_or_below = {
+		every_held_title = {
+			limit = {
+				OR = {
+					tier = tier_kingdom
+					tier = tier_empire
+				}
+			}
+			add_to_temporary_list = dragonlord_subordinate_high_titles
+		}
+	}
+
+	every_in_list = {
+		list = dragonlord_subordinate_high_titles
+		save_scope_as = dragonlord_subordinate_high_title
+		holder = { destroy_title = scope:dragonlord_subordinate_high_title }
+	}
+}
+
+# Root scope: the independent ruler of a Dragonlord Oligarchy.
+# Repairs old saves and keeps each vassal Dragonlord's family dignity as their
+# primary title without changing its engine-supported noble-family tier.
+dragonlord_restore_family_primary_titles_effect = {
+	every_vassal_or_below = {
+		dragonlord_set_registered_family_primary_title_effect = yes
+	}
+}
+
+# Establish the founder's House and up to thirty-nine distinct eligible
+# direct vassal-ruler Houses as Dragonlord Families. Counts and above qualify;
+# barons and indirect vassals do not, and missing places remain vacant.
+# The dignity goes to the selected existing landed representative. If required
+# by the noble-family system, that vassal becomes head of a dedicated branch.
+# Root scope: the independent ruler of a Dragonlord Oligarchy.
+dragonlord_establish_family_titles_effect = {
+	save_scope_as = dragonlord_freehold_ruler
+	dragonlord_mark_historical_house_effect = yes
+
+	house = {
+		add_to_temporary_list = dragonlord_oligarchy_selected_houses
+	}
+	if = {
+		limit = { dragonlord_meets_family_admission_rules = yes }
+		add_to_temporary_list = dragonlord_oligarchy_family_sources
+	}
+
+	# Collect one landed representative from each eligible source House.
+	every_vassal = {
+		limit = {
+			is_ruler = yes
+			NOT = { dragonlord_is_colonial_city_subject_trigger = yes }
+			highest_held_title_tier >= tier_county
+			dragonlord_meets_family_admission_rules = yes
+			exists = house
+			house = {
+				NOT = { is_in_list = dragonlord_oligarchy_selected_houses }
+			}
+		}
+		dragonlord_mark_historical_house_effect = yes
+		house = {
+			add_to_temporary_list = dragonlord_oligarchy_selected_houses
+		}
+		add_to_temporary_list = dragonlord_oligarchy_family_candidates
+	}
+
+	ordered_in_list = {
+		list = dragonlord_oligarchy_family_candidates
+		order_by = {
+			value = house.house_power_score
+		}
+		max = {
+			value = list_size:dragonlord_oligarchy_family_candidates
+			max = 39
+		}
+		add_to_temporary_list = dragonlord_oligarchy_family_sources
+	}
+
+	every_in_list = {
+		list = dragonlord_oligarchy_family_sources
+		dragonlord_create_noble_family_effect = yes
+	}
+}
+
+# House scope. Record one surviving registered family while an old save is
+# being repaired, and reserve its place within the Forty Families.
+dragonlord_collect_existing_family_for_hierarchy_repair_effect = {
+	if = {
+		limit = {
+			NOT = { is_in_list = dragonlord_hierarchy_repair_selected_houses }
+		}
+		add_to_temporary_list = dragonlord_hierarchy_repair_selected_houses
+		scope:dragonlord_hierarchy_repair_ruler = {
+			change_variable = {
+				name = dragonlord_hierarchy_repair_seats_remaining
+				add = -1
+			}
+		}
+	}
+}
+
+# Root scope: the independent ruler of a Dragonlord Oligarchy.
+# One-time migration for realms founded by the old decision order. Existing
+# registered families keep their seats; only final direct-vassal Houses that
+# were skipped before kingdom destruction compete for the remaining places.
+dragonlord_repair_post_kingdom_family_selection_effect = {
+	save_scope_as = dragonlord_hierarchy_repair_ruler
+	set_variable = {
+		name = dragonlord_hierarchy_repair_seats_remaining
+		value = 40
+	}
+
+	# Count the ruler's family and every surviving registered vassal family.
+	every_held_title = {
+		limit = {
+			is_noble_family_title = yes
+			has_variable = dragonlord_family_title
+		}
+		holder.house ?= {
+			dragonlord_collect_existing_family_for_hierarchy_repair_effect = yes
+		}
+	}
+	every_vassal_or_below = {
+		every_held_title = {
+			limit = {
+				is_noble_family_title = yes
+				has_variable = dragonlord_family_title
+			}
+			holder.house ?= {
+				dragonlord_collect_existing_family_for_hierarchy_repair_effect = yes
+			}
+		}
+	}
+
+	# A broken old realm may also have lost the founder's dignity. Restore it
+	# first so the Chief can never be displaced by a vassal candidate.
+	if = {
+		limit = {
+			var:dragonlord_hierarchy_repair_seats_remaining > 0
+			dragonlord_meets_family_admission_rules = yes
+			exists = house
+			house = {
+				NOT = { is_in_list = dragonlord_hierarchy_repair_selected_houses }
+			}
+		}
+		house = {
+			add_to_temporary_list = dragonlord_hierarchy_repair_selected_houses
+		}
+		dragonlord_create_noble_family_effect = yes
+		change_variable = {
+			name = dragonlord_hierarchy_repair_seats_remaining
+			add = -1
+		}
+	}
+
+	# Re-evaluate only the final direct-vassal layer. Indirect counts remain
+	# excluded, matching the normal establishment rule.
+	every_vassal = {
+		limit = {
+			is_ruler = yes
+			NOT = { dragonlord_is_colonial_city_subject_trigger = yes }
+			highest_held_title_tier >= tier_county
+			dragonlord_meets_family_admission_rules = yes
+			exists = house
+			house = {
+				NOT = { is_in_list = dragonlord_hierarchy_repair_selected_houses }
+			}
+		}
+		house = {
+			add_to_temporary_list = dragonlord_hierarchy_repair_selected_houses
+		}
+		add_to_temporary_list = dragonlord_hierarchy_repair_candidates
+	}
+
+	ordered_in_list = {
+		list = dragonlord_hierarchy_repair_candidates
+		order_by = {
+			value = house.house_power_score
+		}
+		if = {
+			limit = {
+				scope:dragonlord_hierarchy_repair_ruler = {
+					var:dragonlord_hierarchy_repair_seats_remaining > 0
+				}
+			}
+			dragonlord_create_noble_family_effect = yes
+			scope:dragonlord_hierarchy_repair_ruler = {
+				change_variable = {
+					name = dragonlord_hierarchy_repair_seats_remaining
+					add = -1
+				}
+			}
+		}
+	}
+
+	remove_variable = dragonlord_hierarchy_repair_seats_remaining
+}
+
+# House scope. Count one currently seated Dragonlord Family and reserve both
+# its actual House and its original source House against duplicate admission.
+dragonlord_collect_seated_family_for_refill_effect = {
+	if = {
+		limit = { NOT = { is_in_list = dragonlord_family_refill_seated_houses } }
+		add_to_temporary_list = dragonlord_family_refill_seated_houses
+		scope:dragonlord_family_refill_ruler = {
+			change_variable = { name = dragonlord_family_refill_seats_remaining add = -1 }
+		}
+	}
+}
+
+# Root scope: the independent ruler of a Dragonlord Oligarchy. Vacant places
+# among the Forty Families are automatically granted only to eligible direct
+# vassals who possess a dragon or dragon egg. Other eligible families must use
+# the elevation petition interaction. Governors and colonial cities are barred.
+dragonlord_fill_vacant_family_seats_effect = {
+	save_scope_as = dragonlord_family_refill_ruler
+	set_variable = { name = dragonlord_family_refill_seats_remaining value = 40 }
+	remove_variable = dragonlord_family_refill_created_family
+
+	# Count every surviving registered dignity inside the realm. A House is
+	# counted once even if an unusual save contains duplicate family titles.
+	every_held_title = {
+		limit = { is_noble_family_title = yes has_variable = dragonlord_family_title }
+		if = {
+			limit = { has_variable = dragonlord_family_source_house }
+			var:dragonlord_family_source_house = { add_to_temporary_list = dragonlord_family_refill_reserved_source_houses }
+		}
+		holder.house ?= { dragonlord_collect_seated_family_for_refill_effect = yes }
+	}
+	every_vassal_or_below = {
+		every_held_title = {
+			limit = { is_noble_family_title = yes has_variable = dragonlord_family_title }
+			if = {
+				limit = { has_variable = dragonlord_family_source_house }
+				var:dragonlord_family_source_house = { add_to_temporary_list = dragonlord_family_refill_reserved_source_houses }
+			}
+			holder.house ?= { dragonlord_collect_seated_family_for_refill_effect = yes }
+		}
+	}
+
+	# every_vassal is deliberately direct-only. A governor may be powerful or
+	# culturally eligible, but a provincial appointment is not a Dragonlord seat.
+	every_vassal = {
+		limit = {
+			is_ruler = yes
+			is_governor = no
+			NOT = { dragonlord_is_colonial_city_subject_trigger = yes }
+			highest_held_title_tier >= tier_county
+			dragonlord_meets_family_admission_rules = yes
+			OR = {
+				any_relation = { type = agot_dragon }
+				any_character_artifact = { has_variable = dragon_egg }
+			}
+			exists = house
+			house = {
+				NOT = { has_variable = dragonlord_is_registered_family }
+				NOT = { is_in_list = dragonlord_family_refill_seated_houses }
+				NOT = { is_in_list = dragonlord_family_refill_reserved_source_houses }
+				NOT = { is_in_list = dragonlord_family_refill_candidate_source_houses }
+			}
+		}
+		house = { add_to_temporary_list = dragonlord_family_refill_candidate_source_houses }
+		add_to_temporary_list = dragonlord_family_refill_candidates
+	}
+
+	ordered_in_list = {
+		list = dragonlord_family_refill_candidates
+		order_by = { value = house.house_power_score }
+		if = {
+			limit = {
+				scope:dragonlord_family_refill_ruler = { var:dragonlord_family_refill_seats_remaining > 0 }
+			}
+			dragonlord_create_noble_family_effect = yes
+			scope:dragonlord_family_refill_ruler = {
+				change_variable = { name = dragonlord_family_refill_seats_remaining add = -1 }
+				set_variable = { name = dragonlord_family_refill_created_family value = yes }
+			}
+		}
+	}
+
+	if = {
+		limit = { has_variable = dragonlord_family_refill_created_family }
+		dragonlord_restore_family_primary_titles_effect = yes
+		dragonlord_recalculate_fourteen_dragonlords_effect = yes
+		dragonlord_recalculate_tamed_dragon_influence_effect = yes
+		remove_variable = dragonlord_family_refill_created_family
+	}
+	remove_variable = dragonlord_family_refill_seats_remaining
+}
+
+# Removes every accumulated stack of the per-dragon modifier.  The regular
+# remove effect only removes one stack, so this must be used before a
+# recalculation (and when a Dragonlord Family is retired).
+# Root scope: a House.
+dragonlord_clear_tamed_dragon_influence_effect = {
+	while = {
+		limit = {
+			has_house_modifier = dragonlord_tamed_dragon_influence_house_modifier
+		}
+		remove_house_modifier = dragonlord_tamed_dragon_influence_house_modifier
+	}
+}
+
+# Rebuild the Dragonlord Families' dragon-derived influence. Each living,
+# tamed dragon bonded to a living member of the same House grants that House
+# one stack of +0.2 monthly Influence. Cadet Houses and other Houses of the
+# same Dynasty are not included unless they possess their own registered
+# Dragonlord Family title.
+# Root scope: the independent ruler of a Dragonlord Oligarchy.
+dragonlord_recalculate_tamed_dragon_influence_effect = {
+	# Clear the previous calculation, including Houses that have since left the
+	# realm or lost their registered family title.
+	primary_title = {
+		if = {
+			limit = {
+				has_variable_list = dragonlord_dragon_influence_houses
+			}
+			every_in_list = {
+				variable = dragonlord_dragon_influence_houses
+				dragonlord_clear_tamed_dragon_influence_effect = yes
+			}
+			clear_variable_list = dragonlord_dragon_influence_houses
+		}
+	}
+
+	# Collect the ruler's own registered Dragonlord Family.
+	every_held_title = {
+		limit = {
+			is_noble_family_title = yes
+			has_variable = dragonlord_family_title
+		}
+		holder.house ?= {
+			if = {
+				limit = {
+					NOT = { is_in_list = dragonlord_dragon_influence_current_houses }
+				}
+				add_to_temporary_list = dragonlord_dragon_influence_current_houses
+			}
+		}
+	}
+
+	# Collect each vassal Dragonlord Family. The list prevents double counting if
+	# a House temporarily owns more than one registered dignity title.
+	every_vassal_or_below = {
+		every_held_title = {
+			limit = {
+				is_noble_family_title = yes
+				has_variable = dragonlord_family_title
+			}
+			holder.house ?= {
+				if = {
+					limit = {
+						NOT = { is_in_list = dragonlord_dragon_influence_current_houses }
+					}
+					add_to_temporary_list = dragonlord_dragon_influence_current_houses
+				}
+			}
+		}
+	}
+
+	every_in_list = {
+		list = dragonlord_dragon_influence_current_houses
+		save_scope_as = dragonlord_dragon_influence_house
+		# Annual repair for families created by older versions, including
+		# registered Dragonlords whose territorial rank is only county tier.
+		if = {
+			limit = { NOT = { has_house_modifier = dragonrider_house_modifier } }
+			add_house_modifier = dragonrider_house_modifier
+		}
+		dragonlord_clear_tamed_dragon_influence_effect = yes
+
+		root.primary_title = {
+			add_to_variable_list = {
+				name = dragonlord_dragon_influence_houses
+				target = scope:dragonlord_dragon_influence_house
+			}
+		}
+
+		# House membership is intentional here: this must never count dragons
+		# ridden by members of another House in the same Dynasty.
+		every_house_member = {
+			limit = {
+				is_alive = yes
+				has_trait = dragonrider
+			}
+			every_relation = {
+				type = agot_dragon
+				limit = {
+					is_alive = yes
+				}
+				scope:dragonlord_dragon_influence_house = {
+					add_house_modifier = dragonlord_tamed_dragon_influence_house_modifier
+				}
+			}
+		}
+	}
+}
+
+# Recalculate the Freehold's elite families.
+# Root scope: the independent ruler of a Dragonlord Oligarchy.
+#
+# Give an ordinary Dragonlord House one permanent, randomly selected
+# administrative attribute.  The selection is deliberately made only when a
+# House is first registered (or when it has just lost the Dragonlord attribute
+# after leaving the Fourteen), so the monthly council ranking does not keep
+# re-rolling its identity.
+dragonlord_assign_random_ordinary_attribute_effect = {
+	random_list = {
+		1 = { set_house_aspiration = { type = dragonlord_diplomatic_envoys level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_staunch_stewards level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_learned_philosophers level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_tax_assessors level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_army_commanders level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_army_quartermasters level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_tactical_besiegers level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_political_meddlers level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_confident_schemers level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_charismatic_socialites level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_respected_despots level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_lofty_architects level = 1 } }
+		1 = { set_house_aspiration = { type = dragonlord_faithful_nobles level = 1 } }
+	}
+	set_variable = { name = dragonlord_ordinary_attribute_assigned value = yes }
+}
+
+# House scope. Count one House in exactly the same category used by the three
+# custom family-list filters. every_noble_family supplies the native data set
+# behind GovernmentAdministrationWindow.GetFamilyGroups, so the header and the
+# visible rows cannot drift apart.
+dragonlord_count_visible_family_house_effect = {
+	if = {
+		limit = {
+			NOT = { is_in_list = dragonlord_counted_visible_family_houses }
+		}
+		add_to_temporary_list = dragonlord_counted_visible_family_houses
+
+		if = {
+			limit = { has_variable = dragonlord_is_fourteen_dragonlord }
+			scope:dragonlord_family_count_ruler.primary_title = {
+				change_variable = {
+					name = dragonlord_ui_fourteen_family_count
+					add = 1
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_variable = dragonlord_is_registered_family
+				NOT = { has_variable = dragonlord_is_chief_family }
+			}
+			scope:dragonlord_family_count_ruler.primary_title = {
+				change_variable = {
+					name = dragonlord_ui_ordinary_family_count
+					add = 1
+				}
+			}
+		}
+		else_if = {
+			limit = { NOT = { has_variable = dragonlord_is_registered_family } }
+			scope:dragonlord_family_count_ruler.primary_title = {
+				change_variable = {
+					name = dragonlord_ui_noble_family_count
+					add = 1
+				}
+			}
+		}
+	}
+}
+
+# Character scope: independent administrative ruler. Rebuild all three header
+# counts from the engine's live Noble Family collection rather than from the
+# annual ranking's temporary candidate lists.
+dragonlord_refresh_family_ui_counts_effect = {
+	save_scope_as = dragonlord_family_count_ruler
+	primary_title = {
+		set_variable = { name = dragonlord_ui_fourteen_family_count value = 0 }
+		set_variable = { name = dragonlord_ui_ordinary_family_count value = 0 }
+		set_variable = { name = dragonlord_ui_noble_family_count value = 0 }
+	}
+
+	# This is the same native family collection consumed by the administration
+	# window. It includes landed governors and landless estate families, while
+	# excluding the imperial family that the window displays separately.
+	every_noble_family = {
+		holder.house ?= {
+			dragonlord_count_visible_family_house_effect = yes
+		}
+	}
+}
+
+# Backwards-compatible name retained for existing on_action call sites.
+dragonlord_refresh_noble_family_ui_count_effect = {
+	dragonlord_refresh_family_ui_counts_effect = yes
+}
+
+# Only registered Dragonlord Families compete. The Chief occupies the first
+# seat; the strongest remaining Houses fill the top 35%, rounded downward,
+# with fourteen seats in total. At forty families this means Chief + thirteen.
+dragonlord_recalculate_fourteen_dragonlords_effect = {
+	# Also migrates existing saves: qualifying Houses acquire the historical
+	# record the next time the annual council ranking is refreshed.
+	dragonlord_mark_historical_house_effect = yes
+	# Reset the scripted copy of native Powerful Family Attribute modifiers
+	# before recalculating the Chief and Fourteen Houses.
+	dragonlord_clear_fourteen_attribute_modifiers_effect = yes
+	# The First Lord's House holds the chief seat above the Fourteen. Remember
+	# it on the imperial title so a former ruling House immediately loses the
+	# council-only attribute when the First Lord changes.
+	house = { save_scope_as = dragonlord_current_chief_house }
+	primary_title = {
+		if = {
+			limit = { has_variable = dragonlord_chief_family_house }
+			var:dragonlord_chief_family_house = {
+				if = {
+					limit = {
+						NOT = { this = scope:dragonlord_current_chief_house }
+					}
+					remove_house_modifier = dragonlord_fourteen_dragonlords_house_modifier
+					dragonlord_remove_fourteen_attribute_modifiers_from_house_effect = yes
+					remove_variable = dragonlord_is_chief_family
+				}
+			}
+		}
+		set_variable = {
+			name = dragonlord_chief_family_house
+			value = scope:dragonlord_current_chief_house
+		}
+	}
+	scope:dragonlord_current_chief_house = {
+		set_variable = { name = dragonlord_is_registered_family value = yes }
+		set_variable = { name = dragonlord_is_chief_family value = yes }
+		# Becoming Chief initializes the dedicated attribute once. It is not a
+		# permanent lock: the House head can subsequently select another one.
+		if = {
+			limit = { NOT = { has_variable = dragonlord_council_attribute_initialized } }
+			set_house_aspiration = { type = dragon_lords level = 1 }
+			set_variable = { name = dragonlord_council_attribute_initialized value = yes }
+			set_variable = { name = dragonlord_ordinary_attribute_assigned value = yes }
+		}
+		dragonlord_apply_fourteen_attribute_modifiers_effect = yes
+	}
+
+	# The primary imperial title remembers the previous year's winners. This
+	# lets us clear a status even if that House has since left the realm.
+	primary_title = {
+		if = {
+			limit = {
+				has_variable_list = dragonlord_fourteen_dragonlords_houses
+			}
+			every_in_list = {
+				variable = dragonlord_fourteen_dragonlords_houses
+				add_to_temporary_list = dragonlord_previous_fourteen_houses
+				remove_house_modifier = dragonlord_fourteen_dragonlords_house_modifier
+				remove_variable = dragonlord_is_fourteen_dragonlord
+			}
+			clear_variable_list = dragonlord_fourteen_dragonlords_houses
+		}
+	}
+
+	# The Chief Dragonlord's House has its own fixed position above the lists,
+	# like an administrative imperial family. Register and clean it here. It is
+	# not placed in the list below, but still consumes one of the fourteen seats.
+	every_held_title = {
+		limit = {
+			is_noble_family_title = yes
+			has_variable = dragonlord_family_title
+		}
+		holder = {
+			dragonlord_mark_historical_house_effect = yes
+			house ?= {
+				set_variable = {
+					name = dragonlord_is_registered_family
+					value = yes
+				}
+			}
+			house ?= {
+				remove_house_modifier = dragonlord_fourteen_dragonlords_house_modifier
+				# Clear stale status left by older versions. The Chief is tracked by
+				# its own variable and must never also occupy a listed council seat.
+				remove_variable = dragonlord_is_fourteen_dragonlord
+			}
+		}
+	}
+
+	# All registered Houses anywhere below the realm ruler remain Dragonlord
+	# Families, including counts. A registered family must not disappear from
+	# the council merely because title changes place its ruler under another
+	# vassal. The Fourteen ranking later gives first priority to rulers with a
+	# real landed duchy or higher title, then fills any remaining seats from the
+	# count pool. The artificial duchy-tier family dignity is ignored.
+	every_vassal_or_below = {
+		every_held_title = {
+			limit = {
+				is_noble_family_title = yes
+				has_variable = dragonlord_family_title
+			}
+			holder = {
+				dragonlord_mark_historical_house_effect = yes
+				house ?= {
+					set_variable = {
+						name = dragonlord_is_registered_family
+						value = yes
+					}
+				}
+				if = {
+					limit = {
+						NOT = { is_in_list = dragonlord_all_dragonlord_candidates }
+					}
+					add_to_temporary_list = dragonlord_all_dragonlord_candidates
+				}
+				if = {
+					limit = {
+						NOT = { is_in_list = dragonlord_fourteen_dragonlords_candidates }
+					}
+					add_to_temporary_list = dragonlord_fourteen_dragonlords_candidates
+				}
+				house ?= {
+					remove_house_modifier = dragonlord_fourteen_dragonlords_house_modifier
+					# The former implementation only cleared Houses remembered in the
+					# previous-winners list. Clean every current candidate before the
+					# ranking so historical winners cannot accumulate indefinitely.
+					remove_variable = dragonlord_is_fourteen_dragonlord
+				}
+			}
+		}
+	}
+	# The Chief Dragonlord occupies one of the fourteen seats. Their House is
+	# displayed separately above the family groups, but receives the same seat
+	# modifier and attribute effects as the other council Houses.
+	scope:dragonlord_current_chief_house = {
+		add_house_modifier = dragonlord_fourteen_dragonlords_house_modifier
+	}
+
+	ordered_in_list = {
+		list = dragonlord_fourteen_dragonlords_candidates
+		order_by = {
+			value = house.house_power_score
+			# Pool priority only: this does not alter the displayed or stored
+			# House Power Score. Every real duke-or-higher ranks ahead of every
+			# count, while House Power Score orders families inside each pool.
+			if = {
+				limit = {
+					any_held_title = {
+						tier >= tier_duchy
+						is_noble_family_title = no
+						is_landless_type_title = no
+					}
+				}
+				add = 1000000
+			}
+		}
+		max = {
+			# Seat count is still based on every registered Dragonlord Family,
+			# including counts. The prioritized ordering above exhausts the
+			# duke-or-higher pool before it can draw from the count pool.
+			value = list_size:dragonlord_all_dragonlord_candidates
+			# The Chief counts toward both the thirty-five percent and the hard
+			# cap of fourteen, leaving at most thirteen additional Houses.
+			add = 1
+			multiply = 0.35
+			floor = yes
+			max = 14
+			subtract = 1
+			min = 0
+		}
+		if = {
+			limit = { exists = house }
+			add_character_flag = dragonlord_is_current_fourteen_dragonlord
+				house = {
+					save_scope_as = dragonlord_fourteen_dragonlords_selected_house
+					add_house_modifier = dragonlord_fourteen_dragonlords_house_modifier
+				set_variable = {
+						name = dragonlord_is_fourteen_dragonlord
+						value = yes
+					}
+					# First entry into the Fourteen grants Giant Dragonlord once. The
+					# family attribute remains player-changeable afterwards.
+					if = {
+						limit = { NOT = { has_variable = dragonlord_council_attribute_initialized } }
+						set_house_aspiration = { type = dragon_lords level = 1 }
+						set_variable = { name = dragonlord_council_attribute_initialized value = yes }
+						set_variable = { name = dragonlord_ordinary_attribute_assigned value = yes }
+					}
+					dragonlord_apply_fourteen_attribute_modifiers_effect = yes
+				}
+			root.primary_title = {
+				add_to_variable_list = {
+					name = dragonlord_fourteen_dragonlords_houses
+					target = scope:dragonlord_fourteen_dragonlords_selected_house
+				}
+			}
+		}
+	}
+
+	# Recount only after every House has received its final category. This reads
+	# the same native collection used by the visible family rows.
+	dragonlord_refresh_family_ui_counts_effect = yes
+
+	# Retire the Fourteen status only after the new ranking has been selected.
+	# A House which falls out keeps its selected attribute. The shared list stays
+	# available, while its Fourteen status and council modifier are removed.
+	every_in_list = {
+		list = dragonlord_previous_fourteen_houses
+		limit = {
+			NOT = { has_variable = dragonlord_is_fourteen_dragonlord }
+			NOT = { has_variable = dragonlord_is_chief_family }
+		}
+	}
+
+# Registered families outside the top thirty-five percent remain ordinary
+# Dragonlords. They receive a stable random ordinary attribute; the
+# Fourteen/Chief status is evaluated separately by the attribute scopes.
+	every_in_list = {
+		list = dragonlord_all_dragonlord_candidates
+		limit = {
+			NOT = { has_character_flag = dragonlord_is_current_fourteen_dragonlord }
+			NOT = { this = root }
+		}
+		house ?= {
+				# Existing saves used to give every registered House Giant Dragonlord.
+				# Convert only those ordinary Houses once. Afterwards every House,
+				# including former Fourteen Dragonlords, keeps the player's choice.
+				if = {
+					limit = {
+						OR = {
+							has_house_aspiration_parameter = dragonlord_unseated_attribute
+							AND = {
+								has_house_aspiration_parameter = dragonlord_attribute_dragon_lords
+								NOT = { has_variable = dragonlord_ordinary_attribute_assigned }
+							}
+						}
+					}
+					dragonlord_assign_random_ordinary_attribute_effect = yes
+				}
+				else = {
+					dragonlord_migrate_legacy_fourteen_attribute_effect = yes
+				}
+			}
+	}
+	every_in_list = {
+		list = dragonlord_all_dragonlord_candidates
+		remove_character_flag = dragonlord_is_current_fourteen_dragonlord
+	}
+}

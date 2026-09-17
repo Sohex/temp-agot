@@ -1,0 +1,435 @@
+﻿# Counts the frozen voting weight of every living attendee.  The same stance
+# boundary used by the agenda forecast applies here: a final support score
+# above zero votes in favor, while zero or less votes against.  A tie fails.
+dragonlord_council_tally_meeting_votes_effect = {
+	clear_variable_list = dragonlord_council_meeting_supporters
+	clear_variable_list = dragonlord_council_meeting_opponents
+	set_variable = { name = dragonlord_council_meeting_support_votes value = 0 }
+	set_variable = { name = dragonlord_council_meeting_opposition_votes value = 0 }
+	remove_variable = dragonlord_council_vote_passed
+
+	every_in_list = {
+		variable = dragonlord_council_meeting_voters
+		limit = {
+			is_alive = yes
+			has_variable = dragonlord_council_meeting_base_support
+			has_variable = dragonlord_council_meeting_vote_weight
+		}
+		save_scope_as = dragonlord_council_ballot_voter
+		if = {
+			limit = { dragonlord_council_meeting_final_support > 0 }
+			root = {
+				add_to_variable_list = {
+					name = dragonlord_council_meeting_supporters
+					target = scope:dragonlord_council_ballot_voter
+				}
+				change_variable = {
+					name = dragonlord_council_meeting_support_votes
+					add = scope:dragonlord_council_ballot_voter.var:dragonlord_council_meeting_vote_weight
+				}
+			}
+		}
+		else = {
+			root = {
+				add_to_variable_list = {
+					name = dragonlord_council_meeting_opponents
+					target = scope:dragonlord_council_ballot_voter
+				}
+				change_variable = {
+					name = dragonlord_council_meeting_opposition_votes
+					add = scope:dragonlord_council_ballot_voter.var:dragonlord_council_meeting_vote_weight
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			var:dragonlord_council_meeting_support_votes > var:dragonlord_council_meeting_opposition_votes
+		}
+		set_variable = { name = dragonlord_council_vote_passed value = yes }
+	}
+}
+
+# Apply a council-authorized law through its ordinary enactment path first so
+# its existing on_pass effects still run.  Some imported law groups retain a
+# second layer of vanilla cooldown/cost requirements; if that layer refuses a
+# law already authorized by the council, force only the database law switch as
+# a fallback.  The post-condition flag also drives the result button text.
+dragonlord_council_apply_realm_law_effect = {
+	add_realm_law = $LAW$
+	if = {
+		limit = { NOT = { has_realm_law = $LAW$ } }
+		add_realm_law_skip_effects = $LAW$
+	}
+	if = {
+		limit = { has_realm_law = $LAW$ }
+		set_variable = { name = dragonlord_council_result_law_enacted value = yes }
+		# Record the law actually present after enactment in this event chain.
+		save_scope_value_as = { name = dragonlord_result_new_law value = flag:$LAW$ }
+	}
+}
+
+# Preserve the law in force before enactment so the resolution can state the
+# exact transition after the database law has already changed.
+dragonlord_council_capture_previous_law_effect = {
+	remove_variable = dragonlord_council_result_previous_law
+	if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:imperial_bureaucracy_0
+				var:dragonlord_council_selected_law = flag:imperial_bureaucracy_1
+				var:dragonlord_council_selected_law = flag:imperial_bureaucracy_2
+				var:dragonlord_council_selected_law = flag:imperial_bureaucracy_3
+			}
+		}
+		if = { limit = { has_realm_law = imperial_bureaucracy_0 } set_variable = { name = dragonlord_council_result_previous_law value = flag:imperial_bureaucracy_0 } }
+		else_if = { limit = { has_realm_law = imperial_bureaucracy_1 } set_variable = { name = dragonlord_council_result_previous_law value = flag:imperial_bureaucracy_1 } }
+		else_if = { limit = { has_realm_law = imperial_bureaucracy_2 } set_variable = { name = dragonlord_council_result_previous_law value = flag:imperial_bureaucracy_2 } }
+		else_if = { limit = { has_realm_law = imperial_bureaucracy_3 } set_variable = { name = dragonlord_council_result_previous_law value = flag:imperial_bureaucracy_3 } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:male_only_law
+				var:dragonlord_council_selected_law = flag:male_preference_law
+				var:dragonlord_council_selected_law = flag:equal_law
+				var:dragonlord_council_selected_law = flag:female_preference_law
+				var:dragonlord_council_selected_law = flag:female_only_law
+			}
+		}
+		if = { limit = { has_realm_law = male_only_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:male_only_law } }
+		else_if = { limit = { has_realm_law = male_preference_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:male_preference_law } }
+		else_if = { limit = { has_realm_law = equal_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:equal_law } }
+		else_if = { limit = { has_realm_law = female_preference_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:female_preference_law } }
+		else_if = { limit = { has_realm_law = female_only_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:female_only_law } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:slavery_disallowed_law
+				var:dragonlord_council_selected_law = flag:slavery_allowed_law
+			}
+		}
+		if = { limit = { has_realm_law = slavery_disallowed_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:slavery_disallowed_law } }
+		else_if = { limit = { has_realm_law = slavery_allowed_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:slavery_allowed_law } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:province_war_law_0
+				var:dragonlord_council_selected_law = flag:province_war_law_1
+				var:dragonlord_council_selected_law = flag:province_war_law_2
+				var:dragonlord_council_selected_law = flag:province_war_law_3
+			}
+		}
+		if = { limit = { has_realm_law = province_war_law_0 } set_variable = { name = dragonlord_council_result_previous_law value = flag:province_war_law_0 } }
+		else_if = { limit = { has_realm_law = province_war_law_1 } set_variable = { name = dragonlord_council_result_previous_law value = flag:province_war_law_1 } }
+		else_if = { limit = { has_realm_law = province_war_law_2 } set_variable = { name = dragonlord_council_result_previous_law value = flag:province_war_law_2 } }
+		else_if = { limit = { has_realm_law = province_war_law_3 } set_variable = { name = dragonlord_council_result_previous_law value = flag:province_war_law_3 } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:province_border_law_0
+				var:dragonlord_council_selected_law = flag:province_border_law_1
+				var:dragonlord_council_selected_law = flag:province_border_law_2
+			}
+		}
+		if = { limit = { has_realm_law = province_border_law_0 } set_variable = { name = dragonlord_council_result_previous_law value = flag:province_border_law_0 } }
+		else_if = { limit = { has_realm_law = province_border_law_1 } set_variable = { name = dragonlord_council_result_previous_law value = flag:province_border_law_1 } }
+		else_if = { limit = { has_realm_law = province_border_law_2 } set_variable = { name = dragonlord_council_result_previous_law value = flag:province_border_law_2 } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:term_length_short
+				var:dragonlord_council_selected_law = flag:term_length_long
+				var:dragonlord_council_selected_law = flag:term_length_life
+			}
+		}
+		if = { limit = { has_realm_law = term_length_short } set_variable = { name = dragonlord_council_result_previous_law value = flag:term_length_short } }
+		else_if = { limit = { has_realm_law = term_length_long } set_variable = { name = dragonlord_council_result_previous_law value = flag:term_length_long } }
+		else_if = { limit = { has_realm_law = term_length_life } set_variable = { name = dragonlord_council_result_previous_law value = flag:term_length_life } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:franchise_democratic_full
+				var:dragonlord_council_selected_law = flag:franchise_lean_democratic
+				var:dragonlord_council_selected_law = flag:franchise_lean_aristocratic
+				var:dragonlord_council_selected_law = flag:franchise_aristocratic_full
+				var:dragonlord_council_selected_law = flag:franchise_theocratic
+			}
+		}
+		if = { limit = { has_realm_law = franchise_democratic_full } set_variable = { name = dragonlord_council_result_previous_law value = flag:franchise_democratic_full } }
+		else_if = { limit = { has_realm_law = franchise_lean_democratic } set_variable = { name = dragonlord_council_result_previous_law value = flag:franchise_lean_democratic } }
+		else_if = { limit = { has_realm_law = franchise_lean_aristocratic } set_variable = { name = dragonlord_council_result_previous_law value = flag:franchise_lean_aristocratic } }
+		else_if = { limit = { has_realm_law = franchise_aristocratic_full } set_variable = { name = dragonlord_council_result_previous_law value = flag:franchise_aristocratic_full } }
+		else_if = { limit = { has_realm_law = franchise_theocratic } set_variable = { name = dragonlord_council_result_previous_law value = flag:franchise_theocratic } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:policy_mercantile_full
+				var:dragonlord_council_selected_law = flag:policy_lean_mercantile
+				var:dragonlord_council_selected_law = flag:policy_lean_militaristic
+				var:dragonlord_council_selected_law = flag:policy_militaristic_full
+			}
+		}
+		if = { limit = { has_realm_law = policy_mercantile_full } set_variable = { name = dragonlord_council_result_previous_law value = flag:policy_mercantile_full } }
+		else_if = { limit = { has_realm_law = policy_lean_mercantile } set_variable = { name = dragonlord_council_result_previous_law value = flag:policy_lean_mercantile } }
+		else_if = { limit = { has_realm_law = policy_lean_militaristic } set_variable = { name = dragonlord_council_result_previous_law value = flag:policy_lean_militaristic } }
+		else_if = { limit = { has_realm_law = policy_militaristic_full } set_variable = { name = dragonlord_council_result_previous_law value = flag:policy_militaristic_full } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:top_liege_redirected_to_border_wars_law
+				var:dragonlord_council_selected_law = flag:top_liege_not_redirected_to_border_wars_law
+			}
+		}
+		if = { limit = { has_realm_law = top_liege_redirected_to_border_wars_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:top_liege_redirected_to_border_wars_law } }
+		else_if = { limit = { has_realm_law = top_liege_not_redirected_to_border_wars_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:top_liege_not_redirected_to_border_wars_law } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:dragonpit_close_family_law
+				var:dragonlord_council_selected_law = flag:dragonpit_house_law
+				var:dragonlord_council_selected_law = flag:dragonpit_dynasty_law
+				var:dragonlord_council_selected_law = flag:dragonpit_everyone_law
+			}
+		}
+		if = { limit = { has_realm_law = dragonpit_close_family_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonpit_close_family_law } }
+		else_if = { limit = { has_realm_law = dragonpit_house_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonpit_house_law } }
+		else_if = { limit = { has_realm_law = dragonpit_dynasty_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonpit_dynasty_law } }
+		else_if = { limit = { has_realm_law = dragonpit_everyone_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonpit_everyone_law } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:dragonlord_culture_high_valyrian_law
+				var:dragonlord_council_selected_law = flag:dragonlord_culture_valyrian_heritage_law
+				var:dragonlord_council_selected_law = flag:dragonlord_culture_all_law
+			}
+		}
+		if = { limit = { has_realm_law = dragonlord_culture_high_valyrian_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonlord_culture_high_valyrian_law } }
+		else_if = { limit = { has_realm_law = dragonlord_culture_valyrian_heritage_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonlord_culture_valyrian_heritage_law } }
+		else_if = { limit = { has_realm_law = dragonlord_culture_all_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonlord_culture_all_law } }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				var:dragonlord_council_selected_law = flag:dragonlord_religion_fourteen_flames_law
+				var:dragonlord_council_selected_law = flag:dragonlord_religion_valyrian_law
+				var:dragonlord_council_selected_law = flag:dragonlord_religion_all_law
+			}
+		}
+		if = { limit = { has_realm_law = dragonlord_religion_fourteen_flames_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonlord_religion_fourteen_flames_law } }
+		else_if = { limit = { has_realm_law = dragonlord_religion_valyrian_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonlord_religion_valyrian_law } }
+		else_if = { limit = { has_realm_law = dragonlord_religion_all_law } set_variable = { name = dragonlord_council_result_previous_law value = flag:dragonlord_religion_all_law } }
+	}
+}
+
+# Realm laws are database objects, while the council planner stores the chosen
+# law as a flag variable.  This explicit bridge applies the existing law and
+# its normal on_pass effects without introducing a second law system.
+dragonlord_council_enact_selected_law_effect = {
+	if = {
+		limit = { var:dragonlord_council_selected_law = flag:imperial_bureaucracy_0 }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_imperial_bureaucracy_0 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:imperial_bureaucracy_1 }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_imperial_bureaucracy_1 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:imperial_bureaucracy_2 }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_imperial_bureaucracy_2 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:imperial_bureaucracy_3 }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_imperial_bureaucracy_3 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:male_only_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = male_only_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:male_preference_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = male_preference_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:equal_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = equal_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:female_preference_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = female_preference_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:female_only_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = female_only_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:slavery_disallowed_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = slavery_disallowed_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:slavery_allowed_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = slavery_allowed_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:province_war_law_0 }
+		dragonlord_council_apply_realm_law_effect = { LAW = province_war_law_0 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:province_war_law_1 }
+		dragonlord_council_apply_realm_law_effect = { LAW = province_war_law_1 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:province_war_law_2 }
+		dragonlord_council_apply_realm_law_effect = { LAW = province_war_law_2 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:province_war_law_3 }
+		dragonlord_council_apply_realm_law_effect = { LAW = province_war_law_3 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:province_border_law_0 }
+		dragonlord_council_apply_realm_law_effect = { LAW = province_border_law_0 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:province_border_law_1 }
+		dragonlord_council_apply_realm_law_effect = { LAW = province_border_law_1 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:province_border_law_2 }
+		dragonlord_council_apply_realm_law_effect = { LAW = province_border_law_2 }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:term_length_short }
+		dragonlord_council_apply_realm_law_effect = { LAW = term_length_short }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:term_length_long }
+		dragonlord_council_apply_realm_law_effect = { LAW = term_length_long }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:term_length_life }
+		dragonlord_council_apply_realm_law_effect = { LAW = term_length_life }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:franchise_democratic_full }
+		dragonlord_council_apply_realm_law_effect = { LAW = franchise_democratic_full }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:franchise_lean_democratic }
+		dragonlord_council_apply_realm_law_effect = { LAW = franchise_lean_democratic }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:franchise_lean_aristocratic }
+		dragonlord_council_apply_realm_law_effect = { LAW = franchise_lean_aristocratic }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:franchise_aristocratic_full }
+		dragonlord_council_apply_realm_law_effect = { LAW = franchise_aristocratic_full }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:franchise_theocratic }
+		dragonlord_council_apply_realm_law_effect = { LAW = franchise_theocratic }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:policy_mercantile_full }
+		dragonlord_council_apply_realm_law_effect = { LAW = policy_mercantile_full }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:policy_lean_mercantile }
+		dragonlord_council_apply_realm_law_effect = { LAW = policy_lean_mercantile }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:policy_lean_militaristic }
+		dragonlord_council_apply_realm_law_effect = { LAW = policy_lean_militaristic }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:policy_militaristic_full }
+		dragonlord_council_apply_realm_law_effect = { LAW = policy_militaristic_full }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:top_liege_redirected_to_border_wars_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = top_liege_redirected_to_border_wars_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:top_liege_not_redirected_to_border_wars_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = top_liege_not_redirected_to_border_wars_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonpit_close_family_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonpit_close_family_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonpit_house_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonpit_house_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonpit_dynasty_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonpit_dynasty_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonpit_everyone_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonpit_everyone_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonlord_culture_high_valyrian_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_culture_high_valyrian_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonlord_culture_valyrian_heritage_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_culture_valyrian_heritage_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonlord_culture_all_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_culture_all_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonlord_religion_fourteen_flames_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_religion_fourteen_flames_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonlord_religion_valyrian_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_religion_valyrian_law }
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_law = flag:dragonlord_religion_all_law }
+		dragonlord_council_apply_realm_law_effect = { LAW = dragonlord_religion_all_law }
+	}
+}
+
+# Route each agenda category to existing game state only after a successful
+# vote.  War motions grant a one-year, single-use authorization rather than
+# starting a war directly.
+dragonlord_council_enact_passed_agenda_effect = {
+	remove_variable = dragonlord_council_result_law_enacted
+	if = {
+		limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda }
+		dragonlord_council_capture_previous_law_effect = yes
+		add_character_flag = dragonlord_council_enacting_law
+		dragonlord_council_enact_selected_law_effect = yes
+		remove_character_flag = dragonlord_council_enacting_law
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda }
+		dragonlord_council_grant_war_authorization_effect = yes
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda }
+		dragonlord_council_enact_development_agenda_effect = yes
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda }
+		add_character_flag = dragonlord_council_enacting_law
+		dragonlord_council_enact_treasury_budget_effect = yes
+		remove_character_flag = dragonlord_council_enacting_law
+	}
+}

@@ -1,0 +1,41 @@
+﻿
+tgp_japan_defense_mobilization_valid_trigger = {
+	custom_tooltip = {
+		text = defense_mobilization_law_valid_trigger
+		exists = capital_county
+		exists = capital_county.empire
+		OR = {
+			AND = {
+				is_at_war = yes
+				save_temporary_scope_as = liege_temp
+				any_character_war = {
+					is_civil_war = no
+					save_temporary_scope_as = war_temp
+					scope:liege_temp = {
+						is_leader_in_war = scope:war_temp
+						is_defender_in_war = scope:war_temp
+					}
+					OR = {
+						# CURRENT ATTACKERS COMBINED ARE A THREAT
+						war_attacker_total_strength_value > scope:liege_temp.max_strength_fifty_percent_value
+						# PRIMARY ATTACKER WITH ALLIES IS A THREAT
+						primary_attacker.max_strength_with_allies_value > scope:liege_temp.max_strength_fifty_percent_value
+					}
+					primary_attacker = {
+						OR = {
+							AND = {
+								exists = capital_county
+								exists = capital_county.empire
+								capital_county.empire != scope:liege_temp.capital_county.empire
+							}
+							NOT = { government_is_japanese_trigger = yes }
+						}
+					}
+				}
+			}
+			capital_county.empire = {
+				any_de_jure_county = { holder.top_liege != root.top_liege }
+			}
+		}
+	}
+}

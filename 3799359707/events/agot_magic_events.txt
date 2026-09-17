@@ -1,0 +1,769 @@
+﻿namespace = agot_magic
+
+# The "Spellbook" menu - opened via the agot_magic_open_spellbook_decision.
+# Self-targeted spells are cast directly from here. Targeted spells
+# (Warg Scout, Warg Sway, Blood Curse) are character interactions used the
+# normal CK3 way, from the target's own character screen - an event popup
+# has no character-picker widget, so they can't live here too. This event
+# just explains that.
+agot_magic.0001 = {
+	type = character_event
+	title = agot_magic.0001.t
+	desc = {
+		desc = agot_magic.0001.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = { has_variable = agot_gift_of_rhllor }
+				desc = agot_magic.0001.desc.rhllor
+			}
+			triggered_desc = {
+				trigger = { has_variable = agot_gift_of_warging }
+				desc = agot_magic.0001.desc.warging
+			}
+			triggered_desc = {
+				trigger = { has_variable = agot_gift_of_blood }
+				desc = agot_magic.0001.desc.blood
+			}
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0001.a
+		trigger = {
+			has_perk = agot_rhllor_ember_sight_perk
+		}
+		if = {
+			limit = { learning >= 10 }
+			random_list = {
+				70 = {
+					custom_tooltip = {
+						text = agot_magic.0001.a.vision_good
+					}
+					add_character_modifier = {
+						modifier = agot_magic_vision_foresight_modifier
+						years = 1
+					}
+					send_interface_toast = {
+						type = event_toast_effect_good
+						title = agot_magic_vision_success_toast
+						left_icon = root
+					}
+				}
+				30 = {
+					custom_tooltip = {
+						text = agot_magic.0001.a.vision_bad
+					}
+					stress_impact = { base = medium_stress_impact_gain }
+					send_interface_toast = {
+						type = event_toast_effect_bad
+						title = agot_magic_vision_failure_toast
+						left_icon = root
+					}
+				}
+			}
+		}
+		else = {
+			random_list = {
+				45 = {
+					custom_tooltip = {
+						text = agot_magic.0001.a.vision_good
+					}
+					add_character_modifier = {
+						modifier = agot_magic_vision_foresight_modifier
+						years = 1
+					}
+					send_interface_toast = {
+						type = event_toast_effect_good
+						title = agot_magic_vision_success_toast
+						left_icon = root
+					}
+				}
+				55 = {
+					custom_tooltip = {
+						text = agot_magic.0001.a.vision_bad
+					}
+					stress_impact = { base = medium_stress_impact_gain }
+					send_interface_toast = {
+						type = event_toast_effect_bad
+						title = agot_magic_vision_failure_toast
+						left_icon = root
+					}
+				}
+			}
+		}
+		agot_magic_track_rhllor_overuse_effect = yes
+		agot_magic_risk_discovery_effect = yes
+	}
+
+	option = {
+		name = agot_magic.0001.close
+	}
+}
+
+# A failed attempt to Seek the Gift sometimes gets noticed.
+agot_magic.0005 = {
+	type = character_event
+	title = agot_magic.0005.t
+	desc = agot_magic.0005.desc
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0005.a
+		trigger = { exists = liege }
+		liege = {
+			add_opinion = {
+				target = root
+				modifier = suspicion_opinion
+				opinion = -10
+			}
+		}
+	}
+
+	option = {
+		name = agot_magic.0005.b
+		trigger = { NOT = { exists = liege } }
+	}
+}
+
+# Discovery - caught in the act of forbidden magic.
+agot_magic.0010 = {
+	type = character_event
+	title = agot_magic.0010.t
+	desc = agot_magic.0010.desc
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	theme = witchcraft
+
+	immediate = {
+		if = {
+			limit = { NOT = { has_trait = witch } }
+			random = {
+				chance = 40
+				add_trait = witch
+			}
+		}
+	}
+
+	option = {
+		name = agot_magic.0010.a
+		trigger = { exists = liege }
+		liege = {
+			add_opinion = {
+				target = root
+				modifier = suspicion_opinion
+				opinion = -30
+			}
+		}
+	}
+
+	option = {
+		name = agot_magic.0010.b
+		trigger = { NOT = { exists = liege } }
+	}
+}
+
+# Hidden wrapper event for on_birth_child - see 00_agot_magic_on_actions.txt
+# for why this goes through the events list instead of an effect block.
+agot_magic.0020 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		agot_magic_birth_roll_effect = yes
+	}
+}
+
+# ============================================================
+# Acquisition event chains - same "engine" as v2's Drowned God:
+# a short narrative chain with travel-simulating delays instead
+# of one instant decision effect. Started by the "Seek the Gift"
+# decisions in 00_agot_magic_decisions.txt.
+# ============================================================
+
+### R'hllor: 0030 (call) -> 0031 (trial explained) -> 0032 (the trial) ###
+
+agot_magic.0030 = {
+	type = character_event
+	title = agot_magic.0030.t
+	desc = agot_magic.0030.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0030.a # Go to the sacred fire
+		trigger_event = { id = agot_magic.0031 days = 4 }
+	}
+
+	option = {
+		name = agot_magic.0030.b # Not now
+		stress_impact = { base = minor_stress_impact_gain }
+	}
+}
+
+agot_magic.0031 = {
+	type = character_event
+	title = agot_magic.0031.t
+	desc = agot_magic.0031.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0031.a # Stare into the flames
+		trigger_event = { id = agot_magic.0032 days = 2 }
+	}
+
+	option = {
+		name = agot_magic.0031.b # Turn back
+		stress_impact = { base = medium_stress_impact_gain }
+	}
+}
+
+agot_magic.0032 = {
+	type = character_event
+	title = agot_magic.0032.t
+	desc = agot_magic.0032.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0032.a # What is written in the fire
+		if = {
+			limit = { learning >= 16 }
+			custom_tooltip = {
+				text = agot_magic.0032.a.success
+			}
+			agot_magic_grant_rhllor_gift_effect = yes
+		}
+		else_if = {
+			limit = { learning >= 12 }
+			random_list = {
+				55 = {
+					custom_tooltip = {
+						text = agot_magic.0032.a.success
+					}
+					agot_magic_grant_rhllor_gift_effect = yes
+				}
+				45 = {
+					custom_tooltip = {
+						text = agot_magic.0032.a.failure
+					}
+					agot_magic_rhllor_ritual_failure_effect = yes
+				}
+			}
+		}
+		else = {
+			random_list = {
+				30 = {
+					custom_tooltip = {
+						text = agot_magic.0032.a.success
+					}
+					agot_magic_grant_rhllor_gift_effect = yes
+				}
+				70 = {
+					custom_tooltip = {
+						text = agot_magic.0032.a.failure
+					}
+					agot_magic_rhllor_ritual_failure_effect = yes
+				}
+			}
+		}
+	}
+}
+
+### Warging: 0040 (call) -> 0041 (rite explained) -> 0042 (the bonding) ###
+
+agot_magic.0040 = {
+	type = character_event
+	title = agot_magic.0040.t
+	desc = agot_magic.0040.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0040.a # Seek out the old gods
+		trigger_event = { id = agot_magic.0041 days = 4 }
+	}
+
+	option = {
+		name = agot_magic.0040.b # Not now
+		stress_impact = { base = minor_stress_impact_gain }
+	}
+}
+
+agot_magic.0041 = {
+	type = character_event
+	title = agot_magic.0041.t
+	desc = agot_magic.0041.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0041.a # Open yourself to the beast
+		trigger_event = { id = agot_magic.0042 days = 2 }
+	}
+
+	option = {
+		name = agot_magic.0041.b # Turn back
+		stress_impact = { base = medium_stress_impact_gain }
+	}
+}
+
+agot_magic.0042 = {
+	type = character_event
+	title = agot_magic.0042.t
+	desc = agot_magic.0042.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0042.a # Reach for the beast's mind
+		if = {
+			limit = { prowess >= 16 }
+			custom_tooltip = {
+				text = agot_magic.0042.a.success
+			}
+			agot_magic_grant_warging_gift_effect = yes
+		}
+		else_if = {
+			limit = { prowess >= 12 }
+			random_list = {
+				55 = {
+					custom_tooltip = {
+						text = agot_magic.0042.a.success
+					}
+					agot_magic_grant_warging_gift_effect = yes
+				}
+				45 = {
+					custom_tooltip = {
+						text = agot_magic.0042.a.failure
+					}
+					agot_magic_warging_ritual_failure_effect = yes
+				}
+			}
+		}
+		else = {
+			random_list = {
+				30 = {
+					custom_tooltip = {
+						text = agot_magic.0042.a.success
+					}
+					agot_magic_grant_warging_gift_effect = yes
+				}
+				70 = {
+					custom_tooltip = {
+						text = agot_magic.0042.a.failure
+					}
+					agot_magic_warging_ritual_failure_effect = yes
+				}
+			}
+		}
+	}
+}
+
+### Blood Magic: 0050 (call) -> 0051 (price explained) -> 0052 (the rite) ###
+
+agot_magic.0050 = {
+	type = character_event
+	title = agot_magic.0050.t
+	desc = agot_magic.0050.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0050.a # Seek out the old rites
+		trigger_event = { id = agot_magic.0051 days = 4 }
+	}
+
+	option = {
+		name = agot_magic.0050.b # Not now
+		stress_impact = { base = minor_stress_impact_gain }
+	}
+}
+
+agot_magic.0051 = {
+	type = character_event
+	title = agot_magic.0051.t
+	desc = agot_magic.0051.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0051.a # Pay the price
+		trigger_event = { id = agot_magic.0052 days = 2 }
+	}
+
+	option = {
+		name = agot_magic.0051.b # Turn back
+		stress_impact = { base = medium_stress_impact_gain }
+	}
+}
+
+agot_magic.0052 = {
+	type = character_event
+	title = agot_magic.0052.t
+	desc = agot_magic.0052.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0052.a # Open your own blood
+		if = {
+			limit = { intrigue >= 16 }
+			custom_tooltip = {
+				text = agot_magic.0052.a.success
+			}
+			agot_magic_grant_blood_gift_effect = yes
+		}
+		else_if = {
+			limit = { intrigue >= 12 }
+			random_list = {
+				50 = {
+					custom_tooltip = {
+						text = agot_magic.0052.a.success
+					}
+					agot_magic_grant_blood_gift_effect = yes
+				}
+				50 = {
+					custom_tooltip = {
+						text = agot_magic.0052.a.failure
+					}
+					agot_magic_bloodmagic_ritual_failure_effect = yes
+				}
+			}
+		}
+		else = {
+			random_list = {
+				25 = {
+					custom_tooltip = {
+						text = agot_magic.0052.a.success
+					}
+					agot_magic_grant_blood_gift_effect = yes
+				}
+				75 = {
+					custom_tooltip = {
+						text = agot_magic.0052.a.failure
+					}
+					agot_magic_bloodmagic_ritual_failure_effect = yes
+				}
+			}
+		}
+	}
+}
+
+# ============================================================
+# Casting chains - the three targeted spells (Cast a Blood Curse,
+# Send Your Beast to Watch, Slip Into Their Mind) used to be instant,
+# one-click character_interactions. Each now saves its target into a
+# variable and opens with a short narrative event before the existing
+# outcome logic resolves - the outcome odds/effects themselves are
+# unchanged, only relocated out of on_accept.
+# ============================================================
+
+### Blood Magic - Cast a Blood Curse: 0060 (the working) -> 0061 (the toll) ###
+
+agot_magic.0060 = {
+	type = character_event
+	title = agot_magic.0060.t
+	desc = agot_magic.0060.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0060.a # A lock of their hair, stolen or bought
+		trigger_event = { id = agot_magic.0061 days = 3 }
+	}
+
+	option = {
+		name = agot_magic.0060.b # Something closer - blood, taken in secret
+		trigger_event = { id = agot_magic.0061 days = 3 }
+	}
+
+	option = {
+		name = agot_magic.0060.c # Let it go
+		stress_impact = { base = minor_stress_impact_gain }
+		remove_variable = agot_bloodcurse_target
+	}
+}
+
+agot_magic.0061 = {
+	type = character_event
+	title = agot_magic.0061.t
+	desc = agot_magic.0061.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0061.a # Open your own blood
+		trigger = {
+			exists = var:agot_bloodcurse_target
+		}
+		add_character_modifier = {
+			modifier = agot_magic_blood_price_modifier
+			years = 2
+		}
+		random_list = {
+			35 = {
+				custom_tooltip = {
+					text = agot_bloodmagic_curse_outcome_infertility
+				}
+				var:agot_bloodcurse_target = {
+					add_character_modifier = {
+						modifier = agot_magic_blood_curse_infertility_modifier
+					}
+				}
+			}
+			35 = {
+				custom_tooltip = {
+					text = agot_bloodmagic_curse_outcome_wasting
+				}
+				var:agot_bloodcurse_target = {
+					add_character_modifier = {
+						modifier = agot_magic_blood_curse_wasting_modifier
+					}
+				}
+			}
+			30 = {
+				custom_tooltip = {
+					text = agot_bloodmagic_curse_outcome_backfire
+				}
+				add_character_modifier = {
+					modifier = agot_magic_blood_curse_backfire_modifier
+				}
+			}
+		}
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_bloodmagic_curse_interaction_notification
+			left_icon = root
+		}
+		agot_magic_track_blood_overuse_effect = yes
+		agot_magic_risk_discovery_effect = yes
+		remove_variable = agot_bloodcurse_target
+	}
+}
+
+### Warging - Send Your Beast to Watch: 0070 (sent out) -> 0071 (the report) ###
+
+agot_magic.0070 = {
+	type = character_event
+	title = agot_magic.0070.t
+	desc = agot_magic.0070.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0070.a # Wait for its return
+		trigger_event = { id = agot_magic.0071 days = 4 }
+	}
+
+	option = {
+		name = agot_magic.0070.b # Call it back early
+		remove_variable = agot_warg_scout_target
+	}
+}
+
+agot_magic.0071 = {
+	type = character_event
+	title = agot_magic.0071.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:agot_warg_scout_flavor = 1 }
+				desc = agot_magic.0071.desc.a
+			}
+			triggered_desc = {
+				trigger = { var:agot_warg_scout_flavor = 2 }
+				desc = agot_magic.0071.desc.b
+			}
+			desc = agot_magic.0071.desc.c
+		}
+	}
+
+	immediate = {
+		random_list = {
+			33 = { set_variable = { name = agot_warg_scout_flavor value = 1 } }
+			33 = { set_variable = { name = agot_warg_scout_flavor value = 2 } }
+			34 = { set_variable = { name = agot_warg_scout_flavor value = 3 } }
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0071.a # Receive its report
+		trigger = {
+			exists = var:agot_warg_scout_target
+		}
+		add_character_modifier = {
+			modifier = agot_magic_vision_foresight_modifier
+			years = 1
+		}
+		send_interface_toast = {
+			type = event_toast_effect_good
+			title = agot_warging_scout_interaction_notification
+			left_icon = root
+		}
+		agot_magic_track_warging_overuse_effect = yes
+		remove_variable = agot_warg_scout_target
+		remove_variable = agot_warg_scout_flavor
+	}
+}
+
+### Warging - Slip Into Their Mind: 0080 (reaching in) -> 0081 (the attempt) ###
+
+agot_magic.0080 = {
+	type = character_event
+	title = agot_magic.0080.t
+	desc = agot_magic.0080.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0080.a # Reach for their mind
+		trigger_event = { id = agot_magic.0081 days = 1 }
+	}
+
+	option = {
+		name = agot_magic.0080.b # Pull back
+		stress_impact = { base = minor_stress_impact_gain }
+		remove_variable = agot_warg_sway_target
+	}
+}
+
+agot_magic.0081 = {
+	type = character_event
+	title = agot_magic.0081.t
+	desc = agot_magic.0081.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0081.a # Slip in
+		trigger = {
+			exists = var:agot_warg_sway_target
+		}
+		stress_impact = { base = major_stress_impact_gain }
+		random_list = {
+			65 = {
+				custom_tooltip = {
+					text = agot_warging_sway_outcome_success
+				}
+				var:agot_warg_sway_target = {
+					add_opinion = {
+						target = root
+						modifier = agot_magic_warg_swayed_opinion
+						opinion = 40
+					}
+				}
+			}
+			35 = {
+				custom_tooltip = {
+					text = agot_warging_sway_outcome_failure
+				}
+				add_character_modifier = {
+					modifier = agot_magic_blood_curse_backfire_modifier
+				}
+			}
+		}
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_warging_sway_interaction_notification
+			left_icon = root
+		}
+		agot_magic_track_warging_overuse_effect = yes
+		agot_magic_risk_discovery_effect = yes
+		remove_variable = agot_warg_sway_target
+	}
+}

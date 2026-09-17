@@ -1,0 +1,169 @@
+﻿ask_for_blood_magic_interaction = {
+    category = interaction_category_friendly
+    auto_accept = yes
+    common_interaction = yes
+    desc = grant_blood_magic_interaction_desc
+    interface_priority = 150
+    is_highlighted = { always = yes }
+
+    cost = { piety = 250 }
+
+    is_valid_showing_failures_only = { 
+        scope:actor = { piety_level >= 2 }
+        custom_description = {
+            text = "ask_for_blood_magic_interaction_requirement"
+            scope:recipient = {
+                OR = {
+                    has_relation_lover = scope:actor
+                    has_relation_friend = scope:actor
+                    has_relation_best_friend = scope:actor
+                    has_relation_soulmate = scope:actor
+                }
+            }
+        }
+    }
+
+    is_shown = {
+        scope:recipient = {
+            has_trait = lifestyle_blood_mage
+        }
+        scope:actor = { 
+            NOR = { 
+                has_trait = lifestyle_blood_mage
+                has_trait = dragon 
+            } 
+        }
+    }
+
+    on_accept = {
+        scope:actor = { debug_log = debug_log.blood_mage_log }
+        scope:actor = {
+            add_trait = lifestyle_blood_mage
+        }
+    }
+
+    # AI
+    ai_targets = { 
+        ai_recipients = dynasty
+        ai_recipients = spouses 
+        ai_recipients = family 
+        ai_recipients = children 
+        ai_recipients = courtiers 
+        ai_recipients = councillors 
+        ai_recipients = liege
+    }
+    ai_potential = { always = yes }
+    ai_frequency = 6
+    ai_will_do = { 
+        base = 10
+    }
+}
+
+
+# Trigger event
+bm_get_blood_magic_from_prisoner_interaction = {
+    common_interaction = yes
+    auto_accept = yes
+    interface_priority = 999
+    category = interaction_category_hostile
+    desc = bm_get_blood_magic_from_prisoner_interaction.desc
+
+    is_highlighted = { always = yes }
+    cost = { piety = 100 }
+
+    is_shown = {
+        scope:actor = { 
+            NOR = { 
+                has_trait = lifestyle_blood_mage
+                has_trait = dragon 
+            } 
+        }
+        scope:recipient = {
+            is_imprisoned_by = scope:actor
+            has_trait = lifestyle_blood_mage
+        }
+    }
+
+    on_accept = {
+        
+        scope:actor = { debug_log = debug_log.blood_mage_log }
+        
+        if = {
+            limit = {scope:recipient = {has_trait = maimed }}
+            scope:actor = {add_trait = cannibal}
+            lifedrain_execution_effect = {
+                VICTIM = scope:recipient
+                EXECUTIONER = scope:actor
+            }
+        }
+        scope:recipient = {
+            send_interface_toast = {
+                left_icon = scope:actor
+                custom_tooltip = bm_get_blood_magic_from_prisoner_interaction.desc
+                if = {
+                    limit = {has_trait = maimed}
+                    add_trait = maimed
+                }
+                if = {
+                    limit = {has_trait = one_legged}
+                    add_trait = maimed
+                }
+                add_trait = one_legged
+            }
+        }
+        scope:actor = {
+            duel = {
+                skills = {learning intrigue prowess}
+                target = scope:recipient
+                35 = {
+                    desc = bm_get_blood_magic_from_prisoner_interaction.success
+                    scope:actor = { add_trait = lifestyle_blood_mage }
+
+                    compare_modifier = {
+                        value = scope:duel_value
+                        multiplier = 3
+                    }
+
+                    send_interface_toast  = {
+                        title = bm_get_blood_magic_from_prisoner_interaction.success
+                        left_icon = scope:actor
+                        right_icon = scope:recipient
+                    }
+                }
+                65 = {
+                    desc = bm_get_blood_magic_from_prisoner_interaction.fail
+                     send_interface_toast  = {
+                        title = bm_get_blood_magic_from_prisoner_interaction.fail
+                        left_icon = scope:actor
+                        right_icon = scope:recipient
+                        if = {
+                            limit = {has_trait = blind}
+                            add_trait = ergotism
+                        }
+                        if = {
+                            limit = {has_trait = one_eyed}
+                            add_trait = blind
+                        }
+                        if = {
+                            limit = {has_trait = wounded_1}
+                            add_trait = one_eyed
+                        }
+                        add_trait = wounded_1
+                        add_trait = scarred
+                    }
+                }
+            }
+        }
+
+    }
+
+    # AI
+    ai_targets = { 
+        ai_recipients = prisoners 
+    }
+    ai_potential = { always = no } #AB Edited
+    ai_frequency = 6
+    ai_will_do = { 
+        base = 33
+    }
+}

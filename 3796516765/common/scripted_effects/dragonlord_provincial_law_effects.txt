@@ -1,0 +1,55 @@
+﻿# Apply the Freehold's intended starting constitution once. The marker lives
+# on the enduring imperial title so succession does not reset later player
+# changes to these laws.
+dragonlord_apply_default_provincial_laws_effect = {
+	add_realm_law_skip_effects = slavery_allowed_law
+	add_realm_law_skip_effects = province_war_law_3
+	add_realm_law_skip_effects = province_border_law_1
+	add_realm_law_skip_effects = term_length_long
+	add_realm_law_skip_effects = franchise_lean_democratic
+	add_realm_law_skip_effects = policy_militaristic_full
+}
+
+# This effect is called only by the player-controlled founding decision. Law
+# initialization after loading an old save must never be allowed to masquerade
+# as an AI ruler passing laws without a Council vote.
+dragonlord_establish_default_provincial_laws_effect = {
+	dragonlord_apply_default_provincial_laws_effect = yes
+	dragonlord_refresh_bureaucracy_opinion_penalty_effect = yes
+
+	every_vassal_or_below = {
+		limit = {
+			has_government = dragonlord_oligarchy_government
+		}
+		dragonlord_apply_default_provincial_laws_effect = yes
+		dragonlord_refresh_bureaucracy_opinion_penalty_effect = yes
+	}
+
+	primary_title = {
+		set_variable = {
+			name = dragonlord_provincial_laws_initialized
+			value = yes
+		}
+	}
+}
+
+dragonlord_initialize_provincial_laws_effect = {
+	if = {
+		limit = {
+			top_liege = this
+			has_government = dragonlord_oligarchy_government
+			primary_title = {
+				NOT = { has_variable = dragonlord_provincial_laws_initialized }
+			}
+		}
+
+		# Existing realms already have active values for these law groups. Record
+		# the migration only; changing them here produces false law-pass notices.
+		primary_title = {
+			set_variable = {
+				name = dragonlord_provincial_laws_initialized
+				value = yes
+			}
+		}
+	}
+}

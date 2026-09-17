@@ -1,0 +1,936 @@
+﻿
+
+check_for_free_city_election = {
+	if = {
+		limit = {
+			has_variable = years_since_election
+			NOT = {
+				holder = { has_realm_law = term_length_life }
+			}
+		}
+		change_variable = {
+			name = years_since_election
+			add = 1
+		}
+	}
+	else = {
+		set_variable = {
+			name = years_since_election
+			value = 1
+		}
+	}
+	if = {
+		limit = {
+			tier >= tier_kingdom
+			exists = holder
+			holder = {
+				is_ruler = yes
+				exists = primary_title
+				has_realm_law = free_city_election_succession_law
+			}
+			NOT = {
+				holder = { has_realm_law = term_length_life }
+			}
+			NOT = { has_title_law = dictatorship_succession_law }
+			NOT = { free_city_term_length = -1 } #historical life term
+			var:years_since_election >= free_city_term_length
+		}
+		pre_magisterial_succession = yes
+	}
+}
+
+
+pre_magisterial_succession = { # Sets up scopes
+	if = {
+		limit = {
+			tier >= tier_kingdom
+			exists = holder
+			holder = {
+				is_ruler = yes
+				exists = primary_title
+				has_realm_law = free_city_election_succession_law
+			}
+		}
+		if = {
+			limit = { has_variable = years_since_election }
+			remove_variable = years_since_election
+			set_variable = {
+				name = years_since_election
+				value = 0
+			}
+		}
+		if = {
+			limit = { # if holder is dead
+				trigger_if = { # is_alive not work when on_death trigger this
+					limit = {
+						exists = scope:dead_holder
+					}
+					holder = scope:dead_holder
+				}
+				trigger_else = {
+					always = no
+				}
+			}
+			scope:dead_holder = { end_diarchy = yes }
+			if = {
+				limit = {
+					holder = { has_character_flag = election_delayed_till_war_ends }
+				}
+				holder = { remove_character_flag = election_delayed_till_war_ends }
+			}
+			save_scope_as = term_limit_country # Saves title being changed
+			scope:term_limit_country = {
+				if = {
+					limit = {
+						this = title:k_norvos
+					}
+					ordered_title_heir = {
+						order_by = "appointment_candidate_score(prev)"
+						save_scope_as = magister_winner
+					}
+					if = {
+						limit = {
+							norvos_are_the_bearded_priests_the_real_power_trigger = yes
+							title:k_norvos.holder = {
+								government_has_flag = government_is_norvos
+							}
+							title:d_norvos_high_priesthood.holder ?= {
+								top_liege = title:k_norvos.holder
+							}
+						}
+						title:d_norvos_high_priesthood.holder = {
+							save_scope_as = future_diarch
+						}
+					}
+				}
+				else = {
+					ordered_title_heir = {
+						order_by = "appointment_candidate_score(prev)"
+						save_scope_as = magister_winner
+					}
+					ordered_title_heir = {
+						order_by = "appointment_candidate_score(prev)"
+						limit = {
+							NOT = { this = scope:magister_winner }
+						}
+						save_scope_as = future_diarch
+					}
+				}
+			}
+			scope:term_limit_country.holder = { save_scope_as = old_holder } # Saves the current holder as a scope
+			scope:old_holder = {
+				every_tributary = {
+					add_to_list = tributaries_death_reroll
+					end_tributary = yes
+				}
+			}
+			if = {
+				limit = { exists = scope:magister_winner }
+				scope:magister_winner = { add_character_flag = titles_should_transfer_manually }
+			}
+			magisterial_succession = yes # Triggers actual succession
+		}
+		else = { # if holder alive
+			if = {
+				limit = {
+					holder = {
+						# Being at war should prevent the election from happening
+						is_at_war = no
+					}
+				}
+				if = {
+					limit = {
+						holder = {
+							has_active_diarchy = yes
+						}
+					}
+					holder = { end_diarchy = yes }
+				}
+				if = {
+					limit = {
+						holder = { has_character_flag = election_delayed_till_war_ends }
+					}
+					holder = { remove_character_flag = election_delayed_till_war_ends }
+				}
+				save_scope_as = term_limit_country # Saves title being changed
+				scope:term_limit_country = {
+					if = {
+						limit = {
+							this = title:k_norvos
+						}
+						ordered_title_heir = {
+							order_by = "appointment_candidate_score(prev)"
+							save_scope_as = magister_winner
+						}
+						if = {
+							limit = {
+								norvos_are_the_bearded_priests_the_real_power_trigger = yes
+								title:k_norvos.holder = {
+									government_has_flag = government_is_norvos
+								}
+								title:d_norvos_high_priesthood.holder ?= {
+									top_liege = title:k_norvos.holder
+								}
+							}
+							title:d_norvos_high_priesthood.holder = {
+								save_scope_as = future_diarch
+							}
+							scope:term_limit_country.holder = {
+								add_character_flag = {
+									flag = has_norvos_government
+									days = 40
+								}
+							}
+						}
+					}
+					else = {
+						ordered_title_heir = {
+							order_by = "appointment_candidate_score(prev)"
+							save_scope_as = magister_winner
+						}
+						ordered_title_heir = {
+							order_by = "appointment_candidate_score(prev)"
+							limit = {
+								exists = scope:magister_winner
+								NOT = { this = scope:magister_winner }
+							}
+							save_scope_as = future_diarch
+						}
+					}
+				}
+				scope:term_limit_country.holder = { save_scope_as = old_holder } # Saves the current holder as a scope
+				if = {
+					limit = { exists = scope:magister_winner }
+					scope:magister_winner = {
+						add_character_flag = titles_should_transfer_manually
+					}
+				}
+				holder = {
+					trigger_event = free_city_events.9999
+					every_vassal = { # Event shows up for the electors
+						limit = {
+							NOT = {
+								this = scope:old_holder
+							}
+						}
+						trigger_event = free_city_events.9999
+					}
+				}
+				if = {
+					limit = {
+						scope:old_holder = {
+							is_tributary = yes
+						}
+					}
+					scope:old_holder.suzerain = {
+						save_scope_as = title_suzerain
+					}
+				}
+				magisterial_succession = yes # Triggers actual succession
+			}
+			else_if = {
+				limit = {
+					holder = {
+						# Being at war should prevent the election from happening
+						is_at_war = yes
+					}
+				}
+				holder = {
+					save_scope_as = current_ruler
+					random_primary_war_enemy = {
+						save_scope_as = war_enemy
+					}
+					add_character_flag = election_delayed_till_war_ends
+					send_interface_toast = {
+						type = event_toast_effect_neutral
+						title = free_city_events.1001.war_delayed_due_to_war_tt
+						left_icon = root
+					}
+					trigger_event = free_city_events.1001
+				}
+			}
+		}
+	}
+}
+
+
+magisterial_succession = { # Actually ends the terms
+	if = {
+		limit = { #only necessary if holder is still alive
+			NOT = { exists = scope:dead_holder }
+		}
+		scope:magister_winner = {
+			add_character_flag = {
+				flag = transferring_title
+				days = 10
+			}
+
+			scope:term_limit_country = {
+				every_in_list = {
+					variable = personal_vassals
+					add_to_list = old_personal_vassals
+				}
+				clear_variable_list = personal_vassals
+			}
+
+			every_vassal = {
+				every_held_title = {
+					limit = { tier >= tier_county }
+					scope:term_limit_country = {
+						add_to_variable_list = {
+							name = personal_vassals
+							target = prev
+						}
+					}
+
+					if = {
+						limit = { scope:magister_winner = { is_ruler = yes } }
+						scope:magister_winner = {
+							change_government = administrative_government #AGOT FreeCityPlaceholder
+							if = {
+								limit = {
+									NOT = {
+										scope:term_limit_country.holder = { has_realm_law = free_city_election_succession_law }
+									}
+								}
+								scope:term_limit_country.holder = { add_realm_law = free_city_election_succession_law }
+							}
+						}
+					}
+				}
+                    #other vassals
+                    if = {
+                        limit = {
+                            OR = {
+                                NOT = { exists = scope:future_diarch }
+                                scope:future_diarch = { NOT = { is_vassal_of = scope:magister_winner } }
+                            }
+                        }
+                        scope:magister_winner = {
+                            random_powerful_vassal = {
+                                limit = { is_adult = yes }
+                                save_scope_as = future_diarch
+                            }
+                        }
+                    }
+
+                    if = {
+                        limit = {
+                            exists = scope:future_diarch
+                            scope:magister_winner = { is_ruler = yes exists = primary_title }
+                            scope:future_diarch = {
+                                OR = {
+                                    is_vassal_of = scope:magister_winner
+                                    is_courtier_of = scope:magister_winner
+                                }
+                                is_diarch_valid_trigger = yes
+                                NOT = { this = scope:magister_winner }
+                            }
+                        }
+                        if = {
+                            limit = { scope:magister_winner.primary_title = title:k_lys }
+                            scope:magister_winner = {
+                                designate_diarch = scope:future_diarch
+                                try_start_diarchy = second_magister
+                                set_diarchy_swing = 40
+                            }
+                        }
+                        else_if = {
+                            limit = {
+                                OR = {
+                                    scope:magister_winner.primary_title = title:k_tyrosh
+                                    scope:magister_winner.primary_title = title:k_pentos
+                                }
+                            }
+                            scope:magister_winner = {
+                                designate_diarch = scope:future_diarch
+                                try_start_diarchy = high_councilor
+                                set_diarchy_swing = 40
+                            }
+                        }
+                        else_if = {
+                            limit = { scope:magister_winner.primary_title = title:k_myr }
+                            scope:magister_winner = {
+                                designate_diarch = scope:future_diarch
+                                try_start_diarchy = tyniate
+                                set_diarchy_swing = 40
+                            }
+                        }
+                        else = {
+                            scope:magister_winner = {
+                                designate_diarch = scope:future_diarch
+                                try_start_diarchy = gonfaloniere
+                                set_diarchy_swing = 40
+                            }
+                        }
+                    }
+				if = {
+					limit = {
+						exists = global_var:three_daughters_confederation
+						scope:magister_winner = { is_ruler = yes exists = primary_title }
+						OR = {
+							scope:magister_winner.primary_title = title:k_myr
+							scope:magister_winner.primary_title = title:k_tyrosh
+							scope:magister_winner.primary_title = title:k_lys
+						}
+					}
+					global_var:three_daughters_confederation = {
+						add_confederation_member = scope:magister_winner
+					}
+				}
+				if = {
+					limit = {
+						exists = scope:title_suzerain
+					}
+					scope:magister_winner = {
+						start_tributary = { contract_group = tributary_subjugated suzerain = scope:title_suzerain }
+						scope:title_suzerain = {
+							save_scope_as = suzerain_loc
+						}
+						scope:magister_winner = {
+							save_scope_as = tributary_loc
+						}
+						add_truce_both_ways = {
+							character = scope:title_suzerain
+							years = 5
+							name = TRUCE_TRIBUTARY
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				scope:term_limit_country.holder = {
+					agot_has_free_city_succession_law_type_general_check = yes
+				}
+			}
+
+			scope:term_limit_country.holder = {
+				add_character_flag = {
+					flag = free_city_election_lost_titles
+					days = 1
+				}
+			}
+
+			create_title_and_vassal_change = {
+				type = election
+				save_scope_as = title_change
+				add_claim_on_loss = no
+			}
+
+			if = {
+				limit = {
+					scope:magister_winner = {
+						has_character_flag = titles_should_transfer_manually
+					}
+				}
+				scope:term_limit_country = {
+					change_title_holder = {
+						holder = scope:magister_winner
+						change = scope:title_change
+					}
+				}
+				scope:magister_winner = {
+					remove_character_flag = titles_should_transfer_manually
+				}
+			}
+			else = {  # fake title history action
+				show_as_tooltip = {
+					scope:term_limit_country = {
+						change_title_holder = {
+							holder = scope:magister_winner
+							change = scope:title_change
+						}
+					}
+				}
+				hidden_effect = {
+					create_dynamic_title = {
+						tier = duchy
+						name = d_dummy_title
+					}
+					create_title_and_vassal_change = {
+						type = election
+						save_scope_as = fake_title_change
+						add_claim_on_loss = no
+					}
+					scope:new_title = {
+						set_capital_county = title:c_myr
+						set_landless_title = yes
+						set_delete_on_destroy = yes
+						copy_title_history = scope:term_limit_country
+						change_title_holder = {
+							holder = scope:magister_winner
+							change = scope:fake_title_change
+						}
+						save_scope_as = fake_title
+					}
+					resolve_title_and_vassal_change = scope:fake_title_change
+					scope:magister_winner = {
+						trigger_event = { # Must trigger it after a day otherwise title history will mix
+							id = free_city_events.1011
+							days = 1
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					OR = {
+						scope:term_limit_country.title_capital_county = { has_title_law = magisterial_attached_titles_law }
+						scope:term_limit_country.title_capital_county.duchy = { has_title_law = magisterial_attached_titles_law }
+					}
+				}
+
+				if = {
+					limit = {
+						scope:term_limit_country.title_capital_county = { has_title_law = magisterial_attached_titles_law }
+					}
+					scope:term_limit_country.title_capital_county = {
+						change_title_holder = {
+							holder = scope:magister_winner
+							change = scope:title_change
+						}
+					}
+					scope:term_limit_country.title_capital_county = { save_scope_as = the_capital }
+				}
+				if = {
+					limit = {
+						scope:term_limit_country.title_capital_county.duchy = { has_title_law = magisterial_attached_titles_law }
+					}
+					scope:term_limit_country.title_capital_county.duchy = {
+						change_title_holder = {
+							holder = scope:magister_winner
+							change = scope:title_change
+						}
+					}
+				}
+			}
+
+			resolve_title_and_vassal_change = scope:title_change
+
+			create_title_and_vassal_change = { # Vassals of Kingdom Swear to Kingdom
+				type = swear_fealty
+				save_scope_as = vassal_change
+			}
+
+			scope:old_holder = {
+				every_vassal = {
+					limit = {
+						primary_title = {
+							NOT = { is_in_list = old_personal_vassals }
+						}
+						NOT = {
+							this = scope:magister_winner
+						}
+					}
+					change_liege = {
+						liege = scope:magister_winner
+						change = scope:vassal_change
+					}
+				}
+				hidden_effect = {
+					every_tributary = {
+						add_to_list = tributaries_reroll
+						end_tributary = yes
+					}
+				}
+			}
+			every_in_list = {
+				list = tributaries_reroll
+				start_tributary = { contract_group = tributary_subjugated suzerain = scope:magister_winner }
+				add_truce_both_ways = {
+					character = scope:magister_winner
+					years = 5
+					name = TRUCE_TRIBUTARY
+				}
+			}
+			resolve_title_and_vassal_change = scope:vassal_change
+
+			if = {
+				limit = { scope:old_holder.highest_held_title_tier < scope:magister_winner.highest_held_title_tier }
+				create_title_and_vassal_change = { # Ensure that the old holder becomes the vassal of the new one
+					type = swear_fealty
+					save_scope_as = change
+				}
+				scope:old_holder = {
+					change_liege = {
+						liege = scope:magister_winner
+						change = scope:change
+					}
+				}
+				resolve_title_and_vassal_change = scope:change
+			}
+
+			scope:term_limit_country = {
+				if = {
+					limit = { exists = scope:the_capital }
+					set_capital_county = scope:the_capital
+				}
+			}
+
+			scope:magister_winner = {
+				if = {
+					limit = {
+						scope:term_limit_country = title:k_norvos
+					}
+					change_government = norvos_government
+				}
+				else = {
+					change_government = administrative_government #AGOT FreeCityPlaceholder
+				}
+				if = {
+					limit = {
+						NOT = {
+							scope:term_limit_country.holder = { has_realm_law = free_city_election_succession_law }
+						}
+						NOT = {
+							scope:term_limit_country = title:k_norvos
+						}
+					}
+					scope:term_limit_country.holder = { add_realm_law = free_city_election_succession_law }
+				}
+				else_if = {
+					limit = {
+						scope:term_limit_country = title:k_norvos
+						NOT = {
+							scope:term_limit_country.holder = { has_realm_law =  norvos_regency_succession_law }
+						}
+					}
+					scope:term_limit_country.holder = { add_realm_law = norvos_regency_succession_law }
+				}
+			}
+		}
+
+		#other vassals
+		if = {
+			limit = {
+				NOT = { scope:term_limit_country = title:k_norvos }
+				NOT = {
+					scope:future_diarch = {
+						is_vassal_of = scope:magister_winner
+					}
+				}
+			}
+			scope:magister_winner = {
+				random_powerful_vassal ={
+					limit = { is_adult = yes }
+					save_scope_as = future_diarch
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				exists = scope:future_diarch
+			}
+			if = {
+				limit = {
+					scope:magister_winner.primary_title = title:k_lys
+				}
+				scope:magister_winner = {
+					designate_diarch = scope:future_diarch
+					try_start_diarchy = second_magister
+					set_diarchy_swing = 40
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						scope:magister_winner.primary_title = title:k_tyrosh
+						scope:magister_winner.primary_title = title:k_pentos
+					}
+				}
+				scope:magister_winner = {
+					designate_diarch = scope:future_diarch
+					try_start_diarchy = high_councilor
+					set_diarchy_swing = 40
+				}
+			}
+			else_if = {
+				limit = {
+					scope:magister_winner.primary_title = title:k_myr
+				}
+				scope:magister_winner = {
+					designate_diarch = scope:future_diarch
+					try_start_diarchy = tyniate
+					set_diarchy_swing = 40
+				}
+			}
+			else_if = {
+				limit = {
+					scope:magister_winner.primary_title = title:k_norvos
+				}
+				if = {
+					limit = {
+						norvos_are_the_bearded_priests_the_real_power_trigger = yes
+						title:k_norvos.holder = {
+							government_has_flag = government_is_norvos
+						}
+						title:d_norvos_high_priesthood.holder ?= {
+							top_liege = title:k_norvos.holder
+						}
+					}
+					scope:magister_winner = {
+						designate_diarch = title:d_norvos_high_priesthood.holder
+						try_start_diarchy = norvos_high_priestship
+						set_diarchy_swing = 100
+					}
+				}
+			}
+			else = {
+				scope:magister_winner = {
+					designate_diarch = scope:future_diarch
+					try_start_diarchy = gonfaloniere
+					set_diarchy_swing = 40
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = global_var:three_daughters_confederation
+				OR = {
+					scope:magister_winner.primary_title = title:k_myr
+					scope:magister_winner.primary_title = title:k_tyrosh
+					scope:magister_winner.primary_title = title:k_lys
+				}
+			}
+			global_var:three_daughters_confederation = {
+				add_confederation_member = scope:magister_winner
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:title_suzerain
+			}
+			scope:magister_winner = {
+				start_tributary = { contract_group = tributary_subjugated suzerain = scope:title_suzerain }
+				scope:title_suzerain = {
+					save_scope_as = suzerain_loc
+				}
+				scope:magister_winner = {
+					save_scope_as = tributary_loc
+				}
+				add_truce_both_ways = {
+					character = scope:title_suzerain
+					years = 5
+					name = TRUCE_TRIBUTARY
+				}
+			}
+		}
+	}
+	else = {  # holder died, only handle new diarchy.
+		scope:magister_winner = {
+			trigger_event = { id = free_city_events.9997 days = 1 } # Used to rejoin the 3Daughters Confederation b/c of on_death. This makes an edge case where if all three leaders die at once..
+			trigger_event = { id = free_city_events.9998 days = 3 }  # this is triggered by on_death, so: Delay to wait for title inheritance and vanilla dissolving of old diarchy
+		}
+	}
+
+	if = {
+		limit = {
+			scope:term_limit_country.title_capital_county.duchy = {
+				any_in_de_jure_hierarchy = {
+					tier = tier_county
+					has_title_law = magisterial_attached_titles_law
+					holder = {
+						any_liege_or_above = {
+							this = scope:term_limit_country.holder
+						}
+					}
+				}
+			}
+		}
+		create_title_and_vassal_change = {
+			type = election
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		scope:term_limit_country.title_capital_county.duchy = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					has_title_law = magisterial_attached_titles_law
+					holder = {
+						any_liege_or_above = {
+							this = scope:term_limit_country.holder
+						}
+					}
+				}
+				change_title_holder = {
+					holder = scope:magister_winner
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+	}
+	#If AI, distribute city titles
+	if = {
+		limit = {
+			scope:magister_winner = {
+				is_ai = yes
+			}
+		}
+		scope:magister_winner = {
+			save_scope_as = new_ruler
+			scope:term_limit_country.title_capital_county = { save_scope_as = capital }
+			trigger_event = {
+				id = free_city_events.9996
+				days = 1
+			}
+		}
+	}
+
+	#Handle estate locations
+	scope:old_holder.domicile ?= {
+		if = { # If you have a capital (i.e. you are a governor) let's move the estate there
+			limit = {
+				owner = {
+					is_landed = yes
+					exists = capital_province
+				}
+			}
+			move_domicile = owner.capital_province
+		}
+		else_if = { # If not, let's move it to a landed house member in the realm, if you have one
+			limit = {
+				owner = {
+					top_liege ?= { save_temporary_scope_as = owner_top_liege }
+					house ?= {
+						any_house_member = {
+							is_governor = yes
+							top_liege = scope:owner_top_liege
+						}
+					}
+				}
+			}
+			owner = {
+				house = {
+					random_house_member = {
+						limit = {
+							is_governor = yes
+							exists = capital_province
+							top_liege = scope:owner_top_liege
+						}
+						capital_province = { save_temporary_scope_as = house_member_location }
+					}
+				}
+			}
+			move_domicile = scope:house_member_location
+		}
+		else_if = { # Otherwise move it to the realm capital
+			limit = {
+				exists = owner.top_liege.capital_province
+			}
+			move_domicile = owner.top_liege.capital_province
+		}
+
+		owner ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					is_imprisoned = no
+					is_travelling = no
+					NOT = {
+						exists = involved_activity
+					}
+					is_commanding_army = no
+				}
+				set_location_to_default = yes
+			}
+		}
+	}
+
+	#Handle estate locations
+	scope:magister_winner.domicile ?= {
+		if = { # If you have a capital (i.e. you are a governor) let's move the estate there
+			limit = {
+				owner = {
+					is_landed = yes
+					exists = capital_province
+				}
+			}
+			move_domicile = owner.capital_province
+		}
+		else_if = { # If not, let's move it to a landed house member in the realm, if you have one
+			limit = {
+				owner = {
+					top_liege ?= { save_temporary_scope_as = owner_top_liege }
+					house ?= {
+						any_house_member = {
+							is_governor = yes
+							top_liege = scope:owner_top_liege
+						}
+					}
+				}
+			}
+			owner = {
+				house = {
+					random_house_member = {
+						limit = {
+							is_governor = yes
+							exists = capital_province
+							top_liege = scope:owner_top_liege
+						}
+						capital_province = { save_temporary_scope_as = house_member_location }
+					}
+				}
+			}
+			move_domicile = scope:house_member_location
+		}
+		else_if = { # Otherwise move it to the realm capital
+			limit = {
+				exists = owner.top_liege.capital_province
+			}
+			move_domicile = owner.top_liege.capital_province
+		}
+
+		owner ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					is_imprisoned = no
+					is_travelling = no
+					NOT = {
+						exists = involved_activity
+					}
+					is_commanding_army = no
+				}
+				set_location_to_default = yes
+			}
+		}
+	}
+}
+
+
+agot_assign_capital_duchy_admins = {
+	$NEW_RULER$ = { save_scope_as = new_ruler }
+	$CAPITAL_COUNTY$ = { save_scope_as = free_city_capital_county }
+	while = {
+		limit = {
+			scope:new_ruler.domain_size > scope:new_ruler.domain_limit
+			scope:free_city_capital_county.duchy = {
+				any_in_de_jure_hierarchy = {
+					tier = tier_county
+					holder = scope:new_ruler
+					NOT = {
+						this = scope:free_city_capital_county
+					}
+				}
+			}
+		}
+		scope:new_ruler.capital_county.duchy = {
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder = scope:new_ruler
+					NOT = { this = scope:new_ruler.capital_county }
+				}
+				save_scope_as = county_to_assign
+				agot_assign_administrator = yes
+			}
+		}
+	}
+}

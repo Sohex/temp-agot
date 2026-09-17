@@ -1,0 +1,263 @@
+﻿namespace = agot_choose_dragonpit_event
+
+agot_choose_dragonpit_event.0001 = {
+	type = character_event
+	title = agot_choose_dragonpit_event.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:rider }
+				desc = agot_choose_dragonpit_event.0001.desc_rider
+			}
+			desc = agot_choose_dragonpit_event.0001.desc
+		}
+	}
+	theme = dragon
+
+	widget = {
+		is_shown = { is_ai = no }
+		gui = "agot_dragonpit_selection_three_options"
+		container = "custom_widgets_container"
+	}
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	right_portrait = {
+		character = scope:head_dragonkeeper
+		animation = throne_room_writer
+	}
+
+	immediate = {
+		# Always rebuild the destination list inside the event.  The previous
+		# implementation passed the Topless Towers into this list from the
+		# calling effect, which could leave the picker with neither that estate
+		# nor AGOT's ordinary dragonpits when the event scopes changed.
+		remove_variable = selected_title
+		remove_variable = dragonlord_topless_towers_picker_title
+		remove_variable = dragonlord_topless_towers_choice
+		clear_variable_list = possible_titles
+
+		if = {
+			limit = { employs_court_position = head_dragonkeeper_court_position }
+			court_position:head_dragonkeeper_court_position = { save_scope_as = head_dragonkeeper }
+		}
+		if = {
+			limit = { scope:dragon = { exists = var:current_rider } }
+			scope:dragon = {
+				var:current_rider = { save_scope_as = rider }
+			}
+		}
+
+		# A title is only a GUI proxy for the estate domicile. Prefer the family's
+		# noble title, but fall back to the primary title so an old-save family
+		# whose registration marker has not yet been repaired can still use its
+		# estate. The chosen proxy is recorded explicitly; its title type is never
+		# used to decide which physical dragonpit was selected.
+		if = {
+			limit = { dragonlord_has_topless_towers_dragonpit = yes }
+			if = {
+				limit = {
+					any_held_title = {
+						is_noble_family_title = yes
+						has_variable = dragonlord_family_title
+					}
+				}
+				random_held_title = {
+					limit = {
+						is_noble_family_title = yes
+						has_variable = dragonlord_family_title
+					}
+					root = {
+						set_variable = {
+							name = dragonlord_topless_towers_picker_title
+							value = prev
+						}
+						add_to_variable_list = {
+							name = possible_titles
+							target = prev
+						}
+					}
+				}
+			}
+			else = {
+				primary_title = {
+					root = {
+						set_variable = {
+							name = dragonlord_topless_towers_picker_title
+							value = prev
+						}
+						add_to_variable_list = {
+							name = possible_titles
+							target = prev
+						}
+					}
+				}
+			}
+		}
+
+		# Ordinary Dragonpits remain restricted to counties held personally by
+		# the event recipient, matching AGOT's ownership rule.
+		every_held_county = {
+			limit = { dragonlord_title_is_conventional_active_dragonpit = yes }
+			root = {
+				add_to_variable_list = {
+					name = possible_titles
+					target = prev
+				}
+			}
+		}
+		ordered_in_list = {
+			variable = possible_titles
+			root = {
+				set_variable = {
+					name = selected_title
+					value = prev
+				}
+			}
+			save_scope_as = selected_title
+		}
+		# The custom list callback keeps this explicit choice marker in sync.
+		# Initialize it for the default highlighted entry as well.
+		if = {
+			limit = {
+				exists = var:selected_title
+				exists = var:dragonlord_topless_towers_picker_title
+				var:selected_title ?= var:dragonlord_topless_towers_picker_title
+			}
+			set_variable = { name = dragonlord_topless_towers_choice value = 1 }
+		}
+	}
+
+	# Choose where to house the dragon.
+	option = {
+		name = agot_choose_dragonpit_event.0001.a
+		trigger = { exists = var:selected_title }
+		show_as_unavailable = {
+			custom_tooltip = {
+				text = CANT_SENT_TO_DRAGONPIT_TT
+				scope:dragon = { owns_story_of_type = story_dragon_at_war }
+			}
+			custom_tooltip = {
+				text = CANT_SENT_TO_DRAGONPIT_TRAVELING_TT
+				scope:dragon = {
+					trigger_if = {
+						limit = {
+							exists = var:current_rider
+							exists = var:current_rider.current_travel_plan
+						}
+						var:current_rider.current_travel_plan = {
+							has_travel_option = dragon_flight_option
+						}
+					}
+					exists = current_travel_plan
+				}
+			}
+		}
+		if = {
+			limit = { exists = var:selected_title }
+			# Map the estate proxy to the actual domicile county. This is what makes
+			# estate-only and landless Dragonlord families work; capital_county is
+			# neither guaranteed to exist nor guaranteed to contain their estate.
+			if = {
+				limit = {
+					has_variable = dragonlord_topless_towers_choice
+				}
+				var:selected_title = { save_scope_as = dragonlord_selected_topless_towers }
+				save_scope_as = dragon_pit_keeper
+				if = {
+					limit = {
+						exists = domicile
+						exists = domicile.domicile_location.county
+						domicile = { has_domicile_building_or_higher = estate_main_01 }
+					}
+					domicile.domicile_location.county = { save_scope_as = dragon_pit_location }
+				}
+				else = {
+					house.house_head = {
+						domicile.domicile_location.county = { save_scope_as = dragon_pit_location }
+					}
+				}
+			}
+			else = {
+				var:selected_title = {
+					save_scope_as = dragonlord_selected_conventional_dragonpit
+					save_scope_as = dragon_pit_location
+					holder = { save_scope_as = dragon_pit_keeper }
+				}
+			}
+			custom_tooltip = {
+				text = agot_choose_dragonpit_event.0001.a.tt
+				if = {
+					limit = { scope:dragon = { has_character_flag = owned_dragon } }
+					agot_send_to_dragonpit_effect = {
+						DRAGON = scope:dragon
+						DRAGONPIT_HOLDER = scope:dragon_pit_keeper
+						DRAGONPIT_COUNTY = scope:dragon_pit_location
+					}
+				}
+				else = {
+					agot_force_wild_dragon_into_dragonpit_effect = {
+						DRAGON = scope:dragon
+						DRAGONPIT_HOLDER = scope:dragon_pit_keeper
+						DRAGONPIT_COUNTY = scope:dragon_pit_location
+					}
+				}
+			}
+			if = {
+				limit = { NOT = { scope:dragon_pit_location = capital_county } }
+				scope:dragon = { add_character_flag = dragon_put_in_different_pit }
+			}
+			if = {
+				limit = {
+					exists = scope:dragon.var:current_rider
+					trigger_if = {
+						limit = { scope:dragon.var:current_rider = { is_landed = yes } }
+						NOT = { scope:dragon_pit_location = scope:dragon.var:current_rider.capital_county }
+					}
+					trigger_else = {
+						trigger_if = {
+							limit = {
+								exists = scope:dragon.var:current_rider.liege_or_court_owner
+								exists = scope:dragon.var:current_rider.liege_or_court_owner.capital_county
+							}
+							NOT = { scope:dragon_pit_location = scope:dragon.var:current_rider.liege_or_court_owner.capital_county }
+						}
+					}
+				}
+				custom_tooltip = agot_choose_dragonpit_event.0001.a.tt_2
+			}
+		}
+	}
+
+	option = {
+		name = agot_choose_dragonpit_event.0001.b
+		trigger = {
+			scope:dragon = { has_character_flag = in_dragonpit }
+			scope:dragon = { exists = var:pitted_dragon_location }
+		}
+		scope:dragon.var:pitted_dragon_location = { save_scope_as = dragon_pit_location }
+		agot_remove_from_dragonpit_effect = { DRAGON = scope:dragon DRAGONPIT_HOLDER = root DRAGONPIT_COUNTY = scope:dragon_pit_location }
+	}
+
+	option = {
+		name = agot_choose_dragonpit_event.0001.c
+		trigger = { scope:dragon = { has_character_flag = in_dragonpit } }
+	}
+
+	option = {
+		name = agot_choose_dragonpit_event.0001.d
+		trigger = {
+			scope:dragon = { NOT = { has_character_flag = in_dragonpit } }
+		}
+	}
+
+	after = {
+		remove_variable = selected_title
+		remove_variable = dragonlord_topless_towers_picker_title
+		remove_variable = dragonlord_topless_towers_choice
+		clear_variable_list = possible_titles
+	}
+}

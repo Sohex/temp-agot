@@ -1,0 +1,785 @@
+﻿# Rebuilds the Dragonlord Council's visible war-target list whenever the
+# proposed casus belli changes. Keeping this in script ensures the list and
+# the final validation use the same target classes.
+dragonlord_council_clear_pending_agenda_effect = {
+	remove_variable = dragonlord_council_pending_agenda
+	remove_variable = dragonlord_council_pending_war_type
+	remove_variable = dragonlord_council_pending_target
+	remove_variable = dragonlord_council_pending_law
+	remove_variable = dragonlord_council_pending_budget_salary
+	remove_variable = dragonlord_council_pending_budget_military
+	remove_variable = dragonlord_council_pending_budget_salary_original
+	remove_variable = dragonlord_council_pending_budget_military_original
+	remove_variable = dragonlord_council_pending_development_type
+	remove_variable = dragonlord_council_pending_development_target
+	remove_variable = dragonlord_council_pending_estate_target
+	remove_variable = dragonlord_council_pending_development_contribution
+	remove_variable = dragonlord_council_development_contributor_count
+	clear_variable_list = dragonlord_council_development_contributors
+}
+
+# Freezes the motion, voter roster, starting support, and voting weight when the
+# first meeting phase becomes active.  The existing vote score expects the
+# planner's selected_* variables, so the pending motion is mirrored back into
+# those variables for the duration of the activity only.
+dragonlord_council_initialize_meeting_effect = {
+	save_scope_as = dragonlord_council_vote_proposer
+	clear_variable_list = dragonlord_council_meeting_voters
+	remove_variable = dragonlord_council_speech_style
+	set_variable = { name = dragonlord_council_speech_score value = 0 }
+
+	remove_variable = dragonlord_council_selected_agenda_category
+	remove_variable = dragonlord_council_selected_war_type
+	remove_variable = dragonlord_council_selected_target
+	remove_variable = dragonlord_council_selected_law
+	remove_variable = dragonlord_council_selected_development_type
+	remove_variable = dragonlord_council_selected_development_target
+	remove_variable = dragonlord_council_selected_estate_target
+	remove_variable = dragonlord_council_budget_salary
+	remove_variable = dragonlord_council_budget_military
+	remove_variable = dragonlord_council_budget_salary_original
+	remove_variable = dragonlord_council_budget_military_original
+
+	set_variable = {
+		name = dragonlord_council_selected_agenda_category
+		value = var:dragonlord_council_pending_agenda
+	}
+	if = {
+		limit = { var:dragonlord_council_pending_agenda = flag:dragonlord_war_agenda }
+		set_variable = {
+			name = dragonlord_council_selected_war_type
+			value = var:dragonlord_council_pending_war_type
+		}
+		set_variable = {
+			name = dragonlord_council_selected_target
+			value = var:dragonlord_council_pending_target
+		}
+	}
+	else_if = {
+		limit = { var:dragonlord_council_pending_agenda = flag:dragonlord_law_agenda }
+		set_variable = {
+			name = dragonlord_council_selected_law
+			value = var:dragonlord_council_pending_law
+		}
+	}
+	else_if = {
+		limit = { var:dragonlord_council_pending_agenda = flag:dragonlord_development_agenda }
+		set_variable = {
+			name = dragonlord_council_selected_development_type
+			value = var:dragonlord_council_pending_development_type
+		}
+		if = {
+			limit = { has_variable = dragonlord_council_pending_development_target }
+			set_variable = {
+				name = dragonlord_council_selected_development_target
+				value = var:dragonlord_council_pending_development_target
+			}
+		}
+		if = {
+			limit = { has_variable = dragonlord_council_pending_estate_target }
+			set_variable = {
+				name = dragonlord_council_selected_estate_target
+				value = var:dragonlord_council_pending_estate_target
+			}
+		}
+		dragonlord_council_rebuild_development_contributors_effect = yes
+	}
+	else_if = {
+		limit = { var:dragonlord_council_pending_agenda = flag:dragonlord_finance_agenda }
+		set_variable = {
+			name = dragonlord_council_selected_law
+			value = var:dragonlord_council_pending_law
+		}
+		set_variable = {
+			name = dragonlord_council_budget_salary
+			value = var:dragonlord_council_pending_budget_salary
+		}
+		set_variable = {
+			name = dragonlord_council_budget_military
+			value = var:dragonlord_council_pending_budget_military
+		}
+		set_variable = {
+			name = dragonlord_council_budget_salary_original
+			value = var:dragonlord_council_pending_budget_salary_original
+		}
+		set_variable = {
+			name = dragonlord_council_budget_military_original
+			value = var:dragonlord_council_pending_budget_military_original
+		}
+	}
+
+	# Activity entourages can contain non-voters.  Only attending registered
+	# House heads receive a frozen council score and enter the meeting roster.
+	scope:activity = {
+		every_attending_character = {
+			remove_variable = dragonlord_council_meeting_base_support
+			remove_variable = dragonlord_council_meeting_support_change
+			remove_variable = dragonlord_council_meeting_vote_weight
+			if = {
+				limit = {
+					is_alive = yes
+					is_house_head = yes
+					dragonlord_is_registered_family_member_trigger = yes
+				}
+				save_scope_as = dragonlord_council_meeting_voter
+				set_variable = {
+					name = dragonlord_council_meeting_base_support
+					value = dragonlord_council_vote_support_score
+				}
+				set_variable = { name = dragonlord_council_meeting_support_change value = 0 }
+				set_variable = {
+					name = dragonlord_council_meeting_vote_weight
+					value = dragonlord_council_vote_weight
+				}
+				root = {
+					add_to_variable_list = {
+						name = dragonlord_council_meeting_voters
+						target = scope:dragonlord_council_meeting_voter
+					}
+				}
+			}
+		}
+	}
+
+	# Defensive fallback for a host not returned by every_attending_character.
+	if = {
+		limit = { NOT = { has_variable = dragonlord_council_meeting_base_support } }
+		set_variable = {
+			name = dragonlord_council_meeting_base_support
+			value = dragonlord_council_vote_support_score
+		}
+		set_variable = { name = dragonlord_council_meeting_support_change value = 0 }
+		set_variable = {
+			name = dragonlord_council_meeting_vote_weight
+			value = dragonlord_council_vote_weight
+		}
+		add_to_variable_list = {
+			name = dragonlord_council_meeting_voters
+			target = this
+		}
+	}
+}
+
+# Adds one meeting-only support change to every frozen voter.  Persistent
+# opinion changes remain separate and will affect the next council instead.
+dragonlord_council_change_all_voter_support_effect = {
+	every_in_list = {
+		variable = dragonlord_council_meeting_voters
+		limit = {
+			is_alive = yes
+			has_variable = dragonlord_council_meeting_base_support
+		}
+		change_variable = {
+			name = dragonlord_council_meeting_support_change
+			add = $VALUE$
+		}
+	}
+}
+
+# Character-scoped counterpart used by discussion and persuasion events.
+dragonlord_council_change_voter_support_effect = {
+	if = {
+		limit = { has_variable = dragonlord_council_meeting_base_support }
+		change_variable = {
+			name = dragonlord_council_meeting_support_change
+			add = $VALUE$
+		}
+	}
+}
+
+# Applies a guest speaker's successful intervention to every other frozen
+# voter. The player keeps their own position until the explicit ballot.
+dragonlord_council_change_other_voter_support_effect = {
+	scope:host = {
+		every_in_list = {
+			variable = dragonlord_council_meeting_voters
+			limit = {
+				this != scope:dragonlord_council_guest_speaker
+				is_alive = yes
+				has_variable = dragonlord_council_meeting_base_support
+			}
+			dragonlord_council_change_voter_support_effect = { VALUE = $VALUE$ }
+		}
+	}
+}
+
+# Ordinary activity invitations do not expose a decline callback. Once the
+# attending roster is frozen, record a human Dragonlord Family head who chose
+# not to appear and apply the meeting-specific opinion reason from the host.
+dragonlord_council_apply_player_absence_opinion_effect = {
+	if = {
+		limit = { is_ai = yes }
+		every_vassal_or_below = {
+			limit = {
+				is_ai = no
+				is_alive = yes
+				is_adult = yes
+				is_house_head = yes
+				dragonlord_is_registered_family_member_trigger = yes
+				top_liege = root
+			}
+			save_scope_as = dragonlord_council_absent_guest
+			scope:activity = {
+				if = {
+					limit = {
+						NOT = {
+							any_attending_character = {
+								this = scope:dragonlord_council_absent_guest
+							}
+						}
+					}
+					scope:host = {
+						add_opinion = {
+							target = scope:dragonlord_council_absent_guest
+							modifier = dragonlord_council_absent_opinion
+							opinion = -10
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# After the host chooses a speaking style, an attending human vassal receives
+# the two guest choices. Otherwise the established AI interruption continues.
+dragonlord_council_route_speech_challenge_effect = {
+	if = {
+		limit = {
+			is_ai = yes
+			scope:activity = {
+				any_attending_character = {
+					this != scope:host
+					is_ai = no
+					has_variable = dragonlord_council_meeting_base_support
+				}
+			}
+		}
+		scope:activity = {
+			random_attending_character = {
+				limit = {
+					this != scope:host
+					is_ai = no
+					has_variable = dragonlord_council_meeting_base_support
+				}
+				trigger_event = { id = dragonlord_council_proposal.1030 days = 2 }
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:activity = {
+				any_attending_character = {
+					this != scope:host
+					is_ai = yes
+					has_variable = dragonlord_council_meeting_base_support
+				}
+			}
+		}
+		trigger_event = { id = dragonlord_council_proposal.1010 days = 2 }
+	}
+	else = {
+		trigger_event = { id = dragonlord_council_proposal.1020 days = 2 }
+	}
+}
+
+dragonlord_council_clear_meeting_state_effect = {
+	every_in_list = {
+		variable = dragonlord_council_meeting_voters
+		remove_variable = dragonlord_council_meeting_base_support
+		remove_variable = dragonlord_council_meeting_support_change
+		remove_variable = dragonlord_council_meeting_vote_weight
+		remove_variable = dragonlord_council_persuasion_attempted
+	}
+	clear_variable_list = dragonlord_council_meeting_voters
+	clear_variable_list = dragonlord_council_meeting_supporters
+	clear_variable_list = dragonlord_council_meeting_opponents
+	remove_variable = dragonlord_council_speech_style
+	remove_variable = dragonlord_council_speech_score
+	remove_variable = dragonlord_council_meeting_support_votes
+	remove_variable = dragonlord_council_meeting_opposition_votes
+	remove_variable = dragonlord_council_vote_passed
+	remove_variable = dragonlord_council_result_law_enacted
+	remove_variable = dragonlord_council_result_previous_law
+
+	remove_variable = dragonlord_council_selected_agenda_category
+	remove_variable = dragonlord_council_selected_war_type
+	remove_variable = dragonlord_council_selected_target
+	remove_variable = dragonlord_council_selected_law
+	remove_variable = dragonlord_council_selected_development_type
+	remove_variable = dragonlord_council_selected_development_target
+	remove_variable = dragonlord_council_selected_estate_target
+	remove_variable = dragonlord_council_budget_salary
+	remove_variable = dragonlord_council_budget_military
+	remove_variable = dragonlord_council_budget_salary_original
+	remove_variable = dragonlord_council_budget_military_original
+}
+
+# Builds the living contributor list from the registered Dragonlord Family
+# dignities. Every family pays one equal share; council rank affects voting
+# weight only and never changes the contribution.
+dragonlord_council_rebuild_development_contributors_effect = {
+	clear_variable_list = dragonlord_council_development_contributors
+	set_variable = { name = dragonlord_council_development_contributor_count value = 0 }
+
+	every_held_title = {
+		limit = {
+			is_noble_family_title = yes
+			has_variable = dragonlord_family_title
+		}
+		holder.house ?= {
+			if = {
+				limit = { NOT = { is_in_list = dragonlord_council_development_houses } }
+				add_to_temporary_list = dragonlord_council_development_houses
+			}
+		}
+	}
+	every_vassal_or_below = {
+		every_held_title = {
+			limit = {
+				is_noble_family_title = yes
+				has_variable = dragonlord_family_title
+			}
+			holder.house ?= {
+				if = {
+					limit = { NOT = { is_in_list = dragonlord_council_development_houses } }
+					add_to_temporary_list = dragonlord_council_development_houses
+				}
+			}
+		}
+	}
+
+	every_in_list = {
+		list = dragonlord_council_development_houses
+		house_head ?= {
+			if = {
+				limit = { is_alive = yes }
+				save_scope_as = dragonlord_council_development_contributor
+				root = {
+					add_to_variable_list = {
+						name = dragonlord_council_development_contributors
+						target = scope:dragonlord_council_development_contributor
+					}
+					change_variable = { name = dragonlord_council_development_contributor_count add = 1 }
+				}
+			}
+		}
+	}
+
+	# Some custom administrative setups expose the family-title holder before
+	# the House-head scope is initialized. Fall back to those unique holders so
+	# the displayed family count and estate target list remain usable.
+	if = {
+		limit = { var:dragonlord_council_development_contributor_count = 0 }
+		every_held_title = {
+			limit = {
+				is_noble_family_title = yes
+				has_variable = dragonlord_family_title
+			}
+			holder = {
+				if = {
+					limit = { is_alive = yes }
+					save_scope_as = dragonlord_council_development_contributor
+					root = {
+						add_to_variable_list = {
+							name = dragonlord_council_development_contributors
+							target = scope:dragonlord_council_development_contributor
+						}
+						change_variable = { name = dragonlord_council_development_contributor_count add = 1 }
+					}
+				}
+			}
+		}
+		every_vassal_or_below = {
+			every_held_title = {
+				limit = {
+					is_noble_family_title = yes
+					has_variable = dragonlord_family_title
+				}
+				holder = {
+					if = {
+						limit = { is_alive = yes }
+						save_scope_as = dragonlord_council_development_contributor
+						root = {
+							add_to_variable_list = {
+								name = dragonlord_council_development_contributors
+								target = scope:dragonlord_council_development_contributor
+							}
+							change_variable = { name = dragonlord_council_development_contributor_count add = 1 }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	# Compatibility fallback for a new save before family dignities initialize.
+	if = {
+		limit = { var:dragonlord_council_development_contributor_count = 0 }
+		save_scope_as = dragonlord_council_development_contributor
+		add_to_variable_list = {
+			name = dragonlord_council_development_contributors
+			target = scope:dragonlord_council_development_contributor
+		}
+		set_variable = { name = dragonlord_council_development_contributor_count value = 1 }
+	}
+}
+
+# Rebuilds the appropriate target list whenever the development project changes.
+dragonlord_council_rebuild_development_target_pool_effect = {
+	clear_variable_list = dragonlord_council_development_county_candidates
+	clear_variable_list = dragonlord_council_development_estate_candidates
+	remove_variable = dragonlord_council_selected_development_target
+	remove_variable = dragonlord_council_selected_estate_target
+	dragonlord_council_rebuild_development_contributors_effect = yes
+
+	if = {
+		limit = { var:dragonlord_council_selected_development_type = flag:dragonlord_city_development }
+		every_sub_realm_county = {
+			limit = {
+				holder = { dragonlord_is_registered_family_member_trigger = yes }
+				NOT = { has_county_modifier = dragonlord_council_city_development_modifier }
+			}
+			save_scope_as = dragonlord_council_development_county
+			root = {
+				add_to_variable_list = {
+					name = dragonlord_council_development_county_candidates
+					target = scope:dragonlord_council_development_county
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery }
+		every_sub_realm_county = {
+			limit = {
+				county_control < 100
+				holder = { dragonlord_is_registered_family_member_trigger = yes }
+				NOT = { has_county_modifier = dragonlord_council_territorial_recovery_modifier }
+			}
+			save_scope_as = dragonlord_council_development_county
+			root = {
+				add_to_variable_list = {
+					name = dragonlord_council_development_county_candidates
+					target = scope:dragonlord_council_development_county
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy }
+		every_in_list = {
+			variable = dragonlord_council_development_contributors
+			if = {
+				limit = {
+					exists = domicile
+					NOT = { has_character_modifier = dragonlord_council_estate_subsidy_modifier }
+				}
+				save_scope_as = dragonlord_council_development_estate
+				root = {
+					add_to_variable_list = {
+						name = dragonlord_council_development_estate_candidates
+						target = scope:dragonlord_council_development_estate
+					}
+				}
+			}
+		}
+		# A family-title holder and its current House head can briefly differ in
+		# administrative successions. If none of the contributor representatives
+		# owns a domicile, use registered landed estate owners in the realm.
+		if = {
+			limit = { list_size:dragonlord_council_development_estate_candidates = 0 }
+			if = {
+				limit = {
+					is_alive = yes
+					dragonlord_is_registered_family_member_trigger = yes
+					exists = domicile
+					NOT = { has_character_modifier = dragonlord_council_estate_subsidy_modifier }
+				}
+				save_scope_as = dragonlord_council_development_estate
+				add_to_variable_list = {
+					name = dragonlord_council_development_estate_candidates
+					target = scope:dragonlord_council_development_estate
+				}
+			}
+			every_vassal_or_below = {
+				limit = {
+					is_alive = yes
+					dragonlord_is_registered_family_member_trigger = yes
+					exists = domicile
+					NOT = { has_character_modifier = dragonlord_council_estate_subsidy_modifier }
+				}
+				save_scope_as = dragonlord_council_development_estate
+				root = {
+					add_to_variable_list = {
+						name = dragonlord_council_development_estate_candidates
+						target = scope:dragonlord_council_development_estate
+					}
+				}
+			}
+		}
+	}
+}
+
+# Temporary enactment path while the council activity is an eventless timed
+# prototype. Once the voting phase is interactive, call this only on passage.
+dragonlord_council_enact_development_agenda_effect = {
+	if = {
+		limit = { var:dragonlord_council_pending_agenda = flag:dragonlord_development_agenda }
+		dragonlord_council_rebuild_development_contributors_effect = yes
+		every_in_list = {
+			variable = dragonlord_council_development_contributors
+			add_gold = {
+				value = root.var:dragonlord_council_pending_development_contribution
+				multiply = -1
+			}
+		}
+
+		if = {
+			limit = {
+				var:dragonlord_council_pending_development_type = flag:dragonlord_city_development
+				has_variable = dragonlord_council_pending_development_target
+			}
+			var:dragonlord_council_pending_development_target = {
+				add_county_modifier = {
+					modifier = dragonlord_council_city_development_modifier
+					years = 10
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				var:dragonlord_council_pending_development_type = flag:dragonlord_territorial_recovery
+				has_variable = dragonlord_council_pending_development_target
+			}
+			var:dragonlord_council_pending_development_target = {
+				change_county_control = 25
+				add_county_modifier = {
+					modifier = dragonlord_council_territorial_recovery_modifier
+					years = 5
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				var:dragonlord_council_pending_development_type = flag:dragonlord_estate_subsidy
+				has_variable = dragonlord_council_pending_estate_target
+			}
+			var:dragonlord_council_pending_estate_target = {
+				add_character_modifier = {
+					modifier = dragonlord_council_estate_subsidy_modifier
+					years = 10
+				}
+			}
+		}
+	}
+}
+
+dragonlord_council_rebuild_war_target_pool_effect = {
+	clear_variable_list = dragonlord_council_target_candidates
+	remove_variable = dragonlord_council_selected_target
+
+	# Colonization absorbs an entire kingdom into the Freehold's colonial
+	# structure, so only independent rulers whose top title is a kingdom appear.
+	if = {
+		limit = { var:dragonlord_council_selected_war_type = flag:dragonlord_colonization_war_agenda }
+			every_independent_ruler = {
+			limit = {
+				is_alive = yes
+				is_landed = yes
+				NOT = { has_trait = ruin }
+				NOT = { has_government = ruins_government }
+				NOT = { has_trait = wilderness }
+				NOT = { has_government = wilderness_government }
+				this != root
+				highest_held_title_tier = tier_kingdom
+				in_diplomatic_range = root
+				NOT = { is_at_war_with = root }
+			}
+			save_scope_as = dragonlord_council_candidate
+			root = {
+				add_to_variable_list = {
+					name = dragonlord_council_target_candidates
+					target = scope:dragonlord_council_candidate
+				}
+			}
+		}
+	}
+
+	# Conquest is deliberately limited to realms no larger than a duchy.
+	else_if = {
+		limit = { var:dragonlord_council_selected_war_type = flag:dragonlord_conquest_war_agenda }
+		every_independent_ruler = {
+			limit = {
+				is_alive = yes
+				is_landed = yes
+				NOT = { has_trait = ruin }
+				NOT = { has_government = ruins_government }
+				NOT = { has_trait = wilderness }
+				NOT = { has_government = wilderness_government }
+				this != root
+				highest_held_title_tier >= tier_county
+				highest_held_title_tier <= tier_duchy
+				in_diplomatic_range = root
+				NOT = { is_at_war_with = root }
+			}
+			save_scope_as = dragonlord_council_candidate
+			root = {
+				add_to_variable_list = {
+					name = dragonlord_council_target_candidates
+					target = scope:dragonlord_council_candidate
+				}
+			}
+		}
+	}
+
+	# Tributary proposals are a frontier matter and therefore require a shared
+	# realm border (the engine trigger also accepts a navigable-water border).
+	else_if = {
+		limit = { var:dragonlord_council_selected_war_type = flag:dragonlord_tributary_war_agenda }
+		every_independent_ruler = {
+			limit = {
+				is_alive = yes
+				is_landed = yes
+				NOT = { has_trait = ruin }
+				NOT = { has_government = ruins_government }
+				NOT = { has_trait = wilderness }
+				NOT = { has_government = wilderness_government }
+				this != root
+				highest_held_title_tier >= tier_county
+				character_is_realm_neighbor = root
+				NOT = { is_at_war_with = root }
+			}
+			save_scope_as = dragonlord_council_candidate
+			root = {
+				add_to_variable_list = {
+					name = dragonlord_council_target_candidates
+					target = scope:dragonlord_council_candidate
+				}
+			}
+		}
+	}
+
+	# Slave raids retain the broad diplomatic-range pool; the selector itself
+	# remains disabled while slavery is prohibited.
+	else_if = {
+		limit = {
+			var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda
+			has_realm_law = slavery_allowed_law
+		}
+		every_independent_ruler = {
+			limit = {
+				is_alive = yes
+				is_landed = yes
+				NOT = { has_trait = ruin }
+				NOT = { has_government = ruins_government }
+				NOT = { has_trait = wilderness }
+				NOT = { has_government = wilderness_government }
+				this != root
+				highest_held_title_tier >= tier_county
+				in_diplomatic_range = root
+				NOT = { is_at_war_with = root }
+			}
+			save_scope_as = dragonlord_council_candidate
+			root = {
+				add_to_variable_list = {
+					name = dragonlord_council_target_candidates
+					target = scope:dragonlord_council_candidate
+				}
+			}
+		}
+	}
+}
+
+# Adds the current character to the appropriate live forecast list. The
+# proposal's author always backs their own motion; other Houses are predicted
+# from proposal interests, personality, relationships, and political pressure.
+# This is deliberately recalculated whenever the forecast opens, so changed
+# circumstances are reflected immediately instead of leaving stale UI data.
+dragonlord_council_add_forecast_voter_effect = {
+	save_scope_as = dragonlord_council_forecast_voter
+	if = {
+		limit = {
+			dragonlord_council_vote_support_score > 0
+		}
+		root = {
+			add_to_variable_list = {
+				name = dragonlord_council_forecast_supporters
+				target = scope:dragonlord_council_forecast_voter
+			}
+			change_variable = {
+				name = dragonlord_council_forecast_support_votes
+				add = scope:dragonlord_council_forecast_voter.dragonlord_council_vote_weight
+			}
+		}
+	}
+	else = {
+		root = {
+			add_to_variable_list = {
+				name = dragonlord_council_forecast_opponents
+				target = scope:dragonlord_council_forecast_voter
+			}
+			change_variable = {
+				name = dragonlord_council_forecast_opposition_votes
+				add = scope:dragonlord_council_forecast_voter.dragonlord_council_vote_weight
+			}
+		}
+	}
+}
+
+# Builds one voting entry for every registered Dragonlord Family. Council-seat
+# rank changes voting weight, not franchise: ordinary Dragonlords retain their
+# vote alongside the Chief and the Fourteen.
+dragonlord_council_rebuild_vote_forecast_effect = {
+	clear_variable_list = dragonlord_council_forecast_supporters
+	clear_variable_list = dragonlord_council_forecast_opponents
+	set_variable = { name = dragonlord_council_forecast_support_votes value = 0 }
+	set_variable = { name = dragonlord_council_forecast_opposition_votes value = 0 }
+	save_scope_as = dragonlord_council_vote_proposer
+
+	# Collect the ruler's registered family and every registered family below
+	# them. The temporary House list prevents duplicate voters if a House owns
+	# more than one family dignity.
+	every_held_title = {
+		limit = {
+			is_noble_family_title = yes
+			has_variable = dragonlord_family_title
+		}
+		holder.house ?= {
+			if = {
+				limit = { NOT = { is_in_list = dragonlord_council_forecast_houses } }
+				add_to_temporary_list = dragonlord_council_forecast_houses
+			}
+		}
+	}
+	every_vassal_or_below = {
+		every_held_title = {
+			limit = {
+				is_noble_family_title = yes
+				has_variable = dragonlord_family_title
+			}
+			holder.house ?= {
+				if = {
+					limit = { NOT = { is_in_list = dragonlord_council_forecast_houses } }
+					add_to_temporary_list = dragonlord_council_forecast_houses
+				}
+			}
+		}
+	}
+
+	every_in_list = {
+		list = dragonlord_council_forecast_houses
+		house_head ?= {
+			if = {
+				limit = { is_alive = yes }
+				dragonlord_council_add_forecast_voter_effect = yes
+			}
+		}
+	}
+
+	# New-save fallback before family dignities have been initialized.
+	if = {
+		limit = { list_size:dragonlord_council_forecast_houses = 0 }
+		dragonlord_council_add_forecast_voter_effect = yes
+	}
+}

@@ -1,0 +1,1552 @@
+﻿# Predicted support score for one registered House head. GUI callers set the voter
+# as root and provide the First Lord as scope:dragonlord_council_vote_proposer.
+# A positive score supports the motion; zero and negative scores favor the status
+# quo. Voting weight is deliberately calculated separately below.
+dragonlord_council_bureaucracy_change_direction = {
+	value = 0
+	if = {
+		limit = {
+			OR = {
+				AND = {
+					has_realm_law = imperial_bureaucracy_0
+					OR = {
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_1
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_2
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_3
+					}
+				}
+				AND = {
+					has_realm_law = imperial_bureaucracy_1
+					OR = {
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_2
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_3
+					}
+				}
+				AND = {
+					has_realm_law = imperial_bureaucracy_2
+					var:dragonlord_council_selected_law = flag:imperial_bureaucracy_3
+				}
+			}
+		}
+		add = 1
+	}
+	else_if = {
+		limit = {
+			OR = {
+				AND = {
+					has_realm_law = imperial_bureaucracy_3
+					OR = {
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_0
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_1
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_2
+					}
+				}
+				AND = {
+					has_realm_law = imperial_bureaucracy_2
+					OR = {
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_0
+						var:dragonlord_council_selected_law = flag:imperial_bureaucracy_1
+					}
+				}
+				AND = {
+					has_realm_law = imperial_bureaucracy_1
+					var:dragonlord_council_selected_law = flag:imperial_bureaucracy_0
+				}
+			}
+		}
+		add = -1
+	}
+}
+
+# Ratio of the Freehold's maximum military strength to that of the selected
+# war target. Callers guard against a missing target before evaluating it.
+dragonlord_council_war_strength_ratio = {
+	value = max_military_strength
+	divide = {
+		value = var:dragonlord_council_selected_target.max_military_strength
+		min = 1
+	}
+}
+
+# Proposed allocation change in percentage points. Positive values mean that
+# the department gains funding; negative values mean that it loses funding.
+dragonlord_council_budget_salary_change = {
+	value = var:dragonlord_council_budget_salary
+	subtract = var:dragonlord_council_budget_salary_original
+}
+
+dragonlord_council_budget_military_change = {
+	value = var:dragonlord_council_budget_military
+	subtract = var:dragonlord_council_budget_military_original
+}
+
+# Salary allocations of 0-20% reduce vassal-tax income by 30-10% in the
+# underlying administrative budget laws. Convert only a worsening of that
+# penalty into opposition; an unchanged pre-existing penalty is not counted
+# again when the new budget is judged.
+dragonlord_council_budget_salary_proposed_vassal_tax_effect = {
+	value = 0
+	if = {
+		limit = { var:dragonlord_council_budget_salary <= 20 }
+		add = var:dragonlord_council_budget_salary
+		subtract = 30
+	}
+}
+
+dragonlord_council_budget_salary_original_vassal_tax_effect = {
+	value = 0
+	if = {
+		limit = { var:dragonlord_council_budget_salary_original <= 20 }
+		add = var:dragonlord_council_budget_salary_original
+		subtract = 30
+	}
+}
+
+dragonlord_council_budget_salary_vassal_tax_change = {
+	value = dragonlord_council_budget_salary_proposed_vassal_tax_effect
+	subtract = dragonlord_council_budget_salary_original_vassal_tax_effect
+}
+
+dragonlord_council_budget_capacity_change = {
+	value = character_treasury_new_budget_capacity
+	subtract = character_treasury_budget_capacity
+}
+
+# Budget-table previews. The vanilla Treasury Budget window calculates these
+# in C++; the council planner mirrors the same visible information without
+# enacting the proposed laws before the vote.
+dragonlord_council_budget_salary_receiver_count = {
+	value = 0
+	every_vassal_or_below = {
+		limit = { monthly_treasury_from_salary_budget_base > 0 }
+		add = 1
+	}
+}
+
+dragonlord_council_budget_salary_receiver_weight = {
+	value = 0
+	every_vassal_or_below = {
+		limit = { monthly_treasury_from_salary_budget_base > 0 }
+		add = monthly_treasury_from_salary_budget_base
+	}
+}
+
+dragonlord_council_budget_military_receiver_count = {
+	value = 0
+	every_vassal_or_below = {
+		limit = { monthly_treasury_from_military_budget_base > 0 }
+		add = 1
+	}
+}
+
+dragonlord_council_budget_military_receiver_weight = {
+	value = 0
+	every_vassal_or_below = {
+		limit = { monthly_treasury_from_military_budget_base > 0 }
+		add = monthly_treasury_from_military_budget_base
+	}
+}
+
+dragonlord_council_budget_salary_total = {
+	value = character_treasury_new_budget_capacity
+	multiply = var:dragonlord_council_budget_salary
+	divide = 100
+	if = {
+		limit = { dragonlord_council_budget_salary_receiver_count <= 0 }
+		multiply = 0
+	}
+}
+
+dragonlord_council_budget_military_total = {
+	value = character_treasury_new_budget_capacity
+	multiply = var:dragonlord_council_budget_military
+	divide = 100
+	if = {
+		limit = { dragonlord_council_budget_military_receiver_count <= 0 }
+		multiply = 0
+	}
+}
+
+dragonlord_council_budget_salary_base_rate = {
+	value = dragonlord_council_budget_salary_total
+	divide = {
+		value = dragonlord_council_budget_salary_receiver_weight
+		min = 0.01
+	}
+}
+
+dragonlord_council_budget_military_base_rate = {
+	value = dragonlord_council_budget_military_total
+	divide = {
+		value = dragonlord_council_budget_military_receiver_weight
+		min = 0.01
+	}
+}
+
+dragonlord_council_budget_salary_previous_total = {
+	value = character_treasury_budget_capacity
+	multiply = var:dragonlord_council_budget_salary_original
+	divide = 100
+	if = {
+		limit = { dragonlord_council_budget_salary_receiver_count <= 0 }
+		multiply = 0
+	}
+}
+
+dragonlord_council_budget_military_previous_total = {
+	value = character_treasury_budget_capacity
+	multiply = var:dragonlord_council_budget_military_original
+	divide = 100
+	if = {
+		limit = { dragonlord_council_budget_military_receiver_count <= 0 }
+		multiply = 0
+	}
+}
+
+dragonlord_council_budget_salary_trend = {
+	value = dragonlord_council_budget_salary_total
+	subtract = dragonlord_council_budget_salary_previous_total
+}
+
+dragonlord_council_budget_military_trend = {
+	value = dragonlord_council_budget_military_total
+	subtract = dragonlord_council_budget_military_previous_total
+}
+
+dragonlord_council_budget_allocation_total = {
+	value = var:dragonlord_council_budget_salary
+	add = var:dragonlord_council_budget_military
+}
+
+dragonlord_council_budget_unallocated_percentage = {
+	value = 100
+	subtract = dragonlord_council_budget_allocation_total
+}
+
+dragonlord_council_budget_total = {
+	value = dragonlord_council_budget_salary_total
+	add = dragonlord_council_budget_military_total
+}
+
+dragonlord_council_budget_total_trend = {
+	value = dragonlord_council_budget_salary_trend
+	add = dragonlord_council_budget_military_trend
+}
+
+dragonlord_council_budget_previous_total = {
+	value = dragonlord_council_budget_salary_previous_total
+	add = dragonlord_council_budget_military_previous_total
+}
+
+dragonlord_council_budget_unallocated = {
+	value = character_treasury_new_budget_capacity
+	subtract = dragonlord_council_budget_total
+	min = 0
+}
+
+dragonlord_council_budget_previous_unallocated = {
+	value = character_treasury_budget_capacity
+	subtract = dragonlord_council_budget_previous_total
+	min = 0
+}
+
+dragonlord_council_budget_unallocated_trend = {
+	value = dragonlord_council_budget_unallocated
+	subtract = dragonlord_council_budget_previous_unallocated
+}
+
+dragonlord_council_development_total_cost = {
+	value = 0
+	if = {
+		limit = { var:dragonlord_council_selected_development_type = flag:dragonlord_city_development }
+		add = 5000
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery }
+		add = 2000
+	}
+	else_if = {
+		limit = { var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy }
+		add = 3000
+	}
+}
+
+dragonlord_council_development_contribution = {
+	value = dragonlord_council_development_total_cost
+	if = {
+		limit = { var:dragonlord_council_development_contributor_count > 0 }
+		divide = var:dragonlord_council_development_contributor_count
+	}
+}
+
+# Character scope, with the proposal author supplied as a saved scope.
+dragonlord_council_development_gold_after_contribution = {
+	value = gold
+	subtract = scope:dragonlord_council_vote_proposer.dragonlord_council_development_contribution
+}
+
+dragonlord_council_vote_support_score = {
+	value = {
+		value = -10
+		# Noble-admission laws use fixed base difficulties: culture 20,
+		# religion 15. Since the common baseline is -10, apply the remainder.
+		if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					OR = {
+						var:dragonlord_council_selected_law = flag:dragonlord_culture_high_valyrian_law
+						var:dragonlord_council_selected_law = flag:dragonlord_culture_valyrian_heritage_law
+						var:dragonlord_council_selected_law = flag:dragonlord_culture_all_law
+					}
+				}
+			}
+			add = -10
+		}
+		else_if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					OR = {
+						var:dragonlord_council_selected_law = flag:dragonlord_religion_fourteen_flames_law
+						var:dragonlord_council_selected_law = flag:dragonlord_religion_valyrian_law
+						var:dragonlord_council_selected_law = flag:dragonlord_religion_all_law
+					}
+				}
+			}
+			add = -5
+		}
+		# Authority proposals become progressively harder to pass. The loose
+		# domain option has no base penalty; the following tiers are -5/-10/-15.
+		else_if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_law = flag:imperial_bureaucracy_0
+				}
+			}
+			add = 10
+		}
+		else_if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_law = flag:imperial_bureaucracy_1
+				}
+			}
+			add = 5
+		}
+		# Treasury-budget motions use a lighter -5 base penalty.
+		else_if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda
+					var:dragonlord_council_selected_law = flag:dragonlord_treasury_budget_agenda
+				}
+			}
+			add = 5
+		}
+		# Development motions use project-specific base difficulty: city
+		# development 0, territorial recovery +5, and other projects -5.
+		else_if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+					var:dragonlord_council_selected_development_type = flag:dragonlord_city_development
+				}
+			}
+			add = 10
+		}
+		else_if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+					var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery
+				}
+			}
+			add = 15
+		}
+		else_if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+				}
+			}
+			add = 5
+		}
+		else_if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_law = flag:imperial_bureaucracy_3
+				}
+			}
+			add = -5
+		}
+		# Tributary and slave-raiding motions use the lighter -5 base penalty.
+		else_if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					OR = {
+						var:dragonlord_council_selected_war_type = flag:dragonlord_tributary_war_agenda
+						var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda
+					}
+				}
+			}
+			add = 5
+		}
+		desc = dragonlord_council_vote_score_base_desc
+	}
+
+	if = {
+		limit = { this = scope:dragonlord_council_vote_proposer }
+		add = {
+			value = 100
+			desc = dragonlord_council_vote_score_proposer_desc
+		}
+	}
+	else = {
+		# Relationship with the proposer. The neutral band from 0 to 40 has no
+		# modifier; the five non-neutral tiers are intentionally asymmetric.
+		if = {
+			limit = {
+				opinion = {
+					target = scope:dragonlord_council_vote_proposer
+					value >= 81
+				}
+			}
+			add = {
+				value = 20
+				desc = dragonlord_council_vote_score_opinion_very_high_desc
+			}
+		}
+		else_if = {
+			limit = {
+				opinion = {
+					target = scope:dragonlord_council_vote_proposer
+					value >= 41
+				}
+			}
+			add = {
+				value = 10
+				desc = dragonlord_council_vote_score_opinion_high_desc
+			}
+		}
+		else_if = {
+			limit = {
+				opinion = {
+					target = scope:dragonlord_council_vote_proposer
+					value <= -81
+				}
+			}
+			add = {
+				value = -60
+				desc = dragonlord_council_vote_score_opinion_hostile_desc
+			}
+		}
+		else_if = {
+			limit = {
+				opinion = {
+					target = scope:dragonlord_council_vote_proposer
+					value <= -41
+				}
+			}
+			add = {
+				value = -20
+				desc = dragonlord_council_vote_score_opinion_very_low_desc
+			}
+		}
+		else_if = {
+			limit = {
+				opinion = {
+					target = scope:dragonlord_council_vote_proposer
+					value <= -1
+				}
+			}
+			add = {
+				value = -10
+				desc = dragonlord_council_vote_score_opinion_low_desc
+			}
+		}
+
+		# Personal ties and confidence in the proposer.
+		if = {
+			limit = { has_relation_friend = scope:dragonlord_council_vote_proposer }
+			add = {
+				value = 15
+				desc = dragonlord_council_vote_score_friend_desc
+			}
+		}
+		if = {
+			limit = { has_relation_lover = scope:dragonlord_council_vote_proposer }
+			add = {
+				value = 20
+				desc = dragonlord_council_vote_score_lover_desc
+			}
+		}
+		if = {
+			limit = { has_relation_rival = scope:dragonlord_council_vote_proposer }
+			add = {
+				value = -25
+				desc = dragonlord_council_vote_score_rival_desc
+			}
+		}
+		if = {
+			limit = { scope:dragonlord_council_vote_proposer = { has_trait = just } }
+			add = {
+				value = 5
+				desc = dragonlord_council_vote_score_just_proposer_desc
+			}
+		}
+		if = {
+			limit = { scope:dragonlord_council_vote_proposer = { has_trait = arbitrary } }
+			add = {
+				value = -5
+				desc = dragonlord_council_vote_score_arbitrary_proposer_desc
+			}
+		}
+		if = {
+			limit = {
+				ai_boldness < 0
+				scope:dragonlord_council_vote_proposer = { dread >= 50 }
+			}
+			add = {
+				value = 10
+				desc = dragonlord_council_vote_score_dread_pressure_desc
+			}
+		}
+
+		# WAR MOTIONS ---------------------------------------------------------
+		if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+				}
+			}
+
+			# Every House weighs military feasibility. A stronger Freehold creates
+			# three increasingly positive tiers; fighting uphill carries steeper
+			# penalties because the political risk of defeat is asymmetric.
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = {
+						exists = var:dragonlord_council_selected_target
+					}
+				}
+				if = {
+					limit = {
+						scope:dragonlord_council_vote_proposer = { dragonlord_council_war_strength_ratio >= 2 }
+					}
+					add = {
+						value = 15
+						desc = dragonlord_council_vote_score_war_strength_overwhelming_advantage_desc
+					}
+				}
+				else_if = {
+					limit = {
+						scope:dragonlord_council_vote_proposer = { dragonlord_council_war_strength_ratio >= 1.5 }
+					}
+					add = {
+						value = 10
+						desc = dragonlord_council_vote_score_war_strength_strong_advantage_desc
+					}
+				}
+				else_if = {
+					limit = {
+						scope:dragonlord_council_vote_proposer = { dragonlord_council_war_strength_ratio >= 1 }
+					}
+					add = {
+						value = 5
+						desc = dragonlord_council_vote_score_war_strength_slight_advantage_desc
+					}
+				}
+				else_if = {
+					limit = {
+						scope:dragonlord_council_vote_proposer = { dragonlord_council_war_strength_ratio >= 0.75 }
+					}
+					add = {
+						value = -10
+						desc = dragonlord_council_vote_score_war_strength_slight_disadvantage_desc
+					}
+				}
+				else_if = {
+					limit = {
+						scope:dragonlord_council_vote_proposer = { dragonlord_council_war_strength_ratio >= 0.5 }
+					}
+					add = {
+						value = -20
+						desc = dragonlord_council_vote_score_war_strength_major_disadvantage_desc
+					}
+				}
+				else = {
+					add = {
+						value = -30
+						desc = dragonlord_council_vote_score_war_strength_overwhelming_disadvantage_desc
+					}
+				}
+			}
+
+			if = {
+				limit = { has_trait = brave }
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_brave_war_desc
+				}
+			}
+			if = {
+				# Character scope is the voting Dragonlord, so relatives do not count.
+				limit = { has_trait = dragonrider }
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_dragonrider_war_desc
+				}
+			}
+			if = {
+				limit = { has_trait = craven }
+				add = {
+					value = -20
+					desc = dragonlord_council_vote_score_craven_war_desc
+				}
+			}
+			if = {
+				limit = { has_trait = ambitious }
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_ambitious_war_desc
+				}
+			}
+			if = {
+				limit = { has_trait = content }
+				add = {
+					value = -10
+					desc = dragonlord_council_vote_score_content_war_desc
+				}
+			}
+
+			# A personal tie to the target overrides some abstract enthusiasm.
+			if = {
+				limit = {
+					exists = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_target
+					has_relation_friend = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_target
+				}
+				add = {
+					value = -30
+					desc = dragonlord_council_vote_score_war_target_friend_desc
+				}
+			}
+			if = {
+				limit = {
+					exists = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_target
+					has_relation_rival = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_target
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_war_target_rival_desc
+				}
+			}
+
+			# Tributary wars appeal to profit-seekers; slave raids additionally
+			# provoke a strong moral response.
+			if = {
+				limit = {
+					has_trait = greedy
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_war_type = flag:dragonlord_tributary_war_agenda
+					}
+				}
+				add = {
+					value = 15
+					desc = dragonlord_council_vote_score_greedy_tributary_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = generous
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_war_type = flag:dragonlord_tributary_war_agenda
+					}
+				}
+				add = {
+					value = -10
+					desc = dragonlord_council_vote_score_generous_tributary_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = callous
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda
+					}
+				}
+				add = {
+					value = 15
+					desc = dragonlord_council_vote_score_callous_slave_raid_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = sadistic
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda
+					}
+				}
+				add = {
+					value = 15
+					desc = dragonlord_council_vote_score_sadistic_slave_raid_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = compassionate
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda
+					}
+				}
+				add = {
+					value = -25
+					desc = dragonlord_council_vote_score_compassionate_slave_raid_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = just
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda
+					}
+				}
+				add = {
+					value = -15
+					desc = dragonlord_council_vote_score_just_slave_raid_desc
+				}
+			}
+		}
+
+		# LAW MOTIONS ---------------------------------------------------------
+		if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda
+				}
+			}
+
+			# Compare the proposed tier with the law currently in force. Centralizing
+			# power benefits only the Chief House; every other noble House loses
+			# autonomy. Decentralization reverses those material interests.
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_bureaucracy_change_direction > 0 }
+					exists = house
+					house = { has_variable = dragonlord_is_chief_family }
+				}
+				add = {
+					value = 15
+					desc = dragonlord_council_vote_score_central_elite_bureaucracy_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_bureaucracy_change_direction < 0 }
+					exists = house
+					house = { NOT = { has_variable = dragonlord_is_chief_family } }
+				}
+				add = {
+					value = 15
+					desc = dragonlord_council_vote_score_ordinary_house_autonomy_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_bureaucracy_change_direction > 0 }
+					exists = house
+					house = { NOT = { has_variable = dragonlord_is_chief_family } }
+				}
+				add = {
+					value = -15
+					desc = dragonlord_council_vote_score_ordinary_house_against_bureaucracy_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_bureaucracy_change_direction < 0 }
+					exists = house
+					house = { has_variable = dragonlord_is_chief_family }
+				}
+				add = {
+					value = -15
+					desc = dragonlord_council_vote_score_central_elite_against_autonomy_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = diligent
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_bureaucracy_change_direction > 0 }
+				}
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_diligent_bureaucracy_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = lazy
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_bureaucracy_change_direction > 0 }
+				}
+				add = {
+					value = -10
+					desc = dragonlord_council_vote_score_lazy_bureaucracy_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = diligent
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_bureaucracy_change_direction < 0 }
+				}
+				add = {
+					value = -10
+					desc = dragonlord_council_vote_score_diligent_bureaucracy_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = lazy
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_bureaucracy_change_direction < 0 }
+				}
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_lazy_bureaucracy_desc
+				}
+			}
+
+			# Gender laws reflect direct eligibility and egalitarian values.
+			if = {
+				limit = {
+					is_female = no
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:male_only_law }
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_male_supports_male_only_desc
+				}
+			}
+			if = {
+				limit = {
+					is_female = no
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:male_preference_law }
+				}
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_male_supports_male_preference_desc
+				}
+			}
+			if = {
+				limit = {
+					is_female = yes
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:female_only_law }
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_female_supports_female_only_desc
+				}
+			}
+			if = {
+				limit = {
+					is_female = yes
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:female_preference_law }
+				}
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_female_supports_female_preference_desc
+				}
+			}
+			if = {
+				limit = {
+					is_female = yes
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:male_only_law }
+				}
+				add = {
+					value = -30
+					desc = dragonlord_council_vote_score_female_against_male_only_desc
+				}
+			}
+			if = {
+				limit = {
+					is_female = yes
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:male_preference_law }
+				}
+				add = {
+					value = -15
+					desc = dragonlord_council_vote_score_female_against_male_preference_desc
+				}
+			}
+			if = {
+				limit = {
+					is_female = no
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:female_only_law }
+				}
+				add = {
+					value = -30
+					desc = dragonlord_council_vote_score_male_against_female_only_desc
+				}
+			}
+			if = {
+				limit = {
+					is_female = no
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:female_preference_law }
+				}
+				add = {
+					value = -15
+					desc = dragonlord_council_vote_score_male_against_female_preference_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = just
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:equal_law }
+				}
+				add = {
+					value = 15
+					desc = dragonlord_council_vote_score_just_equal_law_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = compassionate
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:equal_law }
+				}
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_compassionate_equal_law_desc
+				}
+			}
+
+			# Slavery laws produce opposite moral and financial incentives.
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:slavery_allowed_law }
+					has_trait = callous
+				}
+				add = {
+					value = 15
+					desc = dragonlord_council_vote_score_callous_slavery_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:slavery_allowed_law }
+					has_trait = sadistic
+				}
+				add = {
+					value = 15
+					desc = dragonlord_council_vote_score_sadistic_slavery_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:slavery_allowed_law }
+					has_trait = greedy
+				}
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_greedy_slavery_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:slavery_allowed_law }
+					has_trait = compassionate
+				}
+				add = {
+					value = -25
+					desc = dragonlord_council_vote_score_compassionate_slavery_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:slavery_allowed_law }
+					has_trait = just
+				}
+				add = {
+					value = -15
+					desc = dragonlord_council_vote_score_just_slavery_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:slavery_disallowed_law }
+					has_trait = compassionate
+				}
+				add = {
+					value = 25
+					desc = dragonlord_council_vote_score_compassionate_abolition_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:slavery_disallowed_law }
+					has_trait = just
+				}
+				add = {
+					value = 15
+					desc = dragonlord_council_vote_score_just_abolition_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:slavery_disallowed_law }
+					OR = { has_trait = callous has_trait = sadistic }
+				}
+				add = {
+					value = -20
+					desc = dragonlord_council_vote_score_cruel_against_abolition_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:slavery_disallowed_law }
+					has_trait = greedy
+				}
+				add = {
+					value = -10
+					desc = dragonlord_council_vote_score_greedy_against_abolition_desc
+				}
+			}
+
+			# Provincial autonomy: warlike and ambitious rulers prefer freedom;
+			# content rulers prefer restrictions and stable borders.
+			if = {
+				limit = {
+					ai_has_warlike_personality = yes
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:province_war_law_0
+							var:dragonlord_council_selected_law = flag:province_border_law_0
+							var:dragonlord_council_selected_law = flag:top_liege_not_redirected_to_border_wars_law
+						}
+					}
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_warlike_autonomy_desc
+				}
+			}
+			if = {
+				limit = {
+					ai_has_warlike_personality = yes
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:province_war_law_2
+							var:dragonlord_council_selected_law = flag:province_war_law_3
+							var:dragonlord_council_selected_law = flag:province_border_law_2
+							var:dragonlord_council_selected_law = flag:top_liege_redirected_to_border_wars_law
+						}
+					}
+				}
+				add = {
+					value = -20
+					desc = dragonlord_council_vote_score_warlike_against_restrictions_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = content
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:province_war_law_2
+							var:dragonlord_council_selected_law = flag:province_war_law_3
+							var:dragonlord_council_selected_law = flag:province_border_law_2
+						}
+					}
+				}
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_content_stability_desc
+				}
+			}
+
+			# Term length and franchise are direct institutional interests.
+			if = {
+				limit = {
+					exists = house
+					house = { has_variable = dragonlord_is_chief_family }
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:term_length_life }
+				}
+				add = {
+					value = 30
+					desc = dragonlord_council_vote_score_chief_life_term_desc
+				}
+			}
+			if = {
+				limit = {
+					exists = house
+					house = { has_variable = dragonlord_is_chief_family }
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:term_length_short }
+				}
+				add = {
+					value = -20
+					desc = dragonlord_council_vote_score_chief_short_term_desc
+				}
+			}
+			if = {
+				limit = {
+					has_trait = ambitious
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:term_length_long
+							var:dragonlord_council_selected_law = flag:term_length_life
+						}
+					}
+				}
+				add = {
+					value = 10
+					desc = dragonlord_council_vote_score_ambitious_long_term_desc
+				}
+			}
+
+			if = {
+				limit = {
+					exists = house
+					house = {
+						NOR = {
+							has_variable = dragonlord_is_fourteen_dragonlord
+							has_variable = dragonlord_is_chief_family
+						}
+					}
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:franchise_democratic_full
+							var:dragonlord_council_selected_law = flag:franchise_lean_democratic
+						}
+					}
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_ordinary_house_democratic_desc
+				}
+			}
+			if = {
+				limit = {
+					exists = house
+					house = {
+						OR = {
+							has_variable = dragonlord_is_fourteen_dragonlord
+							has_variable = dragonlord_is_chief_family
+						}
+					}
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:franchise_aristocratic_full
+							var:dragonlord_council_selected_law = flag:franchise_lean_aristocratic
+						}
+					}
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_council_elite_aristocratic_desc
+				}
+			}
+			if = {
+				limit = {
+					exists = house
+					house = {
+						NOR = {
+							has_variable = dragonlord_is_fourteen_dragonlord
+							has_variable = dragonlord_is_chief_family
+						}
+					}
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:franchise_aristocratic_full
+							var:dragonlord_council_selected_law = flag:franchise_lean_aristocratic
+						}
+					}
+				}
+				add = {
+					value = -20
+					desc = dragonlord_council_vote_score_ordinary_house_against_aristocratic_desc
+				}
+			}
+			if = {
+				limit = {
+					exists = house
+					house = {
+						OR = {
+							has_variable = dragonlord_is_fourteen_dragonlord
+							has_variable = dragonlord_is_chief_family
+						}
+					}
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:franchise_democratic_full
+							var:dragonlord_council_selected_law = flag:franchise_lean_democratic
+						}
+					}
+				}
+				add = {
+					value = -20
+					desc = dragonlord_council_vote_score_council_elite_against_democratic_desc
+				}
+			}
+			if = {
+				limit = {
+					ai_zeal >= 20
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:franchise_theocratic }
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_zealous_theocratic_desc
+				}
+			}
+			if = {
+				limit = {
+					ai_zeal <= -20
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:franchise_theocratic }
+				}
+				add = {
+					value = -20
+					desc = dragonlord_council_vote_score_cynical_theocratic_desc
+				}
+			}
+
+			# Realm policy follows the vanilla economical/warlike personality split.
+			if = {
+				limit = {
+					ai_has_economical_boom_personality = yes
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:policy_mercantile_full
+							var:dragonlord_council_selected_law = flag:policy_lean_mercantile
+						}
+					}
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_economical_mercantile_desc
+				}
+			}
+			if = {
+				limit = {
+					ai_has_economical_boom_personality = yes
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:policy_militaristic_full
+							var:dragonlord_council_selected_law = flag:policy_lean_militaristic
+						}
+					}
+				}
+				add = {
+					value = -15
+					desc = dragonlord_council_vote_score_economical_against_militaristic_desc
+				}
+			}
+			if = {
+				limit = {
+					ai_has_warlike_personality = yes
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:policy_militaristic_full
+							var:dragonlord_council_selected_law = flag:policy_lean_militaristic
+						}
+					}
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_warlike_militaristic_desc
+				}
+			}
+
+			# Dragonpit access: entrenched leadership favors narrow access while
+			# ordinary dragonriders benefit from broader eligibility.
+			if = {
+				limit = {
+					exists = house
+					house = { has_variable = dragonlord_is_chief_family }
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:dragonpit_close_family_law }
+				}
+				add = {
+					value = 25
+					desc = dragonlord_council_vote_score_chief_restricted_dragonpit_desc
+				}
+			}
+			if = {
+				limit = {
+					exists = house
+					house = { has_variable = dragonlord_is_chief_family }
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:dragonpit_everyone_law }
+				}
+				add = {
+					value = -20
+					desc = dragonlord_council_vote_score_chief_against_open_dragonpit_desc
+				}
+			}
+			if = {
+				limit = {
+					exists = house
+					house = {
+						NOR = {
+							has_variable = dragonlord_is_fourteen_dragonlord
+							has_variable = dragonlord_is_chief_family
+						}
+					}
+					has_trait = dragonrider
+					scope:dragonlord_council_vote_proposer = {
+						OR = {
+							var:dragonlord_council_selected_law = flag:dragonpit_dynasty_law
+							var:dragonlord_council_selected_law = flag:dragonpit_everyone_law
+						}
+					}
+				}
+				add = {
+					value = 20
+					desc = dragonlord_council_vote_score_ordinary_dragonrider_access_desc
+				}
+			}
+			if = {
+				limit = {
+					exists = house
+					house = {
+						NOR = {
+							has_variable = dragonlord_is_fourteen_dragonlord
+							has_variable = dragonlord_is_chief_family
+						}
+					}
+					has_trait = dragonrider
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_law = flag:dragonpit_close_family_law }
+				}
+				add = {
+					value = -20
+					desc = dragonlord_council_vote_score_ordinary_dragonrider_restricted_desc
+				}
+			}
+
+		}
+
+		# DEVELOPMENT MOTIONS -------------------------------------------------
+		if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+				}
+			}
+
+			# City development primarily benefits the House holding the county.
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_development_type = flag:dragonlord_city_development
+						has_variable = dragonlord_council_selected_development_target
+					}
+					exists = house
+					house = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_development_target.holder.house
+				}
+				add = { value = 30 desc = dragonlord_council_vote_score_development_beneficiary_desc }
+			}
+			else_if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_development_type = flag:dragonlord_city_development
+					}
+				}
+				add = { value = -10 desc = dragonlord_council_vote_score_development_non_beneficiary_desc }
+			}
+
+			# Recovery is less exclusive because restoring control helps the realm.
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery
+						has_variable = dragonlord_council_selected_development_target
+					}
+					exists = house
+					house = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_development_target.holder.house
+				}
+				add = { value = 25 desc = dragonlord_council_vote_score_recovery_beneficiary_desc }
+			}
+			else_if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery
+					}
+				}
+				add = { value = -5 desc = dragonlord_council_vote_score_recovery_non_beneficiary_desc }
+			}
+
+			# Estate aid is family patronage. Relationship scoring always targets the
+			# beneficiary House's current head, even if its estate is held by another
+			# registered member during an administrative succession.
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy
+						has_variable = dragonlord_council_selected_estate_target
+					}
+					exists = house
+					house = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_estate_target.house
+				}
+				add = { value = 40 desc = dragonlord_council_vote_score_estate_beneficiary_desc }
+			}
+			else_if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = {
+						var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy
+						has_variable = dragonlord_council_selected_estate_target
+					}
+					scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_estate_target.house = { exists = house_head }
+				}
+				add = { value = -10 desc = dragonlord_council_vote_score_estate_non_beneficiary_desc }
+				if = {
+					limit = { opinion = { target = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_estate_target.house.house_head value >= 80 } }
+					add = { value = 20 desc = dragonlord_council_vote_score_estate_target_opinion_desc }
+				}
+				else_if = {
+					limit = { opinion = { target = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_estate_target.house.house_head value >= 40 } }
+					add = { value = 10 desc = dragonlord_council_vote_score_estate_target_opinion_desc }
+				}
+				else_if = {
+					limit = { opinion = { target = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_estate_target.house.house_head value <= -80 } }
+					add = { value = -20 desc = dragonlord_council_vote_score_estate_target_opinion_desc }
+				}
+				else_if = {
+					limit = { opinion = { target = scope:dragonlord_council_vote_proposer.var:dragonlord_council_selected_estate_target.house.house_head value <= -40 } }
+					add = { value = -10 desc = dragonlord_council_vote_score_estate_target_opinion_desc }
+				}
+			}
+
+			# Equal family contribution and personality responses shared by projects.
+			if = {
+				limit = { dragonlord_council_development_gold_after_contribution < 50 }
+				add = { value = -80 desc = dragonlord_council_vote_score_development_bankruptcy_desc }
+			}
+			if = {
+				limit = { has_trait = greedy }
+				add = { value = -10 desc = dragonlord_council_vote_score_greedy_development_desc }
+			}
+			if = {
+				limit = { has_trait = generous }
+				add = { value = 10 desc = dragonlord_council_vote_score_generous_development_desc }
+			}
+			if = {
+				limit = {
+					has_trait = diligent
+					scope:dragonlord_council_vote_proposer = {
+						NOT = { var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy }
+					}
+				}
+				add = { value = 10 desc = dragonlord_council_vote_score_diligent_development_desc }
+			}
+			if = {
+				limit = {
+					has_trait = lazy
+					scope:dragonlord_council_vote_proposer = {
+						NOT = { var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy }
+					}
+				}
+				add = { value = -10 desc = dragonlord_council_vote_score_lazy_development_desc }
+			}
+			if = {
+				limit = {
+					has_trait = compassionate
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery }
+				}
+				add = { value = 10 desc = dragonlord_council_vote_score_compassionate_recovery_desc }
+			}
+			if = {
+				limit = {
+					has_trait = callous
+					scope:dragonlord_council_vote_proposer = { var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery }
+				}
+				add = { value = -5 desc = dragonlord_council_vote_score_callous_recovery_desc }
+			}
+		}
+
+		# FINANCE MOTIONS -----------------------------------------------------
+		# Greedy rulers value salary changes point-for-point. Warlike rulers value
+		# military changes at half strength: every 10 allocation points are worth
+		# 5 support points. Worsened vassal-tax penalties create general opposition.
+		if = {
+			limit = {
+				scope:dragonlord_council_vote_proposer = {
+					var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda
+					var:dragonlord_council_selected_law = flag:dragonlord_treasury_budget_agenda
+				}
+			}
+			if = {
+				limit = {
+					has_trait = greedy
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_budget_salary_change != 0 }
+				}
+				add = {
+					value = scope:dragonlord_council_vote_proposer.dragonlord_council_budget_salary_change
+					desc = dragonlord_council_vote_score_greedy_salary_budget_desc
+				}
+			}
+			if = {
+				limit = {
+					ai_has_warlike_personality = yes
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_budget_military_change != 0 }
+				}
+				add = {
+					value = scope:dragonlord_council_vote_proposer.dragonlord_council_budget_military_change
+					multiply = 0.5
+					desc = dragonlord_council_vote_score_warlike_military_budget_desc
+				}
+			}
+			if = {
+				limit = {
+					scope:dragonlord_council_vote_proposer = { dragonlord_council_budget_salary_vassal_tax_change < 0 }
+				}
+				add = {
+					value = scope:dragonlord_council_vote_proposer.dragonlord_council_budget_salary_vassal_tax_change
+					desc = dragonlord_council_vote_score_salary_vassal_tax_penalty_desc
+				}
+			}
+		}
+	}
+}
+
+# Weighted ballots for the forty registered Dragonlord Families. The displayed
+# breakdown is deliberately additive: base 1, a council-seat bonus of +1 for
+# the Fourteen (including the Chief), and a further Chief bonus of +1.
+# Frozen support used by the interactive meeting.  The underlying proposal
+# score is captured once when the proposal phase begins; all phase events add
+# only to the meeting change variable.
+dragonlord_council_meeting_final_support = {
+	value = 0
+	if = {
+		limit = { has_variable = dragonlord_council_meeting_base_support }
+		add = var:dragonlord_council_meeting_base_support
+	}
+	if = {
+		limit = { has_variable = dragonlord_council_meeting_support_change }
+		add = var:dragonlord_council_meeting_support_change
+	}
+	min = -100
+	max = 100
+}
+
+dragonlord_council_vote_weight = {
+	value = {
+		value = 1
+		desc = dragonlord_council_vote_weight_base_desc
+	}
+
+	if = {
+		limit = {
+			exists = house
+			house = {
+				OR = {
+					has_variable = dragonlord_is_fourteen_dragonlord
+					has_variable = dragonlord_is_chief_family
+				}
+			}
+		}
+		add = {
+			value = 1
+			desc = dragonlord_council_vote_weight_fourteen_desc
+		}
+	}
+	if = {
+		limit = {
+			exists = house
+			house = { has_variable = dragonlord_is_chief_family }
+		}
+		add = {
+			value = 1
+			desc = dragonlord_council_vote_weight_chief_desc
+		}
+	}
+}

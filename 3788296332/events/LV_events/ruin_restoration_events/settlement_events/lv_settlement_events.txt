@@ -1,0 +1,530 @@
+﻿namespace = lv_settlement_event
+
+# Directory
+
+# lv_settlement_event.0001 - Decide who you want to send to claim the land
+# lv_settlement_event.0002 - Choose someone to settle the land in your name
+# lv_settlement_event.0003 - Vassal decides to go or refuse
+# lv_settlement_event.0010 - Notification: Departure
+# lv_settlement_event.0011 - Notification: Arrival
+# lv_settlement_event.0100 - Upgrade settlement
+
+# Scripted Effects
+# Rationale for current structure: Scopes don't propagate to on_actions defined by start_travel_plan unlike in event chains, so we store them as variables
+# "Why not just scope the liege by the time the expedition leader arrives, instead of storing them as a variable?"
+# - Currently, the event is set up so you only choose direct vassals and your courtiers, which have you as their liege by default
+# - However, there might be a potential use case for non-vassal/courtier options, which might be interesting to look into eventually
+
+
+# Decide who you want to send to claim the land
+lv_settlement_event.0001 = {
+	type = character_event
+	title = lv_settlement_event.0001.t
+	desc = lv_settlement_event.0001.desc
+	theme = crown
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	right_portrait = {
+		character = scope:councillor
+		animation = steward
+	}
+
+	immediate = {
+		save_scope_as = liege
+		set_variable = {
+			name = lv_settlement_state
+			value = flag:planning
+		}
+		if = {
+			limit = { has_councillor_for_skill = stewardship }
+			random_stewardship_councillor = { save_scope_as = councillor }
+		}
+		else_if = {
+			limit = { has_councillor_for_skill = general }
+			random_general_councillor = { save_scope_as = councillor }
+		}
+	}
+
+	# Lead the expedition yourself
+	option = {
+		name = lv_settlement_event.0001.a
+		trigger = { is_available_adult = yes }
+		lv_settlement_confirm_effect = yes
+	}
+
+	# Send a courtier
+	option = {
+		name = lv_settlement_event.0001.b
+		trigger = { is_landless_adventurer = no }
+		set_variable = {
+			name = lv_settlement_filter
+			value = flag:courtiers
+		}
+		trigger_event = lv_settlement_event.0002
+	}
+
+	# Send a vassal
+	option = {
+		name = lv_settlement_event.0001.c
+		trigger = { is_landless_adventurer = no }
+		set_variable = {
+			name = lv_settlement_filter
+			value = flag:vassals
+		}
+		trigger_event = lv_settlement_event.0002
+	}
+
+	# No
+	option = {
+		name = lv_settlement_event.0001.d
+		remove_variable = lv_settlement_state
+	}
+}
+
+# Choose someone to settle the land in your name
+lv_settlement_event.0002 = {
+	type = character_event
+	title = lv_settlement_event.0002.t
+	desc = lv_settlement_event.0002.desc
+	theme = crown
+
+	widget = {
+		is_shown = { is_ai = no }
+		gui = "agot_character_selection_three_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		switch = {
+			trigger = var:lv_settlement_filter
+			flag:courtiers = {
+				every_courtier = {
+					limit = {
+						is_available_adult = yes
+						is_human = yes
+						NOT = { has_variable = lv_settlement_refused }
+					}
+					root = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+			}
+			flag:vassals = {
+				every_vassal = {
+					limit = {
+						is_available_adult = yes
+						is_human = yes
+						NOT = { has_variable = lv_settlement_refused }
+					}
+					root = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+			}
+		}
+		ordered_in_list = {
+			variable = possible_characters
+			order_by = age
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = selected_character
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = interested
+	}
+
+	# Select person
+	option = {
+		name = lv_settlement_event.0002.a
+		trigger = { exists = var:si_selected_character }
+		if = {
+			limit = { var:lv_settlement_filter = flag:vassals }
+			var:si_selected_character ?= { trigger_event = lv_settlement_event.0003 }
+		}
+		else = { var:si_selected_character ?= { lv_settlement_confirm_effect = yes } }
+
+		clear_variable_list = possible_characters
+	}
+
+	# Nevermind
+	option = {
+		name = lv_settlement_event.0002.b
+		trigger_event = lv_settlement_event.0001
+
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+	}
+
+	after = { remove_variable = lv_settlement_filter }
+}
+
+# Vassal decides to go or refuse
+lv_settlement_event.0003 = {
+	type = character_event
+	title = lv_settlement_event.0003.t
+	desc = lv_settlement_event.0003.desc
+	theme = crown
+
+	left_portrait = {
+		character = root
+		animation = reading
+	}
+
+	right_portrait = {
+		character = scope:liege
+		animation = writing
+	}
+
+	# Yes
+	option = {
+		name = lv_settlement_event.0003.a
+		custom_tooltip = {
+			text = lv_settlement_event.0003.a.tt
+			lv_settlement_confirm_effect = yes
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 2
+				ai_honor = 2
+			}
+			modifier = {
+				factor = 2
+				likes_character_trigger = { CHARACTER = scope:liege }
+				OR = {
+					has_trait = loyal
+					has_trait = trusting
+				}
+			}
+			modifier = {
+	            add = 15
+	            likes_character_trigger = { CHARACTER = scope:liege }
+	        }
+			modifier = {
+	            add = 15
+	            OR = {
+					has_trait = loyal
+					has_trait = trusting
+				}
+	        }
+			modifier = {
+                add = 15
+                has_trait = diligent
+            }
+			modifier = {
+	            add = 15
+	            OR = {
+					has_trait = lifestyle_traveler
+					has_trait = lifestyle_wayfarer
+					has_trait = lifestyle_voyager
+				}
+	        }
+			modifier = {
+				factor = 0
+				scope:ruin ?= {
+					geographical_region = world_valyria_mainland
+					NOT = { scope:liege = { any_realm_province = { geographical_region = world_valyria_mainland } } }
+				}
+				has_trait = craven
+			}
+			modifier = {
+				factor = 0.25
+				scope:ruin ?= {
+					geographical_region = world_valyria_mainland
+					NOT = { scope:liege = { any_realm_province = { geographical_region = world_valyria_mainland } } }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				scope:ruin ?= {
+					geographical_region = world_valyria_mainland
+					scope:liege = { any_realm_province = { geographical_region = world_valyria_mainland } }
+				}
+				has_trait = craven
+			}
+			modifier = {
+				factor = 0.5
+				scope:ruin ?= {
+					geographical_region = world_valyria_mainland
+					scope:liege = { any_realm_province = { geographical_region = world_valyria_mainland } }
+				}
+			}
+		}
+	}
+
+	# No
+	option = {
+		name = lv_settlement_event.0003.b
+		custom_tooltip = {
+			text = lv_settlement_event.0003.b.tt
+			scope:liege = { trigger_event = lv_settlement_event.0004 }
+			set_variable = {
+				name = lv_settlement_refused
+				months = 6
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_rationality = 1
+				ai_boldness = 0.5
+				ai_honor = 0.5
+			}
+			modifier = {
+	            factor = 2
+				dislikes_character_trigger = { CHARACTER = scope:liege }
+				OR = {
+					has_trait = cynical
+					has_trait = disloyal
+				}
+	        }
+	        modifier = {
+	            add = 20
+	            dislikes_character_trigger = { CHARACTER = scope:liege }
+	        }
+			modifier = {
+	            add = 20
+				OR = {
+					has_trait = cynical
+					has_trait = disloyal
+				}
+	        }
+			modifier = {
+                add = 15
+                has_trait = arrogant
+            }
+			modifier = {
+				factor = 2
+				has_trait = craven
+			}
+			modifier = {
+				factor = 1000
+				scope:ruin ?= {
+					geographical_region = world_valyria_mainland
+					NOT = { scope:liege = { any_realm_province = { geographical_region = world_valyria_mainland } } }
+				}
+				has_trait = craven
+			}
+			modifier = {
+				factor = 10
+				scope:ruin ?= {
+					geographical_region = world_valyria_mainland
+					NOT = { scope:liege = { any_realm_province = { geographical_region = world_valyria_mainland } } }
+				}
+			}
+			modifier = {
+				factor = 2
+				scope:ruin ?= {
+					geographical_region = world_valyria_mainland
+					scope:liege = { any_realm_province = { geographical_region = world_valyria_mainland } }
+				}
+				has_trait = craven
+			}
+			modifier = {
+				factor = 1.5
+				scope:ruin ?= {
+					geographical_region = world_valyria_mainland
+					scope:liege = { any_realm_province = { geographical_region = world_valyria_mainland } }
+				}
+			}
+		}
+	}
+}
+
+# Vassal Refused
+lv_settlement_event.0004 = {
+	type = character_event
+	title = lv_settlement_event.0004.t
+	desc = lv_settlement_event.0004.desc
+	theme = travel
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	right_portrait = {
+		character = var:si_selected_character
+		animation = disapproval
+	}
+
+	immediate = {
+		var:si_selected_character = { save_scope_as = rejector }
+		custom_tooltip = lv_settlement_event.0004.tt
+	}
+
+	# Ok, choose another
+	option = {
+		name = lv_settlement_event.0004.a
+		custom_tooltip = {
+			text = lv_settlement_event.0004.a.tt
+			trigger_event = lv_settlement_event.0001
+		}
+	}
+
+	# Nah
+	option = {
+		name = lv_settlement_event.0004.b
+		custom_tooltip = {
+			text = lv_settlement_event.0004.b.tt
+			remove_variable = lv_settlement_state
+		}
+	}
+
+	after = { remove_variable = si_selected_character }
+}
+
+# Notification: Departure
+
+lv_settlement_event.0099 = {
+	hidden = yes
+
+	trigger = {
+		has_variable = lv_settlement_expedition_liege
+		has_variable = lv_settlement_expedition_destination
+	}
+
+	immediate = {
+		lv_settlement_finish_pending_expedition_effect = yes
+	}
+}
+
+lv_settlement_event.0010 = {
+	type = character_event
+	title = lv_settlement_event.0010.t
+	desc = {
+		triggered_desc = {
+			trigger = { this = scope:settler }
+			desc = lv_settlement_event.0010.desc.self
+		}
+		triggered_desc = {
+			trigger = { NOT = { this = scope:settler } }
+			desc = lv_settlement_event.0010.desc.other
+		}
+	}
+	theme = travel
+
+	left_portrait = {
+		character = scope:settler
+		animation = personality_honorable
+	}
+
+	option = { name = lv_settlement_event.0010.a }
+}
+
+# Notification: Arrival
+# - Also a notification event for other rulers
+lv_settlement_event.0011 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = { # You are the liege and you led the expedition
+				trigger = {
+					this = scope:settler
+					scope:liege = scope:settler
+				}
+				desc = lv_settlement_event.0011.t.self_liege
+			}
+			triggered_desc = { # You are not the liege but led the expedition
+				trigger = {
+					this = scope:settler
+					NOT = { scope:liege = scope:settler }
+				}
+				desc = lv_settlement_event.0011.t.self_non_liege
+			}
+			triggered_desc = { # You are the liege but not the leader of the expedition
+				trigger = {
+					NOT = { this = scope:settler }
+					this = scope:liege
+				}
+				desc = lv_settlement_event.0011.t.other_liege
+			}
+			# Default: You are neither the liege nor the leader of the expedition
+			desc = lv_settlement_event.0011.t.other_non_liege
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = { # You are the liege and you led the expedition
+				trigger = {
+					this = scope:settler
+					scope:liege = scope:settler
+				}
+				desc = lv_settlement_event.0011.desc.self_liege
+			}
+			triggered_desc = { # You are not the liege but led the expedition
+				trigger = {
+					this = scope:settler
+					NOT = { scope:liege = scope:settler }
+				}
+				desc = lv_settlement_event.0011.desc.self_non_liege
+			}
+			triggered_desc = { # You are the liege but not the leader of the expedition
+				trigger = {
+					NOT = { this = scope:settler }
+					this = scope:liege
+				}
+				desc = lv_settlement_event.0011.desc.other_liege
+			}
+			# Default: You are neither the liege nor the leader of the expedition
+			desc = lv_settlement_event.0011.desc.other_non_liege
+		}
+	}
+	theme = travel
+
+	left_portrait = {
+		character = scope:settler
+		animation = personality_honorable
+	}
+
+	option = {
+		name = {
+			trigger = { this = scope:settler scope:liege = scope:settler }
+			text = lv_settlement_event.0011.a.self_liege
+		}
+		name = {
+			trigger = { this = scope:settler NOT = { scope:liege = scope:settler } }
+			text = lv_settlement_event.0011.a.self_non_liege
+		}
+		name = {
+			trigger = { NOT = { this = scope:settler } this = scope:liege }
+			text = lv_settlement_event.0011.a.other_liege
+		}
+		name = {
+			trigger = { NOT = { this = scope:settler } NOT = { this = scope:liege } }
+			text = lv_settlement_event.0011.a.other_non_liege
+		}
+	}
+}
+
+# Upgrade settlement
+# Commented out for now, the AGOT ruins event will do until a bespoke LoV event is justified
+#lv_settlement_event.0100 = {
+#	type = character_event
+#	title = lv_settlement_event.0100.t
+#	desc = lv_settlement_event.0100.desc
+#	theme = stewardship_domain_focus
+#	
+#	override_background = { reference = army_camp }
+#
+#	left_portrait = {
+#		character = root
+#		animation = chancellor
+#	}
+#
+#	option = { name = lv_settlement_event.0100.a }
+#}

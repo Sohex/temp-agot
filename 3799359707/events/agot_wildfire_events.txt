@@ -1,0 +1,186 @@
+﻿namespace = agot_wildfire
+
+### Acquisition: 0001 (call) -> 0002 (terms) -> 0003 (the deal) ###
+
+agot_wildfire.0001 = {
+	type = character_event
+	title = agot_wildfire.0001.t
+	desc = agot_wildfire.0001.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_wildfire.0001.a # Seek out the Guild contact
+		trigger_event = { id = agot_wildfire.0002 days = 3 }
+	}
+
+	option = {
+		name = agot_wildfire.0001.b # Not now
+		stress_impact = { base = minor_stress_impact_gain }
+	}
+}
+
+agot_wildfire.0002 = {
+	type = character_event
+	title = agot_wildfire.0002.t
+	desc = agot_wildfire.0002.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_wildfire.0002.a # Pay their price
+		trigger = {
+			gold >= 50
+		}
+		remove_short_term_gold = {
+			value = 50
+		}
+		trigger_event = { id = agot_wildfire.0003 days = 2 }
+	}
+
+	option = {
+		name = agot_wildfire.0002.b # Walk away
+		stress_impact = { base = medium_stress_impact_gain }
+	}
+}
+
+agot_wildfire.0003 = {
+	type = character_event
+	title = agot_wildfire.0003.t
+	desc = agot_wildfire.0003.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_wildfire.0003.a # Learn the formula
+		if = {
+			limit = { intrigue >= 12 }
+			custom_tooltip = {
+				text = agot_wildfire.0003.a.success
+			}
+			agot_wildfire_grant_knowledge_effect = yes
+		}
+		else = {
+			random_list = {
+				60 = {
+					custom_tooltip = {
+						text = agot_wildfire.0003.a.success
+					}
+					agot_wildfire_grant_knowledge_effect = yes
+				}
+				40 = {
+					custom_tooltip = {
+						text = agot_wildfire.0003.a.failure
+					}
+				}
+			}
+		}
+	}
+}
+
+### Planting a cache: 0010 (groundwork) -> 0011 (the night it catches) ###
+# Started by the Plant a Wildfire Cache interaction, which saves its
+# target into var:agot_wildfire_target before triggering 0010.
+
+agot_wildfire.0010 = {
+	type = character_event
+	title = agot_wildfire.0010.t
+	desc = agot_wildfire.0010.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_wildfire.0010.a # Bribe a servant to place it
+		trigger_event = { id = agot_wildfire.0011 days = 4 }
+	}
+
+	option = {
+		name = agot_wildfire.0010.b # Sneak it in yourself
+		trigger_event = { id = agot_wildfire.0011 days = 4 }
+	}
+
+	option = {
+		name = agot_wildfire.0010.c # Call it off
+		stress_impact = { base = minor_stress_impact_gain }
+		remove_variable = agot_wildfire_target
+	}
+}
+
+agot_wildfire.0011 = {
+	type = character_event
+	title = agot_wildfire.0011.t
+	desc = agot_wildfire.0011.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_wildfire.0011.a # It catches
+		trigger = {
+			exists = var:agot_wildfire_target
+		}
+		stress_impact = { base = major_stress_impact_gain }
+		random_list = {
+			60 = {
+				custom_tooltip = {
+					text = agot_wildfire_outcome_target_burns
+				}
+				var:agot_wildfire_target = {
+					death = { death_reason = death_wildfire_killer }
+				}
+			}
+			15 = {
+				custom_tooltip = {
+					text = agot_wildfire_outcome_collateral
+				}
+				var:agot_wildfire_target = {
+					random_courtier = {
+						limit = { NOT = { this = var:agot_wildfire_target } }
+						death = { death_reason = death_wildfire_killer }
+					}
+				}
+			}
+			25 = {
+				modifier = { factor = 0.6 var:agot_wildfire_mastery >= 1 }
+				modifier = { factor = 0.6 var:agot_wildfire_mastery >= 2 }
+				modifier = { factor = 0.4 var:agot_wildfire_mastery >= 3 }
+				custom_tooltip = {
+					text = agot_wildfire_outcome_backfire
+				}
+				death = { death_reason = death_wildfire_accident }
+			}
+		}
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_wildfire_plant_a_cache_notification
+			left_icon = root
+			right_icon = var:agot_wildfire_target
+		}
+		agot_wildfire_discovery_effect = yes
+		remove_variable = agot_wildfire_target
+	}
+}

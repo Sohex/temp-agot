@@ -1,0 +1,216 @@
+﻿
+#HEALTH
+
+ai_modifier_based_on_health  = {
+    modifier = {
+        add = 100
+        root = { health >= excellent_health } 
+    }
+    modifier = {
+        add = 40
+        root = { health >= good_health } 
+    }
+    modifier = {
+        add = 20
+        root = { health >= fine_health } 
+    }
+    modifier = { # don't do magic, if dying
+        add = -250
+        root = { health <= poor_health } 
+    }
+}
+
+# Lifedraining
+ai_willingness_to_lifedrain = {
+    # Opinion counts
+    opinion_modifier = {
+        who = scope:actor
+        opinion_target = scope:recipient
+        multiplier = -0.2
+    }
+
+    # Are they important (to me)
+    modifier = {
+        add = {
+            value = scope:recipient.highest_held_title_tier
+            subtract = scope:actor.highest_held_title_tier
+            multiply = -100
+        }
+    }
+    # Are they close to me?
+    modifier = {
+        scope:actor = {
+            OR = {
+                is_close_family_of = scope:recipient
+                has_relation_friend = scope:recipient
+                has_relation_best_friend = scope:recipient
+                has_relation_soulmate = scope:recipient
+                has_relation_lover = scope:recipient
+                has_relation_ward = scope:recipient
+                is_consort_of = scope:recipient
+                has_secret_relation_lover = scope:recipient
+                opinion = {
+                    target = scope:recipient
+                    value > very_high_positive_opinion
+                }
+            }
+        }
+        add = -1000
+    }
+    modifier = { # not your own children... unless they're your rival/nemesis
+        scope:recipient = {
+            is_child_of = scope:actor
+            NOR = {
+                has_relation_rival = scope:actor
+                has_relation_nemesis = scope:actor
+            }
+        }
+        add = -1000
+    }
+
+    modifier = { # not your spouse, unless they're your rival/have cheated on you
+        scope:recipient = {
+            is_spouse_of = scope:actor
+            NOR = {
+                has_relation_rival = scope:actor
+                has_relation_nemesis = scope:actor
+                exposed_cheating_on_spouse_trigger = { SPOUSE = scope:actor }
+            }
+        }
+        add = -1000
+		}
+    # Do they serve an important function?
+    modifier = {
+        OR = {
+            scope:recipient = {is_knight_of = scope:actor}
+            scope:recipient = {is_councillor_of = scope:actor}
+            scope:recipient = {is_powerful_vassal_of = scope:actor}
+        }
+        add = -100
+    }
+    modifier = {
+        scope:actor = {
+            exists = house
+            exists = scope:recipient.house
+            house = scope:recipient.house
+        }
+        add = -100
+    }
+
+    # Are they my rival?
+    modifier = {
+        OR = {
+            scope:recipient = {has_relation_rival = scope:actor}
+            scope:recipient = {has_relation_nemesis = scope:actor}
+        }
+        add = 100
+    }
+}
+
+ai_willingness_to_do_postitive_magic = {
+    modifier = { # Prioritise myself
+        scope:actor = scope:recipient
+        add = 100
+    }
+    modifier = { # don't do magic, if dying
+        add = -100
+        scope:actor = { health < good_health }
+    }
+
+    # Opinion counts
+    opinion_modifier = {
+        who = scope:actor
+        opinion_target = scope:recipient
+        multiplier = 0.2
+    }
+
+    # Are they important (to me)
+    modifier = {
+        add = {
+            value = scope:recipient.highest_held_title_tier
+            subtract = scope:actor.highest_held_title_tier
+            multiply = 20
+        }
+    }
+    modifier = {
+        OR = {
+            scope:actor = { is_close_family_of = scope:recipient }
+            scope:actor = { has_relation_friend = scope:recipient }
+        }
+        add = 20
+    }
+    modifier = {
+        OR = {
+            
+            scope:actor = { has_relation_soulmate = scope:recipient }
+            scope:actor = { is_consort_of = scope:recipient }
+            scope:actor = { has_relation_lover = scope:recipient }
+        }
+        add = 50
+    }
+    modifier = {
+        scope:actor = {
+            exists = house
+            exists = scope:recipient.house
+            house = scope:recipient.house
+        }
+        add = 30
+    }
+    modifier = {
+        scope:actor = { has_relation_best_friend = scope:recipient }
+        scope:recipient = { is_knight_of = scope:actor }
+        add = 40
+    }
+    modifier = {
+        scope:recipient = { is_powerful_vassal_of = scope:actor }
+        scope:recipient = { is_courtier_of = scope:actor }
+        add = 20
+    }
+}
+
+
+ai_chance_scale_based_on_xp_in_track = {
+    modifier = {
+        has_trait_xp = {
+            trait = lifestyle_blood_mage
+            track = $TRACK$
+            value >= 100
+        }
+        add = -100
+    }
+    modifier = {
+        has_trait_xp = {
+            trait = lifestyle_blood_mage
+            track = $TRACK$
+            value >= 80
+        }
+        add = -5
+    }
+    modifier = {
+        has_trait_xp = {
+            trait = lifestyle_blood_mage
+            track = $TRACK$
+            value >= 60
+        }
+        add = -5
+    }
+    modifier = {
+        has_trait_xp = {
+            trait = lifestyle_blood_mage
+            track = $TRACK$
+            value >= 30
+        }
+        add = -5
+    }
+    modifier = {
+        has_trait_xp = {
+            trait = lifestyle_blood_mage
+            track = $TRACK$
+            value <= 10
+        }
+        add = 5
+    }
+}
+
+
+

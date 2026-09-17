@@ -1,0 +1,406 @@
+﻿#File name needs to be below vanilla realm laws so crown authority takes priority for displaying liege's realm laws
+@slavery_law_cooldown_years = 10
+@dragonpit_law_cooldown_years = 5
+
+slavery_laws = {
+	can_change_law_group = { dragonlord_council_direct_law_change_allowed_trigger = yes }
+	default = slavery_disallowed_law
+	cumulative = no
+	flag = all_realm_law
+	flag = agot_realm_law
+	flag = agot_slavery_law
+	flag = admin_law
+
+	slavery_disallowed_law = {
+		flag = slavery_disabled
+
+		can_pass = {
+			dragonlord_council_direct_law_change_allowed_trigger = yes
+			custom_description = {
+				subject = root
+				text = "has_slavery_law_cooldown"
+				NOT = { has_variable = slavery_law_cooldown }
+			}
+		}
+
+		pass_cost = {
+			prestige = increase_crown_authority_prestige_cost
+		}
+
+		on_pass = {
+			set_variable = {
+				name = slavery_law_cooldown
+				years = @slavery_law_cooldown_years
+			}
+			end_realm_slavery_effect = yes
+		}
+
+		ai_will_do = {
+			value = 0
+			if = {
+				limit = { ai_compassion >= high_positive_compassion }
+				add = 5
+			}
+			if = {
+				limit = {
+					ai_compassion >= high_positive_compassion
+					ai_boldness >= high_positive_boldness
+				}
+				add = 25
+			}
+			if = {
+				limit = { has_trait = slave_master }
+				multiply = 0
+			}
+			if = {
+				limit = {
+					has_trait = freedman
+				}
+				add = 100
+			}
+			if = {
+				limit = {
+					any_parent = { has_trait = freedman }
+				}
+				add = 75
+			}
+			if = {
+				limit = {
+					any_parent = {
+						any_parent = { has_trait = freedman }
+					}
+				}
+				add = 50
+			}
+			if = {
+				limit = {
+					primary_title ?= { has_variable = historical_slavery }
+					NOT = {
+						any_ancestor = { has_trait = freedman }
+					}
+				}
+				divide = 5
+			}
+		}
+	}
+
+	slavery_allowed_law = {
+		flag = slavery_enabled
+
+		can_pass = {
+			dragonlord_council_direct_law_change_allowed_trigger = yes
+			is_human = yes
+			custom_description = {
+				subject = root
+				text = "has_slavery_law_cooldown"
+				NOT = { has_variable = slavery_law_cooldown }
+				#Hiding this in here since NW shouldn't ever see it anyway
+				NOT = { government_has_flag = government_is_nw }
+			}
+			custom_description = {
+				subject = root
+				text = "slavery_criminal_under_faith"
+				NOT = {
+					faith = {
+						OR = {
+							has_doctrine = doctrine_slavery_thralls
+							has_doctrine = doctrine_slavery_indentured
+							has_doctrine = doctrine_slavery_crime
+						}
+					}
+				}
+			}
+		}
+
+		pass_cost = {
+			prestige = increase_crown_authority_prestige_cost
+		}
+
+		on_pass = {
+			set_variable = {
+				name = slavery_law_cooldown
+				years = @slavery_law_cooldown_years
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						OR = {
+							has_title = title:k_braavos
+							has_title = title:d_braavos
+							has_title = title:c_braavos
+						}
+					}
+				}
+				save_scope_as = slaver
+				title:c_ruins.holder = {
+					trigger_event = {
+						id = agot_slavery.0100
+						days = { 30 60 }
+					}
+				}
+			}
+		}
+
+		can_keep = {
+			trigger_if = {
+				limit = { has_government = dragonlord_oligarchy_government }
+				always = yes
+			}
+			trigger_else = {
+				custom_description = {
+					text = slavery_allowed_trigger
+					OR = {
+						liege ?= { has_realm_law = slavery_allowed_law }
+						#Not agot_is_independent_ruler so they don't lose the law during megawars
+						agot_is_independent_ruler = yes
+						AND = {
+							exists = var:agot_pwl_direct
+							var:agot_pwl_direct = { has_realm_law = slavery_allowed_law }
+						}
+					}
+					NOT = {
+						faith = {
+							OR = {
+								has_doctrine = doctrine_slavery_thralls
+								has_doctrine = doctrine_slavery_indentured
+								has_doctrine = doctrine_slavery_crime
+							}
+						}
+					}
+				}
+				agot_pentos_braavos_treaty_character_trigger = no
+			}
+		}
+
+		ai_will_do = {
+			value = 0
+			if = {
+				limit = { ai_compassion >= medium_positive_compassion }
+				add = -20
+			}
+			if = {
+				limit = {
+					is_landed = yes
+					capital_county.title_province = { geographical_region = world_westeros }
+				}
+				add = -20
+			}
+			if = {
+				limit = { ai_greed >= medium_positive_greed }
+				add = 20
+			}
+			if = {
+				limit = { has_trait = slave_master }
+				add = 100
+			}
+			if = {
+				limit = { has_trait = freedman }
+				multiply = 0
+			}
+			if = {
+				limit = {
+					any_parent = { has_trait = freedman }
+				}
+				add = -75
+			}
+			if = {
+				limit = {
+					any_parent = {
+						any_parent = { has_trait = freedman }
+					}
+				}
+				add = -50
+			}
+			if = {
+				limit = {
+					primary_title ?= { has_variable = historical_slavery }
+					NOT = {
+						any_ancestor = { has_trait = freedman }
+					}
+				}
+				multiply = 5
+			}
+		}
+	}
+}
+dragonpit_laws = {
+	can_change_law_group = { dragonlord_council_direct_law_change_allowed_trigger = yes }
+	default = dragonpit_close_family_law
+	cumulative = no
+	flag = all_realm_law
+	flag = agot_realm_law
+	flag = admin_law
+
+	dragonpit_close_family_law = {
+		flag = dragonpit_close_family
+
+		can_have = {
+			OR = {
+				has_government = dragonlord_oligarchy_government
+				any_held_title = {
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+
+		should_start_with = {
+			always = yes
+		}
+
+		can_pass = {
+			dragonlord_council_direct_law_change_allowed_trigger = yes
+			custom_description = {
+				subject = root
+				text = "has_dragonpit_law_cooldown"
+				NOT = { has_variable = dragonpit_law_cooldown }
+			}
+		}
+
+		pass_cost = {
+			prestige = increase_crown_authority_prestige_cost
+		}
+
+		on_pass = {
+			set_variable = {
+				name = dragonpit_law_cooldown
+				years = @dragonpit_law_cooldown_years
+			}
+		}
+
+		ai_will_do = {
+			value = 25
+		}
+	}
+
+	dragonpit_house_law = {
+		flag = dragonpit_house
+		can_have = {
+			OR = {
+				has_government = dragonlord_oligarchy_government
+				any_held_title = {
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+		can_pass = {
+			dragonlord_council_direct_law_change_allowed_trigger = yes
+			custom_description = {
+				subject = root
+				text = "has_dragonpit_law_cooldown"
+				NOT = { has_variable = dragonpit_law_cooldown }
+			}
+		}
+
+		pass_cost = {
+			prestige = increase_crown_authority_prestige_cost
+		}
+
+		on_pass = {
+			set_variable = {
+				name = dragonpit_law_cooldown
+				years = @dragonpit_law_cooldown_years
+			}
+		}
+
+		can_keep = {
+			OR = {
+				has_government = dragonlord_oligarchy_government
+				any_held_title = {
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+
+		ai_will_do = {
+			value = 0
+		}
+	}
+
+	dragonpit_dynasty_law = {
+		flag = dragonpit_dynasty
+		can_have = {
+			OR = {
+				has_government = dragonlord_oligarchy_government
+				any_held_title = {
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+		can_pass = {
+			dragonlord_council_direct_law_change_allowed_trigger = yes
+			custom_description = {
+				subject = root
+				text = "has_dragonpit_law_cooldown"
+				NOT = { has_variable = dragonpit_law_cooldown }
+			}
+		}
+
+		pass_cost = {
+			prestige = increase_crown_authority_prestige_cost
+		}
+
+		on_pass = {
+			set_variable = {
+				name = dragonpit_law_cooldown
+				years = @dragonpit_law_cooldown_years
+			}
+		}
+
+		can_keep = {
+			OR = {
+				has_government = dragonlord_oligarchy_government
+				any_held_title = {
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+
+		ai_will_do = {
+			value = 0
+		}
+	}
+
+	dragonpit_everyone_law = {
+		flag = dragonpit_everyone
+		can_have = {
+			OR = {
+				has_government = dragonlord_oligarchy_government
+				any_held_title = {
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+		can_pass = {
+			dragonlord_council_direct_law_change_allowed_trigger = yes
+			custom_description = {
+				subject = root
+				text = "has_dragonpit_law_cooldown"
+				NOT = { has_variable = dragonpit_law_cooldown }
+			}
+		}
+
+		pass_cost = {
+			prestige = increase_crown_authority_prestige_cost
+		}
+
+		on_pass = {
+			set_variable = {
+				name = dragonpit_law_cooldown
+				years = @dragonpit_law_cooldown_years
+			}
+		}
+
+		can_keep = {
+			OR = {
+				has_government = dragonlord_oligarchy_government
+				any_held_title = {
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+
+		ai_will_do = {
+			value = 0
+		}
+	}
+}

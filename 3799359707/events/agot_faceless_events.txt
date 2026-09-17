@@ -1,0 +1,261 @@
+﻿namespace = agot_faceless
+
+### Acquisition: 0098 (call) -> 0099 (rite explained) -> 0101 (the rite) ###
+
+agot_faceless.0098 = {
+	type = character_event
+	title = agot_faceless.0098.t
+	desc = agot_faceless.0098.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_faceless.0098.a # Travel to Braavos
+		trigger_event = { id = agot_faceless.0099 days = 4 }
+	}
+
+	option = {
+		name = agot_faceless.0098.b # Not now
+		stress_impact = { base = minor_stress_impact_gain }
+	}
+}
+
+agot_faceless.0099 = {
+	type = character_event
+	title = agot_faceless.0099.t
+	desc = agot_faceless.0099.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_faceless.0099.a # Give up your name
+		trigger_event = { id = agot_faceless.0101 days = 2 }
+	}
+
+	option = {
+		name = agot_faceless.0099.b # Turn back
+		stress_impact = { base = medium_stress_impact_gain }
+	}
+}
+
+agot_faceless.0101 = {
+	type = character_event
+	title = agot_faceless.0101.t
+	desc = agot_faceless.0101.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_faceless.0101.a # Drink from the pool
+		if = {
+			limit = { intrigue >= 16 }
+			custom_tooltip = {
+				text = agot_faceless.0101.a.success
+			}
+			agot_magic_grant_faceless_gift_effect = yes
+		}
+		else_if = {
+			limit = { intrigue >= 12 }
+			random_list = {
+				55 = {
+					custom_tooltip = {
+						text = agot_faceless.0101.a.success
+					}
+					agot_magic_grant_faceless_gift_effect = yes
+				}
+				45 = {
+					custom_tooltip = {
+						text = agot_faceless.0101.a.failure
+					}
+					agot_faceless_ritual_failure_effect = yes
+				}
+			}
+		}
+		else = {
+			random_list = {
+				30 = {
+					custom_tooltip = {
+						text = agot_faceless.0101.a.success
+					}
+					agot_magic_grant_faceless_gift_effect = yes
+				}
+				70 = {
+					custom_tooltip = {
+						text = agot_faceless.0101.a.failure
+					}
+					agot_faceless_ritual_failure_effect = yes
+				}
+			}
+		}
+	}
+}
+
+### Issuing a contract: 0104 (the Guild's price) -> 0105 (contract made) ###
+# Started by the Issue a Contract interaction, which saves its target
+# into var:agot_faceless_target before triggering 0104.
+
+agot_faceless.0104 = {
+	type = character_event
+	title = agot_faceless.0104.t
+	desc = agot_faceless.0104.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_faceless.0104.a # Pay their price
+		trigger = {
+			gold >= 100
+		}
+		remove_short_term_gold = {
+			value = 100
+		}
+		trigger_event = { id = agot_faceless.0105 days = 5 }
+	}
+
+	option = {
+		name = agot_faceless.0104.b # Refuse - do it yourself
+		trigger_event = { id = agot_faceless.0105 days = 5 }
+	}
+
+	option = {
+		name = agot_faceless.0104.c # Call the whole thing off
+		stress_impact = { base = minor_stress_impact_gain }
+		remove_variable = agot_faceless_target
+	}
+}
+
+agot_faceless.0105 = {
+	type = character_event
+	title = agot_faceless.0105.t
+	desc = agot_faceless.0105.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_faceless.0105.a # The contract is made
+		trigger = {
+			exists = var:agot_faceless_target
+		}
+		stress_impact = { base = major_stress_impact_gain }
+		agot_faceless_track_debt_effect = yes
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_faceless_issue_a_contract_notification
+			left_icon = root
+			right_icon = var:agot_faceless_target
+		}
+		var:agot_faceless_target = {
+			trigger_event = { id = agot_faceless.0100 days = 20 }
+		}
+		remove_variable = agot_faceless_target
+	}
+}
+
+# The contract is fulfilled - fired from the event above, scoped so ROOT
+# is already the intended victim. Reads as natural death, unlike every
+# other lethal ability in the mod. Mastery (0-3, from Refine Your Craft)
+# improves the chance by up to ~15 points.
+agot_faceless.0100 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		random_list = {
+			30 = {
+				modifier = { factor = 0.7 var:agot_faceless_mastery >= 1 }
+				modifier = { factor = 0.7 var:agot_faceless_mastery >= 2 }
+				modifier = { factor = 0.5 var:agot_faceless_mastery >= 3 }
+			}
+			70 = {
+				death = { death_reason = death_natural_causes }
+			}
+		}
+	}
+}
+
+# Mark for Death (Valar Morghulis finisher) - guaranteed, no Debt. See
+# V3_FIXPLAN.md Block 1. Fired from the interaction, scoped so ROOT is
+# already the marked ruler.
+agot_faceless.0106 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		death = { death_reason = death_natural_causes }
+	}
+}
+
+# Debt choice - fires once, when var:agot_faceless_debt hits 5.
+agot_faceless.0102 = {
+	type = character_event
+	title = agot_faceless.0102.t
+	desc = agot_faceless.0102.desc
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	theme = witchcraft
+
+	immediate = {
+		remove_character_flag = agot_faceless_debt_choice_pending
+	}
+
+	option = {
+		name = agot_faceless.0102.a # Pay with coin and pride
+		trigger = {
+			gold >= 200
+		}
+		remove_short_term_gold = {
+			value = 200
+		}
+		add_prestige = -500
+		set_variable = { name = agot_faceless_debt value = 0 }
+	}
+
+	option = {
+		name = agot_faceless.0102.b # Refuse to pay
+		add_trait = agot_faceless_hunted
+		set_variable = { name = agot_faceless_debt value = 5 } # stays maxed, blocks new contracts
+		trigger_event = { id = agot_faceless.0103 days = 90 }
+	}
+}
+
+# The Guild's own knives, turned on a debtor who refused to pay.
+agot_faceless.0103 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		random = {
+			chance = 50
+			death = { death_reason = death_murder }
+		}
+	}
+}

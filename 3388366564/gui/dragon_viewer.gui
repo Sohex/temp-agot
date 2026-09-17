@@ -1,0 +1,467 @@
+﻿window = {
+	name = "dragon_viewer_window"
+	visible = "[GetVariableSystem.Exists( 'dragon_viewer_toggle' )]"
+	parentanchor = center
+	widgetanchor = center
+	size = { 1620 585 }
+	layer = middle
+	alpha = 1
+
+
+	using = Window_Background
+    using = Window_Decoration_Spike
+
+
+	
+
+	state = {
+        name = _show
+        using = Animation_FadeIn_Standard
+        using = Sound_WindowShow_Standard
+    }
+
+
+    state = {
+        name = _hide
+        using = Animation_FadeOut_Quick
+        using = Sound_WindowHide_Standard
+    }
+
+
+	#Foreground VFX
+	margin_widget = {
+		name = "foreground_shader_vfx_container"
+		position = { 40 20 }
+		size = { 100% 100% }
+		margin = { 40 20 }
+	}
+	vbox = {
+		name = "not_event_window"
+		using = Animation_Tab_Switch
+	
+		widget = {
+			allow_outside = yes
+			name = "dragon_viewer_window"
+			size = { 1520 420 } # Size of the insert into the event window which takes into account the margin below
+			max_height = 400
+			vbox = {
+				allow_outside = yes
+				margin = { 0 -24 } # Pushes the box around
+				scrollbox = {
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					minimumsize = { 460 307 } # Size of the container of characters
+					blockoverride "scrollbox_content"
+					{
+						dynamicgridbox = {
+							name = "dragon_grid"
+							datamodel_wrap = 3
+							flipdirection = yes
+							datamodel = "[GetGlobalList('living_dragons')]"
+							layoutpolicy_horizontal = expanding
+							item = {
+								button_standard = {
+									name = "background_button"
+									size = { 500 68 }
+									using = tooltip_ws
+									layoutpolicy_vertical = expanding
+									datacontext = "[Scope.GetCharacter]"
+
+									tooltipwidget = {
+										cooltip_type = {
+											blockoverride "interaction_info" {
+												text = "CHARACTER_TOOLTIP_INSTRUCTION"
+											}
+										}
+									}
+									tooltip_offset = { 0 0 }
+									tooltip_verticalbehavior = slide
+									tooltip_horizontalbehavior = mirror
+									
+									
+									portrait_head_small = {
+										scale = 0.75
+										tooltip_visible = no
+									}
+
+									
+									flowcontainer = {
+										
+										
+										position = { 70 10 }
+										text_single = {
+											name = "character_name"
+											text = "[Character.GetUINameNotMeNoTooltip]"
+											using = Font_Size_Medium
+											align = center
+										}
+										
+										container = {
+											parentanchor = left|bottom
+											
+											icon = {
+												#AGOT Modified
+												#visible = "[Not(Character.IsFemale)]"
+												parentanchor = left|bottom
+
+												visible = "[GetScriptedGui('agot_male_gender_dragon_shown').IsShown( GuiScope.SetRoot( Character.MakeScope ).End )]"
+												size = { 20 20 }
+												texture = "gfx/interface/icons/character_status/male_dragon.dds"
+												tooltip = "MALE_DRAGON_TOOLTIP"
+											}
+											icon = {
+												#AGOT Modified
+												#visible = "[Not(Character.IsFemale)]"
+												parentanchor = left|bottom
+
+												visible = "[GetScriptedGui('agot_female_gender_dragon_shown').IsShown( GuiScope.SetRoot( Character.MakeScope ).End )]"
+												size = { 20 20 }
+												texture = "gfx/interface/icons/character_status/female_dragon.dds"
+												tooltip = "FEMALE_DRAGON_TOOLTIP"
+											}
+											icon = {
+												#AGOT Modified
+												#visible = "[Not(Character.IsFemale)]"
+												parentanchor = left|bottom
+
+												visible = "[GetScriptedGui('agot_unknown_gender_dragon_shown').IsShown( GuiScope.SetRoot( Character.MakeScope ).End )]"
+												size = { 20 20 }
+												texture = "gfx/interface/icons/character_status/unknown_dragon.dds"
+												tooltip = "UNKNOWN_DRAGON_TOOLTIP"
+											}
+											
+										}
+										
+										
+										
+										container = {
+											ignoreinvisible = yes
+											widget = {
+												visible = "[GetScriptedGui('mde_has_dragon').IsShown(GuiScope.SetRoot(Character.MakeScope).End)]"
+												position = { 0 5 }
+												parentanchor = left
+												agot_coa_house_microscopic = {
+													datacontext = "[Character.MakeScope.Var('current_rider').GetCharacter.GetHouse]"
+													size = { 5 5 }
+													
+												}
+											}
+											widget = {
+												visible = "[GetScriptedGui('mde_dragon_is_owned').IsShown(GuiScope.SetRoot(Character.MakeScope).End)]"
+												position = { 0 5 }
+												parentanchor = left
+												agot_coa_house_microscopic = {
+													datacontext = "[Character.GetEmployer.GetHouse]"
+													size = { 5 5 }
+													
+												}
+											}
+											flowcontainer = {
+												visible = "[Or( GetScriptedGui('mde_dragon_is_owned').IsShown(GuiScope.SetRoot(Character.MakeScope).End), GetScriptedGui('mde_has_dragon').IsShown(GuiScope.SetRoot(Character.MakeScope).End) )]"
+												ignoreinvisible = yes
+												position = { 27 7 }
+												parentanchor = left|bottom
+												datamodel = "[Character.GetTraitIndices]"
+												
+												item = {
+													parentanchor = left
+													icon_trait = {
+														visible = "[Or( Trait.IsGenetic, Trait.IsInheritable )]"
+														datacontext = "[GetTraitForIndex(int32.GetInt)]"
+														blockoverride "icon_size" {
+															size = { 20 20 }
+														}
+														blockoverride "glow_radius" {
+															glow_radius = 3
+														}
+													}
+												}
+											}
+										}
+										
+									}
+									
+
+									icon = {
+										name = "dragon_icon"
+										position = { 67 37 }
+										size = { 17 17 }
+										texture = "gfx/interface/icons/icon_dragon.dds"
+										visible = "[Character.IsAlive]"
+									} 
+									text_single = {
+										maximumsize = { 350 -1 }
+										name = "dragon_relation_to_host"
+										visible = "[And(GetScriptedGui('mde_relation_check_host').IsShown(GuiScope.SetRoot(Character.MakeScope).End), Not(GetScriptedGui('agot_relation_check_owned').IsShown(GuiScope.SetRoot(Character.MakeScope).End)))]"
+										text = "DRAGON_PITTED_WITH_GUI"
+										tooltip = "EXTENDED_RELATIONS_TOOLTIP"
+										using = tooltip_se
+										position = { 83 33 }
+										fontsize_min = 11
+										align = center
+									}#####
+									text_single = {
+										maximumsize = { 350 -1 }
+										name = "dragon_relation_free"
+										visible = "[And(GetScriptedGui('mde_relation_check_free').IsShown(GuiScope.SetRoot(Character.MakeScope).End), Not(GetScriptedGui('agot_relation_check_owned').IsShown(GuiScope.SetRoot(Character.MakeScope).End)))]"
+										text = "DRAGON_WANDERING_WITH_GUI"
+										tooltip = "EXTENDED_RELATIONS_TOOLTIP"
+										using = tooltip_se
+										position = { 83 33 }
+										fontsize_min = 11
+										align = center
+									}
+									text_single = {
+										maximumsize = { 350 -1 }
+										name = "dragon_relation_wild"
+										visible = "[GetScriptedGui('agot_relation_check_wild').IsShown(GuiScope.SetRoot(Character.MakeScope).End)]"
+										text = "DRAGON_WANDERING_WITH_GUI"
+										tooltip = "EXTENDED_RELATIONS_TOOLTIP"
+										using = tooltip_se
+										position = { 83 33 }
+										fontsize_min = 11
+										align = center
+									}
+									text_single = {
+										maximumsize = { 350 -1 }
+										name = "dragon_relation_to_bonded"
+										visible = "[GetScriptedGui('dp_bonded_pitted').IsShown(GuiScope.SetRoot(Character.MakeScope).End)]"
+										text = "DRAGON_PITTED_WITH_GUI"
+										tooltip = "EXTENDED_RELATIONS_TOOLTIP"
+										using = tooltip_se
+										position = { 83 33 }
+										fontsize_min = 11
+										align = center
+									}
+									
+									text_single = {
+										maximumsize = { 350 -1 }
+										name = "dragon_relation_to_rider"
+										visible = "[GetScriptedGui('dp_rider_pitted').IsShown(GuiScope.SetRoot(Character.MakeScope).End)]"
+										text = "DRAGON_PITTED_WITH_GUI"
+										tooltip = "EXTENDED_RELATIONS_TOOLTIP"
+										using = tooltip_se
+										position = { 83 33 }
+										fontsize_min = 11
+										align = center
+									}
+									text_single = {
+										maximumsize = { 350 -1 }
+										name = "dragon_relation_to_rider_unpitted"
+										visible = "[GetScriptedGui('dp_bonded_unpitted').IsShown(GuiScope.SetRoot(Character.MakeScope).End)]"
+										text = "DRAGON_WANDERING_WITH_GUI"
+										tooltip = "EXTENDED_RELATIONS_TOOLTIP"
+										using = tooltip_se
+										position = { 83 33 }
+										fontsize_min = 11
+										align = center
+									}
+									button_normal = {
+										name = "SEND_TO_DRAGONPIT"
+										datacontext = "[GetScriptedGui('mde_send_to_dragonpit_sgui')]"
+										visible = "[ScriptedGui.IsShown( GuiScope.SetRoot( Character.MakeScope ).AddScope( 'owner', GetPlayer.MakeScope ).End)]"
+										enabled = "[ScriptedGui.IsValid( GuiScope.SetRoot( Character.MakeScope ).AddScope( 'owner', GetPlayer.MakeScope ).End)]"
+										tooltip = "SEND_TO_DRAGONPIT_TT"
+										using = tooltip_ne
+										
+										size = { 30 30 }
+										parentanchor = right|vcenter
+										position = { -10 0 }
+
+										icon_round_button_base = {}
+
+										button_send_to_dragonpit = {
+											onclick = "[ScriptedGui.Execute( GuiScope.SetRoot( Character.MakeScope ).AddScope('owner', GetPlayer.MakeScope ).End)]"
+											onclick = "[EventOption.Select]"
+											size = { 30 30 }
+											parentanchor = center
+
+											modify_texture = {
+												texture = "gfx/interface/icons/focuses/hud_icon_mask.dds"
+												blend_mode = alphamultiply
+											}
+
+											effectname = "NoHighlight"
+										}
+										
+										expand = {}
+									}
+									button_normal = {
+										name = "CAPTURE_WILD_DRAGON"
+										datacontext = "[GetScriptedGui('capture_wild_dragon')]"
+										visible = "[ScriptedGui.IsShown( GuiScope.SetRoot( Character.MakeScope ).AddScope('owner', GetPlayer.MakeScope ).End)]"
+										enabled = "[ScriptedGui.IsValid( GuiScope.SetRoot( Character.MakeScope ).AddScope('owner', GetPlayer.MakeScope ).End)]"
+										tooltip = "[SelectLocalization( GetPlayer.MakeScope.Var('capture_cd').IsSet, 'CANNOT_CAPTURE_WILD_DRAGON_TT', 'CAPTURE_WILD_DRAGON_TT' )]"
+										using = tooltip_ne
+										
+										size = { 30 30 }
+										parentanchor = right|vcenter
+										position = { -10 0 }
+
+										icon_round_button_base = {}
+
+										button_capture_wild_dragon = {
+											onclick = "[ScriptedGui.Execute( GuiScope.SetRoot( Character.MakeScope ).AddScope('owner', GetPlayer.MakeScope ).End)]"
+											size = { 30 30 }
+											parentanchor = center
+
+											modify_texture = {
+												texture = "gfx/interface/icons/focuses/hud_icon_mask.dds"
+												blend_mode = alphamultiply
+											}
+										}
+									}
+								}
+							}
+							expand = {}
+						}
+					}
+				}
+			}
+		}
+	}
+	widget = {
+		size = { 2390 76 }
+
+		widget = {
+			size = { 100% 57 }
+			position = { 0 20 }
+
+			icon = {
+				name = "theme_header"
+				position = { 24 0 }
+				size = { 1072 57 }
+				texture = "gfx/interface/window_event/event_header_red.dds"
+
+				modify_texture = {
+					name = overlay
+					texture = "gfx/interface/component_effects/effect_header_blue_shine.dds"
+					blend_mode = colordodge
+					translate_uv = { 0.6 0 }
+				}
+
+				state = {
+					name = right
+					next = left
+
+					duration = 8
+					bezier = { 0.8 0.18 0.96 .05 }
+
+					modify_texture = {
+						name = overlay
+						translate_uv = { -0.6 0 }
+					}
+				}
+
+				state = {
+					name = left
+					next = right
+
+					duration = 0.0
+					delay = 5
+
+					modify_texture = {
+						name = overlay
+						translate_uv = { 0.6 0 }
+					}
+				}
+
+				state = {
+					trigger_on_create = yes
+					name = start
+					next = right
+
+					duration = 0.0
+
+					modify_texture = {
+						name = overlay
+						translate_uv = { 0.6 0 }
+					}
+				}
+			}
+
+			text_single = {
+				name = "title"
+				position = { 128 1 }
+				fontsize = 29
+				fontsize_min = 16
+				text = "[EventWindowData.GetTitle]"
+				default_format = "#high;glow_color:{0.1,0.1,0.1,1.0}"
+				using = Font_Type_Flavor
+				max_width = 950
+
+				alpha = 0
+
+				state = {
+					name = start
+					trigger_on_create = yes
+					delay = 0.2
+					using = Animation_Curve_Default
+					alpha = 1
+					duration = 0.5
+				}
+			}
+
+			icon = {
+				name = "theme_icon"
+				position = { 28 -19 }
+				size = { 90 90 }
+				texture = "gfx/interface/icons/event_types/type_dragon.dds"
+
+				modify_texture = {
+					name = overlay
+					texture = "gfx/interface/component_effects/effect_blue_shine.dds"
+					blend_mode = colordodge
+					translate_uv = { 0.6 0 }
+				}
+
+				state = {
+					name = right
+					next = left
+
+					duration = 2
+					bezier = { .8 .18 .96 .05 }
+
+					modify_texture = {
+						name = overlay
+						translate_uv = { -0.6 0 }
+					}
+				}
+
+				state = {
+					name = left
+					next = right
+
+					duration = 0.0
+					delay = 5
+
+
+					modify_texture = {
+						name = overlay
+						translate_uv = { 0.6 0 }
+					}
+				}
+
+				state = {
+					trigger_on_create = yes
+					name = start
+					next = right
+
+					duration = 0.0
+
+					modify_texture = {
+						name = overlay
+						translate_uv = {0.6 0}
+					}
+				}
+				
+			}
+			
+		}
+	}
+	
+	button_close = {
+		onclick = "[GetVariableSystem.Toggle( 'dragon_viewer_toggle' )]"
+		position = { 1555 15 }
+	}
+}

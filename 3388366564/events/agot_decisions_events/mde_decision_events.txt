@@ -1,0 +1,235 @@
+﻿#Hightower Egg
+namespace = mde_decisions_events
+mde_decisions_events.1000 = {
+	type = character_event
+	title = mde_decisions_events.1000.t
+	desc = {
+		desc = mde_decisions_events.1000.desc
+		triggered_desc = {
+			trigger = { exists = scope:targ_heir }
+			desc = mde_decisions_events.1000.desc_targs
+		}
+	}
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:targ_heir
+		animation = disapproval
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_left_portrait
+	}
+	lower_right_portrait = scope:rhaenys
+
+	immediate = {
+		agot_rediscover_hightower_egg_effect = { OWNER = root }
+	}
+	option = {
+		name = mde_decisions_events.1000.a
+		scope:targ_heir ?= {
+			trigger_event = mde_decisions_events.1001
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -1
+				ai_honor = -1
+				ai_vengefulness = 0.5
+				ai_greed = 0.5
+			}
+		}
+	}
+	option = {
+		name = mde_decisions_events.1000.b
+		trigger = { exists = scope:targ_heir }
+		show_as_tooltip = {
+			scope:newly_created_artifact = { set_owner = scope:targ_heir }
+		}
+		scope:targ_heir = {
+			trigger_event = mde_decisions_events.1002
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = 1
+				ai_honor = 1
+				ai_vengefulness = -0.5
+				ai_greed = -0.5
+			}
+		}
+	}
+}
+
+#Denied
+mde_decisions_events.1001 = {
+	type = character_event
+	title = mde_decisions_events.1001.t
+	desc = mde_decisions_events.1001.desc
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:current_hightower
+		animation = personality_callous
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_left_portrait
+	}
+	lower_right_portrait = scope:rhaenys
+
+	option = {
+		name = mde_decisions_events.1001.a
+		if = {
+			limit = {
+				valid_for_feud_events_with_target_trigger = { TARGET = scope:current_hightower }
+			}
+			house_feud_start_effect = {
+				# Feuding House Head
+				ACTOR = root
+				# Target House Head
+				TARGET = scope:current_hightower
+				# Feud Reason
+				REASON = head_rivalry
+				# House Member attacker if relevant
+				ATTACKER = root
+				# House Member victim if relevant
+				VICTIM = root
+			}
+		}
+		add_opinion = {
+			target = scope:current_hightower
+			modifier = hate_opinion
+			opinion = -25
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_vengefulness = 1
+				ai_boldness = 1
+			}
+		}
+	}
+	option = {
+		name = mde_decisions_events.1001.b
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_vengefulness = -1
+				ai_boldness = -1
+			}
+		}
+	}
+}
+
+#Gifted
+mde_decisions_events.1002 = {
+	type = character_event
+	title = mde_decisions_events.1002.t
+	desc = mde_decisions_events.1002.desc
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+	right_portrait = {
+		character = scope:current_hightower
+		animation = personality_compassionate
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_left_portrait
+	}
+	lower_right_portrait = scope:rhaenys
+
+	immediate = {
+		scope:newly_created_artifact = {
+			set_owner = scope:targ_heir
+		}
+		add_opinion = {
+			target = scope:current_hightower
+			modifier = grateful_opinion
+			opinion = 50
+		}
+	}
+
+	option = {
+		name = mde_decisions_events.1002.a
+	}
+}
+
+mde_decisions_events.3000 = {
+	type = character_event
+	title = mde_decisions_events.3000.t
+	desc = {
+		desc = mde_decisions_events.3000.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:secret_owner = scope:secret_exposer }
+				desc = mde_decisions_events.3000.desc.self
+			}
+			desc = mde_decisions_events.3000.desc.other
+		}
+		triggered_desc = {
+			trigger = { exists = scope:targ_heir }
+			desc = mde_decisions_events.3000.desc.targs
+		}
+	}
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:targ_heir
+		animation = grief
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_left_portrait
+	}
+	lower_right_portrait = scope:rhaenys
+
+	immediate = {
+		secret_exposed_owner_opinion_effects_effect = yes
+		agot_rediscover_hightower_egg_effect = { OWNER = scope:secret_owner } # MDE Modified
+		play_music_cue = "mx_cue_murder"
+	}
+
+	option = {
+		name = mde_decisions_events.3000.a
+		if = { # MDE Modified
+			limit = { this = scope:secret_owner }
+			scope:targ_heir ?= {
+				trigger_event = mde_decisions_events.1001
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			exists = scope:targ_heir
+			this = scope:secret_owner # MDE Modified
+		}
+		name = mde_decisions_events.3000.b
+		show_as_tooltip = {
+			scope:newly_created_artifact = { set_owner = scope:targ_heir }
+		}
+		scope:targ_heir = {
+			trigger_event = mde_decisions_events.1002
+		}
+	}
+}

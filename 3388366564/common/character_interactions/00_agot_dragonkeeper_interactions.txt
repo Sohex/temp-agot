@@ -1,0 +1,1156 @@
+﻿agot_teach_dragonlore = {
+	icon = icon_scheme_dragon
+	category = interaction_category_friendly
+	desc = agot_teach_dragonlore_desc
+	common_interaction = yes
+	interface_priority = 90
+	ignores_pending_interaction_block = yes
+	auto_accept = yes
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			employs_court_position = head_dragonkeeper_court_position
+		}
+		scope:recipient = {
+			is_human = yes
+			OR = {
+				house ?= scope:actor.house
+				is_child_of = scope:actor
+				is_grandchild_of = scope:actor
+			}
+			age >= 5
+			NOT = {
+				has_character_modifier = agot_taught_dragonlore
+				scope:recipient = scope:actor
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			add_prestige = minor_prestige_gain
+			court_position:head_dragonkeeper_court_position = {
+				save_scope_as = head_dragonkeeper
+				save_scope_value_as = {
+					name = hdk_aptitude
+					value = aptitude:head_dragonkeeper_court_position
+				}
+			}
+			hidden_effect = {
+				send_interface_message = {
+					type = event_generic_neutral
+					title = agot_taught_dragonlore
+					right_icon = scope:recipient
+					stress_impact = {
+						greedy = medium_stress_impact_gain
+					}
+					custom_tooltip = agot_teach_dragonlore_increased_dragonlore_interface_tt
+					show_as_tooltip = {
+						scope:recipient = {
+							add_character_modifier = {
+								modifier = agot_taught_dragonlore
+								years = 15
+							}
+						}
+					}
+				}
+			}
+		}
+		scope:recipient = {
+			add_prestige = minor_prestige_gain
+			add_character_modifier = {
+				modifier = agot_taught_dragonlore
+				years = 15
+			}
+			add_opinion = {
+				target = scope:actor
+				modifier = pleased_opinion
+				opinion = 20
+			}
+			custom_tooltip = agot_teach_dragonlore_increased_dragonlore_preview_tt
+			if = {
+				limit = {
+					has_variable = dragonlore
+				}
+				change_variable = {
+					name = dragonlore
+					add = scope:head_dragonkeeper.aptitude:head_dragonkeeper_court_position
+				}
+			}
+			else = {
+				set_variable = {
+					name = dragonlore
+					value = scope:head_dragonkeeper.aptitude:head_dragonkeeper_court_position
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+	ai_frequency = 12
+	ai_targets = {
+		ai_recipients = children
+	}
+}
+
+agot_send_to_dragonpit = {
+	icon = icon_scheme_dragon
+	category = interaction_category_friendly
+	desc = agot_send_to_dragonpit_desc
+	auto_accept = yes
+	cooldown = {
+		years = 1
+	}
+	is_shown = {
+		scope:actor = {
+			is_ai = yes
+			is_human = yes
+			agot_has_an_active_dragonpit = yes
+		}
+		scope:recipient = {
+			OR = {
+				any_liege_or_above = { this = scope:actor }
+				location.county = {
+					holder = {
+						OR = {
+							any_liege_or_above = { this = scope:actor }
+							this = scope:actor
+						}
+					}
+					agot_title_is_an_active_dragonpit = yes
+				}
+				is_courtier_of = scope:actor
+				is_foreign_court_or_pool_guest_of = scope:actor
+			}
+			has_trait = dragon
+			NOT = {
+				has_character_flag = in_dragonpit
+			}
+			NOT = {
+				owns_story_of_type = story_dragon_at_war
+			}
+			trigger_if = {
+				limit = {
+					exists = var:current_rider
+					exists = var:current_rider.current_travel_plan
+				}
+				var:current_rider.current_travel_plan = {
+					NOT = { has_travel_option = dragon_flight_option }
+				}
+			}
+			NOT = { exists = current_travel_plan }
+		}
+	}
+	on_accept = {
+		scope:recipient = {
+			agot_change_dragonpit_status_ai = { OWNER = scope:actor DRAGON_REC = scope:recipient }
+		}
+		scope:actor = {
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				debug_log = "AI tried to entomb dragon"
+				debug_log_scopes = yes
+			}
+		}
+	}
+	ai_will_do = {
+		# MDE Modified
+		base = 85
+		modifier = {
+			add = -84
+			scope:recipient = {
+				# This modifier will only applied to non-tamed/bonded dragons..wild dragons.
+				NOT = {
+					any_relation = {
+						type = agot_dragon
+					}
+				}
+				has_trait = dragon_cannibal
+			}
+		}
+
+		modifier = {
+			add = -55
+			scope:recipient = {
+				# This modifier will only applied to non-tamed/bonded dragons..wild dragons.
+				NOT = {
+					any_relation = {
+						type = agot_dragon
+					}
+				}
+				OR = {
+					has_trait = dragon_aggressive
+					has_trait = dragon_defiant
+					has_trait = dragon_bloodthirsty
+				}
+			}
+		}
+
+		modifier = {
+			add = -35
+			scope:recipient = {
+				# This modifier will only applied to non-tamed/bonded dragons..wild dragons.
+				NOT = {
+					any_relation = {
+						type = agot_dragon
+					}
+				}
+				OR = {
+					dragon_size >= level_five_dragon_size
+					draconic_dread >= 80
+				}
+			}
+		}
+		modifier = {
+			add = -25
+			scope:recipient = {
+				# This modifier will only applied to non-tamed/bonded dragons..wild dragons.
+				NOT = {
+					any_relation = {
+						type = agot_dragon
+					}
+				}
+				OR = {
+					has_trait = dragon_skittish
+					has_trait = dragon_solitary
+				}
+			}
+		}
+	}
+	ai_frequency = 12
+	ai_targets = {
+		ai_recipients = courtiers
+		ai_recipients = guests
+	}
+}
+
+agot_remove_from_dragonpit = {
+	icon = icon_scheme_dragon
+	category = interaction_category_friendly
+	desc = agot_remove_from_dragonpit_desc
+	auto_accept = yes
+	is_shown = {
+		scope:actor = {
+			is_ai = yes
+			is_human = yes
+			agot_has_an_active_dragonpit = yes
+		}
+		scope:recipient = {
+			is_courtier_of = scope:actor
+			has_trait = dragon
+			has_character_flag = in_dragonpit
+		}
+	}
+	on_accept = {
+		scope:actor = {
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				debug_log = "AI tried to release pitted dragon"
+				debug_log_scopes = yes
+			}
+		}
+		scope:recipient = {
+			agot_change_dragonpit_status_ai = { OWNER = scope:actor DRAGON_REC = scope:recipient }
+		}
+	}
+	ai_will_do = {
+		base = 0
+	}
+	ai_frequency = 6
+	ai_targets = {
+		ai_recipients = courtiers
+	}
+}
+
+agot_grant_dragonpit_permission = {
+	icon = icon_scheme_dragon
+	category = interaction_category_friendly
+	desc = agot_grant_dragonpit_permission_desc
+	common_interaction = yes
+	interface_priority = 90
+	ignores_pending_interaction_block = yes
+	auto_accept = yes
+
+	target_type = title
+	target_filter = actor_domain_titles
+	can_be_picked_title = {
+		scope:target = {
+			custom_description = {
+				text = has_an_active_dragonpit
+				AND = {
+					tier = tier_county
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+	}
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			employs_court_position = head_dragonkeeper_court_position
+			NOT = {
+				this = scope:recipient
+			}
+			agot_has_an_active_dragonpit = yes
+			trigger_if = {
+				limit = {
+					has_realm_law = dragonpit_close_family_law
+				}
+				NOT = {
+					is_close_family_of = scope:recipient
+				}
+			}
+			trigger_else_if = {
+				limit = {
+					has_realm_law = dragonpit_house_law
+				}
+				NOT = {
+					house ?= scope:recipient.house
+				}
+			}
+			trigger_else_if = {
+				limit = {
+					has_realm_law = dragonpit_dynasty_law
+				}
+				NOT = {
+					dynasty ?= scope:recipient.dynasty
+				}
+			}
+			trigger_else = {
+				always = yes
+			}
+		}
+		scope:recipient = {
+			is_human = yes
+			age >= 14
+			NOT = {
+				has_variable = granted_access_to_dragonpit
+			}
+			trigger_if = {
+				limit = { NOT = { has_game_rule = dragons_anyone } }
+				agot_has_dragonblood_heritage = yes
+			}
+		}
+
+	}
+
+	on_accept = {
+		scope:actor = {
+			scope:target = {
+				save_scope_as = dragon_pit_location
+				agot_dragonpit_grant_access_to_pit_effect = { RECIPIENT = scope:recipient }
+				custom_tooltip = agot_grant_dragonpit_permission_effect_tt
+			}
+		}
+		scope:recipient = {
+			send_interface_message = {
+				type = event_generic_good
+				title = agot_dragonpit_access_gained
+				right_icon = scope:actor
+				custom_tooltip = agot_dragonpit_access_gained_interface_tt
+				scope:recipient = {
+					add_opinion = {
+						modifier = granted_access_to_dragonpit
+						target = scope:actor
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+		modifier = {
+			OR = {
+				scope:actor = { has_trait = ambitious }
+				scope:actor = { has_trait = trusting }
+			}
+			scope:recipient = {
+				has_any_good_relationship_with_character_trigger = { CHARACTER = scope:actor }
+			}
+			add = 25
+		}
+		modifier = {
+			scope:actor = {
+				ai_greed >= 25
+			}
+			add = -50
+		}
+	}
+	ai_frequency = 12
+	ai_targets = {
+		ai_recipients = courtiers
+		ai_recipients = vassals
+	}
+}
+
+agot_request_dragonpit_permission = {
+	icon = icon_scheme_dragon
+	category = interaction_category_friendly
+	desc = agot_request_dragonpit_permission_desc
+	common_interaction = yes
+	interface_priority = 90
+	cooldown = { years = 5 }
+	target_type = title
+	target_filter = recipient_domain_titles
+	can_be_picked_title = {
+		scope:target = {
+			custom_description = {
+				text = has_an_active_dragonpit
+				AND = {
+					tier = tier_county
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+	}
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			age >= 14
+			NOR = {
+				this = scope:recipient
+				has_variable = granted_access_to_dragonpit
+			}
+			trigger_if = {
+				limit = { NOT = { has_game_rule = dragons_anyone } }
+				agot_has_dragonblood_heritage = yes
+			}
+		}
+		scope:recipient = {
+			is_human = yes
+			agot_has_an_active_dragonpit = yes
+			is_liege_or_above_of = scope:actor
+			trigger_if = {
+				limit = {
+					has_realm_law = dragonpit_close_family_law
+				}
+				NOT = {
+					is_close_family_of = scope:actor
+				}
+			}
+			trigger_else_if = {
+				limit = {
+					has_realm_law = dragonpit_house_law
+				}
+				NOT = {
+					house ?= scope:actor.house
+				}
+			}
+			trigger_else_if = {
+				limit = {
+					has_realm_law = dragonpit_dynasty_law
+				}
+				NOT = {
+					dynasty ?= scope:actor.dynasty
+				}
+			}
+			trigger_else = {
+				always = yes
+			}
+		}
+	}
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			NOR = {
+				has_relation_rival = scope:recipient
+				has_relation_nemesis = scope:recipient
+			}
+		}
+	}
+
+	#Use hook
+	auto_accept = {
+		custom_description = {
+			text = "spending_hook"
+			subject = scope:actor
+			object = scope:recipient
+			scope:hook = yes
+			scope:actor = { has_strong_hook = scope:recipient }
+		}
+	}
+
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				has_strong_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = SCHEME_HOOK
+	}
+
+	should_use_extra_icon = {
+		scope:actor = { has_usable_hook = scope:recipient }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	send_options_exclusive = no
+	on_accept = {
+		scope:recipient = {
+			scope:target = {
+				save_scope_as = dragon_pit_location
+				agot_dragonpit_grant_access_to_pit_effect = {RECIPIENT = scope:actor}
+			}
+			custom_tooltip = agot_request_dragonpit_permission_effect_tt
+		}
+	}
+	on_decline = {
+		scope:actor = {
+			send_interface_message = {
+				type = event_generic_neutral
+				title = agot_dragonpit_access_denied
+				right_icon = scope:recipient
+				custom_tooltip = agot_dragonpit_access_denied_interface_tt
+				scope:recipient = {
+					add_opinion = {
+						modifier = denied_access_to_dragonpit
+						target = scope:recipient
+					}
+				}
+			}
+		}
+	}
+	ai_accept = {
+		base = 0
+		modifier = {
+			custom_tooltip = {
+				text = agot_request_dragonpit_permission_ai_modifier_i_am_blood_of_the_dragon
+				scope:recipient = {
+					agot_has_dragonblood_heritage = yes
+				}
+			}
+			add = -100
+		}
+	}
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = 25
+			scope:actor = {
+				AND = {
+					ai_boldness >= 75
+					has_trait = ambitious
+					has_strong_hook = scope:recipient
+				}
+			}
+		}
+	}
+	ai_frequency = 24
+	ai_targets = {
+		ai_recipients = liege
+		ai_recipients = neighboring_rulers
+	}
+}
+
+agot_ban_from_dragonpit = {
+	icon = icon_scheme_dragon
+	category = interaction_category_friendly
+	desc = agot_ban_from_dragonpit_desc
+	common_interaction = yes
+	interface_priority = 91
+	target_type = title
+	target_filter = actor_domain_titles
+	auto_accept = yes
+
+	can_be_picked_title = {
+		scope:target = {
+			custom_description = {
+				text = has_an_active_dragonpit
+				AND = {
+					tier = tier_county
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+		NOT = {
+			scope:recipient = {
+				is_target_in_variable_list = {
+					name = banned_dragonpit_locations
+					target = scope:target
+				}
+			}
+		}
+	}
+	cost = {
+		prestige = major_prestige_value
+		renown = {
+			value = {
+				if = {
+					limit = {
+						exists = scope:actor.dynasty
+						exists = scope:recipient.dynasty
+						scope:recipient.dynasty = scope:actor.dynasty
+						scope:actor = {
+							is_dynast = yes
+						}
+					}
+					add = major_dynasty_prestige_value
+				}
+			}
+		}
+	}
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			agot_has_an_active_dragonpit = yes
+			employs_court_position = head_dragonkeeper_court_position
+			NOT = {
+				this = scope:recipient
+			}
+			any_held_title = {
+				has_variable = has_dragonkeeper_order
+				save_temporary_scope_as = title
+				NOT = {
+					scope:recipient = {
+						is_target_in_variable_list = {
+							name = banned_dragonpit_locations
+							target = scope:title
+						}
+					}
+				}
+			}
+		}
+		scope:recipient = {
+			is_human = yes
+			# MDE Modified
+			trigger_if = {
+				limit = {
+					scope:actor = { has_realm_law = dragonpit_ruler_law }
+				}
+				scope:recipient = { has_variable = granted_access_to_dragonpit }
+			}
+			trigger_if = {
+				limit = {
+					scope:actor = { has_realm_law = dragonpit_close_family_law }
+				}
+				scope:recipient = { is_close_family_of = scope:actor }
+			}
+			trigger_else_if = {
+				limit = {
+					scope:actor = { has_realm_law = dragonpit_house_law }
+				}
+				scope:recipient = { house ?= scope:actor.house }
+			}
+			trigger_else_if = {
+				limit = {
+					scope:actor = { has_realm_law = dragonpit_dynasty_law }
+				}
+				scope:recipient = { dynasty ?= scope:actor.dynasty }
+			}
+			trigger_else = {
+				always = yes
+			}
+		}
+	}
+	on_accept = {
+		scope:actor = {
+			scope:target = {
+				save_scope_as = dragon_pit_location
+				agot_ban_from_dragonpit_effect = { PERSON_BEING_BANNED = scope:recipient }
+				custom_tooltip = agot_banned_from_dragonpit_permission_effect_tt
+				# The below if statement shouldn't ever really happen, but is a fallback incase it somehow does - the 'ban' interaction is only for people who are covered via your dplaws already
+				if = {
+					limit = {
+						scope:recipient.var:granted_access_to_dragonpit ?= scope:dragon_pit_location
+					}
+					scope:recipient = { save_scope_as = authorized_tamer }
+					hidden_effect = { agot_dragonpit_revoke_access_to_pit_effect = {RECIPIENT = scope:authorized_tamer} }
+					custom_tooltip = agot_dragon_pits.1001.b_tt_dp_access_lost
+				}
+			}
+		}
+		scope:recipient = {
+			send_interface_message = {
+				type = event_generic_bad
+				title = agot_dragonpit_access_gained
+				right_icon = scope:actor
+				custom_tooltip = agot_banned_from_dragonpit_interface_tt
+				scope:recipient = {
+					add_opinion = {
+						modifier = banned_from_dragonpit
+						target = scope:actor
+					}
+				}
+			}
+		}
+	}
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = 25
+			scope:actor = {
+				AND = {
+					ai_greed >= 60
+					has_trait = paranoid
+				}
+			}
+		}
+		modifier = {
+			add = 15
+			scope:actor = {
+				has_any_bad_relationship_with_character_trigger = { CHARACTER = scope:recipient }
+			}
+		}
+	}
+	ai_frequency = 36
+	ai_targets = {
+		ai_recipients = family
+		ai_recipients = dynasty
+	}
+}
+
+agot_reverse_dragonpit_ban = {
+	icon = icon_scheme_dragon
+	category = interaction_category_friendly
+	desc = agot_reverse_dragonpit_ban_desc
+	common_interaction = yes
+	interface_priority = 92
+	target_type = title
+	target_filter = actor_domain_titles
+	auto_accept = yes
+	can_be_picked_title = {
+		scope:target = {
+			custom_description = {
+				text = has_an_active_dragonpit
+				AND = {
+					tier = tier_county
+					has_variable = has_dragonkeeper_order
+				}
+			}
+		}
+		scope:recipient = {
+			is_target_in_variable_list = {
+				name = banned_dragonpit_locations
+				target = scope:target
+			}
+		}
+	}
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			agot_has_an_active_dragonpit = yes
+			employs_court_position = head_dragonkeeper_court_position
+			NOT = {
+				this = scope:recipient
+			}
+		}
+		scope:recipient = {
+			is_human = yes
+			has_variable_list = banned_dragonpit_locations
+			any_in_list = {
+				variable = banned_dragonpit_locations
+				holder = scope:actor
+			}
+		}
+	}
+	on_accept = {
+		scope:actor = {
+			custom_tooltip = agot_ban_lifted_from_dragonpit_effect_tt
+		}
+		scope:recipient = {
+			send_interface_message = {
+				type = event_generic_bad
+				title = agot_dragonpit_access_gained
+				right_icon = scope:actor
+				custom_tooltip = agot_reversed_ban_from_dragonpit_interface_tt
+				scope:recipient = {
+					add_opinion = {
+						modifier = reversed_ban_from_dragonpit
+						target = scope:actor
+					}
+				}
+			}
+			remove_list_variable = {
+				name = banned_dragonpit_locations
+				target = scope:target
+			}
+		}
+	}
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = 33
+			scope:actor = {
+				OR = {
+					has_trait = forgiving
+					has_trait = family_first
+					has_trait = just # Restored my rightful access
+				}
+			}
+		}
+	}
+	ai_frequency = 24
+	ai_targets = {
+		ai_recipients = family
+		ai_recipients = dynasty
+	}
+}
+
+agot_send_egg_to_pit = {
+	category = interaction_category_friendly
+	common_interaction = yes
+	interface_priority = 80
+	icon = icon_scheme_dragon
+	desc = agot_send_egg_to_pit_desc
+
+	target_type = artifact
+	target_filter = actor_artifacts
+
+	ai_frequency = 60
+	ai_targets = {
+		ai_recipients = courtiers
+	}
+
+	can_be_picked_artifact = {
+		scope:target = {
+			has_variable = dragon_egg
+			trigger_if = {
+				limit = {
+					scope:actor = { is_ai = yes }
+				}
+				has_none_of_variables = {
+					name = cradled_egg
+					name = selected_egg_for_hatching
+					name = dud_egg # MDE Modified
+				}
+			}
+			NOT = { has_variable = agot_artifact_cannot_gift }
+		}
+	}
+
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			any_character_artifact = {
+				has_variable = dragon_egg
+				has_none_of_variables = {
+					name = agot_artifact_cannot_gift
+					name = dud_egg # MDE Modified
+				}
+			}
+			NOT = { this = scope:recipient }
+		}
+		scope:recipient = {
+			is_human = yes
+			has_court_position = head_dragonkeeper_court_position
+			is_courtier_of = scope:actor
+		}
+	}
+
+	on_accept = {
+		scope:target = {
+			set_variable = being_pitted
+			set_variable = agot_artifact_cannot_gift
+			set_variable = agot_swiper_no_swiping
+			set_owner = scope:recipient
+		}
+		if = {
+			limit = {
+				scope:actor = {
+					any_held_title = {
+						agot_title_is_an_active_dragonpit = yes
+						count = 1
+					}
+				}
+			}
+			scope:actor = {
+				random_held_title = {
+					limit = { agot_title_is_an_active_dragonpit = yes }
+					save_scope_as = dragonpit_title
+					scope:target = {
+						remove_variable = being_pitted
+						set_variable = {
+							name = pitted_egg
+							value = scope:dragonpit_title
+						}
+					}
+				}
+			}
+		}
+		else = {
+			scope:actor = { trigger_event = agot_dragon_pits.2000 }
+		}
+	}
+
+	auto_accept = yes
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 100
+			scope:actor = {
+				OR = {
+					any_relation = {
+						type = agot_dragon
+					}
+					any_character_artifact = {
+						has_all_variables = {
+							name = dragon_egg
+							name = cradled_egg
+						}
+					}
+					has_trait_with_flag = can_not_bond_dragon
+				}
+			}
+		}
+
+		#give to children first
+		modifier = {
+			factor = 0
+			scope:actor = {
+				# MDE Modified
+				AND = {
+					any_child = {
+						AND = {
+							agot_has_dragonblood_heritage = yes
+							any_relation = {
+								type = agot_dragon
+								count = 0
+							}
+							NOT = {
+								any_character_artifact = {
+									has_all_variables = {
+										name = dragon_egg
+										name = cradled_egg
+									}
+								}
+							}
+						}
+					}
+					any_character_artifact = {
+						has_variable = dragon_egg
+						NOT = { has_variable =  cradled_egg }
+						NOT = { has_variable = pitted_egg }
+						count < 4
+					}
+				}
+			}
+		}
+		modifier = {
+			AND = {
+				global_var:mde_pit_hatch_likelihood_ai = 7
+				NOT = {
+					any_close_family_member = {
+						is_ai = no
+					}
+				}
+			}
+			factor = 0
+		}
+	}
+}
+
+agot_send_all_eggs_to_pit = {
+	category = interaction_category_friendly
+	common_interaction = yes
+	interface_priority = 79
+	icon = icon_scheme_dragon
+	desc = agot_send_egg_to_pit_desc
+
+	ai_frequency = 0
+
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			any_character_artifact = {
+				has_variable = dragon_egg
+				NOT = { has_variable = agot_artifact_cannot_gift }
+				is_equipped = no
+			}
+			NOT = { this = scope:recipient }
+		}
+		scope:recipient = {
+			is_human = yes
+			has_court_position = head_dragonkeeper_court_position
+			is_courtier_of = scope:actor
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			every_character_artifact = {
+				limit = {
+					has_variable = dragon_egg
+					NOT = { has_variable = agot_artifact_cannot_gift }
+					is_equipped = no
+				}
+				set_variable = being_pitted
+				set_variable = agot_artifact_cannot_gift
+				set_variable = agot_swiper_no_swiping
+				set_owner = scope:recipient
+			}
+		}
+		if = {
+			limit = {
+				scope:actor = {
+					any_held_title = {
+						agot_title_is_an_active_dragonpit = yes
+						count = 1
+					}
+				}
+			}
+			scope:actor = {
+				random_held_title = {
+					limit = { agot_title_is_an_active_dragonpit = yes }
+					save_scope_as = dragonpit_title
+				}
+			}
+			scope:recipient = {
+				every_character_artifact = {
+					limit = {
+						has_variable = being_pitted
+					}
+					remove_variable = being_pitted
+					set_variable = {
+						name = pitted_egg
+						value = scope:dragonpit_title
+					}
+				}
+			}
+		}
+		else = {
+			scope:actor = { trigger_event = agot_dragon_pits.2000 }
+		}
+		hidden_effect = {
+			if = {
+				limit = {
+					has_game_rule = agot_silly_mode
+					scope:actor = {
+						any_courtier = {
+							OR = {
+								has_character_flag = is_Targaryen_16
+								has_character_flag = is_Targaryen_27
+								has_character_flag = is_Targaryen_33
+								has_character_flag = is_Targaryen_65
+								has_character_flag = is_Targaryen_78
+								has_character_flag = is_Targaryen_88
+								has_character_flag = is_Targaryen_122
+								has_character_flag = is_Targaryen_11
+								has_character_flag = is_Targaryen_12
+								has_character_flag = is_Blackfyre_1
+								has_character_flag = is_Brightflame_8
+								has_first_name = Aegon
+							}
+						}
+					}
+				}
+				scope:actor = { trigger_event = agot_silly_mode.0001 }
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+agot_retrieve_egg_from_pit = {
+	category = interaction_category_friendly
+	common_interaction = yes
+	interface_priority = 80
+	icon = icon_scheme_dragon
+	desc = agot_retrieve_egg_from_pit_desc
+
+	target_type = artifact
+	target_filter = recipient_artifacts
+
+	ai_frequency = 60
+	ai_targets = {
+		ai_recipients = courtiers
+	}
+
+	can_be_picked_artifact = {
+		scope:target = {
+			has_all_variables = {
+				name = dragon_egg
+				name = pitted_egg
+			}
+		}
+	}
+
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			NOT = { this = scope:recipient }
+		}
+		scope:recipient = {
+			is_human = yes
+			has_court_position = head_dragonkeeper_court_position
+			is_courtier_of = scope:actor
+			any_character_artifact = {
+				has_all_variables = {
+					name = dragon_egg
+					name = pitted_egg
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		scope:target = {
+			remove_variable = pitted_egg
+			remove_variable = agot_artifact_cannot_gift
+			remove_variable = agot_swiper_no_swiping
+			set_owner = scope:actor
+		}
+	}
+
+	auto_accept = yes
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 100
+			scope:actor = {
+				agot_has_dragonblood_heritage = yes
+				NOR = {
+					any_relation = {
+						type = agot_dragon
+					}
+					any_character_artifact = {
+						has_all_variables = {
+							name = dragon_egg
+							name = cradled_egg
+						}
+					}
+					has_trait_with_flag = can_not_bond_dragon
+				}
+			}
+		}
+
+		#give to children first
+		modifier = {
+			add = 100
+			scope:actor = {
+				any_child = {
+					AND = {
+						agot_has_dragonblood_heritage = yes
+						any_relation = {
+							type = agot_dragon
+							count = 0
+						}
+						NOT = {
+							any_character_artifact = {
+								has_all_variables = {
+									name = dragon_egg
+									name = cradled_egg
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

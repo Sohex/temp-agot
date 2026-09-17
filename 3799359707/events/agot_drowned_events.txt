@@ -1,0 +1,199 @@
+﻿namespace = agot_drowned
+
+# Started by agot_drowned_seek_the_drowned_god_decision. Abstracted event
+# chain (no real travel/POI system yet - see V2_PLAN_DROWNED_GOD.md,
+# point 3 - that is a later expansion, not part of this first pass).
+
+### 0001: the call to the shore ###
+agot_drowned.0001 = {
+	type = character_event
+	title = agot_drowned.0001.t
+	desc = agot_drowned.0001.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_drowned.0001.a # Go to the shore
+		trigger_event = { id = agot_drowned.0002 days = 5 } # travel time to the shore
+	}
+
+	option = {
+		name = agot_drowned.0001.b # Not now
+		stress_impact = { base = minor_stress_impact_gain }
+	}
+}
+
+### 0002: the drowned men explain the rite ###
+agot_drowned.0002 = {
+	type = character_event
+	title = agot_drowned.0002.t
+	desc = agot_drowned.0002.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_drowned.0002.a # Submit to the drowning
+		trigger_event = { id = agot_drowned.0003 days = 3 } # the priest makes his preparations
+	}
+
+	option = {
+		name = agot_drowned.0002.b # Turn back
+		stress_impact = { base = medium_stress_impact_gain }
+	}
+}
+
+### 0003: the drowning itself - the real risk moment ###
+agot_drowned.0003 = {
+	type = character_event
+	title = agot_drowned.0003.t
+	desc = agot_drowned.0003.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_drowned.0003.a # What is dead may never die
+		random_list = {
+			90 = {
+				custom_tooltip = {
+					text = agot_drowned.0003.a.survive
+				}
+				agot_magic_grant_drowned_gift_effect = yes
+			}
+			10 = {
+				custom_tooltip = {
+					text = agot_drowned.0003.a.die
+				}
+				death = { death_reason = death_drowned }
+			}
+		}
+	}
+}
+
+### 0004: the aftermath of a natural death averted by the finisher perk.
+### Triggered from common/on_action/00_agot_drowned_on_actions.txt. Grants
+### the visible, Patchface-inspired "changed, returned" trait exactly once.
+agot_drowned.0004 = {
+	type = character_event
+	title = agot_drowned.0004.t
+	desc = agot_drowned.0004.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_drowned.0004.a
+		add_trait = agot_drowned_touched_returned
+	}
+}
+
+# Hidden wrapper event for on_natural_death_second_chance - see
+# 00_agot_drowned_on_actions.txt for why this goes through the events list
+# instead of an effect block. Does our own has_perk gate before handing off
+# to the real narrative event above.
+agot_drowned.0005 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		if = {
+			limit = {
+				has_perk = agot_drowned_reborn_of_the_deep_perk
+				NOT = { has_trait = agot_drowned_touched_returned }
+			}
+			trigger_event = agot_drowned.0004
+		}
+	}
+}
+
+### 0010-0011: Drown & Bind - leading a captive/follower into the sea and
+### calling them back bound. Started by agot_drowned_bind_interaction, which
+### saves its target into var:agot_drowned_bind_target beforehand (a plain
+### trigger_event cannot otherwise carry scope:recipient across the chain).
+
+agot_drowned.0010 = {
+	type = character_event
+	title = agot_drowned.0010.t
+	desc = agot_drowned.0010.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_drowned.0010.a # Lead them into the water
+		trigger_event = { id = agot_drowned.0011 days = 3 }
+	}
+
+	option = {
+		name = agot_drowned.0010.b # Turn back
+		stress_impact = { base = minor_stress_impact_gain }
+		remove_variable = agot_drowned_bind_target
+	}
+}
+
+agot_drowned.0011 = {
+	type = character_event
+	title = agot_drowned.0011.t
+	desc = agot_drowned.0011.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_drowned.0011.a # Hold them under
+		trigger = {
+			exists = var:agot_drowned_bind_target
+		}
+		stress_impact = { base = major_stress_impact_gain }
+		add_character_modifier = {
+			modifier = agot_drowned_binding_ritual_modifier
+			years = 1
+		}
+		add_hook = {
+			type = agot_drowned_binding_hook
+			target = var:agot_drowned_bind_target
+		}
+		var:agot_drowned_bind_target = {
+			add_opinion = {
+				target = root
+				modifier = agot_drowned_bound_loyalty_opinion
+				opinion = 60
+			}
+			add_character_modifier = {
+				modifier = agot_drowned_bound_modifier
+			}
+		}
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_drowned_bind_interaction_notification
+			left_icon = root
+		}
+		remove_variable = agot_drowned_bind_target
+	}
+}

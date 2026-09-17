@@ -1,0 +1,119 @@
+﻿# AGOT: Magic of Westeros v3 - Greenseer interaction
+# Unlike every other tradition's targeted ability, this one is passive
+# observation only - no discovery risk, no cost to the target. The only
+# price is the actor's own Rootedness (see 00_agot_greenseer_effects.txt).
+# It is the mod's one and only way to detect another character's hidden
+# gift from any other tradition.
+
+agot_greenseer_see_the_truth_interaction = {
+	interface_priority = 70
+	category = interaction_category_friendly
+	icon = agot_greenseer_see_the_truth
+
+	desc = agot_greenseer_see_the_truth_interaction_desc
+
+	cooldown = { years = 1 }
+
+	is_shown = {
+		scope:actor = {
+			has_perk = agot_greenseer_truthseer_perk
+		}
+		scope:actor != scope:recipient
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			set_variable = {
+				name = agot_greenseer_truth_target
+				value = scope:recipient
+			}
+			trigger_event = agot_greenseer.0074
+		}
+	}
+
+	auto_accept = yes
+
+	# Passive, no cost to the target - no grudge needed, AI uses this freely.
+	ai_targets = {
+		ai_recipients = courtiers
+		ai_recipients = guests
+		ai_recipients = vassals
+		max = 15
+	}
+
+	ai_frequency = 1
+
+	ai_will_do = {
+		base = 20
+	}
+}
+
+# Hammer of the Waters - the simplified, county-scarring endgame ritual
+# (see V3_PLAN.md). Targets an enemy ruler at war with the actor; their
+# capital county is permanently marked by the flood. Extremely narrow
+# gate: top Greenseer perk + an active war + the target must actually be
+# a war opponent, so it cannot be spammed defensively or offensively at
+# will.
+agot_greenseer_hammer_of_the_waters_interaction = {
+	interface_priority = 95
+	category = interaction_category_hostile
+	icon = agot_greenseer_hammer_of_the_waters
+
+	desc = agot_greenseer_hammer_of_the_waters_interaction_desc
+
+	cooldown = { years = 10 }
+
+	is_shown = {
+		scope:actor = {
+			agot_greenseer_can_call_hammer_of_the_waters_trigger = yes
+		}
+		scope:actor != scope:recipient
+		scope:actor = { is_at_war_with = scope:recipient }
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+		scope:actor = {
+			custom_tooltip = {
+				text = agot_greenseer_hammer_must_be_at_war_tooltip
+				is_at_war_with = scope:recipient
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			set_variable = {
+				name = agot_greenseer_hammer_target
+				value = scope:recipient
+			}
+			trigger_event = agot_greenseer.0075
+		}
+	}
+
+	auto_accept = yes
+
+	# Already strictly gated to an active war opponent by is_shown - no
+	# further grudge check needed.
+	ai_targets = {
+		ai_recipients = war_enemies
+		ai_recipients = primary_war_enemies
+		max = 5
+	}
+
+	ai_frequency = 2
+
+	ai_will_do = {
+		base = 10
+	}
+}

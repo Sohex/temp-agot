@@ -1,0 +1,112 @@
+﻿# AGOT: Magic of Westeros v3 - Greenseer effects
+# Distinct risk model from every other tradition: no corruption trait, no
+# death chance. Instead a single "Rootedness" counter that grows with every
+# use of the gift AND with every failed ritual attempt - at the threshold
+# the character must choose between stopping and a one-time, permanent
+# transformation (see agot_greenseer_events.txt .0073).
+
+agot_magic_grant_greenseer_gift_effect = {
+	set_variable = { name = agot_touched_by_magic value = yes }
+	set_variable = { name = agot_gift_of_greenseer value = yes }
+	set_variable = { name = agot_greenseer_mastery value = 0 }
+	send_interface_toast = {
+		type = event_toast_effect_good
+		title = agot_greenseer_gift_granted_toast
+		left_icon = root
+	}
+}
+
+# A failed acquisition ritual does not grant the gift, but the attempt
+# itself already brushes the mind against the weirwood net - it still
+# advances Rootedness, unlike the other traditions' failure effects.
+agot_greenseer_ritual_failure_effect = {
+	agot_magic_seek_gift_failure_effect = yes
+	agot_greenseer_track_rootedness_effect = yes
+}
+
+agot_greenseer_track_rootedness_effect = {
+	if = {
+		limit = { NOT = { exists = var:agot_greenseer_rootedness } }
+		set_variable = { name = agot_greenseer_rootedness value = 0 }
+	}
+	change_variable = { name = agot_greenseer_rootedness add = 1 }
+	if = {
+		limit = {
+			exists = var:agot_greenseer_rootedness
+			NOT = { has_trait = agot_greenseer_bound_to_the_tree }
+			NOT = { has_character_flag = agot_greenseer_rootedness_choice_pending }
+			OR = {
+				AND = {
+					NOT = { exists = var:agot_greenseer_mastery }
+					var:agot_greenseer_rootedness >= 6
+				}
+				AND = {
+					exists = var:agot_greenseer_mastery
+					var:agot_greenseer_mastery = 1
+					var:agot_greenseer_rootedness >= 8
+				}
+				AND = {
+					exists = var:agot_greenseer_mastery
+					var:agot_greenseer_mastery = 2
+					var:agot_greenseer_rootedness >= 10
+				}
+				AND = {
+					exists = var:agot_greenseer_mastery
+					var:agot_greenseer_mastery >= 3
+					var:agot_greenseer_rootedness >= 12
+				}
+			}
+		}
+		set_character_flag = agot_greenseer_rootedness_choice_pending
+		trigger_event = agot_greenseer.0073
+	}
+}
+
+# Deepen Your Communion - the Greenseer mastery decision (see
+# V3_FIXPLAN.md Block 2). Each level raises the Rootedness threshold
+# above by 2, giving more use out of the gift before the choice event
+# forces itself. Same capped-at-3, varied-flavor pattern as the other 4
+# mastery effects.
+agot_greenseer_deepen_communion_effect = {
+	if = {
+		limit = { NOT = { exists = var:agot_greenseer_mastery } }
+		set_variable = { name = agot_greenseer_mastery value = 0 }
+	}
+	random_list = {
+		55 = {
+			if = {
+				limit = { var:agot_greenseer_mastery < 3 }
+				custom_tooltip = {
+					text = agot_greenseer_deepen_communion_success
+				}
+				change_variable = { name = agot_greenseer_mastery add = 1 }
+				send_interface_toast = {
+					type = event_toast_effect_good
+					title = agot_greenseer_deepen_communion_progress_toast
+					left_icon = root
+				}
+			}
+			else = {
+				custom_tooltip = {
+					text = agot_greenseer_deepen_communion_already_mastered
+				}
+				send_interface_toast = {
+					type = event_toast_effect_neutral
+					title = agot_greenseer_deepen_communion_no_progress_toast
+					left_icon = root
+				}
+			}
+		}
+		45 = {
+			random_list = {
+				50 = { custom_tooltip = { text = agot_greenseer_deepen_communion_setback_a } }
+				50 = { custom_tooltip = { text = agot_greenseer_deepen_communion_setback_b } }
+			}
+			send_interface_toast = {
+				type = event_toast_effect_neutral
+				title = agot_greenseer_deepen_communion_no_progress_toast
+				left_icon = root
+			}
+		}
+	}
+}

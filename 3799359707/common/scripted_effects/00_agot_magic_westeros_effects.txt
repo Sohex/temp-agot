@@ -1,0 +1,235 @@
+﻿# AGOT: Magic of Westeros - Shared effects
+
+### Awakening ###
+
+agot_magic_grant_rhllor_gift_effect = {
+	set_variable = { name = agot_touched_by_magic value = yes }
+	set_variable = { name = agot_gift_of_rhllor value = yes }
+	send_interface_toast = {
+		type = event_toast_effect_good
+		title = agot_magic_awakened_rhllor_toast
+		left_icon = root
+	}
+}
+
+agot_magic_grant_warging_gift_effect = {
+	set_variable = { name = agot_touched_by_magic value = yes }
+	set_variable = { name = agot_gift_of_warging value = yes }
+	send_interface_toast = {
+		type = event_toast_effect_good
+		title = agot_magic_awakened_warging_toast
+		left_icon = root
+	}
+}
+
+agot_magic_grant_blood_gift_effect = {
+	set_variable = { name = agot_touched_by_magic value = yes }
+	set_variable = { name = agot_gift_of_blood value = yes }
+	send_interface_toast = {
+		type = event_toast_effect_good
+		title = agot_magic_awakened_blood_toast
+		left_icon = root
+	}
+}
+
+### Failure to awaken - the attempt always carries a small cost ###
+
+agot_magic_seek_gift_failure_effect = {
+	stress_impact = {
+		base = medium_stress_impact_gain
+	}
+	send_interface_toast = {
+		type = event_toast_effect_bad
+		title = agot_magic_seek_gift_failure_toast
+		left_icon = root
+	}
+	if = {
+		limit = { agot_magic_faith_persecutes_magic_trigger = yes }
+		random = {
+			chance = 35
+			trigger_event = agot_magic.0005 # rumors of the failed attempt spread
+		}
+	}
+	else = {
+		random = {
+			chance = 20
+			trigger_event = agot_magic.0005
+		}
+	}
+}
+
+### Tradition-specific ritual risk (used by the acquisition event chains) ###
+# R'hllor and Warging rituals gone wrong can leave the same permanent mark
+# as overusing the gift would (see the corruption traits above) - reusing
+# those traits instead of inventing new ones keeps "force it and get
+# marked" a single consistent idea. Blood Magic pays with the literal risk
+# of death instead, matching its "First Rite" self-sacrifice lore.
+
+agot_magic_rhllor_ritual_failure_effect = {
+	random_list = {
+		75 = { agot_magic_seek_gift_failure_effect = yes }
+		25 = {
+			agot_magic_seek_gift_failure_effect = yes
+			if = {
+				limit = { NOT = { has_trait = agot_shadow_scarred } }
+				add_trait = agot_shadow_scarred
+			}
+		}
+	}
+}
+
+agot_magic_warging_ritual_failure_effect = {
+	random_list = {
+		75 = { agot_magic_seek_gift_failure_effect = yes }
+		25 = {
+			agot_magic_seek_gift_failure_effect = yes
+			if = {
+				limit = { NOT = { has_trait = agot_wolf_touched } }
+				add_trait = agot_wolf_touched
+			}
+		}
+	}
+}
+
+agot_magic_bloodmagic_ritual_failure_effect = {
+	random_list = {
+		90 = { agot_magic_seek_gift_failure_effect = yes }
+		10 = { death = { death_reason = death_sacrificed_to_gods } }
+	}
+}
+
+### Overuse / corruption tracking ###
+# Each tradition has its own counter variable. At the threshold, the
+# character gains a permanent, visible corruption trait once.
+
+agot_magic_track_warging_overuse_effect = {
+	if = {
+		limit = { NOT = { exists = var:agot_magic_warging_uses } }
+		set_variable = { name = agot_magic_warging_uses value = 0 }
+	}
+	change_variable = { name = agot_magic_warging_uses add = 1 }
+	if = {
+		limit = {
+			exists = var:agot_magic_warging_uses
+			var:agot_magic_warging_uses >= 6
+			NOT = { has_trait = agot_wolf_touched }
+		}
+		add_trait = agot_wolf_touched
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_magic_corruption_warging_toast
+			left_icon = root
+		}
+	}
+}
+
+agot_magic_track_rhllor_overuse_effect = {
+	if = {
+		limit = { NOT = { exists = var:agot_magic_rhllor_uses } }
+		set_variable = { name = agot_magic_rhllor_uses value = 0 }
+	}
+	change_variable = { name = agot_magic_rhllor_uses add = 1 }
+	if = {
+		limit = {
+			exists = var:agot_magic_rhllor_uses
+			var:agot_magic_rhllor_uses >= 6
+			NOT = { has_trait = agot_shadow_scarred }
+		}
+		add_trait = agot_shadow_scarred
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_magic_corruption_rhllor_toast
+			left_icon = root
+		}
+	}
+}
+
+agot_magic_track_blood_overuse_effect = {
+	if = {
+		limit = { NOT = { exists = var:agot_magic_blood_uses } }
+		set_variable = { name = agot_magic_blood_uses value = 0 }
+	}
+	change_variable = { name = agot_magic_blood_uses add = 1 }
+	if = {
+		limit = {
+			exists = var:agot_magic_blood_uses
+			var:agot_magic_blood_uses >= 4
+			NOT = { has_trait = agot_blood_cursed }
+		}
+		add_trait = agot_blood_cursed
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_magic_corruption_blood_toast
+			left_icon = root
+		}
+	}
+}
+
+### Birth roll - a rare few are simply born touched by magic ###
+# Hooked from on_birth_child. ~1% of newborns whose culture/faith fits a
+# tradition awaken with that gift immediately; everyone else is unaffected
+# and can still pursue the "Seek the Gift" decisions later in life.
+
+agot_magic_birth_roll_effect = {
+	random = {
+		chance = 1
+		random_list = {
+			34 = {
+				trigger = {
+					OR = {
+						faith = { has_doctrine = tenet_heart_of_fire }
+						faith = { religion = religion:the_rhllor_religion }
+					}
+				}
+				agot_magic_grant_rhllor_gift_effect = yes
+			}
+			33 = {
+				trigger = {
+					OR = {
+						faith = { has_doctrine = tenet_greensight }
+						culture = culture:northman
+						culture = culture:crannogman
+						culture = culture:wolfswood_clansman
+						culture = culture:skagosi
+						culture = culture:barrowman
+						culture = culture:bearman
+						culture = culture:thenn
+						culture = culture:fangman
+						culture = culture:forestman
+						culture = culture:hornfoot
+						culture = culture:nightrunner
+						culture = culture:lakefolk
+						culture = culture:frozen_shoreman
+						culture = culture:milkwaterman
+						culture = culture:cave_dweller
+						culture = culture:ice_riverman
+						culture = culture:moon_clan
+					}
+				}
+				agot_magic_grant_warging_gift_effect = yes
+			}
+			33 = {
+				trigger = { always = yes }
+				agot_magic_grant_blood_gift_effect = yes
+			}
+		}
+	}
+}
+
+### Discovery risk - being seen practicing forbidden magic ###
+
+agot_magic_risk_discovery_effect = {
+	if = {
+		limit = { agot_magic_faith_persecutes_magic_trigger = yes }
+		random = {
+			chance = 25
+			trigger_event = agot_magic.0010
+		}
+	}
+	else = {
+		random = {
+			chance = 10
+			trigger_event = agot_magic.0010
+		}
+	}
+}

@@ -1,0 +1,114 @@
+﻿# A Dragonlord estate's main building is presented as the Topless Towers.  Do
+# not rely on the cached house marker: check the registered dignity title.
+# Ordinary nobles share this government and building but not its dragonpit.
+dragonlord_has_topless_towers_dragonpit = {
+	government_has_flag = government_is_dragonlord_oligarchy
+	dragonlord_is_registered_family_member_trigger = yes
+	exists = house
+	OR = {
+		AND = {
+			exists = domicile
+			exists = domicile.domicile_location.county
+			domicile = { has_domicile_building_or_higher = estate_main_01 }
+		}
+		house.house_head = {
+			exists = domicile
+			exists = domicile.domicile_location.county
+			domicile = { has_domicile_building_or_higher = estate_main_01 }
+		}
+	}
+}
+
+# County scope. Domiciles are not county buildings, so AGOT's dragonpit system
+# uses the estate's actual domicile location rather than the owner's capital.
+dragonlord_is_topless_towers_dragonpit_county = {
+	tier = tier_county
+	exists = holder
+	OR = {
+		AND = {
+			holder = { dragonlord_has_topless_towers_dragonpit = yes }
+			this = holder.domicile.domicile_location.county
+		}
+		AND = {
+			holder.house.house_head = { dragonlord_has_topless_towers_dragonpit = yes }
+			this = holder.house.house_head.domicile.domicile_location.county
+		}
+	}
+}
+
+# County scope. Keep AGOT's ordinary building-and-Dragonkeeper requirement in
+# one place so the capital and directly held county paths cannot drift apart.
+dragonlord_title_is_conventional_active_dragonpit = {
+	tier = tier_county
+	any_county_province = {
+		OR = {
+			# Legacy of Valyria/Valyria map Dragonpits (volcanoes, Dragon
+			# Towers and the natural Valyrian pits) are centralized here by
+			# that mod's compatibility trigger.
+			lv_has_dragon_pit_building = yes
+			AND = {
+				has_holding_type = castle_holding
+				has_building_or_higher = generic_dragon_pit_01
+			}
+			has_building_or_higher = dragonpit_01
+			has_building = dragonpit_ruins_03
+			has_building = agot_dragonmont_01
+		}
+	}
+	has_variable = has_dragonkeeper_order
+}
+
+# Late overrides of AGOT's building-only checks.
+agot_can_use_dragonpit_amenities = {
+	OR = {
+		dragonlord_has_topless_towers_dragonpit = yes
+		any_held_county = { dragonlord_title_is_conventional_active_dragonpit = yes }
+	}
+}
+
+agot_has_an_active_dragonpit = {
+	OR = {
+		dragonlord_has_topless_towers_dragonpit = yes
+		any_held_county = { dragonlord_title_is_conventional_active_dragonpit = yes }
+	}
+}
+
+# The estate counts as a separate destination when its owner also controls at
+# least one conventional dragonpit. With only the estate, no picker is needed.
+agot_has_multiple_active_dragonpits = {
+	OR = {
+		any_held_county = {
+			dragonlord_title_is_conventional_active_dragonpit = yes
+			count > 1
+		}
+		AND = {
+			dragonlord_has_topless_towers_dragonpit = yes
+			any_held_county = {
+				dragonlord_title_is_conventional_active_dragonpit = yes
+				count > 0
+			}
+		}
+	}
+}
+
+agot_title_is_an_active_dragonpit = {
+	tier = tier_county
+	OR = {
+		dragonlord_is_topless_towers_dragonpit_county = yes
+		dragonlord_title_is_conventional_active_dragonpit = yes
+	}
+}
+
+# Province-scope check used by hatching and dragonpit event logic.
+has_any_dragonpits = {
+	OR = {
+		lv_has_dragon_pit_building = yes
+		has_building = generic_dragon_pit_01
+		has_building_or_higher = dragonpit_01
+		has_building = dragonpit_ruins_03
+		has_building = agot_dragonmont_01
+		county = {
+			dragonlord_is_topless_towers_dragonpit_county = yes
+		}
+	}
+}

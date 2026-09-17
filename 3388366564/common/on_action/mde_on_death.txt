@@ -1,0 +1,183 @@
+﻿on_death = {
+    on_actions = {
+        eggs_no_dissapear
+        mde_dragoncoop_death_handling
+        mde_hightower_egg_secret_inheritance
+        mde_dragon_portrait_inheritance
+    }
+}
+
+mde_dragon_portrait_inheritance = { # MDE Added
+    trigger = {
+        is_ai = no
+        has_variable = show_dragon_portrait
+        exists = player_heir
+    }
+    effect = {
+        player_heir = { set_variable = show_dragon_portrait }
+    }
+}
+
+mde_hightower_egg_secret_inheritance = { # MDE Added
+    trigger = {
+        has_global_variable = hightower_egg_hidden
+        any_secret = { secret_type = secret_agot_hidden_artifact }
+        house ?= dynasty:dynn_Hightower.dynasty_founder.house
+    }
+    effect = {
+        if = {
+            limit = {
+                exists = primary_heir
+                primary_heir.house ?= root.house
+            }
+            primary_heir = { add_secret = { type = secret_agot_hidden_artifact } }
+        }
+        else_if = {
+            limit = {
+                exists = dynasty:dynn_Hightower.dynasty_founder.house.house_head
+                NOT = { dynasty:dynn_Hightower.dynasty_founder.house.house_head = root }
+            }
+            dynasty:dynn_Hightower.dynasty_founder.house.house_head = { add_secret = { type = secret_agot_hidden_artifact } }
+        }
+    }
+}
+
+eggs_no_dissapear = {
+    trigger = {
+        NOT = { exists = primary_heir }
+        exists = liege
+        any_character_artifact = { has_variable = dragon_egg  has_variable = dragon_embryo }
+    }
+    effect = {
+        every_character_artifact = {
+            limit = { has_variable = dragon_egg  has_variable = dragon_embryo }
+            set_owner = prev.liege
+        }
+    }
+}
+
+mde_dragoncoop_death_handling = {
+    trigger = {
+        any_held_title = {
+            is_landless_type_title = yes
+            root = {
+                OR = {
+                    domicile ?= {
+                        has_domicile_building_or_higher = dragon_coop_01
+                    }
+                    any_courtier = {
+                        has_trait = dragon
+                    }  
+                }       
+            }
+        }
+    }
+    effect = {
+        if = { #No Longer Valid
+            limit = {
+                NOR = {
+                    player_heir ?= {
+                        OR = {
+                            AND = {
+                                culture = { has_cultural_pillar = heritage_valyrian }
+                                agot_has_dragonblood_heritage = yes
+                                OR = {
+                                    any_character_artifact = { has_variable = dragon_egg }
+                                    AND = {
+                                        employs_court_position = head_dragonkeeper_court_position
+                                        court_position:head_dragonkeeper_court_position = {
+                                            any_character_artifact = { has_variable = dragon_egg }
+                                        }
+                                    }
+                                }
+                            }
+                            any_relation = { type = agot_dragon is_alive = yes }
+                        }
+                    }
+                    any_courtier = {
+                        is_alive = yes
+                        NOT = { has_trait = dragon }
+                        any_relation = {
+                            type = agot_dragon
+                            is_alive = yes
+                            NOT = { this = root }
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    employs_court_position = head_dragonkeeper_court_position
+                }
+                court_position:head_dragonkeeper_court_position = {
+                    every_character_artifact = {
+                        limit = {
+                            has_variable = dragon_egg
+                        }
+                        if = {
+                            limit = {
+                                has_variable = pitted_egg
+                            }
+                            remove_variable = pitted_egg
+                        }
+                        set_owner = root
+                    }
+                }
+            }
+            every_courtier = {
+                limit = {
+                    has_trait = dragon
+                    NOT = { any_relation = { type = agot_dragon is_alive = yes NOT = { this = root } } }
+                    OR = {
+                        has_character_flag = owned_dragon
+                        has_variable = pitted_dragon_location
+                    }
+                }
+                if = {
+                    limit = { has_variable = pitted_dragon_location }
+                    agot_remove_from_dragonpit_skip_county_effects = { DRAGON = this }
+                }
+                agot_dragon_flees_province = yes
+            }
+            if = {
+                limit = {
+                    domicile ?= {
+                        has_domicile_building_or_higher = dragon_coop_01
+                    }
+                }
+                remove_domicile_building_no_refund = dragon_coop_01
+            }
+        }
+        else = {
+            every_courtier = {
+                limit = {
+                    has_trait = dragon
+                    NOT = { any_relation = { type = agot_dragon is_alive = yes NOT = { this = root } } }
+                    has_character_flag = owned_dragon
+                    NOT = { has_variable = pitted_dragon_location }
+                }
+                random_list = {
+                    5 = {}
+                    95 = {
+                        agot_dragon_flees_province = yes
+                    }
+                }
+            }
+            every_courtier = {
+                limit = {
+                    has_trait = dragon
+                    NOT = { any_relation = { type = agot_dragon is_alive = yes NOT = { this = root } } }
+                    has_character_flag = owned_dragon
+                    has_variable = pitted_dragon_location
+                }
+                random_list = {
+                    40 = {}
+                    60 = {
+                        agot_remove_from_dragonpit_skip_county_effects = { DRAGON = this }
+                        agot_dragon_flees_province = yes
+                    }
+                }
+            }
+        }
+    }
+}

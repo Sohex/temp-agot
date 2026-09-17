@@ -1,0 +1,59 @@
+﻿namespace = dragonlord_family_cleanup
+
+# Save compatibility for cleanup events queued by older versions. Ordinary
+# administrative families must remain intact; the legacy effect now only
+# normalizes their holder's government.
+dragonlord_family_cleanup.0001 = {
+	hidden = yes
+
+	trigger = {
+		is_alive = yes
+		is_landed = yes
+		NOT = { top_liege = this }
+		top_liege = { government_has_flag = government_is_dragonlord_oligarchy }
+		exists = house
+		house = { NOT = { has_variable = dragonlord_is_registered_family } }
+		NOT = { has_character_flag = dragonlord_authorized_family_creation }
+		any_held_title = {
+			is_noble_family_title = yes
+			NOT = { has_variable = dragonlord_family_title }
+		}
+		any_held_title = {
+			tier = tier_county
+			is_noble_family_title = no
+			is_landless_type_title = no
+		}
+		NOT = {
+			any_held_title = {
+				tier >= tier_duchy
+				is_noble_family_title = no
+				is_landless_type_title = no
+			}
+		}
+	}
+
+	immediate = {
+		dragonlord_remove_unregistered_noble_family_effect = yes
+	}
+}
+
+# A newly granted administrative county can briefly look independent while
+# its government and realm laws are initialized. Recheck after the vassal
+# relationship has fully settled.
+dragonlord_family_cleanup.0002 = {
+	hidden = yes
+
+	trigger = {
+		is_alive = yes
+		is_independent_ruler = no
+		top_liege = { government_has_flag = government_is_dragonlord_oligarchy }
+		any_held_title = {
+			tier >= tier_county
+			is_landless_type_title = no
+		}
+	}
+
+	immediate = {
+		dragonlord_normalize_vassal_appointment_succession_effect = yes
+	}
+}

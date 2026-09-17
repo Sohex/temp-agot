@@ -1,0 +1,118 @@
+﻿namespace = agot_dragonbinder
+
+# The horn is raised - fired immediately from the Blow the Horn
+# interaction, which already saved the target dragon into
+# var:agot_dragonbinder_target_dragon. Gives the player a real moment to
+# back out before the roll, instead of resolving instantly.
+agot_dragonbinder.0105 = {
+	type = character_event
+	title = agot_dragonbinder.0105.t
+	desc = agot_dragonbinder.0105.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_dragonbinder.0105.a # Raise it to your lips
+		trigger_event = { id = agot_dragonbinder.0106 days = 2 }
+	}
+
+	option = {
+		name = agot_dragonbinder.0105.b # Lower it - not yet
+		stress_impact = { base = medium_stress_impact_gain }
+		remove_variable = agot_dragonbinder_target_dragon
+	}
+}
+
+# The roll itself. Mastery (0-3, from Study the Valyrian Glyphs) reduces
+# the death weight by up to ~70% at full mastery.
+agot_dragonbinder.0106 = {
+	type = character_event
+	title = agot_dragonbinder.0106.t
+	desc = agot_dragonbinder.0106.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_dragonbinder.0106.a # Blood for fire, fire for blood
+		trigger = {
+			exists = var:agot_dragonbinder_target_dragon
+		}
+		random_list = {
+			40 = {
+				modifier = { factor = 0.75 var:agot_dragonbinder_mastery >= 1 }
+				modifier = { factor = 0.75 var:agot_dragonbinder_mastery >= 2 }
+				modifier = { factor = 0.55 var:agot_dragonbinder_mastery >= 3 }
+				random_list = {
+					50 = { custom_tooltip = { text = agot_dragonbinder.0106.a.dies_a } }
+					50 = { custom_tooltip = { text = agot_dragonbinder.0106.a.dies_b } }
+				}
+				death = { death_reason = death_dragon_fire_failed_tame }
+			}
+			60 = {
+				random_list = {
+					50 = { custom_tooltip = { text = agot_dragonbinder.0106.a.lives_a } }
+					50 = { custom_tooltip = { text = agot_dragonbinder.0106.a.lives_b } }
+				}
+				trigger_event = { id = agot_dragonbinder.0111 days = 1 }
+			}
+		}
+	}
+}
+
+# The bond takes hold - fired from Blow the Horn on survival. ROOT is the
+# actor (the would-be dragonbinder); the target dragon was saved into
+# var:agot_dragonbinder_target_dragon before the delay, since a
+# trigger_event delay cannot otherwise carry scope:recipient across.
+agot_dragonbinder.0111 = {
+	type = character_event
+	title = agot_dragonbinder.0111.t
+	desc = agot_dragonbinder.0111.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	immediate = {
+		if = {
+			limit = {
+				exists = var:agot_dragonbinder_target_dragon
+				var:agot_dragonbinder_target_dragon = { exists = var:current_rider }
+			}
+			agot_untame_dragon = {
+				OWNER = var:agot_dragonbinder_target_dragon.var:current_rider
+				DRAGON = var:agot_dragonbinder_target_dragon
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragonbinder.0111.a # Claim what the horn has bound
+		trigger = {
+			exists = var:agot_dragonbinder_target_dragon
+		}
+		agot_tame_dragon = {
+			TAMER = root
+			DRAGON = var:agot_dragonbinder_target_dragon
+		}
+		set_character_flag = dragon_by_horn
+		send_interface_toast = {
+			type = event_toast_effect_good
+			title = agot_dragonbinder_bound_toast
+			left_icon = root
+		}
+		remove_variable = agot_dragonbinder_target_dragon
+	}
+}

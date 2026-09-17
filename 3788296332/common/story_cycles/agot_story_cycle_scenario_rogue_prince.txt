@@ -1,0 +1,759 @@
+﻿story_agot_scenario_trp = {
+	# by Sililex
+
+	on_setup = {
+		debug_log = "TRP Scenario Initialized"
+		##################################
+		set_variable = {
+			name	= agot_trp_daemon_war_counter
+			value	= 1
+		}
+		set_variable = {
+			name = agot_trp_prince_crabfeeder_duel
+			value = flag:negative
+		}
+		set_variable = {
+			name = agot_trp_iron_throne_support
+			value = flag:negative
+		}
+
+		global_var:three_daughters_confederation = {
+			every_confederation_member = {
+				add_truce_both_ways = {
+					character = character:Drahar_8
+					years = 5
+					name = truce_stepstones_holders_trp
+				}
+				add_truce_both_ways = {
+					character = character:Naethys_113
+					years = 5
+					name = truce_stepstones_holders_trp
+				}
+				add_truce_both_ways = {
+					character = character:Raharyen_70
+					years = 5
+					name = truce_stepstones_holders_trp
+				}
+			}
+		}
+
+		#Initialise Events
+		# Passive Targs
+		character:Targaryen_60 = { # Viserys
+			trigger_event = agot_scenario_trp.1000
+		}
+
+		character:Targaryen_63 = { # Rhaenyra
+			trigger_event = agot_scenario_trp.1001
+		}
+
+		# Core Bookmark Characters
+		character:Targaryen_61 = { # Daemon
+			trigger_event = agot_scenario_trp.0001
+		}
+		character:Velaryon_31 = { # Corlys
+			trigger_event = agot_scenario_trp.0101 # Starter event
+			# Laena marriage events
+			character:Velaryon_34 = {
+				add_character_flag = {
+					flag = cannot_get_unhappy_engagement_event
+					years = 3
+				}
+			}
+			if = {
+				limit = { is_ai = yes }
+				trigger_event = {
+					id = agot_scenario_trp.0105
+					days = 894
+				}
+			}
+			else = {
+				trigger_event = {
+					id = agot_scenario_trp.0105
+					days = 910
+				}
+			}
+		}
+		character:Drahar_8 = { # Crabfeeder
+			trigger_event = agot_scenario_trp.0201
+		}
+
+		# Co-admirals get events
+		character:Naethys_113 = {
+			trigger_event = agot_scenario_trp.1014
+		}
+		character:Raharyen_70 = {
+			trigger_event = agot_scenario_trp.1014
+		}
+
+		character:Targaryen_61 = {
+			#Daemon needs his host
+			spawn_army = {
+				men_at_arms = {
+					type = mangonel
+					stacks = 2
+				}
+				men_at_arms = {
+					type = armored_footmen
+					stacks = 3
+				}
+				men_at_arms = {
+					type = bowmen
+					stacks = 3
+				}
+				levies = 1500
+				location = character:Targaryen_61.location
+				name = event_troop_default_name
+			}
+		}
+		character:Drahar_8 = {
+			#Crabfeeder needs his host
+			spawn_army = {
+				men_at_arms = {
+					type = weeping_guard
+					stacks = 1
+				}
+				men_at_arms = {
+					type = ornate_helms
+					stacks = 1
+				}
+				men_at_arms = {
+					type = myrish_crossbows
+					stacks = 1
+				}
+				men_at_arms = {
+					type = scorpions
+					stacks = 1
+				}
+				levies = 600
+				location = character:Drahar_8.location
+				name = event_troop_default_name
+			}
+			set_variable = {
+				name = agot_has_scorpions
+				value = yes
+				years = 1
+			}
+		}
+	}
+	on_end = {
+	}
+	on_owner_death = {
+		if = {
+			limit = {
+				var:agot_trp_daemon_war_counter = 1
+				character:Velaryon_31 = { is_alive = yes }
+			}
+			character:Velaryon_31 = {
+				trigger_event = agot_scenario_trp.0102
+			}
+		}
+	}
+
+	# General daily checks
+	effect_group = {
+		days = 1
+
+		# Daemon is not a ruler anymore or has died
+		triggered_effect = {
+			trigger = {
+				character:Targaryen_61 = {
+					OR = {
+						is_alive = no
+						is_ruler = no
+					}
+				}
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+
+		# Daemon stepstone war handlers
+		triggered_effect = { # First War
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				var:agot_trp_daemon_war_counter = 1
+				character:Targaryen_61 = {
+					is_alive = yes
+				}
+			}
+			effect = {
+				# If First Admiral dies, Daemon wins
+				if = {
+					limit = {
+						character:Targaryen_61 = {
+							is_at_war_as_attacker = yes
+							is_at_war_with = title:d_first_stepstones.holder
+						}
+						character:Naethys_113 = { is_alive = no }
+					}
+					character:Targaryen_61 = {
+						every_character_war = {
+							limit = {
+								primary_defender = title:d_first_stepstones.holder
+							}
+							end_war = attacker
+						}
+					}
+				}
+				# General maintenance, if Daemon is at peace, increase counter and trigger second war
+				if = {
+					limit = {
+						character:Targaryen_61 = {
+							is_at_war = no
+							is_ruler = yes
+						}
+					}
+					set_variable = {
+						name = agot_trp_daemon_war_counter
+						value = 2
+					}
+					# Daemon's 2nd war is already fired from the conclusion of his CB.
+				}
+			}
+		}
+		triggered_effect = { # Iron Throne support against Triarchy
+			trigger = {
+				var:agot_trp_iron_throne_support = flag:negative
+				OR = {
+					var:agot_trp_daemon_war_counter = 1
+					var:agot_trp_daemon_war_counter = 2
+				}
+				character:Targaryen_60 = {
+					is_alive = yes
+					has_title = title:h_the_iron_throne
+				}
+				character:Targaryen_61 = {
+					is_alive = yes
+					NOT = { has_title = title:k_the_stepstones }
+					days_of_continuous_war > 730
+				}
+			}
+			effect = {
+				set_variable = {
+					name = agot_trp_iron_throne_support
+					value = flag:positive
+				}
+				character:Targaryen_60 = {
+					trigger_event = agot_scenario_trp.1003
+				}
+			}
+		}
+		triggered_effect ={ # Second War
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				var:agot_trp_daemon_war_counter = 2
+				character:Targaryen_61 = {
+					is_alive = yes
+				}
+			}
+			effect = {
+				# If Second Admiral and Crabfeeder die, Daemon wins
+				if = {
+					limit = {
+						character:Targaryen_61 = {
+							is_at_war_as_attacker = yes
+							is_at_war_with = title:k_the_stepstones.holder
+						}
+						character:Drahar_8 = { is_alive = no } # Crabfeeder is dead
+						character:Raharyen_70 = { is_alive = no } # Second Admiral is dead
+						NOT = { # And the Stepstones are not under the Triarchy direct control due to dying beforehand
+							title:k_the_stepstones.holder = {
+								is_member_of_confederation = global_var:three_daughters_confederation
+							}
+						}
+					}
+					character:Targaryen_61 = {
+						every_character_war = {
+							limit = {
+								primary_defender = title:k_the_stepstones.holder
+							}
+							end_war = attacker
+						}
+					}
+				}
+				# General maintenance, if Daemon is at peace, increase counter
+				if = {
+					limit = {
+						character:Targaryen_61 = { is_at_war = no }
+					}
+					set_variable = {
+						name = agot_trp_daemon_war_counter
+						value = 3
+					}
+				}
+			}
+		}
+		# Daemon and Crabfeeder meet in battle
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				var:agot_trp_prince_crabfeeder_duel = flag:negative
+				var:agot_trp_daemon_war_counter = 2
+				character:Drahar_8 = {
+					is_at_same_location = character:Targaryen_61
+					location = { is_sea_province = no }
+					is_in_army = yes
+					is_alive = yes
+				}
+				character:Targaryen_61 = {
+					is_in_army = yes
+					is_alive = yes
+				}
+			}
+			effect = {
+				set_variable = {
+					name = agot_trp_prince_crabfeeder_duel
+					value = flag:positive
+				}
+				if = {
+					limit = {
+						OR = { #Players get the big event
+							character:Drahar_8 = { is_ai = no }
+							character:Targaryen_61 = { is_ai = no }
+						}
+					}
+					random_list = {
+						50 = {
+							modifier = {
+								factor = 0
+								character:Drahar_8 = { is_ai = yes }
+							}
+							character:Drahar_8 = {
+								save_scope_as = duel_attacker
+								character:Targaryen_61 = { save_scope_as = duel_defender }
+								trigger_event = agot_scenario_trp.1002
+							}
+						}
+						50 = {
+							modifier = {
+								factor = 0
+								character:Targaryen_61 = { is_ai = yes }
+							}
+							character:Targaryen_61 = {
+								save_scope_as = duel_attacker
+								character:Drahar_8 = { save_scope_as = duel_defender }
+								trigger_event = agot_scenario_trp.1002
+							}
+						}
+					}
+				}
+				else = { #AI just fight
+					random_list = {
+						0 = {
+							modifier = {
+								add = agot_historic_event_chance
+							}
+							random_list = {
+								0 = {
+									modifier = {
+										add = agot_nonhistoric_outcome_2
+									}
+									character:Targaryen_61 = {
+										death = {
+											death_reason = death_duel
+											killer = character:Drahar_8
+										}
+									}
+									character:Drahar_8 = {
+										trigger_event = agot_scenario_trp.1008
+									}
+								}
+								0 = {
+									modifier = {
+										add = agot_historic_outcome_2
+									}
+									character:Drahar_8 = {
+										death = {
+											death_reason = death_duel
+											killer = character:Targaryen_61
+										}
+									}
+									character:Targaryen_61 = {
+										trigger_event = agot_scenario_trp.1008
+									}
+								}
+							}
+						}
+						0 = {
+							#no duel
+							modifier = {
+								add = agot_nonhistoric_event_chance
+							}
+						}
+					}
+				}
+			}
+		}
+
+		# Daemon at peace - trigger Dorne offer of alliance to Triarchy
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				var:agot_trp_daemon_war_counter = 3
+				NOT = { exists = var:agot_trp_dorne_offer_considered }
+				character:Targaryen_61 = {
+					is_alive = yes
+					has_title = title:k_the_stepstones
+				}
+				OR = {
+					current_date > 8110.1.1 # Either it's at canon date
+					character:Targaryen_61 = {
+						days_of_continuous_peace >= 90 # Or Daemon won a bit ago
+					}
+				}
+			}
+			effect = {
+				set_variable = {
+					name = agot_trp_dorne_offer_considered
+					value = flag:positive
+				}
+				title:e_dorne.holder = {
+					trigger_event = agot_scenario_trp.1004
+				}
+			}
+		}
+
+		# Daemon is at peace and has won second Stepstones war
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				var:agot_trp_daemon_war_counter = 4
+				character:Targaryen_61 = {
+					is_alive = yes
+					has_title = title:k_the_stepstones
+					days_of_continuous_peace > 120 # Daemon won a bit ago
+				}
+			}
+			effect = {
+				set_variable = {
+					name = agot_trp_daemon_war_counter
+					value = 5
+				}
+				character:Targaryen_61 = {
+					trigger_event = agot_scenario_trp.0005
+				}
+			}
+		}
+	}
+}
+
+story_agot_admiral_war = {
+	# by Sililex
+
+	on_setup = {
+		title:k_the_stepstones = {
+			every_de_jure_county = {
+				if = {
+					limit = {
+						holder.top_liege = {
+							primary_title = {
+								tier <= tier_kingdom
+							}
+							NOT = { this = scope:story.story_owner }
+						}
+						NOT = { is_in_list = stepstone_targets }
+					}
+					holder.top_liege = {
+						add_to_temporary_list = stepstone_targets
+					}
+				}
+			}
+		}
+		every_in_list = {
+			list = stepstone_targets
+			scope:story.story_owner = {
+				if = {
+					limit = { NOT = { is_at_war_with = prev } }
+					start_war = {
+						casus_belli = admiral_subjugation_cb
+						target = prev
+					}
+				}
+			}
+		}
+	}
+
+	on_end = {
+
+	}
+
+	on_owner_death = {
+
+	}
+
+	effect_group = {
+		days = 1
+
+		# If they are independent, not at war, and control all of the stepstones, candidate for ending event
+		triggered_effect = {
+			trigger = {
+				scope:story.story_owner = {
+					is_independent_ruler = yes
+					is_at_war = no
+					NOT = { has_title = title:k_the_stepstones }
+					NOT = { has_character_flag = admiral_war_peace }
+				}
+			}
+			effect = {
+				scope:story.story_owner = {
+					if = {
+						limit = { # If they control all the stepstones, send event
+							title:k_the_stepstones = {
+								any_de_jure_county = {
+									holder.top_liege = {
+										NOT = { this = scope:story.story_owner }
+									}
+									count = 0
+								}
+							}
+						}
+						trigger_event = {
+							id = agot_scenario_trp.1022
+						}
+					}
+					else = { # Else they white peaced, so primacy is not possible
+						global_var:three_daughters_confederation = {
+							random_confederation_member = {
+								weight = {
+									base = 1
+									modifier = {
+										add = current_military_strength
+									}
+								}
+								save_scope_as = powerful_peace_char
+							}
+						}
+						every_in_list = {
+							list = stepstone_rulers
+							limit = {
+								NOT = { has_character_flag = admiral_war_peace }
+							}
+							trigger_event = {
+								id = agot_scenario_trp.1023
+							}
+							add_character_flag = admiral_war_peace
+						}
+						# Swear fealty to three daughters if possible
+						if = {
+							limit = {
+								exists = scope:powerful_peace_char
+							}
+							create_title_and_vassal_change = {
+								type = swear_fealty
+								save_scope_as = title_change
+							}
+							change_liege = {
+								liege = scope:powerful_peace_char
+								change = scope:title_change
+							}
+							resolve_title_and_vassal_change = scope:title_change
+						}
+					}
+				}
+			}
+		}
+
+		# If they have been alerted to peace, end the story
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					has_character_flag = admiral_war_peace
+				}
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+	}
+}
+
+story_agot_rhae_pregnancy_prevention = {
+	# by Sililex
+	on_setup = {
+	}
+
+	on_end = {
+	}
+
+	on_owner_death = {
+	}
+
+	effect_group = {
+		days = 14
+
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					is_pregnant = yes
+					pregnancy_real_father = character:Targaryen_61
+				}
+			}
+			effect = {
+				story_owner = {
+					end_pregnancy = yes
+				}
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					OR = {
+						NOT = { has_relation_rival = character:Targaryen_61 }
+						has_relation_lover = character:Targaryen_61
+						is_married = no
+						is_alive = no
+					}
+				}
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+	}
+}
+
+story_agot_laena_betrothal_decision = {
+	# by Sililex
+	on_setup = {
+		set_variable = {
+			name = proposed_visy
+			value = flag:negative
+		}
+		set_variable = {
+			name = proposed_daemon
+			value = flag:negative
+		}
+	}
+
+	on_end = {
+	}
+
+	on_owner_death = {
+		end_story = yes
+	}
+
+	effect_group = {
+		days = 30
+
+		triggered_effect = {
+			trigger = { # If Laena is dead or married or not my employee
+				character:Velaryon_34 = {
+					OR = {
+						is_alive = no
+						is_married = yes
+						NOT = { employer = scope:story.story_owner }
+					}
+				}
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+
+		triggered_effect = {
+			trigger = { # If Laena is old enough, either marry or don't
+				character:Velaryon_34 = {
+					age >= 30
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = {
+						id = agot_scenario_trp.0108
+					}
+				}
+				end_story = yes
+			}
+		}
+
+		triggered_effect = { # King is unmarried
+			trigger = {
+				trigger_if = {
+					limit = { title:h_the_iron_throne.holder = character:Targaryen_60 }
+					var:proposed_visy = flag:negative
+				}
+				trigger_if = {
+					limit = { title:h_the_iron_throne.holder = character:Targaryen_61 }
+					var:proposed_daemon = flag:negative
+				}
+				trigger_if = {
+					limit = {
+						title:h_the_iron_throne.holder = {
+							NOT = {
+								this = character:Targaryen_60
+								this = character:Targaryen_61
+							}
+						}
+					}
+					OR = {
+						NOT = { exists = var:proposed_other }
+						NOT = { var:proposed_other = title:h_the_iron_throne.holder }
+					}
+				}
+				title:h_the_iron_throne.holder = {
+					is_male = yes
+					is_alive = yes
+					is_married = no
+					is_betrothed = no
+					NOT = { dynasty = character:Velaryon_34.dynasty }
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = {
+						id = agot_scenario_trp.0106
+					}
+				}
+				if = {
+					limit = {
+						title:h_the_iron_throne.holder = character:Targaryen_60
+					}
+					set_variable = {
+						name = proposed_visy
+						value = flag:positive
+					}
+				}
+				else_if = {
+					limit = {
+						title:h_the_iron_throne.holder = character:Targaryen_61
+					}
+					set_variable = {
+						name = proposed_daemon
+						value = flag:positive
+					}
+				}
+				else = {
+					set_variable = {
+						name = proposed_other
+						value = title:h_the_iron_throne.holder
+					}
+				}
+			}
+		}
+
+		triggered_effect = { # Daemon is unmarried
+			trigger = {
+				character:Targaryen_61 = {
+					is_alive = yes
+					is_married = no
+					is_betrothed = no
+					days_of_continuous_peace > 10
+					NOT = { has_title = title:h_the_iron_throne }
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = {
+						id = agot_scenario_trp.0107
+					}
+				}
+				set_variable = {
+					name = proposed_daemon
+					value = flag:positive
+				}
+			}
+		}
+	}
+}

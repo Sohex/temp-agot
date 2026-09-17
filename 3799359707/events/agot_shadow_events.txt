@@ -1,0 +1,256 @@
+﻿namespace = agot_shadow
+
+### Acquisition: 0090 (call) -> 0091 (rite explained) -> 0092 (the rite) ###
+
+agot_shadow.0090 = {
+	type = character_event
+	title = agot_shadow.0090.t
+	desc = agot_shadow.0090.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_shadow.0090.a # Seek the shadowbinder
+		trigger_event = { id = agot_shadow.0091 days = 4 }
+	}
+
+	option = {
+		name = agot_shadow.0090.b # Not now
+		stress_impact = { base = minor_stress_impact_gain }
+	}
+}
+
+agot_shadow.0091 = {
+	type = character_event
+	title = agot_shadow.0091.t
+	desc = agot_shadow.0091.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_shadow.0091.a # Give up part of your life-fire
+		trigger_event = { id = agot_shadow.0092 days = 2 }
+	}
+
+	option = {
+		name = agot_shadow.0091.b # Turn back
+		stress_impact = { base = medium_stress_impact_gain }
+	}
+}
+
+agot_shadow.0092 = {
+	type = character_event
+	title = agot_shadow.0092.t
+	desc = agot_shadow.0092.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_shadow.0092.a # Let the darkness in
+		if = {
+			limit = { intrigue >= 16 }
+			custom_tooltip = {
+				text = agot_shadow.0092.a.success
+			}
+			agot_magic_grant_shadow_gift_effect = yes
+		}
+		else_if = {
+			limit = { intrigue >= 12 }
+			random_list = {
+				50 = {
+					custom_tooltip = {
+						text = agot_shadow.0092.a.success
+					}
+					agot_magic_grant_shadow_gift_effect = yes
+				}
+				50 = {
+					custom_tooltip = {
+						text = agot_shadow.0092.a.failure
+					}
+					agot_shadow_ritual_failure_effect = yes
+				}
+			}
+		}
+		else = {
+			random_list = {
+				25 = {
+					custom_tooltip = {
+						text = agot_shadow.0092.a.success
+					}
+					agot_magic_grant_shadow_gift_effect = yes
+				}
+				75 = {
+					custom_tooltip = {
+						text = agot_shadow.0092.a.failure
+					}
+					agot_shadow_ritual_failure_effect = yes
+				}
+			}
+		}
+	}
+}
+
+### Casting the rite: 0093 (asking) -> 0094 (the rite itself) ###
+# Started by the Conceive a Shadow interaction, which saves its target
+# into var:agot_shadow_target before triggering 0093 (a plain trigger_event
+# cannot otherwise carry scope:recipient across the narrative chain).
+
+agot_shadow.0093 = {
+	type = character_event
+	title = agot_shadow.0093.t
+	desc = agot_shadow.0093.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	right_portrait = {
+		character = root.primary_spouse
+		animation = worry
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_shadow.0093.a # Ask this of them
+		trigger_event = { id = agot_shadow.0094 days = 3 }
+	}
+
+	option = {
+		name = agot_shadow.0093.b # You cannot ask this of them
+		stress_impact = { base = medium_stress_impact_gain }
+		remove_variable = agot_shadow_target
+	}
+}
+
+agot_shadow.0094 = {
+	type = character_event
+	title = agot_shadow.0094.t
+	desc = agot_shadow.0094.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_shadow.0094.a # Give what must be given
+		trigger = {
+			exists = var:agot_shadow_target
+		}
+		primary_spouse = {
+			add_character_modifier = {
+				modifier = agot_shadow_lifefire_spent_modifier
+			}
+		}
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_shadow_conceive_a_shadow_notification
+			left_icon = root
+			right_icon = var:agot_shadow_target
+		}
+		var:agot_shadow_target = {
+			trigger_event = { id = agot_shadow.0095 days = 12 }
+		}
+		remove_variable = agot_shadow_target
+	}
+}
+
+### Casting alone (no spouse): 0096 (the choice) -> 0097 (the rite) ###
+
+agot_shadow.0096 = {
+	type = character_event
+	title = agot_shadow.0096.t
+	desc = agot_shadow.0096.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_shadow.0096.a # Give of yourself
+		trigger_event = { id = agot_shadow.0097 days = 3 }
+	}
+
+	option = {
+		name = agot_shadow.0096.b # This price is too steep alone
+		stress_impact = { base = medium_stress_impact_gain }
+		remove_variable = agot_shadow_target
+	}
+}
+
+agot_shadow.0097 = {
+	type = character_event
+	title = agot_shadow.0097.t
+	desc = agot_shadow.0097.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_shadow.0097.a # Give what must be given
+		trigger = {
+			exists = var:agot_shadow_target
+		}
+		add_character_modifier = {
+			modifier = agot_shadow_own_lifefire_spent_modifier
+		}
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_shadow_conceive_a_shadow_notification
+			left_icon = root
+			right_icon = var:agot_shadow_target
+		}
+		var:agot_shadow_target = {
+			trigger_event = { id = agot_shadow.0095 days = 12 }
+		}
+		remove_variable = agot_shadow_target
+	}
+}
+
+# The shadow finds its mark - fired from the rite above, scoped so that
+# ROOT is already the intended victim. Hidden: this is the assassin
+# arriving, not something the victim chooses. Mastery (0-3, from Steel
+# Your Resolve) improves the strike's chance by up to ~20 points.
+agot_shadow.0095 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		random_list = {
+			15 = {
+				modifier = { factor = 0.6 var:agot_shadow_mastery >= 1 }
+				modifier = { factor = 0.6 var:agot_shadow_mastery >= 2 }
+				modifier = { factor = 0.4 var:agot_shadow_mastery >= 3 }
+			}
+			85 = {
+				death = { death_reason = death_murder }
+			}
+		}
+	}
+}

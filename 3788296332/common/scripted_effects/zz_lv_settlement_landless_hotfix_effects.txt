@@ -1,0 +1,213 @@
+﻿
+lv_settlement_establish_effect = {
+	# Determine ruin level for converting to appropriate colony building
+	$PROVINCE$ = {
+		county = { save_scope_as = county }
+		# Determine ruin size to return to in case the colony becomes abandoned
+		if = {
+			limit = { has_building_or_higher = large_ruin_01 }
+			set_variable = { name = ruin_size value = flag:ruin_size_large }
+		}
+		else_if = {
+			limit = { has_building_or_higher = medium_ruin_01 }
+			set_variable = { name = ruin_size value = flag:ruin_size_medium }
+		}
+		# Determine level progress
+		if = {
+			limit = {
+				OR = {
+					has_building = large_ruin_03
+					has_building = medium_ruin_03
+					has_building = small_ruin_03
+				}
+			}
+			set_variable = {
+				name = ruin_progress
+				value = flag:ruin_progress_significant
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_building = large_ruin_02
+					has_building = medium_ruin_02
+					has_building = small_ruin_02
+				}
+			}
+			set_variable = {
+				name = ruin_progress
+				value = flag:ruin_progress_minimal
+			}
+		}
+		set_holding_type = settlement_holding
+
+		# Convert to appropriate colony level if prior progress made
+		if = { # Colony level 3 building
+			limit = { var:ruin_progress ?= flag:ruin_progress_significant }
+			add_building = settlement_03
+		}
+		else_if = { # Colony level 2 building
+			limit = { var:ruin_progress ?= flag:ruin_progress_minimal }
+			add_building = settlement_02
+		}
+		remove_variable = ruin_progress
+	}
+	$ACTOR$ = {
+		# Liege "gets" the title first, so it will reflect in history that they "granted" the title to the settler
+		if = {
+			limit = { NOT = { exists = scope:liege } }
+			save_scope_as = liege
+		}
+		create_title_and_vassal_change = {
+			type = conquest
+			save_scope_as = claim_change
+		}
+		scope:county = {
+			change_title_holder = {
+				holder = scope:liege
+				change = scope:claim_change
+				take_baronies = yes
+			}
+		}
+		resolve_title_and_vassal_change = scope:claim_change
+
+		# Now we give it to the actual settler
+		if = {
+			limit = {
+				NOT = { this = scope:liege }
+				scope:liege = {
+					NOT = {
+						# Can't have county vassals as a count, of course
+						highest_held_title_tier = tier_county
+					}
+				}
+			}
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change
+			}
+			change_liege = {
+				liege = scope:liege
+				change = scope:change
+			}
+			scope:county = {
+				change_title_holder = {
+					holder = $ACTOR$
+					change = scope:change
+					take_baronies = yes
+				}
+			}
+			resolve_title_and_vassal_change = scope:change
+		}
+
+		if = {
+			limit = { government_has_flag = government_is_landless_adventurer }
+			hidden_effect = { laamp_clear_domicile_buildings_liquidator_effect = yes }
+			if = {
+				limit = {
+					OR = {
+						agot_is_valid_lp_feudal_government_target = yes
+						any_liege_or_above = { agot_is_valid_lp_feudal_government_target = yes }
+					}
+				}
+				change_government = lp_feudal_government
+			}
+			else = { change_government = feudal_government }
+		}
+
+		scope:county = {
+			generate_coa = yes
+			holder ?= { primary_title ?= { save_scope_as = restored_county_color_source } }
+			if = {
+				limit = { exists = scope:restored_county_color_source }
+				set_color_from_title = scope:restored_county_color_source
+			}
+			every_county_province = { barony ?= { generate_coa = yes } }
+		}
+
+		scope:county = {
+			set_county_faith = $ACTOR$.faith
+			if = {
+				limit = { culture = culture:unknown_culture }
+				if = {
+					limit = {
+						$ACTOR$.culture = culture:high_valyrian
+						has_game_rule = agot_hv_conversion_offshoots
+						title_province = { geographical_region = world_westeros }
+						NOT = { title_province = { lv_agot_hv_conversion_exempt_province_trigger = yes } }
+					}
+					set_county_culture = culture:westerosi_valyrian
+				}
+				else_if = {
+					limit = {
+						$ACTOR$.culture = culture:high_valyrian
+						has_game_rule = agot_hv_conversion_offshoots
+						NOT = { title_province = { lv_agot_hv_conversion_exempt_province_trigger = yes } }
+						NOT = { title_province = { geographical_region = world_westeros } }
+					}
+					set_county_culture = culture:essosi_valyrian
+				}
+				else = { set_county_culture = $ACTOR$.culture }
+			}
+		}
+		increase_variable = {
+			NAME = num_settled_wilderness
+			AMOUNT = 1
+		}
+		trigger_event = agot_colonization_events.0007
+		correct_wilderness_tracker = yes
+	}
+}
+
+lv_settlement_finish_pending_expedition_effect = {
+	save_scope_as = settler
+	if = {
+		limit = {
+			has_variable = lv_settlement_expedition_liege
+			has_variable = lv_settlement_expedition_destination
+		}
+		var:lv_settlement_expedition_liege = { save_scope_as = liege }
+		var:lv_settlement_expedition_destination = { save_scope_as = ruin }
+
+		if = {
+			limit = {
+				exists = scope:liege
+				exists = scope:ruin
+				scope:ruin = {
+					province_owner = { agot_is_dummy_character = yes }
+					OR = {
+						has_holding_type = ruin_holding
+						has_holding_type = wilderness_holding
+						has_holding_type = unknown_holding
+					}
+				}
+			}
+
+			if = {
+				limit = { exists = var:lv_settlement_cost }
+				scope:liege = { remove_short_term_gold = scope:settler.var:lv_settlement_cost }
+			}
+
+			scope:ruin = { save_scope_as = completed_ruin }
+			lv_settlement_establish_effect = {
+				ACTOR = scope:settler
+				PROVINCE = scope:ruin
+			}
+			scope:liege = { trigger_event = lv_settlement_event.0011 }
+		}
+
+		scope:liege ?= {
+			random_owned_story = {
+				limit = { story_type = lv_settlement_story_cycle }
+				remove_list_variable = {
+					name = lv_settlement_expeditions
+					target = scope:ruin
+				}
+			}
+		}
+		remove_variable = lv_settlement_expedition_liege
+		remove_variable = lv_settlement_expedition_destination
+		remove_variable = lv_settlement_expedition_started
+		remove_variable = lv_settlement_cost
+	}
+}

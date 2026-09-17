@@ -1,0 +1,188 @@
+﻿dragonlord_petition_for_family_elevation_interaction = {
+	category = interaction_category_succession
+	icon = powerful_family_shield
+	desc = dragonlord_petition_for_family_elevation_interaction_desc
+	common_interaction = yes
+	interface_priority = 90
+
+	ai_maybe = yes
+	ai_min_reply_days = 4
+	ai_max_reply_days = 9
+	popup_on_receive = yes
+	pause_on_receive = yes
+	greeting = positive
+	notification_text = dragonlord_petition_for_family_elevation_notification
+	pre_answer_yes_key = dragonlord_petition_for_family_elevation_accept
+	pre_answer_no_key = dragonlord_petition_for_family_elevation_decline
+
+	# One House may ask the same First Lord only once per decade. AI petitions
+	# also share a realm-wide three-year intake lock, preventing request floods.
+	cooldown_against_recipient = { years = 10 }
+
+	is_shown = {
+		scope:actor != scope:recipient
+		scope:actor = {
+			is_independent_ruler = no
+			liege = scope:recipient
+			top_liege = scope:recipient
+		}
+		scope:recipient = {
+			top_liege = this
+			government_has_flag = government_is_dragonlord_oligarchy
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			custom_tooltip = {
+				text = dragonlord_family_elevation_candidate_invalid_tt
+				dragonlord_can_petition_for_family_elevation_trigger = yes
+			}
+		}
+		trigger_if = {
+			limit = { scope:actor = { is_ai = yes } }
+			scope:recipient = {
+				custom_tooltip = {
+					text = dragonlord_family_elevation_petitions_throttled_tt
+					NOT = { has_character_flag = dragonlord_family_elevation_ai_petition_lock }
+				}
+			}
+		}
+	}
+
+	on_send = {
+		if = {
+			limit = { scope:actor = { is_ai = yes } }
+			scope:recipient = {
+				add_character_flag = { flag = dragonlord_family_elevation_ai_petition_lock years = 3 }
+			}
+		}
+	}
+
+	on_accept = {
+		if = {
+			limit = {
+				scope:actor = { dragonlord_can_petition_for_family_elevation_trigger = yes }
+				scope:recipient = { dragonlord_has_vacant_family_seat_trigger = yes }
+			}
+			scope:actor = { dragonlord_create_noble_family_effect = yes }
+			scope:recipient = {
+				dragonlord_restore_family_primary_titles_effect = yes
+				dragonlord_recalculate_fourteen_dragonlords_effect = yes
+				dragonlord_recalculate_tamed_dragon_influence_effect = yes
+				dragonlord_refresh_noble_family_ui_count_effect = yes
+			}
+		}
+		else = {
+			scope:actor = {
+				send_interface_toast = {
+					type = event_toast_effect_neutral
+					title = dragonlord_family_elevation_no_longer_valid_toast
+					left_icon = scope:actor
+					right_icon = scope:recipient
+				}
+			}
+		}
+	}
+
+	ai_targets = { ai_recipients = liege }
+	ai_target_quick_trigger = { adult = yes }
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 36
+		duchy = 36
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+	ai_potential = {
+		dragonlord_can_petition_for_family_elevation_trigger = yes
+	}
+	ai_will_do = {
+		base = 15
+		modifier = { add = 20 has_trait = ambitious }
+		modifier = { add = 10 has_trait = brave }
+		modifier = { add = -15 has_trait = content }
+		modifier = { add = -15 has_trait = humble }
+	}
+
+	# AI First Lords decide almost entirely from their opinion of the applicant:
+	# positive relations favor elevation, while hostility favors refusal.
+	ai_accept = {
+		base = 0
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 1
+			desc = AI_OPINION_REASON
+		}
+	}
+}
+
+# The First Lord may fill a vacant Dragonlord-family seat proactively instead
+# of waiting for an eligible direct vassal to submit a petition. This is a
+# unilateral appointment and deliberately has no AI usage: AI candidates still
+# approach the First Lord through the throttled petition interaction above.
+dragonlord_elevate_vassal_family_interaction = {
+	category = interaction_category_succession
+	icon = powerful_family_shield
+	desc = dragonlord_elevate_vassal_family_interaction_desc
+	common_interaction = yes
+	interface_priority = 91
+
+	ai_maybe = no
+	auto_accept = { always = yes }
+	notification_text = dragonlord_elevate_vassal_family_notification
+
+	is_shown = {
+		scope:actor != scope:recipient
+		scope:actor = {
+			top_liege = this
+			government_has_flag = government_is_dragonlord_oligarchy
+		}
+		scope:recipient = {
+			is_independent_ruler = no
+			liege = scope:actor
+			top_liege = scope:actor
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:recipient = {
+			custom_tooltip = {
+				text = dragonlord_elevate_family_candidate_invalid_tt
+				dragonlord_can_petition_for_family_elevation_trigger = yes
+			}
+		}
+	}
+
+	on_accept = {
+		hidden_effect = {
+			# Recheck both the candidate and the seat at execution time. This closes
+			# the race where the law or family count changes while the window is open.
+			if = {
+				limit = {
+					scope:recipient = { dragonlord_can_petition_for_family_elevation_trigger = yes }
+					scope:actor = { dragonlord_has_vacant_family_seat_trigger = yes }
+				}
+				scope:recipient = { dragonlord_create_noble_family_effect = yes }
+				scope:actor = {
+					dragonlord_restore_family_primary_titles_effect = yes
+					dragonlord_recalculate_fourteen_dragonlords_effect = yes
+					dragonlord_recalculate_tamed_dragon_influence_effect = yes
+					dragonlord_refresh_noble_family_ui_count_effect = yes
+				}
+			}
+			else = {
+				scope:actor = {
+					send_interface_toast = {
+						type = event_toast_effect_neutral
+						title = dragonlord_family_elevation_no_longer_valid_toast
+						left_icon = scope:actor
+						right_icon = scope:recipient
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,389 @@
+﻿adopt_dragonlord_oligarchy_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_dragons.dds"
+	}
+	decision_group_type = major
+	desc = adopt_dragonlord_oligarchy_decision_desc
+	selection_tooltip = adopt_dragonlord_oligarchy_decision_tooltip
+	confirm_text = adopt_dragonlord_oligarchy_decision_confirm
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	is_shown = {
+		NOT = { government_has_flag = government_is_dragonlord_oligarchy }
+		highest_held_title_tier >= tier_empire
+		faith = faith:valyrian_pan_freehold
+		culture = culture:high_valyrian
+	}
+
+	is_valid = {
+		has_ep3_dlc_trigger = yes
+		highest_held_title_tier >= tier_empire
+		faith = faith:valyrian_pan_freehold
+		culture = culture:high_valyrian
+	}
+
+	effect = {
+		hidden_effect = {
+			add_character_flag = dragonlord_oligarchy_adopted
+			change_to_administrative_holding_effect = yes
+			change_government = dragonlord_oligarchy_government
+			dragonlord_refresh_bureaucracy_opinion_penalty_effect = yes
+			primary_title = {
+				set_title_name = dragonlord_valyrian_dragonlord_council
+				set_definitive_form = yes
+			}
+			if = {
+				limit = {
+					NOT = { has_realm_law = dragonlord_council_election_succession_law }
+				}
+				add_realm_law_skip_effects = dragonlord_council_election_succession_law
+			}
+				every_vassal_or_below = {
+					limit = {
+						highest_held_title_tier >= tier_county
+				}
+					change_to_administrative_holding_effect = yes
+					change_government = dragonlord_oligarchy_government
+				}
+
+			dragonlord_enforce_single_high_title_effect = yes
+
+			# High-title destruction can promote former sub-vassal counts into direct
+			# vassals. Select the Forty Families only after that hierarchy has
+			# settled so every ruler who is direct in the restored Freehold is
+			# evaluated by the same rule.
+			dragonlord_initialize_noble_laws_effect = yes
+			dragonlord_establish_family_titles_effect = yes
+			add_character_flag = dragonlord_final_hierarchy_family_selection_migrated
+			dragonlord_restore_family_primary_titles_effect = yes
+
+			# At full capacity, the strongest fourteen of the forty Dragonlord
+			# Families become the first Fourteen Dragonlords.
+			dragonlord_recalculate_fourteen_dragonlords_effect = yes
+			dragonlord_recalculate_tamed_dragon_influence_effect = yes
+			dragonlord_establish_default_provincial_laws_effect = yes
+		}
+		custom_tooltip = adopt_dragonlord_oligarchy_decision_effect_tooltip
+	}
+
+	ai_potential = { always = no }
+	ai_will_do = { base = 0 }
+}
+
+# Save repair for realms founded while the custom government was not yet
+# preregistered. It disappears permanently once a family title exists.
+summon_dragonlord_families_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_dragons.dds"
+	}
+	decision_group_type = major
+	desc = summon_dragonlord_families_decision_desc
+	selection_tooltip = summon_dragonlord_families_decision_tooltip
+	confirm_text = summon_dragonlord_families_decision_confirm
+
+	is_shown = {
+		top_liege = this
+		government_has_flag = government_is_dragonlord_oligarchy
+		NOR = {
+			any_held_title = {
+				is_noble_family_title = yes
+				has_variable = dragonlord_family_title
+			}
+			any_vassal_or_below = {
+				any_held_title = {
+					is_noble_family_title = yes
+					has_variable = dragonlord_family_title
+				}
+			}
+		}
+	}
+
+	is_valid = {
+		has_ep3_dlc_trigger = yes
+	}
+
+	effect = {
+		hidden_effect = {
+			primary_title = {
+				set_title_name = dragonlord_valyrian_dragonlord_council
+				set_definitive_form = yes
+			}
+			if = {
+				limit = {
+					NOT = { has_realm_law = dragonlord_council_election_succession_law }
+				}
+				add_realm_law_skip_effects = dragonlord_council_election_succession_law
+			}
+			dragonlord_initialize_noble_laws_effect = yes
+			dragonlord_establish_family_titles_effect = yes
+			dragonlord_recalculate_fourteen_dragonlords_effect = yes
+			dragonlord_recalculate_tamed_dragon_influence_effect = yes
+			dragonlord_initialize_provincial_laws_effect = yes
+		}
+		custom_tooltip = summon_dragonlord_families_decision_effect_tooltip
+	}
+
+	ai_check_interval = 12
+	ai_potential = { always = yes }
+	ai_will_do = { base = 100 }
+}
+
+# Opens the agenda planner for the next Dragonlord Council. The cooldown is
+# applied only when a complete motion is confirmed inside the scripted widget,
+# so closing the planner does not consume the meeting.
+convene_dragonlord_council_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/dragonlord_council.png"
+	}
+	decision_group_type = major
+	desc = convene_dragonlord_council_decision_desc
+	selection_tooltip = convene_dragonlord_council_decision_tooltip
+	confirm_text = convene_dragonlord_council_decision_confirm
+
+	is_shown = {
+		top_liege = this
+		government_has_flag = government_is_dragonlord_oligarchy
+	}
+
+	is_valid = {
+		is_at_war = no
+		custom_description = {
+			text = dragonlord_council_decision_cooldown_requirement
+			NOT = { has_character_flag = dragonlord_council_meeting_cooldown }
+		}
+		custom_description = {
+			text = dragonlord_council_decision_no_pending_agenda_requirement
+			NOT = { has_variable = dragonlord_council_pending_agenda }
+		}
+	}
+
+	effect = {
+		hidden_effect = { dragonlord_initialize_noble_laws_effect = yes }
+		if = {
+			limit = { is_ai = yes }
+			hidden_effect = { dragonlord_council_ai_prepare_agenda_effect = yes }
+		}
+		else = {
+		hidden_effect = {
+			# War targets are populated only after a war type is selected, because
+			# each proposed casus belli has a different target pool.
+			clear_variable_list = dragonlord_council_target_candidates
+			clear_variable_list = dragonlord_council_development_county_candidates
+			clear_variable_list = dragonlord_council_development_estate_candidates
+			clear_variable_list = dragonlord_council_development_contributors
+			clear_variable_list = dragonlord_council_forecast_supporters
+			clear_variable_list = dragonlord_council_forecast_opponents
+			remove_variable = dragonlord_council_forecast_support_votes
+			remove_variable = dragonlord_council_forecast_opposition_votes
+			remove_variable = dragonlord_council_selected_agenda_category
+			remove_variable = dragonlord_council_selected_law_menu
+			remove_variable = dragonlord_council_selected_war_type
+			remove_variable = dragonlord_council_selected_target
+			remove_variable = dragonlord_council_selected_law
+			remove_variable = dragonlord_council_selected_development_type
+			remove_variable = dragonlord_council_selected_development_target
+			remove_variable = dragonlord_council_selected_estate_target
+			remove_variable = dragonlord_council_development_contributor_count
+			remove_variable = dragonlord_council_vote_forecast_open
+
+			# The treasury budget uses the two law groups valid for this government.
+			# Copy their current
+			# percentages into temporary agenda variables so the council page can
+			# edit them without enacting anything before the vote.
+			set_variable = { name = dragonlord_council_budget_salary value = 30 }
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_0 }
+				set_variable = { name = dragonlord_council_budget_salary value = 0 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_5 }
+				set_variable = { name = dragonlord_council_budget_salary value = 5 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_10 }
+				set_variable = { name = dragonlord_council_budget_salary value = 10 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_15 }
+				set_variable = { name = dragonlord_council_budget_salary value = 15 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_20 }
+				set_variable = { name = dragonlord_council_budget_salary value = 20 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_25 }
+				set_variable = { name = dragonlord_council_budget_salary value = 25 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_30 }
+				set_variable = { name = dragonlord_council_budget_salary value = 30 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_35 }
+				set_variable = { name = dragonlord_council_budget_salary value = 35 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_40 }
+				set_variable = { name = dragonlord_council_budget_salary value = 40 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_45 }
+				set_variable = { name = dragonlord_council_budget_salary value = 45 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_50 }
+				set_variable = { name = dragonlord_council_budget_salary value = 50 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_55 }
+				set_variable = { name = dragonlord_council_budget_salary value = 55 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_60 }
+				set_variable = { name = dragonlord_council_budget_salary value = 60 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_65 }
+				set_variable = { name = dragonlord_council_budget_salary value = 65 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_70 }
+				set_variable = { name = dragonlord_council_budget_salary value = 70 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_75 }
+				set_variable = { name = dragonlord_council_budget_salary value = 75 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_80 }
+				set_variable = { name = dragonlord_council_budget_salary value = 80 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_85 }
+				set_variable = { name = dragonlord_council_budget_salary value = 85 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_90 }
+				set_variable = { name = dragonlord_council_budget_salary value = 90 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_95 }
+				set_variable = { name = dragonlord_council_budget_salary value = 95 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_salary_100 }
+				set_variable = { name = dragonlord_council_budget_salary value = 100 }
+			}
+			set_variable = { name = dragonlord_council_budget_military value = 20 }
+			if = {
+				limit = { has_realm_law = budget_allocation_military_0 }
+				set_variable = { name = dragonlord_council_budget_military value = 0 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_5 }
+				set_variable = { name = dragonlord_council_budget_military value = 5 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_10 }
+				set_variable = { name = dragonlord_council_budget_military value = 10 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_15 }
+				set_variable = { name = dragonlord_council_budget_military value = 15 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_20 }
+				set_variable = { name = dragonlord_council_budget_military value = 20 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_25 }
+				set_variable = { name = dragonlord_council_budget_military value = 25 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_30 }
+				set_variable = { name = dragonlord_council_budget_military value = 30 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_35 }
+				set_variable = { name = dragonlord_council_budget_military value = 35 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_40 }
+				set_variable = { name = dragonlord_council_budget_military value = 40 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_45 }
+				set_variable = { name = dragonlord_council_budget_military value = 45 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_50 }
+				set_variable = { name = dragonlord_council_budget_military value = 50 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_55 }
+				set_variable = { name = dragonlord_council_budget_military value = 55 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_60 }
+				set_variable = { name = dragonlord_council_budget_military value = 60 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_65 }
+				set_variable = { name = dragonlord_council_budget_military value = 65 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_70 }
+				set_variable = { name = dragonlord_council_budget_military value = 70 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_75 }
+				set_variable = { name = dragonlord_council_budget_military value = 75 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_80 }
+				set_variable = { name = dragonlord_council_budget_military value = 80 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_85 }
+				set_variable = { name = dragonlord_council_budget_military value = 85 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_90 }
+				set_variable = { name = dragonlord_council_budget_military value = 90 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_95 }
+				set_variable = { name = dragonlord_council_budget_military value = 95 }
+			}
+			if = {
+				limit = { has_realm_law = budget_allocation_military_100 }
+				set_variable = { name = dragonlord_council_budget_military value = 100 }
+			}
+			# Preserve the enacted allocations so voting support can respond to the
+			# size and direction of each proposed change rather than its final level.
+			set_variable = { name = dragonlord_council_budget_salary_original value = var:dragonlord_council_budget_salary }
+			set_variable = { name = dragonlord_council_budget_military_original value = var:dragonlord_council_budget_military }
+			set_variable = {
+				name = dragonlord_council_agenda_window_open
+				value = yes
+			}
+		}
+		custom_tooltip = convene_dragonlord_council_decision_effect_tooltip
+		}
+	}
+
+	ai_check_interval = 12
+	ai_potential = {
+		NOT = { has_character_flag = dragonlord_council_war_authorized }
+	}
+	ai_will_do = { base = 100 }
+}

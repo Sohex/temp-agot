@@ -1,0 +1,265 @@
+﻿namespace = agot_greenseer
+
+### Acquisition: 0070 (call) -> 0071 (rite explained) -> 0072 (the rite) ###
+
+agot_greenseer.0070 = {
+	type = character_event
+	title = agot_greenseer.0070.t
+	desc = agot_greenseer.0070.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_greenseer.0070.a # Seek out a weirwood
+		trigger_event = { id = agot_greenseer.0071 days = 4 }
+	}
+
+	option = {
+		name = agot_greenseer.0070.b # Not now
+		stress_impact = { base = minor_stress_impact_gain }
+	}
+}
+
+agot_greenseer.0071 = {
+	type = character_event
+	title = agot_greenseer.0071.t
+	desc = agot_greenseer.0071.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_greenseer.0071.a # Eat of the red paste
+		trigger_event = { id = agot_greenseer.0072 days = 2 }
+	}
+
+	option = {
+		name = agot_greenseer.0071.b # Turn back
+		stress_impact = { base = medium_stress_impact_gain }
+	}
+}
+
+agot_greenseer.0072 = {
+	type = character_event
+	title = agot_greenseer.0072.t
+	desc = agot_greenseer.0072.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_greenseer.0072.a # Open your mind to the tree
+		if = {
+			limit = { learning >= 16 }
+			custom_tooltip = {
+				text = agot_greenseer.0072.a.success
+			}
+			agot_magic_grant_greenseer_gift_effect = yes
+		}
+		else_if = {
+			limit = { learning >= 12 }
+			random_list = {
+				55 = {
+					custom_tooltip = {
+						text = agot_greenseer.0072.a.success
+					}
+					agot_magic_grant_greenseer_gift_effect = yes
+				}
+				45 = {
+					custom_tooltip = {
+						text = agot_greenseer.0072.a.failure
+					}
+					agot_greenseer_ritual_failure_effect = yes
+				}
+			}
+		}
+		else = {
+			random_list = {
+				25 = {
+					custom_tooltip = {
+						text = agot_greenseer.0072.a.success
+					}
+					agot_magic_grant_greenseer_gift_effect = yes
+				}
+				75 = {
+					custom_tooltip = {
+						text = agot_greenseer.0072.a.failure
+					}
+					agot_greenseer_ritual_failure_effect = yes
+				}
+			}
+		}
+	}
+}
+
+# Rootedness choice - fires once, when var:agot_greenseer_rootedness hits 6.
+# Not a punishment event: staying human is always free and safe, the
+# transformation is a genuine, permanent upgrade the player opts into.
+agot_greenseer.0073 = {
+	type = character_event
+	title = agot_greenseer.0073.t
+	desc = agot_greenseer.0073.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	immediate = {
+		remove_character_flag = agot_greenseer_rootedness_choice_pending
+	}
+
+	option = {
+		name = agot_greenseer.0073.a # Remain who you are
+		set_variable = { name = agot_greenseer_rootedness value = 3 } # eases back, can grow again later
+	}
+
+	option = {
+		name = agot_greenseer.0073.b # Give yourself to the tree
+		add_trait = agot_greenseer_bound_to_the_tree
+		set_variable = { name = agot_greenseer_rootedness value = 0 }
+		send_interface_toast = {
+			type = event_toast_effect_neutral
+			title = agot_greenseer_bound_to_the_tree_toast
+			left_icon = root
+		}
+	}
+}
+
+# See the Truth as an actual vision, not a flat toast. Fired from the
+# interaction, which saves its target into
+# var:agot_greenseer_truth_target first. Deterministic (no randomness -
+# Truthseer either sees a gift or doesn't), but now a real moment instead
+# of instant text.
+agot_greenseer.0074 = {
+	type = character_event
+	title = agot_greenseer.0074.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:agot_greenseer_truth_target = { has_variable = agot_gift_of_rhllor } }
+				desc = agot_greenseer.0074.desc.rhllor
+			}
+			triggered_desc = {
+				trigger = { var:agot_greenseer_truth_target = { has_variable = agot_gift_of_warging } }
+				desc = agot_greenseer.0074.desc.warging
+			}
+			triggered_desc = {
+				trigger = { var:agot_greenseer_truth_target = { has_variable = agot_gift_of_blood } }
+				desc = agot_greenseer.0074.desc.blood
+			}
+			triggered_desc = {
+				trigger = { var:agot_greenseer_truth_target = { has_variable = agot_gift_of_drowned } }
+				desc = agot_greenseer.0074.desc.drowned
+			}
+			triggered_desc = {
+				trigger = { var:agot_greenseer_truth_target = { has_variable = agot_gift_of_faceless } }
+				desc = agot_greenseer.0074.desc.faceless
+			}
+			triggered_desc = {
+				trigger = { var:agot_greenseer_truth_target = { has_variable = agot_gift_of_shadow } }
+				desc = agot_greenseer.0074.desc.shadow
+			}
+			desc = agot_greenseer.0074.desc.nothing
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	right_portrait = {
+		character = var:agot_greenseer_truth_target
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_greenseer.0074.a
+		agot_greenseer_track_rootedness_effect = yes
+		remove_variable = agot_greenseer_truth_target
+	}
+}
+
+### Hammer of the Waters: 0075 (calling the old pact) -> 0076 (the flood) ###
+# Started by the Hammer of the Waters interaction, which saves its target
+# into var:agot_greenseer_hammer_target first.
+
+agot_greenseer.0075 = {
+	type = character_event
+	title = agot_greenseer.0075.t
+	desc = agot_greenseer.0075.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_greenseer.0075.a # Call on the last of the children
+		trigger_event = { id = agot_greenseer.0076 days = 6 }
+	}
+
+	option = {
+		name = agot_greenseer.0075.b # This is too much to ask
+		stress_impact = { base = medium_stress_impact_gain }
+		remove_variable = agot_greenseer_hammer_target
+	}
+}
+
+agot_greenseer.0076 = {
+	type = character_event
+	title = agot_greenseer.0076.t
+	desc = agot_greenseer.0076.desc
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_greenseer.0076.a # Break the earth
+		trigger = {
+			exists = var:agot_greenseer_hammer_target
+		}
+		stress_impact = { base = massive_stress_impact_gain }
+		agot_greenseer_track_rootedness_effect = yes
+		if = {
+			limit = { exists = var:agot_greenseer_hammer_target.capital_county }
+			var:agot_greenseer_hammer_target.capital_county = {
+				add_county_modifier = {
+					modifier = agot_greenseer_flooded_county_modifier
+					years = -1
+				}
+			}
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = agot_greenseer_hammer_of_the_waters_notification
+				left_icon = root
+				right_icon = var:agot_greenseer_hammer_target
+			}
+		}
+		remove_variable = agot_greenseer_hammer_target
+	}
+}

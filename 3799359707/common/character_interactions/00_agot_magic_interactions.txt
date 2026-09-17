@@ -1,0 +1,202 @@
+﻿# AGOT: Magic of Westeros - targeted spells
+# These are character interactions (not decisions) because they need a
+# character-picker, which only interactions provide. All are auto_accept:
+# the target has no way to refuse magic being worked on/against them.
+
+### Blood Magic: cast a curse on a target, paid for with your own body ###
+agot_bloodmagic_curse_interaction = {
+	interface_priority = 90
+	category = interaction_category_hostile
+	icon = agot_bloodmagic_curse
+
+	desc = agot_bloodmagic_curse_interaction_desc
+
+	cooldown = { years = 2 }
+
+	is_shown = {
+		scope:actor = {
+			has_perk = agot_bloodmagic_first_rite_perk
+		}
+		scope:actor != scope:recipient
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			NOT = { is_at_war_with = scope:recipient }
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			set_variable = {
+				name = agot_bloodcurse_target
+				value = scope:recipient
+			}
+			trigger_event = { id = agot_magic.0060 days = 2 }
+		}
+	}
+
+	auto_accept = yes
+
+	ai_potential = {
+		has_perk = agot_bloodmagic_first_rite_perk
+	}
+
+	ai_targets = {
+		ai_recipients = scripted_relations
+		ai_recipients = courtiers
+		ai_recipients = guests
+		max = 15
+	}
+
+	ai_frequency = 3
+
+	ai_will_do = {
+		base = -50
+		modifier = {
+			add = 100
+			scope:actor = { has_relation_nemesis = scope:recipient }
+		}
+		modifier = {
+			add = 80
+			scope:actor = { has_relation_rival = scope:recipient }
+		}
+		modifier = {
+			add = 40
+			opinion = {
+				target = scope:recipient
+				value <= -30
+			}
+		}
+	}
+}
+
+### Warging: send your beast to watch someone ###
+agot_warging_scout_interaction = {
+	interface_priority = 85
+	category = interaction_category_hostile
+	icon = agot_warging_scout
+
+	desc = agot_warging_scout_interaction_desc
+
+	cooldown = { years = 1 }
+
+	is_shown = {
+		scope:actor = {
+			has_perk = agot_warging_second_sight_perk
+		}
+		scope:actor != scope:recipient
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			set_variable = {
+				name = agot_warg_scout_target
+				value = scope:recipient
+			}
+			trigger_event = { id = agot_magic.0070 days = 2 }
+		}
+	}
+
+	auto_accept = yes
+
+	# Harmless information-gathering - no grudge needed, AI uses this freely.
+	ai_targets = {
+		ai_recipients = courtiers
+		ai_recipients = guests
+		ai_recipients = vassals
+		max = 15
+	}
+
+	ai_frequency = 1
+
+	ai_will_do = {
+		base = 25
+	}
+}
+
+### Warging: briefly slip into a rival's mind and sway them ###
+# Unlike Warg Scout (an animal spying at a distance - the whole point of
+# the ability), slipping into a HUMAN mind is a far rarer, more dangerous
+# act in the lore (Bran into Hodor, never at a distance) - lore-accurate
+# target restriction: only someone already within the actor's own reach.
+agot_warging_sway_interaction = {
+	interface_priority = 80
+	category = interaction_category_hostile
+	icon = agot_warging_sway
+
+	desc = agot_warging_sway_interaction_desc
+
+	cooldown = { years = 2 }
+
+	is_shown = {
+		scope:actor = {
+			has_perk = agot_warging_mastery_perk
+		}
+		scope:actor != scope:recipient
+		OR = {
+			scope:recipient = { is_vassal_of = scope:actor }
+			scope:recipient = { employer = scope:actor }
+			scope:recipient = { is_imprisoned_by = scope:actor }
+		}
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			set_variable = {
+				name = agot_warg_sway_target
+				value = scope:recipient
+			}
+			trigger_event = { id = agot_magic.0080 days = 1 }
+		}
+	}
+
+	auto_accept = yes
+
+	# Not lethal (worst case is a backfire modifier on the actor), so no
+	# strict grudge gate - but the AI still prefers it against people it
+	# already dislikes within its reach.
+	ai_targets = {
+		ai_recipients = vassals
+		ai_recipients = courtiers
+		max = 10
+	}
+
+	ai_frequency = 2
+
+	ai_will_do = {
+		base = 10
+		modifier = {
+			add = 40
+			scope:actor = { has_relation_rival = scope:recipient }
+		}
+		modifier = {
+			add = 30
+			opinion = {
+				target = scope:recipient
+				value <= -20
+			}
+		}
+	}
+}

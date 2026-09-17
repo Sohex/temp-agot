@@ -1,0 +1,239 @@
+﻿demand_braavosi_eggs_decision = {
+    picture = {
+        reference = "gfx/interface/illustrations/decisions/decision_dragons.dds"
+    }
+    desc = demand_braavosi_eggs_decision_desc
+    ai_check_interval = 120
+    ai_potential = {
+        always = yes
+    }
+    is_shown = {
+        NOT = { has_character_flag = already_demanded_eggs }
+        game_start_date >= 8055
+        highest_held_title_tier >= tier_empire
+        house ?= {
+			has_house_modifier = dragonrider_house_modifier
+		}
+        OR = {
+            house ?= {
+                any_house_member = {
+                    has_trait = dragonrider
+                }
+            }
+            any_knight = {
+                has_trait = dragonrider
+            }
+            dynasty ?= dynasty:dynn_Targaryen
+        }
+        OR = {
+            title:k_braavos.holder = {
+                OR = {
+                    any_vassal_or_below = {
+                        any_character_artifact = {
+                            has_variable = dragon_egg
+                            has_variable = dragon_embryo
+                            OR = {
+                                var:dragon_embryo = flag:drogon
+                                var:dragon_embryo = flag:rhaegal
+                                var:dragon_embryo = flag:viserion
+                            }
+                            count >= 3
+                        }
+                    }
+                    any_character_artifact = {
+                        has_variable = dragon_egg
+                        has_variable = dragon_embryo
+                        OR = {
+                            var:dragon_embryo = flag:drogon
+                            var:dragon_embryo = flag:rhaegal
+                            var:dragon_embryo = flag:viserion
+                        }
+                        count >= 3
+                    }   
+                }
+            }
+            title:k_pentos.holder = {
+                OR = {
+                    any_vassal_or_below = {
+                        any_character_artifact = {
+                            has_variable = dragon_egg
+                            has_variable = dragon_embryo
+                            OR = {
+                                var:dragon_embryo = flag:drogon
+                                var:dragon_embryo = flag:rhaegal
+                                var:dragon_embryo = flag:viserion
+                            }
+                            count >= 3
+                        }
+                    }
+                    any_character_artifact = {
+                        has_variable = dragon_egg
+                        has_variable = dragon_embryo
+                        OR = {
+                            var:dragon_embryo = flag:drogon
+                            var:dragon_embryo = flag:rhaegal
+                            var:dragon_embryo = flag:viserion
+                        }
+                        count >= 3
+                    }   
+                }
+            }
+            any_independent_ruler = {
+                is_landless_ruler = yes
+                any_character_artifact = {
+                    has_variable = dragon_egg
+                    has_variable = dragon_embryo
+                    OR = {
+                        var:dragon_embryo = flag:drogon
+                        var:dragon_embryo = flag:rhaegal
+                        var:dragon_embryo = flag:viserion
+                    }
+                    count >= 3
+                }
+            }
+        }
+    }
+    is_valid = {
+        OR = {
+            has_trait = ambitious
+            has_trait = brave
+            has_trait = paranoid
+            has_trait = diligent
+            has_trait = dragon_dreams
+        }
+        OR = {
+            has_trait = education_learning_5
+			has_trait = education_diplomacy_5
+            has_trait = education_stewardship_5
+            has_trait = education_martial_5
+            has_trait = education_intrigue_5
+            has_trait = dragonrider
+        }
+    }
+    cost = {
+        prestige = 5000
+    }
+    decision_group_type = dragon_group
+    effect = {
+        every_artifact = {
+            limit = {
+                has_variable = dragon_egg
+                has_variable = dragon_embryo
+                var:dragon_embryo = flag:drogon
+            }
+            save_scope_as = egg_drogon
+        }
+        every_artifact = {
+            limit = {
+                has_variable = dragon_egg
+                has_variable = dragon_embryo
+                var:dragon_embryo = flag:viserion
+            }
+            save_scope_as = egg_viserion
+        }
+        every_artifact = {
+            limit = {
+                has_variable = dragon_egg
+                has_variable = dragon_embryo
+                var:dragon_embryo = flag:rhaegal
+            }
+            save_scope_as = egg_rhaegal
+        }
+        scope:egg_drogon ?= { # MDE Modified
+            artifact_owner.top_liege = {
+                save_scope_as = egg_target
+            }
+        }
+        root = {
+            save_scope_as = egg_taker
+        }
+        scope:egg_target ?= {
+            trigger_event = mde_demand_egg_events.0001
+        }
+    }
+}
+
+a_crown_for_a_king_decision = {
+    picture = {
+        reference = "gfx/interface/illustrations/event_story/agot_fullscreen_event_targaryen.dds"
+    }
+    desc = a_crown_for_a_king_decision
+    ai_check_interval = 0
+    is_shown = {
+        is_ai = no
+        any_owned_story = {
+            story_type = story_agot_targaryen_exile_invasion
+        }
+    }
+    decision_group_type = major
+    effect = {
+        character:Targaryen_8 = {
+            random_owned_story = {
+                limit = { story_type = story_agot_targaryen_exile_invasion }
+                make_story_owner = character:Targaryen_9
+            }
+		}
+        depose = yes
+        character:Targaryen_9 = {
+            add_prestige = 2000
+            trigger_event = agot_targaryen_exile_invasion.9999
+        }
+        
+    }
+}
+
+retrieve_hidden_artifact_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	desc = retrieve_hidden_artifact_decision_desc
+	selection_tooltip = retrieve_hidden_artifact_decision_tooltip
+
+	decision_group_type = artifact
+
+	ai_check_interval = 0
+
+	is_shown = {
+		any_secret = { secret_type = secret_agot_hidden_artifact }
+	}
+
+	is_valid_showing_failures_only = {
+		is_available = yes
+		age >= 10
+	}
+
+	effect = {
+		if = {
+			limit = { house ?= dynasty:dynn_Uller.dynasty_founder.house }
+			show_as_tooltip = {
+				agot_create_artifact_rhaenys_circlet_historical_effect = { OWNER = this }
+			}
+			trigger_event = agot_decisions_events.1000
+		}
+		else_if = {
+			limit = {
+				exists = dynasty:dynn_Mopatis
+				house ?= dynasty:dynn_Mopatis.dynasty_founder.house
+			}
+			show_as_tooltip = {
+				agot_create_artifact_vs_blackfyre_effect = { OWNER =this }
+			}
+			trigger_event = agot_decisions_events.1010
+		}
+        else_if = {
+            limit = { house ?= dynasty:dynn_Hightower.dynasty_founder.house }
+            show_as_tooltip = {
+                create_artifact_dragon_egg_blue_effect = { OWNER = this }
+            }
+            trigger_event = mde_decisions_events.1000
+        }
+	}
+
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}

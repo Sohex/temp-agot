@@ -1,0 +1,84 @@
+﻿# AGOT: Magic of Westeros v2 - Drowned God
+# "Drown & bind": near-drowns the target and binds them as a fanatically
+# loyal follower. The binding uses a real strong hook (see
+# 00_agot_drowned_hook_types.txt) so the target is actually blocked from
+# joining factions against the actor via the base game's own
+# passes_faction_hard_block rule - no faction files touched.
+
+agot_drowned_bind_interaction = {
+	interface_priority = 75
+	category = interaction_category_hostile
+	icon = agot_drowned_bind
+
+	desc = agot_drowned_bind_interaction_desc
+
+	cooldown = { years = 3 }
+
+	# Lore-accurate target restriction: in canon, the Drowned God priests
+	# perform this rite on converts, followers or captives already within
+	# their own power (Aeron Damphair's converts, Victarion "giving men to
+	# the Drowned God" as punishment for his own crew) - never as a spell
+	# reaching out to bind some unrelated foreign ruler at a distance.
+	is_shown = {
+		scope:actor = {
+			has_perk = agot_drowned_binding_perk
+		}
+		scope:actor != scope:recipient
+		OR = {
+			scope:recipient = { is_vassal_of = scope:actor }
+			scope:recipient = { employer = scope:actor }
+			scope:recipient = { is_imprisoned_by = scope:actor }
+		}
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			NOT = { is_at_war_with = scope:recipient }
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			set_variable = {
+				name = agot_drowned_bind_target
+				value = scope:recipient
+			}
+			trigger_event = { id = agot_drowned.0010 days = 2 }
+		}
+	}
+
+	auto_accept = yes
+
+	# Not lethal - this is a control tool over an already-subordinate
+	# character, so no strict grudge gate, but the AI prefers it against
+	# vassals/captives it does not trust.
+	ai_targets = {
+		ai_recipients = vassals
+		ai_recipients = courtiers
+		max = 10
+	}
+
+	ai_frequency = 2
+
+	ai_will_do = {
+		base = 15
+		modifier = {
+			add = 30
+			opinion = {
+				target = scope:recipient
+				value <= -20
+			}
+		}
+		modifier = {
+			add = 20
+			scope:recipient = { is_imprisoned_by = scope:actor }
+		}
+	}
+}

@@ -1,0 +1,114 @@
+﻿lv_agot_ruin_remember_developed_mines_effect = {
+	if = {
+		limit = { has_building = valyria_mines_03 }
+		set_variable = lv_agot_keep_valyria_mine
+	}
+	if = {
+		limit = { has_building = valyria_mines_dormant_03 }
+		set_variable = lv_agot_keep_valyria_mine_dormant
+	}
+	if = {
+		limit = { has_building = lokirian_barracks_03 }
+		set_variable = lv_agot_keep_lokirian_barracks
+	}
+}
+
+lv_agot_ruin_restore_developed_mines_effect = {
+	if = {
+		limit = {
+			has_variable = lv_agot_keep_valyria_mine
+			NOT = { has_building_or_higher = valyria_mines_01 }
+		}
+		add_building = valyria_mines_03
+	}
+	if = {
+		limit = {
+			has_variable = lv_agot_keep_valyria_mine_dormant
+			NOT = { has_building_or_higher = valyria_mines_dormant_01 }
+		}
+		add_building = valyria_mines_dormant_03
+	}
+	if = {
+		limit = {
+			has_variable = lv_agot_keep_lokirian_barracks
+			NOT = { has_building_or_higher = lokirian_barracks_01 }
+		}
+		add_building = lokirian_barracks_03
+	}
+	remove_variable = lv_agot_keep_valyria_mine
+	remove_variable = lv_agot_keep_valyria_mine_dormant
+	remove_variable = lv_agot_keep_lokirian_barracks
+}
+
+
+
+lv_agot_chain_clear_effect = {
+	set_local_variable = { name = lv_agot_prune_guard value = 0 }
+	while = {
+		limit = {
+			has_building_with_flag = { flag = $FLAG$ count >= 1 }
+			local_var:lv_agot_prune_guard < 8
+		}
+		change_local_variable = { name = lv_agot_prune_guard add = 1 }
+		if = {
+			limit = { has_building = $CHAIN$_03 }
+			remove_building = $CHAIN$_03
+		}
+		else_if = {
+			limit = { has_building = $CHAIN$_02 }
+			remove_building = $CHAIN$_02
+		}
+		else = {
+			remove_building = $CHAIN$_01
+		}
+	}
+}
+
+lv_agot_chain_prune_effect = {
+	if = {
+		limit = { has_building_with_flag = { flag = $FLAG$ count >= 2 } }
+		# Spur im debug.log, nur wenn wirklich aufgeraeumt wird: welche Kette, welche Provinz.
+		debug_log = "LV_AGOT_MINE_CHAIN: doppelter Eintrag der Kette $CHAIN$ - Provinz folgt"
+		debug_log_scopes = yes
+		if = {
+			limit = { has_building = $CHAIN$_03 }
+			lv_agot_chain_clear_effect = { CHAIN = $CHAIN$ FLAG = $FLAG$ }
+			if = {
+				limit = { always = $REWARD$ }
+				set_variable = upgraded_mine
+				set_variable = completed_mine
+			}
+			add_building = $CHAIN$_03
+		}
+		else_if = {
+			limit = { has_building = $CHAIN$_02 }
+			lv_agot_chain_clear_effect = { CHAIN = $CHAIN$ FLAG = $FLAG$ }
+			if = {
+				limit = { always = $REWARD$ }
+				set_variable = upgraded_mine
+			}
+			add_building = $CHAIN$_02
+		}
+		else = {
+			lv_agot_chain_clear_effect = { CHAIN = $CHAIN$ FLAG = $FLAG$ }
+			add_building = $CHAIN$_01
+		}
+	}
+}
+
+lv_agot_mine_chain_prune_effect = {
+	lv_agot_chain_prune_effect = { CHAIN = valyria_mines          FLAG = lv_agot_chain_valyria_mines          REWARD = yes }
+	lv_agot_chain_prune_effect = { CHAIN = valyria_mines_dormant  FLAG = lv_agot_chain_valyria_mines_dormant  REWARD = yes }
+	lv_agot_chain_prune_effect = { CHAIN = lokirian_barracks      FLAG = lv_agot_chain_lokirian_barracks      REWARD = no }
+}
+
+lv_agot_mine_chain_sweep_effect = {
+	title:b_valyria_5.title_province ?= { lv_agot_mine_chain_prune_effect = yes }
+	title:b_ilvonys_1.title_province ?= { lv_agot_mine_chain_prune_effect = yes }
+	title:b_kastaryia_4.title_province ?= { lv_agot_mine_chain_prune_effect = yes }
+	title:b_jarqanor_1.title_province ?= { lv_agot_mine_chain_prune_effect = yes }
+	title:b_dragonfields_1.title_province ?= { lv_agot_mine_chain_prune_effect = yes }
+	title:b_ruklonos_1.title_province ?= { lv_agot_mine_chain_prune_effect = yes }
+	title:b_hills_of_nolos_1.title_province ?= { lv_agot_mine_chain_prune_effect = yes }
+	title:b_dragonstone.title_province ?= { lv_agot_mine_chain_prune_effect = yes }
+}

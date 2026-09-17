@@ -1,0 +1,199 @@
+﻿namespace = dragonlord_council_persuasion
+
+# The host receives two opportunities during the seven-day persuasion phase.
+# Only current opponents are eligible, and each voter can be approached once.
+# Marginal opponents are heavily preferred without making hardened opponents
+# completely impossible targets when few alternatives remain.
+dragonlord_council_persuasion.3000 = {
+	type = activity_event
+	window = dragonlord_council_event
+	title = dragonlord_council_persuasion.3000.t
+	desc = dragonlord_council_persuasion.3000.desc
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+	right_portrait = {
+		character = scope:dragonlord_council_persuasion_target
+		animation = thinking
+	}
+
+	trigger = {
+		this = scope:host
+		scope:activity = { has_current_phase = dragonlord_council_phase_persuasion }
+		any_in_list = {
+			variable = dragonlord_council_meeting_voters
+			this != root
+			is_ai = yes
+			is_alive = yes
+			has_variable = dragonlord_council_meeting_base_support
+			dragonlord_council_meeting_final_support <= 0
+			NOT = { has_variable = dragonlord_council_persuasion_attempted }
+		}
+	}
+
+	immediate = {
+		random_in_list = {
+			variable = dragonlord_council_meeting_voters
+			limit = {
+				this != root
+				is_ai = yes
+				is_alive = yes
+				has_variable = dragonlord_council_meeting_base_support
+				dragonlord_council_meeting_final_support <= 0
+				NOT = { has_variable = dragonlord_council_persuasion_attempted }
+			}
+			weight = {
+				base = 1
+				modifier = {
+					add = 300
+					dragonlord_council_meeting_final_support >= -15
+				}
+				modifier = {
+					add = 100
+					dragonlord_council_meeting_final_support >= -30
+				}
+				modifier = {
+					add = 25
+					dragonlord_council_meeting_final_support >= -50
+				}
+			}
+			save_scope_as = dragonlord_council_persuasion_target
+			set_variable = { name = dragonlord_council_persuasion_attempted value = 1 }
+		}
+	}
+
+	option = { # Reason with the voter.
+		name = dragonlord_council_persuasion.3000.a
+		duel = {
+			skill = diplomacy
+			target = scope:dragonlord_council_persuasion_target
+			50 = {
+				compare_modifier = { value = scope:duel_value multiplier = 3.5 min = -49 }
+				desc = dragonlord_council_persuasion.reason.success
+				send_interface_toast = {
+					type = event_toast_effect_good
+					title = dragonlord_council_persuasion.reason.success
+					left_icon = root
+					right_icon = scope:dragonlord_council_persuasion_target
+					scope:dragonlord_council_persuasion_target = {
+						dragonlord_council_change_voter_support_effect = { VALUE = 15 }
+						add_opinion = {
+							target = root
+							modifier = respect_opinion
+							opinion = 10
+						}
+					}
+					custom_tooltip = dragonlord_council_persuasion.support_plus_15_tt
+				}
+			}
+			50 = {
+				compare_modifier = { value = scope:duel_value multiplier = -3.5 min = -49 }
+				desc = dragonlord_council_persuasion.reason.failure
+				send_interface_toast = {
+					type = event_toast_effect_bad
+					title = dragonlord_council_persuasion.reason.failure
+					left_icon = root
+					right_icon = scope:dragonlord_council_persuasion_target
+					scope:dragonlord_council_persuasion_target = {
+						dragonlord_council_change_voter_support_effect = { VALUE = -5 }
+						add_opinion = {
+							target = root
+							modifier = disrespect_opinion
+							opinion = -5
+						}
+					}
+					custom_tooltip = dragonlord_council_persuasion.support_minus_5_tt
+				}
+			}
+		}
+		ai_chance = { base = 45 modifier = { add = diplomacy } }
+	}
+
+	option = { # Buy a commitment with existing gold-transfer effects.
+		name = dragonlord_council_persuasion.3000.b
+		trigger = { gold >= 200 }
+		pay_short_term_gold = {
+			target = scope:dragonlord_council_persuasion_target
+			gold = 200
+		}
+		scope:dragonlord_council_persuasion_target = {
+			dragonlord_council_change_voter_support_effect = { VALUE = 20 }
+			add_opinion = {
+				target = root
+				modifier = bribed_opinion
+				opinion = 10
+			}
+		}
+		custom_tooltip = dragonlord_council_persuasion.support_plus_20_tt
+		ai_chance = {
+			base = 25
+			modifier = { add = 20 has_trait = generous }
+			modifier = { add = -15 has_trait = greedy }
+		}
+	}
+
+	option = { # Coerce the voter; dread and their boldness affect the contest.
+		name = dragonlord_council_persuasion.3000.c
+		duel = {
+			skill = intrigue
+			target = scope:dragonlord_council_persuasion_target
+			50 = {
+				compare_modifier = { value = scope:duel_value multiplier = 3.5 min = -49 }
+				modifier = { add = 30 dread >= 60 }
+				modifier = {
+					add = 15
+					scope:dragonlord_council_persuasion_target = { ai_boldness < 0 }
+				}
+				desc = dragonlord_council_persuasion.threat.success
+				send_interface_toast = {
+					type = event_toast_effect_good
+					title = dragonlord_council_persuasion.threat.success
+					left_icon = root
+					right_icon = scope:dragonlord_council_persuasion_target
+					scope:dragonlord_council_persuasion_target = {
+						dragonlord_council_change_voter_support_effect = { VALUE = 10 }
+						add_opinion = {
+							target = root
+							modifier = threatened_opinion
+							opinion = -15
+						}
+					}
+					custom_tooltip = dragonlord_council_persuasion.support_plus_10_tt
+				}
+			}
+			50 = {
+				compare_modifier = { value = scope:duel_value multiplier = -3.5 min = -49 }
+				modifier = { add = 20 dread < 20 }
+				desc = dragonlord_council_persuasion.threat.failure
+				send_interface_toast = {
+					type = event_toast_effect_bad
+					title = dragonlord_council_persuasion.threat.failure
+					left_icon = root
+					right_icon = scope:dragonlord_council_persuasion_target
+					scope:dragonlord_council_persuasion_target = {
+						dragonlord_council_change_voter_support_effect = { VALUE = -10 }
+						add_opinion = {
+							target = root
+							modifier = threatened_opinion
+							opinion = -25
+						}
+					}
+					custom_tooltip = dragonlord_council_persuasion.support_minus_10_tt
+				}
+			}
+		}
+		ai_chance = {
+			base = 25
+			modifier = { add = intrigue }
+			modifier = { add = 30 dread >= 50 }
+		}
+	}
+
+	option = {
+		name = dragonlord_council_persuasion.3000.d
+		ai_chance = { base = 5 }
+	}
+}

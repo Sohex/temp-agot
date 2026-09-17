@@ -1,0 +1,770 @@
+﻿@demand_egg_cooldown_value = 365
+
+demand_egg = {
+    category = interaction_category_hostile
+	common_interaction = yes
+	interface_priority = 80
+	icon = icon_scheme_dragon
+	desc = demand_egg_desc
+
+	target_type = artifact
+	target_filter = recipient_artifacts
+
+    can_be_picked_artifact = {
+		scope:target = {
+			has_variable = dragon_egg
+			trigger_if = {
+				limit = {
+					has_variable = already_demanded
+				}
+				var:already_demanded = scope:actor
+			}
+		}
+	}
+
+	cost = {
+		prestige = {
+			value = 0
+			if = {
+				limit = {
+					scope:actor = { is_independent_ruler = yes }
+				}
+				add = 2000
+			}
+			else = {
+				add = 5000
+			}
+			
+		}
+	}
+
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			trigger_if = {
+				limit = {
+					is_independent_ruler = yes
+				}
+				prestige >= 2000
+			}
+			trigger_else = {
+				prestige >= 5000
+			}
+		}
+	}
+
+    is_shown = {
+		# interaction locked behind Accomplished Forger perk from the Diplomacy lifestyle
+		scope:actor = {
+			OR = {
+				is_independent_ruler = yes
+				AND = {
+					NOT = { has_trait = dragonrider }
+					NOT = {
+						any_character_artifact = {
+							AND = {
+								has_variable = cradled_egg
+								NOT = { has_variable = dud_egg }
+							}
+						}
+					}
+				}
+				any_child = {
+					OR = {
+						NOT = { has_trait = dragonrider }
+						NOT = {
+							any_character_artifact = {
+								AND = {
+									has_variable = cradled_egg
+									NOT = { has_variable = dud_egg }
+								}
+							}
+						}
+					}
+				}
+				AND = { #Daemon/Mysaria
+					any_spouse = {
+						is_pregnant = yes
+					}
+					NOT = {
+						any_character_artifact = {
+							AND = {
+								has_variable = dragon_egg
+								NOT = { has_variable = dud_egg }
+							}
+						}
+					}
+				}
+			}
+			agot_has_dragonblood_heritage = yes
+			house ?= { has_house_modifier = dragonrider_house_modifier }
+			OR = {
+				AND = {
+					is_independent_ruler = yes
+					OR = {
+						AND = {
+							this = scope:recipient.top_liege
+							OR = {
+								AND = {
+									has_realm_law = egg_ruler_law
+									scope:recipient = {
+										NAND = {
+											has_variable = granted_egg_access
+											var:granted_egg_access = scope:actor.primary_title
+										}
+									}
+								}
+								AND = {
+									has_realm_law = egg_close_family_law
+									NOT = {
+										is_close_family_of = scope:recipient
+									}
+								}
+								AND = {
+									has_realm_law = egg_house_law
+									NOT = {
+										house = scope:recipient.house
+									}
+								}
+								AND = {
+									has_realm_law = egg_dynasty_law
+									NOT = {
+										dynasty = scope:recipient.dynasty
+									}
+								}
+								AND = {
+									has_realm_law = egg_dragonrider_house_law
+									NOT = {
+										house ?= { has_house_modifier = dragonrider_house_modifier }
+									}
+								}
+							}
+							
+						}
+						AND = {
+							NOT = { has_realm_law = egg_everyone_law }
+							NOT = { scope:recipient.top_liege = { house ?= { has_house_modifier = dragonrider_house_modifier } } }
+						}
+					}
+				}
+				AND = {
+					OR = {
+						AND = {
+							scope:recipient.top_liege = this.top_liege
+							OR = {
+								AND = {
+									this.top_liege = { has_realm_law = egg_close_family_law }
+									NOT = {
+										is_close_family_of = scope:recipient
+									}
+								}
+								AND = {
+									this.top_liege = { has_realm_law = egg_house_law }
+									NOT = {
+										house = scope:recipient.house
+									}
+								}
+								AND = {
+									this.top_liege = { has_realm_law = egg_dynasty_law }
+									NOT = {
+										dynasty = scope:recipient.dynasty
+									}
+								}
+								AND = {
+									this.top_liege = { has_realm_law = egg_dragonrider_house_law }
+									NOT = {
+										house ?= { has_house_modifier = dragonrider_house_modifier }
+									}
+								}
+							}
+						}
+						NOT = {
+							house ?= { has_house_modifier = dragonrider_house_modifier }
+						}
+					}
+					
+				}
+			}
+			is_human = yes
+		}
+        
+		NOT = {
+			# Can't buy from yourself
+			scope:recipient = scope:actor
+			# Can't buy from one of your prisoners
+			scope:recipient = { is_imprisoned_by = scope:actor }
+		}
+		scope:recipient = {
+			is_human = yes
+			in_diplomatic_range = scope:actor
+			any_character_artifact = {
+				exists = this
+				scope:actor = {
+					NOT = { has_personal_artifact_claim = prev }
+				}
+				has_variable = dragon_egg
+			}
+		}
+	}
+    auto_accept = yes
+
+	cooldown = { days = 365 }
+
+	on_accept = {
+		scope:target = {
+			set_variable = {
+				name = already_demanded
+				value = scope:actor
+				years = 30 # MDE Modified
+			}
+			save_scope_as = egg_target
+		}
+		scope:recipient = {
+			save_scope_as = egg_victim
+		}
+		# If it's a religous artifact...
+        scope:actor = {
+			if = {
+				limit = { is_independent_ruler = yes }
+				send_interface_toast = {
+					type = event_artifact_bad
+					custom_tooltip = mde_start_demand_egg_event_chain
+					title = demanded_egg_interaction.t
+					left_icon = scope:recipient
+					right_icon = scope:target
+					# Determine prestige cost
+				}
+			}
+			else = {
+				send_interface_toast = {
+					type = event_artifact_bad
+					custom_tooltip = mde_start_demand_egg_event_chain
+					title = demanded_egg_interaction.t
+					left_icon = scope:recipient
+					right_icon = scope:target
+					# Determine prestige cost
+				}
+			}
+			save_scope_as = egg_taker
+        }
+        
+        scope:recipient = {
+            send_interface_message = {
+                type = event_artifact_bad_text
+                title = demanded_egg_interaction.t
+                desc = demanded_egg_interaction.desc
+                left_icon = scope:actor
+                right_icon = scope:target
+            }
+			trigger_event = mde_demand_egg_events.0004
+        }
+
+		scope:recipient = {
+			add_opinion = {
+				target = scope:actor
+				modifier = claimed_my_artifact_opinion
+				opinion = -40
+			}
+			# Recipient grows closer to forming a rivalry with the actor
+			if = {
+				limit = {
+					can_set_relation_potential_rival_trigger = { 
+						CHARACTER = scope:actor
+					}
+				}
+				set_relation_potential_rival = scope:actor
+			}
+		}
+
+	}
+}
+
+take_prisoner_egg = {
+    category = interaction_category_hostile
+	common_interaction = yes
+	interface_priority = 80
+	icon = icon_scheme_dragon
+	desc = take_prisoner_egg_desc
+
+	target_type = artifact
+	target_filter = recipient_artifacts
+
+    can_be_picked_artifact = {
+		scope:target = {
+			has_variable = dragon_egg
+		}
+	}
+
+    is_shown = {
+		# interaction locked behind Accomplished Forger perk from the Diplomacy lifestyle
+		scope:actor = {
+			agot_has_dragonblood_heritage = yes
+			house ?= { has_house_modifier = dragonrider_house_modifier }
+			OR = {
+				AND = {
+					is_independent_ruler = yes
+					OR = {
+						AND = {
+							this = scope:recipient.top_liege
+							OR = {
+								AND = {
+									has_realm_law = egg_ruler_law
+									NOT = {
+										scope:recipient = {
+											has_variable = granted_egg_access
+											var:granted_egg_access = scope:actor.primary_title
+										}
+									}
+								}
+								AND = {
+									has_realm_law = egg_close_family_law
+									NOT = {
+										is_close_family_of = scope:recipient
+									}
+								}
+								AND = {
+									has_realm_law = egg_house_law
+									NOT = {
+										house = scope:recipient.house
+									}
+								}
+								AND = {
+									has_realm_law = egg_dynasty_law
+									NOT = {
+										dynasty = scope:recipient.dynasty
+									}
+								}
+								AND = {
+									has_realm_law = egg_dragonrider_house_law
+									NOT = {
+										house ?= { has_house_modifier = dragonrider_house_modifier }
+									}
+								}
+							}
+							
+						}
+						AND = {
+							NOT = { has_realm_law = egg_everyone_law }
+							NOT = { scope:recipient = { house ?= { has_house_modifier = dragonrider_house_modifier } } }
+						}
+					}
+				}
+				AND = {
+					OR = {
+						AND = {
+							scope:recipient.top_liege = this.top_liege
+							OR = {
+								AND = {
+									this.top_liege = { has_realm_law = egg_close_family_law }
+									NOT = {
+										is_close_family_of = scope:recipient
+									}
+								}
+								AND = {
+									this.top_liege = { has_realm_law = egg_house_law }
+									NOT = {
+										house = scope:recipient.house
+									}
+								}
+								AND = {
+									this.top_liege = { has_realm_law = egg_dynasty_law }
+									NOT = {
+										dynasty = scope:recipient.dynasty
+									}
+								}
+								AND = {
+									this.top_liege = { has_realm_law = egg_dragonrider_house_law }
+									NOT = {
+										house ?= { has_house_modifier = dragonrider_house_modifier }
+									}
+								}
+							}
+						}
+						NOT = {
+							house ?= { has_house_modifier = dragonrider_house_modifier }
+						}
+					}
+					
+				}
+			}
+			is_human = yes
+		}
+        
+		NOT = {
+			# Can't buy from yourself
+			scope:recipient = scope:actor
+			# Can't buy from one of your prisoners
+		}
+		scope:recipient = {
+			is_imprisoned_by = scope:actor
+			any_character_artifact = {
+				has_variable = dragon_egg
+			}
+			trigger_if = {
+				limit = {
+					has_variable = rightfully_demanded_egg
+				}
+				var:rightfully_demanded_egg = scope:actor
+			}
+		}
+	}
+
+
+    auto_accept = yes
+
+
+	on_accept = {
+		
+		scope:target = {
+			set_owner = scope:actor
+			mde_clear_transferred_egg_state_effect = yes # MDE Modified
+		}
+		# If it's a religous artifact...
+        scope:actor = {
+			send_interface_toast = {
+				type = event_artifact_bad
+				custom_tooltip = mde_transfer_prison_egg_tt
+				title = bought_artifact_claim.t
+				left_icon = scope:recipient
+				right_icon = scope:target
+				# Determine prestige cost
+			}
+        }
+        
+        scope:recipient = {
+            send_interface_message = {
+                type = event_artifact_bad_text
+                title = sold_artifact_claim.t
+                desc = sold_artifact_claim.desc
+                left_icon = scope:actor
+                right_icon = scope:target
+            }
+        }
+		
+		scope:recipient = {
+			add_opinion = {
+				target = scope:actor
+				modifier = claimed_my_artifact_opinion
+				opinion = -40
+			}
+			# Recipient grows closer to forming a rivalry with the actor
+			if = {
+				limit = {
+					can_set_relation_potential_rival_trigger = { 
+						CHARACTER = scope:actor
+					}
+				}
+				set_relation_potential_rival = scope:actor
+			}
+		}
+
+	}
+}
+
+mde_grant_egg_permission = {
+	icon = icon_scheme_dragon
+	category = interaction_category_friendly
+	desc = mde_grant_egg_permission_desc
+	common_interaction = yes
+	interface_priority = 90
+	ignores_pending_interaction_block = yes
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			NOT = {
+				this = scope:recipient
+			}
+			is_independent_ruler = yes
+			OR = {
+				house ?= { has_house_modifier = dragonrider_house_modifier }
+				has_trait = dragonrider
+			}
+			NOT = { has_realm_law = egg_everyone_law }
+			this = scope:recipient.top_liege
+		}
+		scope:recipient = {
+			NAND = {
+				has_variable = granted_egg_access
+				var:granted_egg_access = scope:actor.primary_title
+			}
+			trigger_if = {
+				limit = {
+					scope:actor = { has_realm_law = egg_close_family_law }
+				}
+				NOT = {
+					is_close_family_of = scope:actor
+				}
+			}
+			trigger_else_if = {
+				limit = {
+					scope:actor = { has_realm_law = egg_house_law }
+				}
+				NOT = {
+					house ?= scope:actor.house
+				}
+			}
+			trigger_else_if = {
+				limit = {
+					scope:actor = { has_realm_law = egg_dynasty_law }
+				}
+				NOT = {
+					dynasty ?= scope:actor.dynasty
+				}
+			}
+			trigger_else_if = {
+				limit = {
+					scope:actor = { has_realm_law = egg_dragonrider_house_law }
+				}
+				NOT = {
+					house ?= { has_house_modifier = dragonrider_house_modifier }
+				}
+			}
+			trigger_else = {
+				always = yes
+			}
+		}
+
+	}
+
+	on_accept = {
+		scope:recipient = {
+			send_interface_message = {
+				type = event_generic_good
+				title = mde_egg_access_gained
+				right_icon = scope:actor
+				custom_tooltip = mde_egg_access_gained_interface_tt
+				scope:recipient = {
+					set_variable = {
+						name = granted_egg_access
+						value = scope:actor.primary_title
+					}
+				}
+			}
+		}
+	}
+}
+
+mde_remove_egg_permission = {
+	icon = icon_scheme_dragon
+	category = interaction_category_hostile
+	desc = mde_remove_egg_permission_desc
+	common_interaction = yes
+	interface_priority = 91
+	ignores_pending_interaction_block = yes
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			NOT = {
+				this = scope:recipient
+			}
+		}
+		scope:recipient = {
+			is_human = yes
+			has_variable = granted_egg_access
+			var:granted_egg_access = scope:actor.primary_title
+		}
+
+	}
+
+	on_accept = {
+		scope:recipient = {
+			send_interface_message = {
+				type = event_generic_bad
+				title = mde_egg_access_removed
+				right_icon = scope:actor
+				custom_tooltip = mde_egg_access_removed_interface_tt
+				scope:recipient = {
+					remove_variable = granted_egg_access
+				}
+			}
+		}
+	}
+}
+
+
+debug_take_egg = {
+	category = interaction_category_agot_debug
+	common_interaction = yes
+	interface_priority = 80
+	icon = icon_scheme_dragon
+	desc = debug_take_egg_desc
+
+	target_type = artifact
+	target_filter = recipient_artifacts
+
+    can_be_picked_artifact = {
+		scope:target = {
+			has_variable = dragon_egg
+		}
+	}
+	
+	is_shown = {
+		NOT = { scope:recipient = scope:actor }
+		scope:recipient = {
+			any_character_artifact = {
+				has_variable = dragon_egg
+			}
+		}
+		debug_only = yes
+	}
+
+	on_accept = {
+		scope:target = {
+			if = {
+				limit = {
+					has_variable = pitted_egg
+				}
+				remove_variable = pitted_egg
+			}
+			set_owner = scope:actor
+		}
+	}
+
+	auto_accept = yes
+}
+
+
+debug_hatch_egg = {
+	category = interaction_category_agot_debug
+	common_interaction = yes
+	interface_priority = 80
+	icon = icon_scheme_dragon
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:recipient = {
+						has_court_position = head_dragonkeeper_court_position
+					}
+				}
+				desc = debug_hatch_egg_own_pit_desc
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = {
+						scope:recipient = {
+							any_relation = {
+								type = agot_dragon
+							}
+						}
+					}
+				}
+				desc = debug_hatch_egg_bond_desc
+			}
+			desc = debug_hatch_egg_own_desc
+		}
+	}
+
+	target_type = artifact
+	target_filter = recipient_artifacts
+
+    can_be_picked_artifact = {
+		scope:target = {
+			has_variable = dragon_egg
+		}
+	}
+	
+	is_shown = {
+		debug_only = yes
+	}
+
+	on_accept = {
+		if = {
+			limit = {
+				scope:target = {
+					has_variable = pitted_egg
+				}
+			}
+			scope:target = {
+				save_scope_as = egg
+				scope:recipient = {
+					save_scope_as = head_dragonkeeper
+				}
+				var:pitted_egg.holder = {
+					trigger_event = agot_dragon_pits.2005
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:recipient = {
+					NOT = {
+						any_relation = {
+							type = agot_dragon
+						}
+					}
+				}
+			}
+			agot_spawn_bonded_hatchling_from_egg_effect = { OWNER = scope:recipient EGG = scope:target }
+		}
+		else = {
+			agot_spawn_owned_hatchling_from_egg_effect = { OWNER = scope:recipient EGG = scope:target }
+		}
+	}
+
+	auto_accept = yes
+}
+
+debug_take_all_eggs = {
+	category = interaction_category_agot_debug
+	common_interaction = yes
+	interface_priority = 80
+	icon = icon_scheme_dragon
+	desc = debug_take_all_eggs_desc
+
+
+	
+	is_shown = {
+		scope:recipient = scope:actor
+		debug_only = yes
+	}
+
+	on_accept = {
+		every_artifact = {
+			limit = {
+				has_variable = dragon_egg
+			}
+			remove_variable = pitted_egg
+			remove_variable = cradled_egg
+			remove_variable = agot_artifact_cannot_gift
+			remove_variable = agot_swiper_no_swiping
+			set_owner = scope:actor
+		}
+	}
+
+	auto_accept = yes
+}
+
+debug_give_all_eggs = {
+	category = interaction_category_agot_debug
+	common_interaction = yes
+	interface_priority = 80
+	icon = icon_scheme_dragon
+	desc = cradle_egg_desc
+
+
+	
+	is_shown = {
+		NOT = { scope:recipient = scope:actor }
+		debug_only = yes
+	}
+
+	on_accept = {
+		every_artifact = {
+			limit = {
+				has_variable = dragon_egg
+			}
+			remove_variable = pitted_egg
+			remove_variable = cradled_egg
+			remove_variable = agot_artifact_cannot_gift
+			remove_variable = agot_swiper_no_swiping
+			set_owner = scope:recipient
+		}
+	}
+
+	auto_accept = yes
+}

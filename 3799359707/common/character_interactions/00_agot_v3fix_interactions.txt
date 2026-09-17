@@ -1,0 +1,193 @@
+﻿# AGOT: Magic of Westeros - Fix-plan interactions (dead-finisher rework,
+# see V3_FIXPLAN.md Block 1). Kept in their own file, v1's original
+# interaction file untouched.
+
+### Blood Magic finisher: The Final Rite ###
+# Unlike the base Blood Curse (never kills, cheap), this is the
+# escalated version only Old Rites unlocks - real death risk for the
+# target, and a real bodily toll on the caster, not just stress.
+agot_bloodmagic_final_rite_interaction = {
+	interface_priority = 91
+	category = interaction_category_hostile
+	icon = agot_bloodmagic_curse
+
+	desc = agot_bloodmagic_final_rite_interaction_desc
+
+	cooldown = { years = 5 }
+
+	is_shown = {
+		scope:actor = {
+			has_perk = agot_bloodmagic_old_rites_perk
+		}
+		scope:actor != scope:recipient
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			stress_impact = { base = massive_stress_impact_gain }
+			add_character_modifier = {
+				modifier = agot_bloodmagic_final_rite_toll_modifier
+				years = 2
+			}
+			random_list = {
+				30 = {
+					custom_tooltip = {
+						text = agot_bloodmagic_final_rite_outcome_dies
+					}
+					scope:recipient = {
+						death = { death_reason = death_sacrificed_to_gods }
+					}
+				}
+				70 = {
+					custom_tooltip = {
+						text = agot_bloodmagic_final_rite_outcome_survives
+					}
+					scope:recipient = {
+						add_character_modifier = {
+							modifier = agot_magic_blood_curse_infertility_modifier
+						}
+						add_character_modifier = {
+							modifier = agot_magic_blood_curse_wasting_modifier
+						}
+					}
+				}
+			}
+			send_interface_toast = {
+				type = event_toast_effect_neutral
+				title = agot_bloodmagic_final_rite_notification
+				left_icon = scope:actor
+				right_icon = scope:recipient
+			}
+			agot_magic_risk_discovery_effect = yes
+		}
+	}
+
+	auto_accept = yes
+
+	ai_potential = {
+		has_perk = agot_bloodmagic_old_rites_perk
+	}
+
+	ai_targets = {
+		ai_recipients = scripted_relations
+		ai_recipients = war_enemies
+		ai_recipients = primary_war_enemies
+		ai_recipients = courtiers
+		max = 15
+	}
+
+	ai_frequency = 3
+
+	ai_will_do = {
+		base = -60
+		modifier = {
+			add = 100
+			scope:actor = { has_relation_nemesis = scope:recipient }
+		}
+		modifier = {
+			add = 70
+			scope:actor = { has_relation_rival = scope:recipient }
+		}
+		modifier = {
+			add = 50
+			scope:actor = { is_at_war_with = scope:recipient }
+		}
+	}
+}
+
+### Faceless Men finisher: Mark for Death ###
+# Unlike the base Issue a Contract (70% chance, grows Debt), this is
+# guaranteed and Debt-free - the price instead is that it only works on
+# a titled ruler, and an extremely long cooldown.
+agot_faceless_mark_for_death_interaction = {
+	interface_priority = 97
+	category = interaction_category_hostile
+	icon = agot_faceless_issue_a_contract
+
+	desc = agot_faceless_mark_for_death_interaction_desc
+
+	cooldown = { years = 15 }
+
+	is_shown = {
+		scope:actor = {
+			has_perk = agot_faceless_valar_morghulis_perk
+		}
+		scope:recipient = {
+			is_landed = yes
+		}
+		scope:actor != scope:recipient
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+		custom_tooltip = {
+			text = agot_faceless_mark_must_be_landed_tooltip
+			scope:recipient = { is_landed = yes }
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			stress_impact = { base = massive_stress_impact_gain }
+			set_variable = {
+				name = agot_faceless_mark_target
+				value = scope:recipient
+			}
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = agot_faceless_mark_for_death_notification
+				left_icon = scope:actor
+				right_icon = scope:recipient
+			}
+			var:agot_faceless_mark_target = {
+				trigger_event = { id = agot_faceless.0106 days = 10 }
+			}
+			remove_variable = agot_faceless_mark_target
+		}
+	}
+
+	auto_accept = yes
+
+	# Guaranteed kill of a titled ruler - the mod's single most severe
+	# ability, gated the hardest: real grudge required, candidate pool
+	# limited to rulers the AI would plausibly already want dead.
+	ai_potential = {
+		has_perk = agot_faceless_valar_morghulis_perk
+	}
+
+	ai_targets = {
+		ai_recipients = war_enemies
+		ai_recipients = primary_war_enemies
+		ai_recipients = neighboring_rulers
+		ai_recipients = liege
+		max = 8
+	}
+
+	ai_frequency = 6
+
+	ai_will_do = {
+		base = -100
+		modifier = {
+			add = 120
+			scope:actor = { has_relation_nemesis = scope:recipient }
+		}
+		modifier = {
+			add = 90
+			scope:actor = { is_at_war_with = scope:recipient }
+		}
+		modifier = {
+			add = 70
+			scope:actor = { has_relation_rival = scope:recipient }
+		}
+	}
+}

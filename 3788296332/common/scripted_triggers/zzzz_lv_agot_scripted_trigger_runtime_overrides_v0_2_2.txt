@@ -1,0 +1,508 @@
+﻿
+
+is_eligible_for_agot_squirehood_trigger = {
+	is_human = yes
+	OR = {
+		is_male = yes
+		AND = {
+			is_female = yes
+			has_character_modifier = agot_tomboy_modifier
+			prowess >= high_skill_rating
+			martial >= decent_skill_rating
+		}
+		AND = {
+			is_male = no
+			faith = { has_doctrine = doctrine_gender_equal }
+		}
+		AND = {
+			is_male = no
+			faith = { has_doctrine = doctrine_gender_female_dominated }
+		}
+	}
+	age < 22 #There really is no age limit for squire's but for now we'll pick an age and keep them under it.
+	age >= 9 #9 years old is the usual age most highborn boys start squiring.
+	custom_tooltip = {
+		text = is_squire_or_prev_squire
+		OR = { #They cannot have the squire trait, OR they are a knightless squire
+			NOT = {
+				has_trait_xp = { #They cannot be a squire already
+					trait = squire
+					track = knight
+					value < 100
+				}
+			}
+			has_past_experience_with_squirehood = yes
+		}
+	}
+	agot_has_traits_preventing_knighthood_trigger = no #You can't have any traits that disqualify you from being made a knight
+	is_imprisoned = no
+	num_of_relation_agot_knight = 0
+}
+
+
+agot_hostile_relations_for_squire_knights_trigger = {
+	OR = {
+		has_relation_nemesis = $KNIGHT$ # They have become your nemesis
+		has_relation_rival = $KNIGHT$ # They have become your rival
+		is_at_war_with = $KNIGHT$ # You are at war with them
+		liege ?= {
+			is_at_war_with = $KNIGHT$ # Your liege is at war with them
+		}
+		liege ?= { # Your liege is at war with their liege
+			this != $KNIGHT$
+			AND = {
+				exists = $KNIGHT$.liege
+				is_at_war_with = $KNIGHT$.liege
+			}
+		}
+	}
+}
+
+
+agot_nw_can_banish = {
+	# Must be not a wildling and have a capital in westeros to send
+	$BANISHER$ = {
+		culture = { agot_is_wildling_culture = no }
+		primary_title = {
+			exists = title_capital_county.title_province
+			title_capital_county.title_province = {
+				geographical_region = world_westeros_seven_kingdoms
+			}
+		}
+	}
+
+	# Must be male and not a wildling to get sent
+	$BANISHEE$ = {
+		agot_valid_potential_nw_member = yes
+		age >= 10
+		culture = { agot_is_wildling_culture = no }
+	}
+
+	# NW must exist
+	OR = {
+		title:k_the_wall.holder ?= {
+			government_has_flag = government_is_nw
+		}
+		title:d_the_wall.holder ?= {
+			government_has_flag = government_is_nw
+		}
+	}
+}
+
+
+agot_death_can_start_feud_trigger = {
+	$VICTIM$ = { save_temporary_scope_as = agot_temp_feud_victim }
+	trigger_if = {
+		limit = {
+			exists = scope:agot_temp_feud_victim
+			exists = scope:agot_temp_feud_victim.killer
+			OR = {
+				scope:agot_temp_feud_victim.killer ?= { has_dead_character_flag = should_not_start_feud }
+				scope:agot_temp_feud_victim ?= { has_dead_character_flag = should_not_start_feud }
+			}
+		}
+		always = no
+	}
+	trigger_else = {
+		always = yes
+	}
+}
+
+
+ai_should_get_extreme_conqueror_bonuses = {
+	is_alive = yes
+	has_variable = conqueror
+	has_character_modifier = ai_extreme_conqueror_modifier
+}
+
+
+can_set_relation_potential_friend_trigger = {
+	trigger_if = {
+		limit = { $CHARACTER$ ?= { always = yes } }
+		NOT = { this = $CHARACTER$ }
+
+		NOT = { has_relation_potential_friend = $CHARACTER$ }
+		can_set_relation_friend_trigger = { CHARACTER = $CHARACTER$ }
+
+		#AGOT Added
+		is_human = yes
+		$CHARACTER$ = { is_human = yes }
+	}
+	trigger_else = { always = no }
+}
+
+
+can_set_relation_friend_trigger = {
+	trigger_if = {
+		limit = { $CHARACTER$ ?= { always = yes } }
+		NOT = { this = $CHARACTER$ }
+
+		NOR = {
+			this = $CHARACTER$
+			has_relation_friend = $CHARACTER$
+			has_relation_best_friend = $CHARACTER$
+			has_relation_rival = $CHARACTER$
+			has_relation_nemesis = $CHARACTER$
+		}
+
+		#AGOT Added
+		is_human = yes
+		$CHARACTER$ = { is_human = yes }
+	}
+	trigger_else = { always = no }
+}
+
+
+can_set_relation_potential_rival_trigger = {
+	trigger_if = {
+		limit = { $CHARACTER$ ?= { always = yes } }
+		NOT = { this = $CHARACTER$ }
+
+		can_set_relation_rival_if_adult_trigger = { CHARACTER = $CHARACTER$ }
+		NOT = { has_relation_potential_rival = $CHARACTER$ }
+	}
+	trigger_else = { always = no }
+}
+
+
+can_set_relation_rival_if_adult_trigger = {
+	trigger_if = {
+		limit = { $CHARACTER$ ?= { always = yes } }
+		NOT = { this = $CHARACTER$ }
+
+		NOR = {
+			this = $CHARACTER$
+			has_relation_friend = $CHARACTER$
+			has_relation_best_friend = $CHARACTER$
+			has_relation_rival = $CHARACTER$
+			has_relation_nemesis = $CHARACTER$
+		}
+
+		#AGOT Added
+		is_human = yes
+		$CHARACTER$ = { is_human = yes }
+	}
+	trigger_else = { always = no }
+}
+
+
+can_set_relation_rival_trigger = {
+	trigger_if = {
+		limit = { $CHARACTER$ ?= { always = yes } }
+		NOT = { this = $CHARACTER$ }
+
+		is_adult = yes
+		$CHARACTER$ = { is_adult = yes }
+		can_set_relation_rival_if_adult_trigger = { CHARACTER = $CHARACTER$ }
+
+		#AGOT Added
+		is_human = yes
+		$CHARACTER$ = { is_human = yes }
+	}
+	trigger_else = { always = no }
+}
+
+
+has_any_mild_bad_relationship_with_character_trigger = {
+	trigger_if = {
+		limit = {
+			$CHARACTER$ ?= { is_alive = yes }
+			NOT = { this = $CHARACTER$ }
+		}
+		OR = {
+			has_relation_potential_rival = $CHARACTER$
+			has_relation_victim = $CHARACTER$
+			has_relation_bully = $CHARACTER$
+		}
+	}
+	trigger_else = { always = no }
+}
+
+
+has_any_moderate_bad_relationship_with_character_trigger = {
+	trigger_if = {
+		limit = {
+			$CHARACTER$ ?= { is_alive = yes }
+			NOT = { this = $CHARACTER$ }
+		}
+		has_relation_rival = $CHARACTER$
+	}
+	trigger_else = { always = no }
+}
+
+
+has_any_only_moderate_bad_relationship_with_character_trigger = {
+	trigger_if = {
+		limit = {
+			$CHARACTER$ ?= { is_alive = yes }
+			NOT = { this = $CHARACTER$ }
+		}
+		has_relation_rival = $CHARACTER$
+		NOT = { has_any_worst_bad_relationship_with_character_trigger = { CHARACTER = $CHARACTER$ } }
+	}
+	trigger_else = { always = no }
+}
+
+
+has_any_worst_bad_relationship_with_character_trigger = {
+	trigger_if = {
+		limit = {
+			$CHARACTER$ ?= { is_alive = yes }
+			NOT = { this = $CHARACTER$ }
+		}
+		has_relation_nemesis = $CHARACTER$
+	}
+	trigger_else = { always = no }
+}
+
+
+location_has_harsh_winter_trigger = {
+	exists = location
+	location = { has_province_modifier = winter_harsh_modifier }
+}
+
+
+location_has_normal_or_worse_winter_trigger = {
+	exists = location
+	location = {
+		OR = {
+			has_province_modifier = winter_normal_modifier
+			has_province_modifier = winter_harsh_modifier
+		}
+	}
+}
+
+
+location_has_winter_trigger = {
+	exists = location
+	location = {
+		has_winter_trigger = yes
+	}
+}
+
+
+use_convert_to_witchcraft_secrecy_trigger = {
+	trigger_if = {
+		limit = { $OWNER$ ?= { is_alive = yes } }
+		$OWNER$ = {
+			any_secret = { type = secret_witch }
+			save_temporary_scope_as = witchract_secrecy_check
+			trait_is_shunned_or_criminal_in_my_or_lieges_faith_trigger = { TRAIT = trait:witch GENDER_CHARACTER = scope:witchract_secrecy_check }
+		}
+	}
+	trigger_else = { always = no }
+}
+
+
+house_has_feud_relation_with_trigger = {
+	trigger_if = {
+		limit = {
+			exists = house
+			$TARGET$ ?= { exists = house }
+		}
+		$TARGET$ = { house = { save_temporary_scope_as = feud_target_house } }
+		house != scope:feud_target_house
+		OR = {
+			house = {
+				any_house_relation = {
+					has_house_relation_level = feud
+					any_relation_house = { this = scope:feud_target_house }
+				}
+			}
+			exists = scope:return_feud_as_true_for_debug
+		}
+		has_bp1_dlc_trigger = yes
+	}
+	trigger_else = { always = no }
+}
+
+
+valid_squire_for_accolade_trigger = {
+	save_temporary_scope_as = squire_temp
+	exists = $KNIGHT$.accolade.accolade_owner
+	is_courtier_of = $KNIGHT$.accolade.accolade_owner
+	exists = liege
+	$KNIGHT$.liege ?= liege
+	age >= 10
+	age <= 20
+	#If in an accolade's squire pool...
+	trigger_if = {
+		limit = {
+			$KNIGHT$.accolade.accolade_owner = {
+				any_accolade = {
+					has_variable_list = accolade_squire_chars
+					any_in_list = {
+						variable = accolade_squire_chars
+						this = scope:squire_temp
+					}
+				}
+			}
+		}
+		#...must be this accolade's squire pool
+		$KNIGHT$.accolade = {
+			has_variable_list = accolade_squire_chars
+			any_in_list = {
+				variable = accolade_squire_chars
+				this = scope:squire_temp
+			}
+		}
+	}
+	NOR = {
+		#Already has bonus commensurate with level
+		trigger_if = {
+			limit = {
+				$KNIGHT$.accolade = {
+					accolade_squires_quality_value < accolade_squires_capable_minimum_value
+				}
+			}
+			has_variable = acclaimed_sq_inexperienced
+		}
+		trigger_if = {
+			limit = {
+				$KNIGHT$.accolade = {
+					accolade_squires_quality_value < accolade_squires_accomplished_minimum_value
+				}
+			}
+			has_variable = acclaimed_sq_capable
+		}
+		#Accomplished-tier training
+		has_variable = acclaimed_sq_maxed
+		
+		#Don't want to make it impossible to be trained by guardian
+		any_relation = {
+			type = guardian
+			is_acclaimed = yes
+			NOT = {
+				this = $KNIGHT$
+			}
+		}
+	}
+	#Must be knight's ward if player, implying that you intentionally signed up to be trained by them
+	OR = {
+		is_ai = yes
+		has_relation_guardian = $KNIGHT$
+	}
+	OR = {
+		can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = liege }
+		#Player can ignore gender triggers
+		is_ai = no
+		AND = {
+			any_close_family_member = {
+				is_ai = no
+			}
+			has_relation_guardian = $KNIGHT$
+		}
+	}
+	is_imprisoned = no
+	is_incapable = no
+	NOR = {
+		has_trait = infirm
+		has_trait = physique_bad_3
+		has_trait = blind
+		has_trait = maimed
+	}
+	NOT = {
+		this = $KNIGHT$
+	}
+	#fanatic accolade requires same faith
+	trigger_if = {
+		limit = {
+			$KNIGHT$.accolade = {
+				has_accolade_type = fanatic_attribute 
+			}
+		}
+		faith = $KNIGHT$.accolade.accolade_owner.faith
+	}
+	#Limit random unrelated children who can be pulled in as squires
+	trigger_if = {
+		limit = {
+			NOR = {
+				has_relation_guardian = $KNIGHT$
+				is_close_family_of = $KNIGHT$
+			}
+		}
+		#Consider blocking personality trait accolades picking up kids with wrong personality/childhood traits
+		#revels accolade can't get temperate kid
+		trigger_if = {
+			limit = {
+				$KNIGHT$.accolade = {
+					has_accolade_type = master_of_revels_attribute
+				}
+			}
+			NOR = {
+				has_trait = temperate
+				has_trait = shy
+			}
+		}
+		#charmer accolade can't get chaste kid
+		trigger_if = {
+			limit = {
+				$KNIGHT$.accolade = {
+					has_accolade_type = charmer_attribute
+				}
+			}
+			NOR = {
+				has_trait = chaste
+				has_trait = celibate
+				has_sexuality = asexual
+			}
+		}
+		#skill type accolade should only get skill-educated kids
+		trigger_if = {
+			limit = {
+				$KNIGHT$.accolade = {
+					has_accolade_type = politicker_attribute
+				}
+			}
+			OR = {
+				has_focus = education_diplomacy
+				has_trait = education_diplomacy
+				has_lifestyle = diplomacy_lifestyle
+				diplomacy > average_skill_rating
+			}
+		}
+		#skill type accolade should only get skill-educated kids
+		trigger_if = {
+			limit = {
+				$KNIGHT$.accolade = {
+					has_accolade_type = reeve_attribute
+				}
+			}
+			OR = {
+				has_focus = education_stewardship
+				has_trait = education_stewardship
+				has_lifestyle = stewardship_lifestyle
+				stewardship > average_skill_rating
+			}
+		}
+		#skill type accolade should only get skill-educated kids
+		trigger_if = {
+			limit = {
+				$KNIGHT$.accolade = {
+					has_accolade_type = manipulator_attribute
+				}
+			}
+			OR = {
+				has_focus = education_intrigue
+				has_trait = education_intrigue
+				has_lifestyle = intrigue_lifestyle
+				intrigue > average_skill_rating
+			}
+		}
+		#skill type accolade should only get skill-educated kids
+		trigger_if = {
+			limit = {
+				$KNIGHT$.accolade = {
+					has_accolade_type = mentor_attribute
+				}
+			}
+			OR = {
+				has_focus = education_learning
+				has_trait = education_learning
+				has_lifestyle = learning_lifestyle
+				learning > average_skill_rating
+			}
+		}
+	}
+}
+

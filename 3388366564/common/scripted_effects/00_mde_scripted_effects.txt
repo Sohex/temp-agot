@@ -1,0 +1,473 @@
+﻿selected_set_error_fixer = {
+	character:Unknown_Empress = {
+		save_scope_as = selected_dragon
+		save_scope_as = gui_egg
+		save_scope_as = relevant_trait
+		random_character_artifact = {
+			character:Unknown_Empress = {
+				add_to_variable_list = {
+					name = mde_egg_hatching_remove_list
+					target = prev
+				}
+			}
+		}
+	}
+	title:c_unknown = {
+		save_scope_as = selected_dragonpit
+	}
+}
+
+agot_rediscover_hightower_egg_effect = {
+	if = { # MDE Modified
+		limit = { has_global_variable = hightower_egg_hidden }
+		remove_global_variable = hightower_egg_hidden
+		character:dragon_tessarion = { save_scope_as = dragon_parent }
+		character:dragon_seasmoke = { save_scope_as = dragon_parent_other }
+		mde_start_egg_source_effect = { SOURCE = secret_hightower }
+		agot_create_random_blue_dragon_egg_artifact = { OWNER = $OWNER$ }
+		mde_end_egg_source_effect = yes
+		set_global_variable = { name = mde_hightower_egg value = scope:newly_created_artifact }
+	}
+	else_if = {
+		limit = { exists = global_var:mde_hightower_egg }
+		global_var:mde_hightower_egg = { save_scope_as = newly_created_artifact }
+	}
+	if = {
+		limit = {
+			exists = dynasty:dynn_Targaryen.dynasty_founder.house.house_head
+		}
+		dynasty:dynn_Targaryen.dynasty_founder.house.house_head = { save_scope_as = targ_heir }
+	}
+	if = {
+		limit = {
+			any_secret = { secret_type = secret_agot_hidden_artifact }
+		}
+		random_secret = {
+			limit = { secret_type = secret_agot_hidden_artifact }
+			remove_secret = yes
+		}
+	}
+	character:dragon_tessarion = { save_scope_as = tessarion }
+	save_scope_as = current_hightower
+}
+
+mde_build_dragonpits_ui_list = {
+	clear_variable_list = possible_dragonpit_view_only # MDE Added
+	every_county = {
+		limit = {
+			agot_title_is_an_active_dragonpit = yes
+		}
+		root = {
+			add_to_variable_list = {
+				name = possible_dragonpit_view_only
+				target = prev
+			}
+		}	
+	}
+	every_domicile = {
+		limit = {
+			exists = owner
+			exists = owner.primary_title
+			has_domicile_building_or_higher = dragon_coop_01
+			has_domicile_parameter = camp_unlocks_dragonkeeper
+		}
+		owner.primary_title = {
+			root = {
+				add_to_variable_list = {
+					name = possible_dragonpit_view_only
+					target = prev
+				}
+			}
+		}
+	}
+}
+
+clean_lists_scripted_effect = {
+	clear_global_variable_list = dragon_eggs
+	
+	every_artifact = {
+		limit = {
+			has_variable = dragon_egg
+			NOT = { has_variable = dud_egg }
+		}
+		add_to_global_variable_list = {
+			name = dragon_eggs
+			target = this
+		}
+	}
+	every_artifact = {
+		limit = {
+			has_variable = dragon_egg
+			has_variable = dud_egg
+		}
+		add_to_global_variable_list = {
+			name = dragon_eggs
+			target = this
+		}
+	}
+}
+
+mde_build_valyrian_steel_list_effect = {
+	clear_global_variable_list = mde_valyrian_steel
+
+	every_artifact = {
+		limit = {
+			has_variable = valyrian_steel
+			OR = {
+			artifact_type = sword
+			artifact_type = hammer
+			artifact_type = spear
+			artifact_type = axe
+			artifact_type = mace
+			artifact_type = dagger
+			}
+		}
+		add_to_global_variable_list = {
+			name = mde_valyrian_steel
+			target = this
+		}
+	}
+	every_artifact = {
+		limit = {
+			has_variable = valyrian_steel
+			NOR = {
+			artifact_type = sword
+			artifact_type = hammer
+			artifact_type = spear
+			artifact_type = axe
+			artifact_type = mace
+			artifact_type = dagger
+			}
+		}
+		add_to_global_variable_list = {
+			name = mde_valyrian_steel
+			target = this
+		}
+	}
+}
+
+mde_build_dragonblooded_list_effect = {
+	clear_global_variable_list = mde_dragonblooded_characters
+	clear_global_variable_list = mde_dragonblooded_characters_unsorted
+
+	every_living_character = {
+		limit = {
+			NOT = { has_trait = dragon }
+			agot_has_dragonblood_heritage = yes
+		}
+		add_to_global_variable_list = {
+			name = mde_dragonblooded_characters_unsorted
+			target = this
+		}
+	}
+
+	every_in_global_list = {
+		variable = mde_dragonblooded_characters_unsorted
+		limit = { dragonblood_percent >= 100 }
+		add_to_global_variable_list = { name = mde_dragonblooded_characters target = this }
+	}
+	every_in_global_list = {
+		variable = mde_dragonblooded_characters_unsorted
+		limit = {
+			dragonblood_percent >= 50
+			dragonblood_percent < 100
+		}
+		add_to_global_variable_list = { name = mde_dragonblooded_characters target = this }
+	}
+	every_in_global_list = {
+		variable = mde_dragonblooded_characters_unsorted
+		limit = {
+			dragonblood_percent >= 25
+			dragonblood_percent < 50
+		}
+		add_to_global_variable_list = { name = mde_dragonblooded_characters target = this }
+	}
+	every_in_global_list = {
+		variable = mde_dragonblooded_characters_unsorted
+		limit = { dragonblood_percent < 25 }
+		add_to_global_variable_list = { name = mde_dragonblooded_characters target = this }
+	}
+
+	clear_global_variable_list = mde_dragonblooded_characters_unsorted
+}
+
+mde_toggle_artifact_market_effect = {
+	if = {
+		limit = { has_variable = agot_artifact_market_window_open }
+		remove_variable = agot_artifact_market_window_open
+	}
+	else = {
+		hidden_effect = {
+				if = {
+					limit = {
+						NOT = {
+							exists = global_var:agot_artifact_keeper
+						}
+					}
+					agot_get_artifact_keeper = yes
+				}
+				else_if = {
+					limit = {
+						global_var:agot_artifact_keeper = {
+							OR = {
+								is_alive = no
+								is_ai = no
+							}
+						}
+					}
+					agot_reload_artifact_keeper = yes
+				}
+				else_if = {
+					limit = {
+						NOT = {
+							global_var:agot_artifact_keeper_title.holder = global_var:agot_artifact_keeper
+						}
+					}
+					global_var:agot_artifact_keeper_title = {
+						create_title_and_vassal_change = {
+							type = conquest
+							save_scope_as = change
+							add_claim_on_loss = no
+						}
+						change_title_holder_include_vassals = {
+							holder = global_var:agot_artifact_keeper
+							change = scope:change
+						}
+
+						resolve_title_and_vassal_change = scope:change
+					}
+				}
+				if = {
+					limit = {
+						NOT = {
+							global_var:agot_artifact_keeper = {
+								is_independent_ruler = yes
+							}
+						}
+					}
+					global_var:agot_artifact_keeper = {
+						create_title_and_vassal_change = {
+							type = independency
+							save_scope_as = change
+							add_claim_on_loss = yes
+						}
+						becomes_independent = {
+							change = scope:change
+						}
+						resolve_title_and_vassal_change = scope:change
+					}
+				}
+			}
+
+			agot_get_market_artifacts_effect = yes
+			agot_get_owned_artifacts_effect = yes
+
+			set_variable = {
+				name = agot_artifact_market_window_open
+				value = 1
+			}
+	}
+}
+
+
+
+mde_start_egg_source_effect = {
+	save_scope_value_as = { name = mde_egg_source value = flag:$SOURCE$ }
+	clear_saved_scope = mde_egg_toast_sent
+}
+
+mde_end_egg_source_effect = {
+	clear_saved_scope = mde_egg_source
+	clear_saved_scope = mde_egg_toast_sent
+}
+
+mde_dragon_egg_created_toast_effect = {
+	if = {
+		limit = {
+			mde_egg_notifications_enabled_trigger = yes
+			NOT = { exists = scope:mde_egg_toast_sent }
+			OR = {
+				has_global_variable = mde_egg_toasts_active
+				years_from_game_start > 0.01
+			}
+		}
+		save_scope_value_as = { name = mde_egg_toast_sent value = yes }
+		save_scope_as = mde_egg_owner
+		scope:newly_created_artifact = { save_scope_as = mde_toast_egg }
+
+		if = {
+			limit = { NOT = { exists = scope:mde_egg_source } }
+			save_scope_value_as = { name = mde_egg_source_detected value = yes }
+		}
+		if = {
+			limit = { exists = scope:mde_egg_source_detected }
+			mde_detect_egg_source_effect = yes
+		}
+
+		every_player = {
+			limit = {
+				NOT = { this = scope:mde_egg_owner }
+				NOT = { this = root }
+			}
+			mde_send_egg_created_toast_effect = yes
+		}
+
+		if = {
+			limit = { exists = scope:mde_egg_source_detected }
+			clear_saved_scope = mde_egg_source
+			clear_saved_scope = mde_egg_source_detected
+		}
+	}
+}
+
+mde_detect_egg_source_effect = {
+	if = {
+		limit = {
+			scope:activity ?= { has_activity_type = activity_agot_sailing }
+		}
+		save_scope_value_as = { name = mde_egg_source value = flag:expedition_valyria }
+	}
+	else_if = {
+		limit = { exists = scope:adventurer }
+		save_scope_value_as = { name = mde_egg_source value = flag:expedition_adventure }
+	}
+	else_if = {
+		limit = { exists = scope:char_good_artifact }
+		save_scope_value_as = { name = mde_egg_source value = flag:expedition_trade }
+	}
+	else_if = {
+		limit = {
+			exists = scope:smith
+			exists = scope:owner
+		}
+		save_scope_value_as = { name = mde_egg_source value = flag:artifact_market }
+	}
+	else = {
+		save_scope_value_as = { name = mde_egg_source value = flag:other }
+	}
+}
+
+mde_send_egg_created_toast_effect = {
+	if = {
+		limit = {
+			scope:mde_egg_source = flag:clutch
+			exists = scope:dragon_parent
+		}
+		send_interface_message = {
+			type = msg_dragon_egg_created
+			title = mde_egg_toast_clutch_t
+			desc = mde_egg_toast_clutch
+			left_icon = scope:dragon_parent
+			right_icon = scope:mde_toast_egg
+		}
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_skagos }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_skagos }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_vale }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_vale }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_isle_of_faces }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_isle_of_faces }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_dragonstone }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_dragonstone }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_spicetown }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_spicetown }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_old_wyk }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_old_wyk }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_hellholt }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_hellholt }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_volantis }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_volantis }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_qohor_road }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_qohor_road }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_red_lake }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_red_lake }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_winterfell }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_winterfell }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:pickup_summerhall }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_pickup_t DESC = mde_egg_toast_pickup_summerhall }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:restoration_summerhall }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_restoration_t DESC = mde_egg_toast_restoration_summerhall }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:restoration_spicetown }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_restoration_t DESC = mde_egg_toast_restoration_spicetown }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:expedition_valyria }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_expedition_t DESC = mde_egg_toast_expedition_valyria }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:expedition_adventure }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_expedition_t DESC = mde_egg_toast_expedition_adventure }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:expedition_trade }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_expedition_t DESC = mde_egg_toast_expedition_trade }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:secret_hightower }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_secret_t DESC = mde_egg_toast_secret_hightower }
+	}
+	else_if = {
+		limit = { scope:mde_egg_source = flag:artifact_market }
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_market_t DESC = mde_egg_toast_market }
+	}
+	else = {
+		mde_send_egg_toast_effect = { TITLE = mde_egg_toast_other_t DESC = mde_egg_toast_other }
+	}
+}
+
+mde_send_egg_toast_effect = {
+	send_interface_message = {
+		type = msg_dragon_egg_created
+		title = $TITLE$
+		desc = $DESC$
+		left_icon = scope:mde_egg_owner
+		right_icon = scope:mde_toast_egg
+	}
+}
+
+mde_clear_transferred_egg_state_effect = { # MDE Added
+	if = {
+		limit = { has_variable = pitted_egg }
+		remove_variable = pitted_egg
+	}
+	if = {
+		limit = { has_variable = cradled_egg }
+		remove_variable = cradled_egg
+		remove_variable = cradled_egg_year
+	}
+	if = {
+		limit = { has_variable = selected_egg_for_hatching }
+		remove_variable = selected_egg_for_hatching
+	}
+	if = {
+		limit = { has_variable = already_demanded }
+		remove_variable = already_demanded
+	}
+}

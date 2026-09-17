@@ -1,0 +1,564 @@
+﻿# called when a siege completes. Does *not* fire on reoccupation by province order
+# root is the occupant
+# scope:barony is the barony title that got occupied
+# scope:county is the county title for the barony
+# scope:previous_controller is the previous controller of the county
+# scope:war is the war causing the previous controller and the occupant to be hostile
+# occupied_baronies is a list of all baronies that the siege caused the occupier to control (I.E., can include baronies with no fort level)
+on_siege_completion = {
+	events = {
+		#agot_siege_events.1
+		#agot_siege_events.2
+		agot_silly_mode.0301
+		agot_sailing.6000 # Steal their treasure map in the siege
+	}
+	on_actions = {
+		on_gulltown_siege_complete
+		on_starpike_siege_complete
+		on_bank_location_siege_complete
+	}
+}
+
+on_gulltown_siege_complete = {
+	trigger = {
+		exists = character:Baratheon_2
+		character:Baratheon_2 = {
+			is_alive = yes
+		}
+		character:Baratheon_2 = {
+			location = {
+				OR = {
+					this = title:b_graftons_holdfast.title_province
+					this = title:b_grafton.title_province
+					this = title:b_gulltown.title_province
+					this = title:b_osgoods_square.title_province
+					this = title:b_port_of_arryn.title_province
+				}
+			}
+		}
+		scope:barony = {
+			this = title:b_graftons_holdfast
+		}
+		scope:county = {
+			this = title:c_gulltown
+		}
+		scope:previous_controller = {
+			OR = {
+				this = character:Grafton_1
+				this = character:Grafton_2
+				this = character:Grafton_3
+			}
+		}
+		scope:war = {
+			primary_attacker = {
+				any_owned_story = {
+					story_type = story_agot_mw_rebel
+				}
+			}
+			primary_defender = {
+				any_owned_story = {
+					story_type = story_agot_mw_crown
+				}
+			}
+		}
+		OR = {
+			this = character:Stark_3
+			this = character:Arryn_3
+			this = character:Baratheon_2
+		}
+	}
+	effect = {
+		character:Baratheon_2 = {
+			trigger_event = agot_events_rr_minor.0128
+		}
+		# title:b_graftons_holdfast = {
+		# 	remove_province_modifier = agot_weakened_walls
+		# }
+	}
+}
+
+on_starpike_siege_complete = {
+	trigger = {
+		exists = character:Targaryen_110
+		character:Targaryen_110 = {
+			is_alive = yes
+			has_character_modifier = castle_storming_event_modifier
+		}
+		# character:Targaryen_110 = {
+		# 	location = {
+		# 		this = title:b_starpike.title_province
+		# 	}
+		# }
+		scope:barony = {
+			this = title:b_starpike
+		}
+		scope:county = {
+			this = title:c_starpike
+		}
+		scope:previous_controller = {
+			OR = {
+				this = character:Peake_66
+				this = character:Peake_69
+			}
+		}
+	}
+	effect = {
+		random_list = { # Maekar dies, canonical route
+			25 = {
+				trigger_event = agot_peake_uprising.0007
+				title:b_starpike.holder = {
+					random_character_war = {
+						end_war = defender
+					}
+					trigger_event = {
+						id = agot_peake_uprising.0011 # Notify Peake
+					}
+				}
+				modifier = { add = agot_historic_outcome_2 }
+			}
+			0 = { # Maekar lives
+				trigger_event = agot_peake_uprising.0006
+				title:b_starpike.holder = {
+					random_character_war = {
+						end_war = defender
+					}
+					trigger_event = {
+						id = agot_peake_uprising.0012 # Notify Peake
+					}
+				}
+				modifier = { add = agot_nonhistoric_outcome_5 }
+			}
+		}
+	}
+}
+
+on_bank_location_siege_complete = {
+	trigger = {
+		scope:barony = {
+			OR = {
+				global_var:IB_location ?= this
+				global_var:bank1_location ?= this
+				global_var:bank2_location ?= this
+				global_var:bank3_location ?= this
+			}
+		}
+	}
+	effect = {
+		root = {
+			trigger_event = agot_banking.0701
+		}
+	}
+}
+
+on_raid_action_completion = {
+	events = {
+		agot_silly_mode.0300
+	}
+	on_actions = {
+		#on_bottleneck_raid
+		agot_landless_pirate_loot_deliverer
+		agot_sailing_ironborn_raiding
+	}
+}
+
+# called for armies whenever they enter a province
+# root is the owner of the army
+# scope:army is the army
+on_army_enter_province = {
+	on_actions = {
+		# on_bottleneck_enter_province
+		on_the_neck_friendly_terrain
+		agot_wildling_wall
+		agot_landless_pirate_loot_collect
+	}
+	random_events = {
+		#chance_to_happen = 5
+		chance_of_no_event = {
+			value = 100
+		}
+		#50 = crannogfiller.0005 #Bog Body Found in the Neck #DYLAN  #AGOT TODO
+		50 = agot_lannister_events.200 #A Hidden Cave #Cryden
+	}
+	events = {
+		agot_events_rr_minor.0200 #If a player Tywin marches on KL, start the rest of event chain!
+		agot_events_rr_minor.0400 #If the Reach marches on Storm's End, Onion Knight Appears
+	}
+}
+
+agot_wildling_wall = {
+	trigger = {
+		culture = { agot_is_wildling_culture = yes }
+		scope:old_location = {
+			geographical_region = world_westeros_beyond_the_wall
+		}
+		scope:new_location = {
+			geographical_region = world_westeros_the_wall_only
+		}
+		scope:new_location.county.holder.top_liege = {
+			NOT = {
+				is_at_war_with = root
+				culture = { agot_is_wildling_culture = yes }
+			}
+		}
+		NOT = { has_character_flag = wildling_raid_happened }
+	}
+	effect = {
+		scope:old_location = {
+			save_scope_as = old_locationscope
+		}
+		scope:new_location = {
+			save_scope_as = thewallprovince
+		}
+		scope:army = {
+			save_scope_as = scopearmy
+		}
+		trigger_event = agot_ambush_events.1002
+	}
+}
+
+on_the_neck_friendly_terrain = {
+	trigger = {
+		exists = scope:army.location
+	}
+	effect = {
+		scope:army.location ?= {
+			if = {
+				limit = {
+					geographical_region = world_westeros_the_neck
+					NOT = {
+						geographical_region = the_neck_causeway_region
+					}
+				}
+				if = {
+					limit = {
+						scope:army.army_owner = {
+							OR = {
+								any_held_county = {
+									title_province = { geographical_region = world_westeros_the_neck }
+								}
+								scope:army.army_owner.culture = culture:crannogman
+								scope:army.army_owner.culture = {
+									has_cultural_tradition = tradition_agot_crannogmen
+								}
+							}
+						}
+					}
+					add_province_modifier = {
+						modifier = agot_bog_friendly
+						days = 90
+					}
+					scope:army.location = {
+						set_variable = {
+							name = bog_crannogman_locations
+							value = scope:army.location
+						}
+					}
+					# scope:army = { Variable is never used, reenable when used
+					# 	set_variable = {
+					# 		name = bog_crannogman_army
+					# 		value = scope:army
+					# 	}
+					# }
+					scope:army.army_owner = {
+						trigger_event = {
+							id = agot_debug.1008
+							days = 1
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
+# on_bottleneck_enter_province = {
+# 	trigger = {
+# 		exists = scope:army
+# 		exists = scope:army.location
+# 	}
+
+# 	effect = {
+# 		scope:army.location = {
+# 			if = {
+# 				limit = {
+# 					geographical_region = moat_cailin_bottleneck_region
+# 					title:c_moat_cailin.holder.top_liege = county_controller.top_liege
+# 					NOT = {
+# 						OR = {
+# 							NOT = {
+# 								title:c_moat_cailin.holder.top_liege = {
+# 									completely_controls = title:b_gatehouse_tower
+# 								}
+# 							}
+# 							scope:army.army_owner = {
+# 								has_character_flag = raided_moat_cailin
+# 							}
+# 						}
+# 					}
+
+# 				}
+# 				if = {
+# 					limit = {
+# 						NOT = {
+# 							county_controller = {
+# 								OR = {
+# 									THIS = root
+# 									any_liege_or_above = {
+# 										THIS = root
+# 										NOT = {is_at_war_with = prev}
+# 									}
+# 									any_ally = {
+# 										THIS = root
+# 									}
+# 									any_liege_or_above = {
+# 										any_ally = {
+# 											THIS = root
+# 										}
+# 										NOT = {is_at_war_with = prev}
+# 									}
+# 								}
+# 							}
+# 						}
+# 					}
+# 					add_province_modifier = {
+# 						modifier = bottleneck_province_modifiers
+# 						days = 45
+# 					}
+# 					if = {
+# 						limit = {
+# 							exists = scope:army.army_commander
+# 						}
+# 						scope:army.army_commander = {
+# 							add_character_modifier = {
+# 								modifier = bottleneck_character_modifiers
+# 								days = 90
+# 							}
+# 						}
+# 					}
+# 					scope:army.army_owner = {
+# 						add_character_modifier = {
+# 							modifier = bottleneck_character_modifiers
+# 							days = 90
+# 						}
+# 					}
+# 				}
+# 				else_if = {
+# 					limit = {
+# 						county_controller = {
+# 							OR = {
+# 								THIS = root
+# 								any_liege_or_above = {
+# 									THIS = root
+# 									NOT = {is_at_war_with = prev}
+# 								}
+# 								any_ally = {
+# 									THIS = root
+# 								}
+# 								any_liege_or_above = {
+# 									any_ally = {
+# 										THIS = root
+# 									}
+# 									NOT = {is_at_war_with = prev}
+# 								}
+# 							}
+# 						}
+# 						has_province_modifier = bottleneck_province_modifiers
+# 					}
+# 					remove_province_modifier = bottleneck_province_modifiers
+# 					if = {
+# 						limit = {
+# 							exists = scope:army.army_commander
+# 						}
+# 						scope:army.army_commander = {
+# 							remove_character_modifier = bottleneck_character_modifiers
+# 						}
+# 					}
+# 					scope:army.army_owner = {
+# 						remove_character_modifier = bottleneck_character_modifiers
+# 					}
+# 				}
+# 			}
+# 			else = {
+# 				if = {
+# 					limit = {
+# 						scope:army.army_owner = {
+# 							has_character_modifier = bottleneck_character_modifiers
+# 						}
+# 					}
+# 					scope:army.army_owner = {
+# 						remove_character_modifier = bottleneck_character_modifiers
+# 					}
+# 				}
+# 				if = {
+# 					limit = {
+# 						AND = {
+# 							exists = scope:army.army_commander
+# 							scope:army.army_commander = {
+# 								has_character_modifier = bottleneck_character_modifiers
+# 							}
+# 						}
+# 					}
+# 					scope:army.army_commander = {
+# 						remove_character_modifier = bottleneck_character_modifiers
+# 					}
+# 				}
+# 			}
+# 		}
+# 	}
+# }
+
+on_army_monthly = {
+	events = {
+		agot_dragon_siege.0001 # do I want to use dragon?
+	}
+	random_events = {
+		chance_to_happen = 20
+		1 = agot_ambush_events.1001
+	}
+	events = {
+		#agot_ambush_events.1001
+	}
+}
+
+on_game_start = {
+	on_actions = {
+		on_bottleneck_start
+	}
+}
+
+on_bottleneck_start = {
+	effect = {
+		title:c_moat_cailin = {
+			add_county_modifier = bottleneck_visual
+		}
+	}
+}
+
+# on_bottleneck_raid = {
+# 	effect = {
+# 		if = {
+# 			limit = {
+# 				scope:county = title:c_moat_cailin
+# 			}
+# 			scope:raider = {
+# 				add_character_flag = {
+# 					flag = raided_moat_cailin
+# 					years = 2
+# 				}
+# 			}
+# 		}
+# 	}
+# }
+
+# Called when a raid action finishes
+# root is the raid army
+# scope:raider is the person owning the raid army
+# scope:barony is the barony title that got raided
+# scope:county is the county title for the barony
+agot_landless_pirate_loot_deliverer = {
+	trigger = {
+		scope:raider = {
+			is_landed = no
+			government_has_flag = government_is_pirate
+		}
+	}
+	effect = {
+		scope:raider = {
+			set_variable = {
+				name = raid_loot
+				value = root.raid_loot
+			}
+		}
+	}
+}
+# called for armies whenever they enter a province
+# root is the owner of the army
+# scope:army is the army
+agot_landless_pirate_loot_collect = {
+	trigger = {
+		is_landed = no
+		government_has_flag = government_is_pirate
+		has_variable = raid_loot
+		is_ai = yes
+	}
+	effect = {
+		if = {
+			limit = {
+				scope:army = { location = root.domicile.domicile_location }
+			}
+			send_interface_toast = {
+				type = event_raid_good
+				title = raiding.0011.t
+				right_icon = scope:army.army_commander
+				add_prestige = var:raid_loot
+				add_gold = var:raid_loot
+			}
+			remove_variable = raid_loot
+		}
+	}
+}
+
+# root is the raid army
+# scope:raider is the person owning the raid army
+# scope:barony is the barony title that got raided
+# scope:county is the county title for the barony
+agot_sailing_ironborn_raiding = {
+	trigger = {
+		scope:county = { is_coastal_county = yes }
+	}
+	effect = {
+		scope:raider ?= {
+			every_knight = {
+				limit = {
+					knight_army ?= root
+					culture = { has_cultural_parameter = ironborn_raiding_sailing }
+				}
+				if = {
+					limit = {
+						NOT = { has_trait = lifestyle_mariner }
+					}
+					add_trait = lifestyle_mariner
+				}
+				else = {
+					add_trait_xp = {
+						trait = lifestyle_mariner
+						value = {
+							value = 0.5
+							add = {
+								value = martial
+								divide = 10
+							}
+						}
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = army_commander
+				army_commander.culture = { has_cultural_parameter = ironborn_raiding_sailing }
+			}
+			army_commander = {
+				if = {
+					limit = {
+						NOT = { has_trait = lifestyle_mariner }
+					}
+					add_trait = lifestyle_mariner
+				}
+				else = {
+					add_trait_xp = {
+						trait = lifestyle_mariner
+						value = {
+							value = 0.5
+							add = {
+								value = martial
+								divide = 10
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

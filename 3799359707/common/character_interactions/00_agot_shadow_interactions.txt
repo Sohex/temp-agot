@@ -1,0 +1,81 @@
+﻿# AGOT: Magic of Westeros v3 - Shadowbinding
+# The mod's only guaranteed (85%), delayed kill. Normally paid for by
+# the actor's own spouse; if no spouse exists (or none is willing), the
+# actor can pay with their own body/health instead, at a steeper price
+# (see V3_FIXPLAN.md Block 4) - the ability is never hard-locked behind
+# a life circumstance the player cannot control.
+
+agot_shadow_conceive_a_shadow_interaction = {
+	interface_priority = 96
+	category = interaction_category_hostile
+	icon = agot_shadow_conceive_a_shadow
+
+	desc = agot_shadow_conceive_a_shadow_interaction_desc
+
+	cooldown = { years = 5 }
+
+	is_shown = {
+		scope:actor = {
+			has_perk = agot_shadow_child_of_shadow_perk
+		}
+		scope:actor != scope:recipient
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			stress_impact = { base = massive_stress_impact_gain }
+			set_variable = {
+				name = agot_shadow_target
+				value = scope:recipient
+			}
+			if = {
+				limit = { exists = primary_spouse }
+				trigger_event = agot_shadow.0093
+			}
+			else = {
+				trigger_event = agot_shadow.0096
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	# The mod's only guaranteed, delayed kill - the AI must have a real
+	# reason to reach for this.
+	ai_potential = {
+		has_perk = agot_shadow_child_of_shadow_perk
+	}
+
+	ai_targets = {
+		ai_recipients = scripted_relations
+		ai_recipients = war_enemies
+		ai_recipients = primary_war_enemies
+		ai_recipients = courtiers
+		max = 15
+	}
+
+	ai_frequency = 3
+
+	ai_will_do = {
+		base = -80
+		modifier = {
+			add = 100
+			scope:actor = { has_relation_nemesis = scope:recipient }
+		}
+		modifier = {
+			add = 70
+			scope:actor = { has_relation_rival = scope:recipient }
+		}
+		modifier = {
+			add = 60
+			scope:actor = { is_at_war_with = scope:recipient }
+		}
+	}
+}

@@ -1,0 +1,327 @@
+﻿namespace = dragonlord_council_voting
+
+# Freeze the final chamber state into weighted ballots and route to the result.
+dragonlord_council_voting.4000 = {
+	type = activity_event
+	hidden = yes
+
+	trigger = {
+		this = scope:host
+		scope:activity = { has_current_phase = dragonlord_council_phase_voting }
+		any_in_list = {
+			variable = dragonlord_council_meeting_voters
+			is_alive = yes
+			has_variable = dragonlord_council_meeting_base_support
+		}
+	}
+
+	immediate = {
+		dragonlord_council_tally_meeting_votes_effect = yes
+		if = {
+			limit = { has_variable = dragonlord_council_vote_passed }
+			dragonlord_council_enact_passed_agenda_effect = yes
+			dragonlord_council_snapshot_resolution_effect = yes
+			scope:activity = {
+				every_attending_character = {
+					limit = {
+						this != scope:host
+						is_ai = no
+						has_variable = dragonlord_council_meeting_base_support
+					}
+					trigger_event = dragonlord_council_voting.4040
+				}
+			}
+			trigger_event = dragonlord_council_voting.4010
+		}
+		else = {
+			scope:activity = {
+				every_attending_character = {
+					limit = {
+						this != scope:host
+						is_ai = no
+						has_variable = dragonlord_council_meeting_base_support
+					}
+					trigger_event = dragonlord_council_voting.4050
+				}
+			}
+			trigger_event = dragonlord_council_voting.4020
+		}
+	}
+}
+
+dragonlord_council_voting.4010 = {
+	type = activity_event
+	window = dragonlord_council_event
+	title = dragonlord_council_voting.passed.t
+	desc = dragonlord_council_voting.passed.desc
+	theme = realm
+
+	immediate = {
+		if = {
+			limit = { has_variable = dragonlord_council_selected_development_target }
+			var:dragonlord_council_selected_development_target = { save_scope_as = dragonlord_council_result_county }
+		}
+		if = {
+			limit = { has_variable = dragonlord_council_selected_estate_target }
+			var:dragonlord_council_selected_estate_target = { save_scope_as = dragonlord_council_result_estate }
+		}
+		if = {
+			limit = { has_variable = dragonlord_council_selected_target }
+			var:dragonlord_council_selected_target = { save_scope_as = dragonlord_council_result_war_target }
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = admiration
+	}
+
+	option = {
+		name = dragonlord_council_voting.passed.a
+		trigger = {
+			scope:dragonlord_result_category = flag:dragonlord_law_agenda
+			scope:dragonlord_result_law_enacted = 1
+		}
+		custom_tooltip = dragonlord_council_voting.result.law
+	}
+	option = {
+		name = dragonlord_council_voting.passed.a
+		trigger = {
+			scope:dragonlord_result_category = flag:dragonlord_law_agenda
+			scope:dragonlord_result_law_enacted = 0
+		}
+		custom_tooltip = dragonlord_council_voting.result.law_failed
+	}
+	option = {
+		name = dragonlord_council_voting.passed.a
+		trigger = {
+			var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+			has_variable = dragonlord_council_selected_development_target
+		}
+		custom_tooltip = dragonlord_council_voting.result.development_county
+	}
+	option = {
+		name = dragonlord_council_voting.passed.a
+		trigger = {
+			var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+			has_variable = dragonlord_council_selected_estate_target
+		}
+		custom_tooltip = dragonlord_council_voting.result.development_estate
+	}
+	option = {
+		name = dragonlord_council_voting.passed.a
+		trigger = {
+			var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+			has_character_flag = dragonlord_council_war_authorized
+		}
+		custom_tooltip = dragonlord_council_voting.result.war
+	}
+	option = {
+		name = dragonlord_council_voting.passed.a
+		trigger = {
+			var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+			NOT = { has_character_flag = dragonlord_council_war_authorized }
+		}
+		custom_tooltip = dragonlord_council_voting.result.war_failed
+	}
+	option = {
+		name = dragonlord_council_voting.passed.a
+		trigger = {
+			scope:dragonlord_result_category = flag:dragonlord_finance_agenda
+		}
+		custom_tooltip = dragonlord_council_voting.result.finance
+	}
+}
+
+dragonlord_council_voting.4020 = {
+	type = activity_event
+	window = dragonlord_council_event
+	title = dragonlord_council_voting.failed.t
+	desc = dragonlord_council_voting.failed.desc
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = disbelief
+	}
+
+	option = {
+		name = dragonlord_council_voting.result.a
+	}
+}
+
+# Human attendees cast their own frozen ballot shortly before the host tallies
+# the existing weighted voter list. The selected change simply places their
+# final support one point on the chosen side of the established zero boundary.
+dragonlord_council_voting.4030 = {
+	type = activity_event
+	window = dragonlord_council_event
+	title = dragonlord_council_voting.4030.t
+	desc = dragonlord_council_voting.4030.desc
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:host
+		animation = chancellor
+	}
+
+	trigger = {
+		this != scope:host
+		is_ai = no
+		has_variable = dragonlord_council_meeting_base_support
+		scope:host = { is_ai = yes }
+		scope:activity = { has_current_phase = dragonlord_council_phase_voting }
+	}
+
+	immediate = {
+		scope:host = { save_scope_as = bg_override_char }
+	}
+
+	option = {
+		name = dragonlord_council_voting.4030.a
+		set_variable = {
+			name = dragonlord_council_meeting_support_change
+			value = {
+				value = var:dragonlord_council_meeting_base_support
+				multiply = -1
+				add = 1
+			}
+		}
+		custom_tooltip = dragonlord_council_voting.guest_support_ballot_tt
+	}
+
+	option = {
+		name = dragonlord_council_voting.4030.b
+		set_variable = {
+			name = dragonlord_council_meeting_support_change
+			value = {
+				value = var:dragonlord_council_meeting_base_support
+				multiply = -1
+				add = -1
+			}
+		}
+		custom_tooltip = dragonlord_council_voting.guest_opposition_ballot_tt
+	}
+}
+
+# Attending players see the same final settlement after the AI host enacts the
+# motion. The result scopes are rebuilt from the host's frozen agenda variables.
+dragonlord_council_voting.4040 = {
+	type = activity_event
+	window = dragonlord_council_event
+	title = dragonlord_council_voting.passed.t
+	desc = dragonlord_council_voting.guest_passed.desc
+	theme = realm
+
+	immediate = {
+		scope:host = { save_scope_as = bg_override_char }
+		scope:host = {
+			if = {
+				limit = { has_variable = dragonlord_council_selected_development_target }
+				var:dragonlord_council_selected_development_target = { save_scope_as = dragonlord_council_result_county }
+			}
+			if = {
+				limit = { has_variable = dragonlord_council_selected_estate_target }
+				var:dragonlord_council_selected_estate_target = { save_scope_as = dragonlord_council_result_estate }
+			}
+			if = {
+				limit = { has_variable = dragonlord_council_selected_target }
+				var:dragonlord_council_selected_target = { save_scope_as = dragonlord_council_result_war_target }
+			}
+		}
+	}
+
+	left_portrait = {
+		character = scope:host
+		animation = admiration
+	}
+
+	option = {
+		name = dragonlord_council_voting.guest_passed.a
+		trigger = {
+			scope:dragonlord_result_category = flag:dragonlord_law_agenda
+			scope:dragonlord_result_law_enacted = 1
+		}
+		custom_tooltip = dragonlord_council_voting.guest_result.law
+	}
+	option = {
+		name = dragonlord_council_voting.guest_passed.a
+		trigger = {
+			scope:dragonlord_result_category = flag:dragonlord_law_agenda
+			scope:dragonlord_result_law_enacted = 0
+		}
+		custom_tooltip = dragonlord_council_voting.guest_result.law_failed
+	}
+	option = {
+		name = dragonlord_council_voting.guest_passed.a
+		trigger = {
+			scope:host = {
+				var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+				has_variable = dragonlord_council_selected_development_target
+			}
+		}
+		custom_tooltip = dragonlord_council_voting.guest_result.development_county
+	}
+	option = {
+		name = dragonlord_council_voting.guest_passed.a
+		trigger = {
+			scope:host = {
+				var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+				has_variable = dragonlord_council_selected_estate_target
+			}
+		}
+		custom_tooltip = dragonlord_council_voting.guest_result.development_estate
+	}
+	option = {
+		name = dragonlord_council_voting.guest_passed.a
+		trigger = {
+			scope:host = {
+				var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+				has_character_flag = dragonlord_council_war_authorized
+			}
+		}
+		custom_tooltip = dragonlord_council_voting.guest_result.war
+	}
+	option = {
+		name = dragonlord_council_voting.guest_passed.a
+		trigger = {
+			scope:host = {
+				var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+				NOT = { has_character_flag = dragonlord_council_war_authorized }
+			}
+		}
+		custom_tooltip = dragonlord_council_voting.guest_result.war_failed
+	}
+	option = {
+		name = dragonlord_council_voting.guest_passed.a
+		trigger = {
+			scope:dragonlord_result_category = flag:dragonlord_finance_agenda
+		}
+		custom_tooltip = dragonlord_council_voting.guest_result.finance
+	}
+}
+
+dragonlord_council_voting.4050 = {
+	type = activity_event
+	window = dragonlord_council_event
+	title = dragonlord_council_voting.failed.t
+	desc = dragonlord_council_voting.guest_failed.desc
+	theme = realm
+
+	immediate = {
+		scope:host = { save_scope_as = bg_override_char }
+	}
+
+	left_portrait = {
+		character = scope:host
+		animation = disbelief
+	}
+
+	option = {
+		name = dragonlord_council_voting.result.a
+	}
+}

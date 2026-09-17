@@ -1,0 +1,1973 @@
+﻿namespace = agot_dragon_egg_cradling
+namespace = agot_dragon_egg_cradling_birth
+namespace = agot_dragon_egg_lay
+
+scripted_trigger can_give_child_egg_trigger = {
+	is_alive = yes
+	any_character_artifact = {
+		has_variable = dragon_egg
+		NOT = { has_variable = cradled_egg }
+		NOT = { has_variable = dud_egg }
+		NOT = { has_variable = pitted_egg }
+	}
+	OR = {
+		has_game_rule = dragons_anyone
+		agot_has_dragonblood_heritage = yes
+		$CHILD$ = { agot_has_dragonblood_heritage = yes }
+	}
+	$CHILD$ = {
+		NOT = {
+			any_character_artifact = {
+				has_variable = dragon_egg
+				NOT = { has_variable = cradled_egg }
+				NOT = { has_variable = dud_egg }
+				NOT = { has_variable = pitted_egg }
+			}
+		}
+	}
+}
+
+scripted_effect spouse_provides_egg_interface = {
+	$SPOUSE$ = { save_scope_as = spouse }
+	$EGG$ = { save_scope_as = cradle_egg }
+	send_interface_message = {
+		title = agot_dragon_egg_cradling.child_cradle_title
+		custom_tooltip = agot_dragon_egg_cradling.child_cradle_desc
+		left_icon = scope:cradle_egg
+		right_icon = scope:child
+	}
+}
+
+scripted_trigger can_give_twins_egg_trigger = {
+	is_alive = yes
+	any_character_artifact = {
+		count > 1
+		has_variable = dragon_egg
+		NOT = { has_variable = cradled_egg }
+		NOT = { has_variable = dud_egg }
+		NOT = { has_variable = pitted_egg }
+	}
+	OR = {
+		has_game_rule = dragons_anyone
+		agot_has_dragonblood_heritage = yes
+		$CHILD_1$ = { agot_has_dragonblood_heritage = yes }
+	}
+	NOR = {
+		$CHILD_1$ = {
+			any_character_artifact = {
+				has_variable = dragon_egg
+				NOT = { has_variable = cradled_egg }
+				NOT = { has_variable = dud_egg }
+				NOT = { has_variable = pitted_egg }
+			}
+		}
+		$CHILD_2$ = {
+			any_character_artifact = {
+				has_variable = dragon_egg
+				NOT = { has_variable = cradled_egg }
+				NOT = { has_variable = dud_egg }
+				NOT = { has_variable = pitted_egg }
+			}
+		}
+	}
+}
+
+agot_dragon_egg_cradling.0001 = {
+	scope = artifact
+	hidden = yes
+
+	trigger = {
+		has_variable = dragon_egg
+	}
+
+	immediate = {
+		#Previously Cradled, Reset
+		if = {
+			limit = { has_variable = cradled_egg }
+			remove_variable = cradled_egg
+		}
+		if = {
+			limit = { has_variable = cradled_egg_year }
+			remove_variable = cradled_egg_year
+		}
+		#If eligible and no other eggs, cradle
+		if = {
+			limit = {
+				NOR = {
+					has_variable = dud_egg
+					has_variable = being_pitted
+				}
+				scope:owner = {
+					is_ai = yes
+					OR = { # MDE Modified
+						NOT = { global_var:mde_cradle_hatch_likelihood_ai ?= 7 }
+						court_owner ?= { is_ai = no }
+						any_close_family_member = { is_ai = no }
+					}
+					NOT = {
+						any_character_artifact = {
+							has_variable = dragon_egg
+							has_variable = cradled_egg
+						}
+					}
+					NOT = {
+						any_relation = {
+							type = agot_dragon
+						}
+					}
+					OR = {
+						has_game_rule = dragons_anyone
+						agot_has_dragonblood_heritage = yes
+					}
+				}
+			}
+			set_variable = cradled_egg
+			set_variable = { name = cradled_egg_year value = current_year }
+		}
+	}
+}
+
+#Dud Egg Handler
+agot_dragon_egg_cradling.1000 = {
+	hidden = yes
+
+	trigger = {
+		scope:dud_egg ?= {
+			has_variable = cradled_egg
+		}
+	}
+
+	immediate = {
+		scope:dud_egg = {
+			agot_dudify_egg = yes
+		}
+
+		if = {
+			limit = {
+				is_ruler = no
+				court_owner ?= {
+					is_parent_of = prev
+				}
+				dragonkeepers_315_child_eligible_for_egg_not_hatching_selection = yes
+			}
+			court_owner = {
+				trigger_event = agot_dragonkeepers.0315
+			}
+		}
+		else_if = {
+			limit = {
+				is_ruler = no
+				court_owner ?= {
+					is_close_family_of = prev
+				}
+			}
+			save_scope_as = egg_owner
+			court_owner = {
+				random_character_artifact = {
+					limit = {
+						has_variable = dragon_egg
+						NOT = { has_variable = cradled_egg }
+						NOT = { has_variable = dud_egg }
+						NOT = { has_variable = pitted_egg }
+					}
+					save_scope_as = new_egg
+				}
+				trigger_event = agot_dragon_egg_cradling.1002
+			}
+		}
+		else = {
+			random_character_artifact = {
+				limit = {
+					has_variable = dragon_egg
+					NOT = { has_variable = cradled_egg }
+					NOT = { has_variable = dud_egg }
+					NOT = { has_variable = pitted_egg }
+				}
+				save_scope_as = new_egg
+			}
+			trigger_event = agot_dragon_egg_cradling.1001
+		}
+	}
+}
+
+#Dud Egg, Self
+agot_dragon_egg_cradling.1001 = {
+	type = character_event
+	title = agot_dragon_egg_cradling.1001.t
+	desc = agot_dragon_egg_cradling.1001.desc
+
+	theme = dragon
+
+	override_background = { reference = bedchamber }
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	immediate = {
+		add_stress = medium_stress_gain
+	}
+
+	option = {
+		trigger = { exists = scope:new_egg }
+		name = agot_dragon_egg_cradling.1001.a
+		custom_tooltip = agot_dragon_egg_cradling.1001.a.tt
+		stress_impact = {
+			base = minor_stress_impact_loss
+		}
+		scope:new_egg = {
+			set_variable = cradled_egg
+			set_variable = { name = cradled_egg_year value = current_year }
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling.1001.b
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+#Dud Egg, Other
+agot_dragon_egg_cradling.1002 = {
+	type = character_event
+	title = agot_dragon_egg_cradling.1002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:egg_owner = {
+						age < 5
+					}
+				}
+				desc = agot_dragon_egg_cradling.1002.young_desc
+			}
+			desc = agot_dragon_egg_cradling.1002.desc
+		}
+	}
+
+	theme = dragon
+
+	override_background = { reference = bedchamber }
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	right_portrait = {
+		character = scope:egg_owner
+		animation = sadness
+	}
+
+	immediate = {
+		scope:egg_owner = { add_stress = medium_stress_gain }
+		scope:dud_egg = { set_owner = root }
+	}
+
+	option = {
+		trigger = { exists = scope:new_egg }
+		name = agot_dragon_egg_cradling.1002.a
+		custom_tooltip = agot_dragon_egg_cradling.1002.a.tt
+		scope:new_egg = {
+			set_owner = scope:egg_owner
+			set_variable = cradled_egg
+			set_variable = { name = cradled_egg_year value = current_year }
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 25
+				agot_cannot_use_dragon_egg = yes
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling.1001.b
+		ai_chance = {
+			base = 75
+			modifier = {
+				factor = 0
+				scope:egg_owner = { is_child_of = root }
+			}
+		}
+	}
+}
+
+#Child is born, give egg
+agot_dragon_egg_cradling.2000 = {
+	type = character_event
+	title = agot_dragon_egg_cradling.2000.t
+	desc = {
+		random_valid = {
+			triggered_desc = {
+				trigger = { ai_compassion >= low_positive_ai_value }
+				desc = agot_dragon_egg_cradling.2000.desc_start1
+			}
+			desc = agot_dragon_egg_cradling.2000.desc_start2
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					dynasty = dynasty:dynn_Targaryen
+					scope:child = { dynasty = dynasty:dynn_Targaryen }
+					game_start_date > 8036.6.1
+					NOT = { this = character:Targaryen_32 }
+					NOT = { this = character:Targaryen_35 }
+					NOT = { this = character:Targaryen_36 }
+				}
+				desc = agot_dragon_egg_cradling.2000.desc_targ
+			}
+			desc = agot_dragon_egg_cradling.2000.desc
+		}
+	}
+
+	theme = dragon
+
+	override_background = { reference = bedchamber }
+
+	right_portrait = {
+		character = root
+		animation = newborn
+	}
+
+	lower_center_portrait = {
+		character = scope:child
+	}
+
+	trigger = {
+		scope:child = {
+			is_alive = yes
+		}
+		any_character_artifact = {
+			has_variable = dragon_egg
+			NOT = { has_variable = cradled_egg }
+			NOT = { has_variable = dud_egg }
+			NOT = { has_variable = pitted_egg }
+		}
+		NOT = {
+			scope:child = {
+				any_character_artifact = {
+					has_variable = dragon_egg
+				}
+			}
+		}
+		OR = {
+			has_game_rule = dragons_anyone
+			agot_has_dragonblood_heritage = yes
+			scope:child = { agot_has_dragonblood_heritage = yes }
+		}
+		trigger_if = {
+			limit = { agot_canon_dragons_enabled = yes }
+			OR = {
+				is_ai = no
+				NAND = {
+					scope:child = { agot_is_canon_rider = yes }
+					scope:child = { agot_has_canon_cradle_egg = no }
+				}
+			}
+		}
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_artifact_selection"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		every_character_artifact = {
+			limit = {
+				has_variable = dragon_egg
+				NOT = { has_variable = cradled_egg }
+				NOT = { has_variable = dud_egg }
+				NOT = { has_variable = pitted_egg }
+			}
+			root = {
+				add_to_variable_list = {
+					name = possible_artifacts
+					target = prev
+				}
+			}
+		}
+
+		ordered_in_list = { # Cleaner if we choose the top egg
+			variable = possible_artifacts
+			save_scope_as = cradle_egg
+		}
+
+		set_variable = {
+			name = selected_artifact
+			value = scope:cradle_egg
+		}
+	}
+
+	option = {
+		var:selected_artifact = {
+			save_scope_as = cradle_egg
+		}
+
+		name = agot_dragon_egg_cradling.2000.a
+		custom_tooltip = {
+			text = agot_dragon_egg_cradling.2000.a.tt
+			scope:cradle_egg = {
+				set_owner = scope:child
+				set_variable = cradled_egg
+				set_variable = { name = cradled_egg_year value = current_year }
+			}
+		}
+
+		remove_variable = selected_artifact
+		clear_variable_list = possible_artifacts
+
+		if = {
+			limit = {
+				scope:child = {
+					any_parent = {
+						NOT = { this = root}
+						is_alive = yes
+						is_ai = no
+						save_temporary_scope_as = spouse_temp
+					}
+				}
+			}
+
+			scope:spouse_temp = {
+				spouse_provides_egg_interface = { SPOUSE = root EGG = scope:cradle_egg }
+			}
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				agot_cannot_use_dragon_egg = yes
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling.2000.b
+
+		remove_variable = selected_artifact
+		clear_variable_list = possible_artifacts
+
+		if = {
+			limit = {
+				scope:human_parent ?= root
+			}
+
+			scope:other_parent ?= { trigger_event = agot_dragon_egg_cradling.2000 }
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				agot_cannot_use_dragon_egg = no
+			}
+		}
+	}
+}
+
+#Twins, give egg
+agot_dragon_egg_cradling.2001 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					any_character_artifact = {
+						count > 1
+						has_variable = dragon_egg
+						NOT = { has_variable = cradled_egg }
+						NOT = { has_variable = dud_egg }
+						NOT = { has_variable = pitted_egg }
+					}
+				}
+				desc = agot_dragon_egg_cradling.2001.t.two
+			}
+			desc = agot_dragon_egg_cradling.2001.t
+		}
+	}
+	desc = {
+		desc = agot_dragon_egg_cradling.2001.desc.intro
+		triggered_desc = {
+			trigger = {
+				dynasty = dynasty:dynn_Targaryen
+				scope:child = { dynasty = dynasty:dynn_Targaryen }
+				game_start_date > 8036.6.1
+				NOT = { this = character:Targaryen_32 }
+				NOT = { this = character:Targaryen_35 }
+				NOT = { this = character:Targaryen_36 }
+			}
+			desc = agot_dragon_egg_cradling.2001.desc_targ
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					any_character_artifact = {
+						count > 1
+						has_variable = dragon_egg
+						NOT = { has_variable = cradled_egg }
+						NOT = { has_variable = dud_egg }
+						NOT = { has_variable = pitted_egg }
+					}
+				}
+				desc = agot_dragon_egg_cradling.2001.desc.two_egg
+			}
+			desc = agot_dragon_egg_cradling.2001.desc.one_egg
+		}
+	}
+	theme = dragon
+
+	override_background = { reference = bedchamber }
+
+	right_portrait = {
+		character = root
+		animation = newborn
+	}
+
+	lower_center_portrait = {
+		character = scope:child_1
+	}
+
+	lower_right_portrait = {
+		character = scope:child_2
+	}
+
+	immediate = {
+		random_character_artifact = {
+			limit = {
+				has_variable = dragon_egg
+				NOT = { has_variable = cradled_egg }
+				NOT = { has_variable = dud_egg }
+				NOT = { has_variable = pitted_egg }
+			}
+			save_scope_as = cradle_egg_1
+		}
+		random_character_artifact = {
+			limit = {
+				has_variable = dragon_egg
+				NOT = { has_variable = cradled_egg }
+				NOT = { has_variable = dud_egg }
+				NOT = { has_variable = pitted_egg }
+				NOT = { scope:cradle_egg_1 ?= this}
+			}
+			save_scope_as = cradle_egg_2
+		}
+	}
+
+	option = { # Give to both
+		trigger = {
+			any_character_artifact = {
+				count > 1
+				has_variable = dragon_egg
+				NOT = { has_variable = cradled_egg }
+				NOT = { has_variable = dud_egg }
+				NOT = { has_variable = pitted_egg }
+			}
+		}
+		name = agot_dragon_egg_cradling.2001.a
+
+		custom_tooltip = {
+			text = agot_dragon_egg_cradling.2001.a.tt
+			scope:child_1 = {
+				add_to_list = children_need_eggs
+			}
+			scope:child_2 = {
+				add_to_list = children_need_eggs
+			}
+			trigger_event = agot_dragon_egg_cradling.2002
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 500
+				agot_cannot_use_dragon_egg = yes
+			}
+		}
+	}
+
+	option = { # Give to one
+		name = agot_dragon_egg_cradling.2001.b
+		if = {
+			limit = {
+				any_character_artifact = {
+					count > 1
+					has_variable = dragon_egg
+					NOT = { has_variable = cradled_egg }
+					NOT = { has_variable = dud_egg }
+					NOT = { has_variable = pitted_egg }
+				}
+			}
+			custom_tooltip = {
+				text = agot_dragon_egg_cradling.2001.b.tt
+				scope:child_1 = {
+					add_to_list = children_need_eggs
+				}
+				trigger_event = agot_dragon_egg_cradling.2002
+			}
+		}
+		else = {
+			custom_tooltip = {
+				text = agot_dragon_egg_cradling.2001.b.tt.one_egg
+				scope:cradle_egg_1 = {
+					set_owner = scope:child_1
+					set_variable = cradled_egg
+					set_variable = { name = cradled_egg_year value = current_year }
+				}
+			}
+		}
+
+		random_list = {
+			95 = {
+				scope:child_2 = {
+					progress_towards_rival_effect = {
+						REASON = rival_twin_given_egg
+						CHARACTER = scope:child_1
+						OPINION = default_rival_opinion
+					}
+				}
+			}
+			5 = {
+				scope:child_2 = {
+					set_relation_rival = {
+						target = scope:child_1
+						reason = rival_twin_given_egg
+					}
+				}
+			}
+		}
+
+		ai_chance = { # Ai more likely to give to both
+			base = 0
+
+			modifier = { # Sometimes the ai chooses one
+				add = 100
+				agot_cannot_use_dragon_egg = yes
+			}
+			modifier = {
+				add = 100
+				root.player_heir ?= scope:child_1
+			}
+		}
+	}
+
+	option = { # Give to other
+		name = agot_dragon_egg_cradling.2001.c
+
+		if = {
+			limit = {
+				any_character_artifact = {
+					count > 1
+					has_variable = dragon_egg
+					NOT = { has_variable = cradled_egg }
+					NOT = { has_variable = dud_egg }
+					NOT = { has_variable = pitted_egg }
+				}
+			}
+			custom_tooltip = {
+				text = agot_dragon_egg_cradling.2001.c.tt
+				scope:child_2 = {
+					add_to_list = children_need_eggs
+				}
+				trigger_event = agot_dragon_egg_cradling.2002
+			}
+		}
+		else = {
+			custom_tooltip = {
+				text = agot_dragon_egg_cradling.2001.c.tt.one_egg
+				scope:cradle_egg_1 = {
+					set_owner = scope:child_2
+					set_variable = cradled_egg
+					set_variable = { name = cradled_egg_year value = current_year }
+				}
+			}
+		}
+
+		random_list = {
+			95 = {
+				scope:child_1 = {
+					progress_towards_rival_effect = {
+						REASON = rival_twin_given_egg
+						CHARACTER = scope:child_2
+						OPINION = default_rival_opinion
+					}
+				}
+			}
+			5 = {
+				scope:child_1 = {
+					set_relation_rival = {
+						target = scope:child_2
+						reason = rival_twin_given_egg
+					}
+				}
+			}
+		}
+
+		ai_chance = { # Ai more likely to give to both
+			base = 0
+
+			modifier = { # Sometimes the ai chooses one
+				add = 100
+				agot_cannot_use_dragon_egg = yes
+			}
+			modifier = {
+				add = 100
+				root.player_heir ?= scope:child_2
+			}
+		}
+	}
+
+	option = { # Neither
+		name = agot_dragon_egg_cradling.2001.d
+
+		if = {
+			limit = {
+				scope:human_parent ?= root
+			}
+
+			scope:other_parent ?= { trigger_event = agot_dragon_egg_cradling.2001 }
+		}
+
+		ai_chance = { # Ai more likely to give to both
+			base = 0
+
+			modifier = {
+				add = 100
+				agot_cannot_use_dragon_egg = no
+			}
+		}
+	}
+}
+
+# Twins follow up to give eggs
+agot_dragon_egg_cradling.2002 = {
+	type = character_event
+	title = agot_dragon_egg_cradling.2002.t
+	desc = agot_dragon_egg_cradling.2002.desc
+
+	theme = dragon
+
+	override_background = { reference = bedchamber }
+
+	right_portrait = {
+		character = root
+		animation = newborn
+	}
+
+	lower_center_portrait = {
+		character = scope:child
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_artifact_selection"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		every_character_artifact = {
+			limit = {
+				has_variable = dragon_egg
+				NOT = { has_variable = cradled_egg }
+				NOT = { has_variable = dud_egg }
+				NOT = { has_variable = pitted_egg }
+			}
+			root = {
+				add_to_variable_list = {
+					name = possible_artifacts
+					target = prev
+				}
+			}
+		}
+
+		ordered_in_list = { # Cleaner if we choose the top egg
+			variable = possible_artifacts
+			save_scope_as = cradle_egg
+		}
+
+		set_variable = {
+			name = selected_artifact
+			value = scope:cradle_egg
+		}
+
+		ordered_in_list = {
+			list = children_need_eggs
+			save_scope_as = child
+		}
+	}
+
+	option = {
+		var:selected_artifact = {
+			save_scope_as = cradle_egg # scope prefered for loc purposes
+		}
+		remove_variable = selected_artifact
+
+		name = agot_dragon_egg_cradling.2002.a
+
+		custom_tooltip = {
+			text = agot_dragon_egg_cradling.2002.a.tt
+			scope:cradle_egg = {
+				set_owner = scope:child
+				set_variable = cradled_egg
+				set_variable = { name = cradled_egg_year value = current_year }
+			}
+		}
+		scope:child = {
+			remove_from_list = children_need_eggs
+		}
+		remove_list_variable = {
+			name = possible_artifacts
+			target = scope:cradle_egg
+		}
+
+		if = {
+			limit = {
+				scope:child = {
+					any_parent = {
+						NOT = { this = root}
+						is_alive = yes
+						is_ai = no
+						save_temporary_scope_as = spouse_temp
+					}
+				}
+			}
+
+			scope:spouse_temp = {
+				spouse_provides_egg_interface = { SPOUSE = root EGG = scope:cradle_egg }
+			}
+		}
+
+		if = {
+			limit = {
+				any_in_list = {
+					list = children_need_eggs
+					count > 0
+				}
+				any_character_artifact = {
+					count > 0
+					has_variable = dragon_egg
+					NOT = { has_variable = cradled_egg }
+					NOT = { has_variable = dud_egg }
+					NOT = { has_variable = pitted_egg }
+				}
+			}
+			trigger_event = agot_dragon_egg_cradling.2002
+		}
+		else = {
+			clear_variable_list = possible_artifacts
+		}
+
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling.2002.b
+		# I am not going to consider what happens if a human player
+		# decides to opt out on this with an applicable spouse waiting in the wings
+		ai_chance = {
+			base = 0
+		}
+		clear_variable_list = possible_artifacts
+		remove_variable = selected_artifact
+	}
+
+}
+# Handler for giving egg to child
+agot_dragon_egg_cradling.2010 = {
+	hidden = yes
+	trigger = {
+		NOT = { has_trait = twin }
+		OR = {
+			scope:father ?= {
+				can_give_child_egg_trigger = { CHILD = root }
+			}
+			scope:mother ?= {
+				can_give_child_egg_trigger = { CHILD = root }
+			}
+		}
+	}
+	immediate = {
+		if = { # Father is human candidate
+			limit = {
+				scope:father ?= {
+					is_ai = no
+					can_give_child_egg_trigger = { CHILD = root }
+				}
+			}
+
+			# Save scopes incase this parent chooses to not provide an egg
+			scope:father ?= {
+				save_scope_as = human_parent
+			}
+			if = {
+				limit = {
+					scope:mother ?= { # Doesn't necessarily need to be human
+						can_give_child_egg_trigger = { CHILD = root }
+					}
+				}
+				scope:mother ?= {
+					save_scope_as = other_parent
+				}
+			}
+
+		}
+		else_if = { # Mother is human candidate
+			limit = {
+				scope:mother ?= {
+					is_ai = no
+					can_give_child_egg_trigger = { CHILD = root }
+				}
+			}
+
+			# Save scopes incase this parent chooses to not provide an egg
+			scope:mother ?= {
+				save_scope_as = human_parent
+			}
+			if = {
+				limit = {
+					scope:father ?= {
+						can_give_child_egg_trigger = { CHILD = root }
+					}
+				}
+				scope:father ?= {
+					save_scope_as = other_parent
+				}
+			}
+		}
+		else = { # Neither are human candidates
+			if = {
+				limit = {
+					AND = {
+						scope:father ?= {
+							can_give_child_egg_trigger = { CHILD = root }
+						}
+						scope:mother ?= {
+							can_give_child_egg_trigger = { CHILD = root }
+						}
+					}
+				}
+				random_list = {
+					50 = { scope:father = { trigger_event = agot_dragon_egg_cradling.2000 } }
+					50 = { scope:mother = { trigger_event = agot_dragon_egg_cradling.2000 } }
+				}
+			}
+			else_if = {
+				limit = {
+					scope:father ?= {
+						can_give_child_egg_trigger = { CHILD = root }
+					}
+				}
+				scope:father = { trigger_event = agot_dragon_egg_cradling.2000 }
+			}
+			else = {
+				scope:mother = { trigger_event = agot_dragon_egg_cradling.2000 }
+			}
+		}
+
+		scope:human_parent ?= { # Only happens if real parent
+			trigger_event = agot_dragon_egg_cradling.2000
+		}
+	}
+}
+
+# Handler for twins
+agot_dragon_egg_cradling.2011 = {
+	hidden = yes
+	trigger = {
+		any_sibling = {
+			is_twin_of = root
+			save_temporary_scope_as = twin_2
+		}
+		OR = {
+			scope:father ?= {
+				OR = {
+					can_give_child_egg_trigger = { CHILD = root }
+					can_give_child_egg_trigger = { CHILD = scope:twin_2 }
+				}
+			}
+			scope:mother ?= {
+				OR = {
+					can_give_child_egg_trigger = { CHILD = root }
+					can_give_child_egg_trigger = { CHILD = scope:twin_2 }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		save_scope_as = child_1
+
+		random_sibling = {
+			limit = {
+				is_twin_of = root
+			}
+			save_scope_as = child_2
+		}
+
+		if = { # If a parent has two eggs
+			limit = {
+				OR = {
+					scope:father ?= { # because we are counting two eggs, can't use the trigger
+						can_give_twins_egg_trigger = { CHILD_1 = scope:child_1 CHILD_2 = scope:child_2 }
+						save_temporary_scope_as = parent_to_give
+					}
+					scope:mother ?= {
+						can_give_twins_egg_trigger = { CHILD_1 = scope:child_1 CHILD_2 = scope:child_2 }
+						save_temporary_scope_as = parent_to_give
+					}
+				}
+			}
+
+			if = { # Father is real
+				limit = {
+					scope:father ?= {
+						is_ai = no
+						can_give_twins_egg_trigger = { CHILD_1 = scope:child_1 CHILD_2 = scope:child_2 }
+					}
+				}
+
+				scope:father = {
+					save_scope_as = human_parent
+				}
+
+				if = {
+					limit = {
+						scope:mother ?= { # Just needs to be able to give one egg
+							AND = {
+								can_give_child_egg_trigger = { CHILD = scope:child_1 }
+								can_give_child_egg_trigger = { CHILD = scope:child_2 }
+							}
+						}
+					}
+
+					scope:mother = {
+						save_scope_as = other_parent
+					}
+				}
+			}
+			else_if = { # Mother is real
+				limit = {
+					scope:father ?= {
+						is_ai = no
+						can_give_twins_egg_trigger = { CHILD_1 = scope:child_1 CHILD_2 = scope:child_2 }
+					}
+				}
+
+				scope:mother = {
+					save_scope_as = human_parent
+				}
+
+				if = {
+					limit = {
+						scope:father ?= { # Just needs to be able to give one egg
+							AND = {
+								can_give_child_egg_trigger = { CHILD = scope:child_1 }
+								can_give_child_egg_trigger = { CHILD = scope:child_2 }
+							}
+						}
+					}
+
+					scope:father = {
+						save_scope_as = other_parent
+					}
+				}
+			}
+			else = { # Neither are real
+				scope:parent_to_give = { trigger_event = agot_dragon_egg_cradling.2001 }
+			}
+
+			scope:human_parent ?= { trigger_event = agot_dragon_egg_cradling.2001 }
+		}
+		else_if = { # both parents have one egg
+			limit = {
+				AND = {
+					scope:father ?= {
+						can_give_child_egg_trigger = { CHILD = scope:child_1 }
+					}
+					scope:mother ?= {
+						can_give_child_egg_trigger = { CHILD = scope:child_2 }
+					}
+				}
+			}
+
+			if = { # *in case* a parent is a human and has a favorite twin (shame)
+				limit = {
+					scope:father ?= {
+						is_ai = no
+					}
+				}
+
+				scope:mother = { save_scope_as = other_parent }
+				scope:father = { trigger_event = agot_dragon_egg_cradling.2012 }
+			}
+			else_if = {
+				limit = {
+					scope:mother ?= {
+						is_ai = no
+					}
+				}
+				scope:father = { save_scope_as = other_parent }
+				scope:mother = { trigger_event = agot_dragon_egg_cradling.2012 }
+			}
+			else = {
+				random_list = { # Just a fun shuffle
+					50 = {
+						scope:father = { trigger_event = agot_dragon_egg_cradling.2000 }
+						scope:child_2 = { save_scope_as = child } # Necessary scope for next event
+						scope:mother = { trigger_event = agot_dragon_egg_cradling.2000 }
+					}
+					50 = {
+						scope:mother = { trigger_event = agot_dragon_egg_cradling.2000 }
+						scope:child_2 = { save_scope_as = child } # Necessary scope for next event
+						scope:father = { trigger_event = agot_dragon_egg_cradling.2000 }
+					}
+				}
+			}
+		}
+		else_if = { # Only one egg to give... rip, gift from father
+			limit = {
+				scope:father ?= {
+					AND = {
+						can_give_child_egg_trigger = { CHILD = scope:child_1 }
+						can_give_child_egg_trigger = { CHILD = scope:child_2 }
+					}
+				}
+			}
+
+			scope:father = { trigger_event = agot_dragon_egg_cradling.2001 }
+		}
+		else_if = { # Only one egg to give... rip, gift from mother
+			limit = {
+				scope:mother ?= {
+					AND = {
+						can_give_child_egg_trigger = { CHILD = scope:child_1 }
+						can_give_child_egg_trigger = { CHILD = scope:child_2 }
+					}
+				}
+			}
+
+			scope:father = { trigger_event = agot_dragon_egg_cradling.2001 }
+		}
+		else_if = { # Only one child is applicable
+			limit = {
+				OR = {
+					scope:father ?= {
+						OR = {
+							can_give_child_egg_trigger = { CHILD = scope:child_1 }
+							NOT = { can_give_child_egg_trigger = { CHILD = scope:child_2 } }
+							scope:child_1 = { save_temporary_scope_as = child_to_recieve }
+						}
+						OR = {
+							NOT = { can_give_child_egg_trigger = { CHILD = scope:child_1 } }
+							can_give_child_egg_trigger = { CHILD = scope:child_2 }
+							scope:child_2 = { save_temporary_scope_as = child_to_recieve }
+						}
+						save_temporary_scope_as = father_to_give
+					}
+					scope:mother ?= {
+						OR = {
+							can_give_child_egg_trigger = { CHILD = scope:child_1 }
+							NOT = { can_give_child_egg_trigger = { CHILD = scope:child_2 } }
+							scope:child_1 = { save_temporary_scope_as = child_to_recieve }
+						}
+						OR = {
+							NOT = { can_give_child_egg_trigger = { CHILD = scope:child_1 } }
+							can_give_child_egg_trigger = { CHILD = scope:child_2 }
+							scope:child_2 = { save_temporary_scope_as = child_to_recieve }
+						}
+						save_temporary_scope_as = mother_to_give
+					}
+				}
+			}
+
+			scope:child_to_recieve = { save_scope_as = child }
+
+			if = {
+				limit = {
+					exists = scope:father_to_give
+					exists = scope:mother_to_give
+				}
+				# Check if real
+				if = {
+					limit = {
+						scope:father_to_give = { is_ai = no }
+					}
+
+					scope:father_to_give = {
+						save_scope_as = human_parent
+					}
+					scope:mother_to_give = {
+						save_scope_as = other_parent
+					}
+				}
+				else_if = {
+					limit = {
+						scope:mother_to_give = { is_ai = no }
+					}
+					scope:mother_to_give = {
+						save_scope_as = human_parent
+					}
+					scope:father_to_give = {
+						save_scope_as = other_parent
+					}
+				}
+				else = {
+					random_list = {
+						50 = {
+							scope:father_to_give = { trigger_event = agot_dragon_egg_cradling.2000 }
+						}
+						50 = {
+							scope:mother_to_give = { trigger_event = agot_dragon_egg_cradling.2000 }
+						}
+					}
+				}
+
+				scope:human_parent ?= { trigger_event = agot_dragon_egg_cradling.2000 }
+			}
+			else_if = {
+				limit = {
+					exists = scope:father_to_give
+				}
+				scope:father_to_give = { trigger_event = agot_dragon_egg_cradling.2000 }
+			}
+			else = { # Mother has to be valid
+				scope:mother_to_give = { trigger_event = agot_dragon_egg_cradling.2000 }
+			}
+		}
+
+	}
+}
+
+# Each parent has an egg for a twin, let real parent pick
+# This event is so unnecessary, but I can see people not wanting random
+agot_dragon_egg_cradling.2012 = {
+	type = character_event
+	title = agot_dragon_egg_cradling.2012.t
+	desc = agot_dragon_egg_cradling.2012.desc.intro
+
+	theme = dragon
+
+	override_background = { reference = bedchamber }
+
+	right_portrait = {
+		character = root
+		animation = newborn
+	}
+
+	left_portrait = {
+		character = scope:other_parent
+		animation = newborn
+	}
+	lower_center_portrait = {
+		character = scope:child_1
+	}
+
+	lower_right_portrait = {
+		character = scope:child_2
+	}
+
+	trigger = {
+		NOT = { # In this case, both parents are real and can toss eggs
+			scope:other_parent = { is_ai = no }
+		}
+	}
+
+	immediate = {
+		random_character_artifact = {
+			limit = {
+				has_variable = dragon_egg
+				NOT = { has_variable = cradled_egg }
+				NOT = { has_variable = dud_egg }
+				NOT = { has_variable = pitted_egg }
+			}
+			save_scope_as = my_egg
+		}
+
+		scope:other_parent = {
+			random_character_artifact = {
+				limit = {
+					has_variable = dragon_egg
+					NOT = { has_variable = cradled_egg }
+					NOT = { has_variable = dud_egg }
+					NOT = { has_variable = pitted_egg }
+				}
+				save_scope_as = parent_two_egg
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling.2012.a
+		custom_tooltip = {
+			text = agot_dragon_egg_cradling.2012.a.tt
+			scope:my_egg = {
+				set_owner = scope:child_1
+				set_variable = cradled_egg
+				set_variable = { name = cradled_egg_year value = current_year }
+			}
+			scope:parent_two_egg = {
+				set_owner = scope:child_2
+				set_variable = cradled_egg
+				set_variable = { name = cradled_egg_year value = current_year }
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling.2012.b
+		custom_tooltip = {
+			text = agot_dragon_egg_cradling.2012.b.tt
+			scope:my_egg = {
+				set_owner = scope:child_2
+				set_variable = cradled_egg
+				set_variable = { name = cradled_egg_year value = current_year }
+			}
+			scope:parent_two_egg = {
+				set_owner = scope:child_1
+				set_variable = cradled_egg
+				set_variable = { name = cradled_egg_year value = current_year }
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling.2012.c
+	}
+
+}
+###                     ###
+#                         #
+# Dragon Cradling Events #
+#    by TypicalCrusader   #
+#                         #
+###                     ###
+
+agot_dragon_egg_cradling_birth.0001 = {
+	hidden = yes
+	trigger = {
+		NOT = {
+			any_relation = {
+				type = agot_dragon
+			}
+		}
+		NOT = { has_trait_with_flag = can_not_bond_dragon }
+		any_character_artifact = {
+			has_variable = dragon_egg
+			has_variable = cradled_egg
+		}
+	}
+	immediate = {
+		if = { # MDE Modified
+			limit = {
+				OR = {
+					is_ai = no
+					court_owner ?= { is_ai = no }
+					any_close_family_member = {
+						is_ai = no
+					}
+					NOT = { global_var:mde_cradle_hatch_likelihood_ai ?= 7 }
+				}
+				
+			}
+			random_character_artifact = {
+				limit = {
+					has_variable = dragon_egg
+					has_variable = cradled_egg
+				}
+				save_scope_as = egg
+			}
+			hidden_effect = { agot_spawn_bonded_hatchling_from_egg_effect = { OWNER = root EGG = scope:egg } }
+
+
+			if = {
+				limit = {
+					NOT = {
+						scope:dragon = { has_character_flag = agot_no_silly_name }
+					}
+					is_ai = yes
+					age <= 10
+					age >= 3
+				}
+					random = {
+						chance = {
+							value = 10
+							if = {
+								limit = {
+									has_game_rule = agot_silly_mode
+								}
+								add = 90
+							}
+						}
+						save_scope_as = child
+						agot_generate_dragon_baby_name = yes
+					}
+				}
+
+				send_interface_toast = {
+					type = event_generic_neutral
+					title = hatched_dragon_via_cradling_notification
+					left_icon = root
+					right_icon = scope:dragon
+				}
+
+			if = {
+				limit = {
+					exists = scope:dragon_baby_reference
+				}
+
+				if = { # First check if a parent is real
+					limit = {
+						is_landed = no
+					}
+					employer ?= { trigger_event = agot_dragon_egg_cradling_birth.0010 }
+				}
+				else = {
+					# Should consider regency, but for now leave it and kill baby reference
+					scope:dragon_baby_reference = {
+						death = {
+							death_reason = death_vanished
+						}
+					}
+
+					agot_inform_dragon_egg_hatched_effect = yes
+					hidden_effect = {
+						dragon_gender_reveal_calc = yes
+					}
+				}
+			}
+			else = {
+				trigger_event = agot_dragon_egg_cradling_birth.0002
+			}
+		}
+	}
+}
+
+# Dragon hatches from cradling egg
+agot_dragon_egg_cradling_birth.0002 = {
+	type = character_event
+	window = agot_dragon_character_event
+	theme = dragon
+	title = agot_dragon_egg_cradling_birth.0002.t
+	desc = agot_dragon_egg_cradling_birth.0002.desc
+
+	#NAMING WIDGET
+	widget = {
+		is_shown = {
+			is_ai = no
+			is_landed = yes
+		}
+		gui = "event_window_widget_name_child"
+		container = "dynamic_birth_name"
+		controller = name_character
+		setup_scope = { scope:dragon = { save_scope_as = name_character_target } }
+	}
+
+	left_portrait = {
+		character = root
+		animation = ecstasy
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_head
+		camera = camera_dragon_event_standing_baby
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {}
+
+	option = {
+		name = agot_dragon_egg_cradling_birth.0002.a
+		custom_tooltip = agot_dragon_egg_cradling_birth.0002.a_tt_dragon_born
+		custom_tooltip = agot_dragon_egg_cradling_birth.0002.a_tt_egg_destroyed
+		if = {
+			limit = {
+				is_landed = no
+				is_ai = no
+				exists = employer
+			}
+			employer = { trigger_event = agot_dragon_egg_cradling_birth.0003 }
+		}
+		else = {
+			agot_inform_dragon_egg_hatched_effect = yes
+			hidden_effect = {
+				dragon_gender_reveal_calc = yes
+			}
+		}
+	}
+}
+
+# Name dragon, redirected to liege if the hatcher is not landed
+agot_dragon_egg_cradling_birth.0003 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = agot_dragon_egg_cradling_birth.0003.t
+	desc = agot_dragon_egg_cradling_birth.0003.desc
+	theme = dragon
+	left_portrait = root
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+
+	#NAMING WIDGET
+	widget = {
+		gui = "event_window_widget_name_child"
+		container = "dynamic_birth_name"
+		controller = name_character
+		setup_scope = { scope:dragon = { save_scope_as = name_character_target } }
+		is_shown = {
+			is_ai = no
+			is_landed = yes
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling_birth.0003.opt.a
+		scope:child = {
+			agot_inform_dragon_egg_hatched_effect = yes
+		}
+		hidden_effect = {
+			dragon_gender_reveal_calc = yes
+		}
+	}
+}
+
+# Base dragon gender reveal event
+agot_dragon_egg_cradling_birth.0004 = {
+	type = character_event
+	title = agot_dragon_egg_cradling_birth.0004.t
+	desc = agot_dragon_egg_cradling_birth.0004.desc
+	theme = dragon
+	right_portrait = root
+	left_portrait = {
+		character = scope:revealing
+	}
+	lower_left_portrait = {
+		character = scope:dragon
+	}
+	override_background = {
+		reference = physicians_study
+	}
+
+	immediate = {
+		scope:dragon = {
+			agot_reveal_dragon_gender_effect = yes
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling_birth.0004.a
+	}
+}
+
+# My child or liege's egg has hatched, they have named it oddly...
+agot_dragon_egg_cradling_birth.0010 = {
+	type = character_event
+	window = agot_dragon_character_event
+	theme = dragon
+	title = agot_dragon_egg_cradling_birth.0010.t
+	desc = {
+		desc = agot_dragon_egg_cradling_birth.0010.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					any_child = { scope:child = this }
+				}
+				desc = agot_dragon_egg_cradling_birth.0010.desc.child
+			}
+			desc = agot_dragon_egg_cradling_birth.0010.desc.courtier
+		}
+	}
+
+	override_background = { reference = bedchamber }
+	left_portrait = {
+		character = scope:child
+		animation = happiness
+	}
+
+	right_portrait = {
+		character = root
+		animation = shame
+	}
+
+	lower_center_portrait = {
+		character = scope:dragon
+	}
+
+	immediate = {
+
+	}
+
+	option = { # This is fine
+		name = agot_dragon_egg_cradling_birth.0010.a
+
+		scope:child = {
+			agot_inform_dragon_egg_hatched_effect = yes
+		}
+
+		hidden_effect = {
+			dragon_gender_reveal_calc = yes
+		}
+		stress_impact = {
+			base = minor_stress_impact_gain
+			compassionate = minor_stress_impact_loss
+		}
+		ai_chance = { # 1/3 chance ai allows it
+			base = 1
+		}
+	}
+
+	option = { # Offer an example dragon name
+		name = agot_dragon_egg_cradling_birth.0010.b
+		custom_tooltip = {
+			text = agot_dragon_egg_cradling_birth.0010.b.tt
+			scope:dragon = {
+				change_first_name = { template_character = scope:dragon_baby_reference }
+			}
+			scope:child = {
+				agot_inform_dragon_egg_hatched_effect = yes
+			}
+			dragon_gender_reveal_calc = yes
+		}
+
+		reverse_add_opinion = {
+			target = scope:child
+			modifier = angry_opinion
+			opinion = -25
+		}
+		ai_chance = { # 2/3 chance ai rejects it
+			base = 2
+		}
+	}
+
+	option = { # Rename
+		name = agot_dragon_egg_cradling_birth.0010.c
+		custom_tooltip = agot_dragon_egg_cradling_birth.0010.c.tt
+		trigger_event = agot_dragon_egg_cradling_birth.0011
+
+		reverse_add_opinion = {
+			target = scope:child
+			modifier = angry_opinion
+			opinion = -25
+		}
+		ai_chance = {
+			base = 0
+		}
+	}
+
+	after = {
+		hidden_effect = {
+			scope:dragon_baby_reference = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+}
+
+agot_dragon_egg_cradling_birth.0011 = {
+	type = character_event
+	window = agot_dragon_character_event
+	theme = dragon
+	title = agot_dragon_egg_cradling_birth.0011.t
+	desc = agot_dragon_egg_cradling_birth.0011.desc
+
+	left_portrait = {
+		character = root
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	#NAMING WIDGET
+	widget = {
+		gui = "event_window_widget_name_child"
+		container = "dynamic_birth_name"
+		controller = name_character
+		setup_scope = { scope:dragon = { save_scope_as = name_character_target } }
+		is_shown = {
+			is_ai = no
+			is_landed = yes
+		}
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_dragon_egg_cradling_birth.0011.a
+		scope:child = {
+			agot_inform_dragon_egg_hatched_effect = yes
+		}
+		hidden_effect = {
+			dragon_gender_reveal_calc = yes
+		}
+		ai_chance = {
+			base = 1
+		}
+	}
+}
+
+# Laying events
+agot_dragon_egg_lay.0001 = { #Your dragon has laid 1 egg
+	type = character_event
+	window = agot_dragon_character_event
+	theme = dragon
+	title = agot_dragon_egg_lay.0001.t
+	desc = {
+		desc = agot_dragon_egg_lay.0001.desc
+		triggered_desc = {
+			trigger = { scope:dragon_parent = { has_variable = dragon_gender_hidden } }
+			desc = agot_dragon_egg_lay.female_revealed
+		}
+	}
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:dragon_parent
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {
+		scope:dragon_parent = { save_scope_as = dragon } # For TT loc
+		scope:dragon_parent = {
+			create_character_memory = {
+				type = agot_dragon_laid_clutch_1
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_lay.0001.opt
+
+		set_variable = { name = spawn_eggs value = 1 }
+		agot_spawn_laid_egg = {
+			AMOUNT_OF_EGGS_TO_SPAWN = 1
+			OWNER_SCOPE = root
+			DRAGON_PARENT = scope:dragon_parent
+		}
+		if = {
+			limit = {
+				scope:dragon_parent = {
+					has_variable = dragon_gender_hidden
+				}
+			}
+			scope:dragon_parent = {
+				agot_reveal_dragon_gender_effect = yes
+			}
+		}
+	}
+}
+
+agot_dragon_egg_lay.0002 = { #Your dragon has laid x eggs
+	type = character_event
+	window = agot_dragon_character_event
+	theme = dragon
+	title = agot_dragon_egg_lay.0002.t
+	desc = {
+		desc = agot_dragon_egg_lay.0002.desc
+		triggered_desc = {
+			trigger = { scope:dragon_parent = { has_variable = dragon_gender_hidden } }
+			desc = agot_dragon_egg_lay.female_revealed
+		}
+	}
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:dragon_parent
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {
+		scope:dragon_parent = { save_scope_as = dragon } # For TT loc
+		random_list = {
+			25 = {
+				trigger = {
+					NOT = { scope:dragon_parent = { has_trait = dragon_fertile } }
+					agot_dragon_population_low = no
+				}
+				scope:dragon_parent = { # MDE Modified
+					set_variable = {
+						name = spawn_eggs
+						value = {
+							value = 2
+							add = mde_dragon_egg_clutch_size_add
+						}
+					}
+					mde_create_laid_clutch_memory_effect = yes
+				}
+			}
+			25 = {
+				scope:dragon_parent = { # MDE Modified
+					set_variable = {
+						name = spawn_eggs
+						value = {
+							value = 3
+							add = mde_dragon_egg_clutch_size_add
+						}
+					}
+					mde_create_laid_clutch_memory_effect = yes
+				}
+			}
+			25 = {
+				trigger = {
+					scope:dragon_parent = { has_trait = dragon_fertile }
+				}
+				scope:dragon_parent = { # MDE Modified
+					set_variable = {
+						name = spawn_eggs
+						value = {
+							value = 4
+							add = mde_dragon_egg_clutch_size_add
+						}
+					}
+					mde_create_laid_clutch_memory_effect = yes
+				}
+			}
+			10 = {
+				trigger = {
+					scope:dragon_parent = { has_trait = dragon_fertile }
+				}
+				scope:dragon_parent = { # MDE Modified
+					set_variable = {
+						name = spawn_eggs
+						value = {
+							value = 5
+							add = mde_dragon_egg_clutch_size_add
+						}
+					}
+					mde_create_laid_clutch_memory_effect = yes
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_egg_lay.0002.opt
+
+		custom_tooltip = {
+			text = dragon_laid_eggs
+			switch = {
+				trigger = scope:dragon_parent.var:spawn_eggs
+
+				2 = {
+					agot_spawn_laid_egg = {
+						AMOUNT_OF_EGGS_TO_SPAWN = 2
+						OWNER_SCOPE = root
+						DRAGON_PARENT = scope:dragon_parent
+					}
+				}
+				3 = {
+					agot_spawn_laid_egg = {
+						AMOUNT_OF_EGGS_TO_SPAWN = 3
+						OWNER_SCOPE = root
+						DRAGON_PARENT = scope:dragon_parent
+					}
+				}
+				4 = {
+					agot_spawn_laid_egg = {
+						AMOUNT_OF_EGGS_TO_SPAWN = 4
+						OWNER_SCOPE = root
+						DRAGON_PARENT = scope:dragon_parent
+					}
+				}
+				5 = {
+					agot_spawn_laid_egg = {
+						AMOUNT_OF_EGGS_TO_SPAWN = 5
+						OWNER_SCOPE = root
+						DRAGON_PARENT = scope:dragon_parent
+					}
+				}
+				6 = { # MDE Modified
+					agot_spawn_laid_egg = {
+						AMOUNT_OF_EGGS_TO_SPAWN = 6
+						OWNER_SCOPE = root
+						DRAGON_PARENT = scope:dragon_parent
+					}
+				}
+				7 = { # MDE Modified
+					agot_spawn_laid_egg = {
+						AMOUNT_OF_EGGS_TO_SPAWN = 7
+						OWNER_SCOPE = root
+						DRAGON_PARENT = scope:dragon_parent
+					}
+				}
+				8 = { # MDE Modified
+					agot_spawn_laid_egg = {
+						AMOUNT_OF_EGGS_TO_SPAWN = 8
+						OWNER_SCOPE = root
+						DRAGON_PARENT = scope:dragon_parent
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:dragon_parent = {
+					has_variable = dragon_gender_hidden
+				}
+			}
+			scope:dragon_parent = {
+				agot_reveal_dragon_gender_effect = yes
+			}
+		}
+		if = {
+			limit = {
+				scope:dragon_parent = {
+					is_female = yes
+					AND = {
+						has_inactive_trait = dragon_fertile
+						has_variable = dragon_is_fertile
+					}
+				}
+			}
+			scope:dragon_parent = {
+				make_trait_active = dragon_fertile
+				remove_variable = dragon_is_fertile
+			}
+		}
+	}
+}

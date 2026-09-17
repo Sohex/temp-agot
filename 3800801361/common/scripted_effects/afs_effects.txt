@@ -1,0 +1,400 @@
+﻿afs_postpone_effect = {
+ if = {
+  limit = { has_character_flag = afs_pending NOT = { has_character_flag = afs_reminder_used } }
+  if = { limit = { NOT = { has_variable = afs_cycle } } set_variable = { name = afs_cycle value = 0 } }
+  add_character_flag = afs_reminder_used
+  add_character_flag = afs_reminder_scheduled
+  save_scope_value_as = { name = afs_reminder_cycle value = var:afs_cycle }
+  trigger_event = { id = afs.0003 months = 3 }
+ }
+}
+# Character scope. Shared by the player-only startup hook.
+afs_schedule_effect = {
+    if = {
+        limit = {
+            has_trait = afs_founders_ambition
+            NOR = { has_character_flag = afs_scheduled has_character_flag = afs_pending }
+        }
+        if = { limit = { NOT = { has_variable = afs_cycle } } set_variable = { name = afs_cycle value = 0 } }
+        change_variable = { name = afs_cycle add = 1 }
+        remove_character_flag = afs_reminder_used
+        remove_character_flag = afs_reminder_scheduled
+        add_character_flag = afs_scheduled
+        set_variable = { name = afs_schedule_guard value = 1 days = 12 }
+        save_scope_value_as = { name = afs_start_cycle value = var:afs_cycle }
+        trigger_event = { id = afs.0004 days = 10 }
+    }
+}
+# Character scope. Prefer the capital, then a personally held castle.
+afs_open_selection_effect = {
+    if = {
+        limit = { has_character_flag = afs_pending  }
+
+    if = {
+        limit = { afs_has_eligible_site = yes }
+        if = {
+            limit = { capital_province = { afs_eligible_site = yes } }
+            capital_province = { save_scope_as = afs_site }
+        }
+        else = {
+            random_held_title = {
+                limit = {
+                    tier = tier_barony
+                    title_province = { afs_eligible_site = yes }
+                }
+                title_province = { save_scope_as = afs_site }
+            }
+        }
+        afs_reset_picker_effect = yes
+        if = { limit = { any_held_title = { count >= 2 tier = tier_barony title_province = { afs_eligible_site = yes } } } trigger_event = afs.0150 }
+        else = { trigger_event = afs.0100 }
+    }
+    else = { trigger_event = afs.0400 }
+    }
+}
+# Called only on confirmation; check ownership and the slot again.
+afs_build_seat_effect = {
+    if = {
+        limit = {
+            has_character_flag = afs_pending
+            
+            exists = scope:afs_site
+            $FOUNDER_RULE$ = yes
+            scope:afs_site = {
+                afs_eligible_site = yes
+                OR = { always = $ALLOW_INLAND$ is_coastal = yes }
+                $SITE_RULE$ = yes
+            }
+        }
+        scope:afs_site = {
+            add_special_building_slot = $BUILDING$
+            add_special_building = $BUILDING$
+            afs_install_native_dragonpit_effect = yes
+        }
+        remove_character_flag = afs_paid_receipt
+        add_character_flag = afs_completed
+        remove_character_flag = afs_pending
+    }
+    else = { afs_open_selection_effect = yes }
+}
+
+afs_train_duelist_effect = {
+    if = {
+        limit = {
+            is_adult = yes
+            is_imprisoned = no
+            any_held_title = {
+                tier = tier_barony
+                title_province = { has_building = afs_dawnspire_01 agot_generic_is_special_building_enabled = yes }
+            }
+        }
+        if = { limit = { NOT = { has_trait = lifestyle_blademaster } } add_trait = lifestyle_blademaster }
+        add_trait_xp = { trait = lifestyle_blademaster value = 0.5 }
+    }
+}
+
+afs_reset_picker_effect = {
+    set_variable = { name = afs_site_offset value = 0 }
+    set_variable = { name = afs_return_event value = 0 }
+}
+afs_prepare_sites_effect = {
+    set_variable = { name = afs_site_count value = 0 }
+    every_held_title = {
+        limit = { tier = tier_barony title_province = { afs_picker_valid_site = yes } }
+        root = { change_variable = { name = afs_site_count add = 1 } }
+    }
+    if = { limit = { var:afs_site_offset >= var:afs_site_count } set_variable = { name = afs_site_offset value = 0 } }
+    clear_saved_scope = afs_candidate_1
+    if = {
+        limit = { var:afs_site_count > { value = var:afs_site_offset add = 0 } }
+        ordered_held_title = {
+            limit = { tier = tier_barony title_province = { afs_picker_valid_site = yes } }
+            order_by = title_province.monthly_income
+            position = { value = root.var:afs_site_offset add = 0 }
+            title_province = { save_scope_as = afs_candidate_1 }
+        }
+    }
+    clear_saved_scope = afs_candidate_2
+    if = {
+        limit = { var:afs_site_count > { value = var:afs_site_offset add = 1 } }
+        ordered_held_title = {
+            limit = { tier = tier_barony title_province = { afs_picker_valid_site = yes } }
+            order_by = title_province.monthly_income
+            position = { value = root.var:afs_site_offset add = 1 }
+            title_province = { save_scope_as = afs_candidate_2 }
+        }
+    }
+    clear_saved_scope = afs_candidate_3
+    if = {
+        limit = { var:afs_site_count > { value = var:afs_site_offset add = 2 } }
+        ordered_held_title = {
+            limit = { tier = tier_barony title_province = { afs_picker_valid_site = yes } }
+            order_by = title_province.monthly_income
+            position = { value = root.var:afs_site_offset add = 2 }
+            title_province = { save_scope_as = afs_candidate_3 }
+        }
+    }
+    clear_saved_scope = afs_candidate_4
+    if = {
+        limit = { var:afs_site_count > { value = var:afs_site_offset add = 3 } }
+        ordered_held_title = {
+            limit = { tier = tier_barony title_province = { afs_picker_valid_site = yes } }
+            order_by = title_province.monthly_income
+            position = { value = root.var:afs_site_offset add = 3 }
+            title_province = { save_scope_as = afs_candidate_4 }
+        }
+    }
+    clear_saved_scope = afs_candidate_5
+    if = {
+        limit = { var:afs_site_count > { value = var:afs_site_offset add = 4 } }
+        ordered_held_title = {
+            limit = { tier = tier_barony title_province = { afs_picker_valid_site = yes } }
+            order_by = title_province.monthly_income
+            position = { value = root.var:afs_site_offset add = 4 }
+            title_province = { save_scope_as = afs_candidate_5 }
+        }
+    }
+    clear_saved_scope = afs_candidate_6
+    if = {
+        limit = { var:afs_site_count > { value = var:afs_site_offset add = 5 } }
+        ordered_held_title = {
+            limit = { tier = tier_barony title_province = { afs_picker_valid_site = yes } }
+            order_by = title_province.monthly_income
+            position = { value = root.var:afs_site_offset add = 5 }
+            title_province = { save_scope_as = afs_candidate_6 }
+        }
+    }
+}
+afs_return_from_picker_effect = {
+ if = { limit = { var:afs_return_event = 301 } trigger_event = afs.0301 }
+ else_if = { limit = { var:afs_return_event = 302 } trigger_event = afs.0302 }
+ else_if = { limit = { var:afs_return_event = 303 } trigger_event = afs.0303 }
+ else_if = { limit = { var:afs_return_event = 304 } trigger_event = afs.0304 }
+ else_if = { limit = { var:afs_return_event = 305 } trigger_event = afs.0305 }
+ else_if = { limit = { var:afs_return_event = 306 } trigger_event = afs.0306 }
+ else_if = { limit = { var:afs_return_event = 307 } trigger_event = afs.0307 }
+ else_if = { limit = { var:afs_return_event = 308 } trigger_event = afs.0308 }
+ else_if = { limit = { var:afs_return_event = 309 } trigger_event = afs.0309 }
+ else_if = { limit = { var:afs_return_event = 310 } trigger_event = afs.0310 }
+ else_if = { limit = { var:afs_return_event = 311 } trigger_event = afs.0311 }
+ else_if = { limit = { var:afs_return_event = 312 } trigger_event = afs.0312 }
+ else_if = { limit = { var:afs_return_event = 313 } trigger_event = afs.0313 }
+ else_if = { limit = { var:afs_return_event = 314 } trigger_event = afs.0314 }
+ else_if = { limit = { var:afs_return_event = 315 } trigger_event = afs.0315 }
+ else_if = { limit = { var:afs_return_event = 316 } trigger_event = afs.0316 }
+ else_if = { limit = { var:afs_return_event = 317 } trigger_event = afs.0317 }
+ else_if = { limit = { var:afs_return_event = 318 } trigger_event = afs.0318 }
+ else_if = { limit = { var:afs_return_event = 319 } trigger_event = afs.0319 }
+ else_if = { limit = { var:afs_return_event = 320 } trigger_event = afs.0320 }
+ else_if = { limit = { var:afs_return_event = 321 } trigger_event = afs.0321 }
+ else_if = { limit = { var:afs_return_event = 322 } trigger_event = afs.0322 }
+ else_if = { limit = { var:afs_return_event = 323 } trigger_event = afs.0323 }
+ else_if = { limit = { var:afs_return_event = 324 } trigger_event = afs.0324 }
+ else_if = { limit = { var:afs_return_event = 325 } trigger_event = afs.0325 }
+ else_if = { limit = { var:afs_return_event = 326 } trigger_event = afs.0326 }
+ else_if = { limit = { var:afs_return_event = 327 } trigger_event = afs.0327 }
+ else_if = { limit = { var:afs_return_event = 328 } trigger_event = afs.0328 }
+ else_if = { limit = { var:afs_return_event = 329 } trigger_event = afs.0329 }
+ else_if = { limit = { var:afs_return_event = 330 } trigger_event = afs.0330 }
+ else_if = { limit = { var:afs_return_event = 331 } trigger_event = afs.0331 }
+ else_if = { limit = { var:afs_return_event = 332 } trigger_event = afs.0332 }
+ else_if = { limit = { var:afs_return_event = 333 } trigger_event = afs.0333 }
+ else_if = { limit = { var:afs_return_event = 334 } trigger_event = afs.0334 }
+ else_if = { limit = { var:afs_return_event = 335 } trigger_event = afs.0335 }
+ else_if = { limit = { var:afs_return_event = 336 } trigger_event = afs.0336 }
+ else_if = { limit = { var:afs_return_event = 337 } trigger_event = afs.0337 }
+ else_if = { limit = { var:afs_return_event = 338 } trigger_event = afs.0338 }
+ else_if = { limit = { var:afs_return_event = 339 } trigger_event = afs.0339 }
+ else_if = { limit = { var:afs_return_event = 340 } trigger_event = afs.0340 }
+ else_if = { limit = { var:afs_return_event = 341 } trigger_event = afs.0341 }
+ else_if = { limit = { var:afs_return_event = 342 } trigger_event = afs.0342 }
+ else_if = { limit = { var:afs_return_event = 343 } trigger_event = afs.0343 }
+ else_if = { limit = { var:afs_return_event = 344 } trigger_event = afs.0344 }
+ else_if = { limit = { var:afs_return_event = 345 } trigger_event = afs.0345 }
+ else_if = { limit = { var:afs_return_event = 346 } trigger_event = afs.0346 }
+ else_if = { limit = { var:afs_return_event = 347 } trigger_event = afs.0347 }
+ else_if = { limit = { var:afs_return_event = 348 } trigger_event = afs.0348 }
+ else_if = { limit = { var:afs_return_event = 349 } trigger_event = afs.0349 }
+ else_if = { limit = { var:afs_return_event = 350 } trigger_event = afs.0350 }
+ else_if = { limit = { var:afs_return_event = 351 } trigger_event = afs.0351 }
+ else_if = { limit = { var:afs_return_event = 352 } trigger_event = afs.0352 }
+ else_if = { limit = { var:afs_return_event = 353 } trigger_event = afs.0353 }
+ else_if = { limit = { var:afs_return_event = 354 } trigger_event = afs.0354 }
+ else_if = { limit = { var:afs_return_event = 355 } trigger_event = afs.0355 }
+ else_if = { limit = { var:afs_return_event = 356 } trigger_event = afs.0356 }
+ else_if = { limit = { var:afs_return_event = 357 } trigger_event = afs.0357 }
+ else_if = { limit = { var:afs_return_event = 358 } trigger_event = afs.0358 }
+ else_if = { limit = { var:afs_return_event = 359 } trigger_event = afs.0359 }
+ else_if = { limit = { var:afs_return_event = 360 } trigger_event = afs.0360 }
+ else_if = { limit = { var:afs_return_event = 361 } trigger_event = afs.0361 }
+ else_if = { limit = { var:afs_return_event = 362 } trigger_event = afs.0362 }
+ else_if = { limit = { var:afs_return_event = 363 } trigger_event = afs.0363 }
+ else_if = { limit = { var:afs_return_event = 364 } trigger_event = afs.0364 }
+ else_if = { limit = { var:afs_return_event = 365 } trigger_event = afs.0365 }
+ else_if = { limit = { var:afs_return_event = 366 } trigger_event = afs.0366 }
+ else_if = { limit = { var:afs_return_event = 367 } trigger_event = afs.0367 }
+ else_if = { limit = { var:afs_return_event = 368 } trigger_event = afs.0368 }
+ else_if = { limit = { var:afs_return_event = 369 } trigger_event = afs.0369 }
+ else_if = { limit = { var:afs_return_event = 370 } trigger_event = afs.0370 }
+ else_if = { limit = { var:afs_return_event = 371 } trigger_event = afs.0371 }
+ else_if = { limit = { var:afs_return_event = 372 } trigger_event = afs.0372 }
+ else_if = { limit = { var:afs_return_event = 373 } trigger_event = afs.0373 }
+ else_if = { limit = { var:afs_return_event = 374 } trigger_event = afs.0374 }
+ else_if = { limit = { var:afs_return_event = 375 } trigger_event = afs.0375 }
+ else_if = { limit = { var:afs_return_event = 376 } trigger_event = afs.0376 }
+ else_if = { limit = { var:afs_return_event = 377 } trigger_event = afs.0377 }
+ else_if = { limit = { var:afs_return_event = 378 } trigger_event = afs.0378 }
+ else_if = { limit = { var:afs_return_event = 379 } trigger_event = afs.0379 }
+ else_if = { limit = { var:afs_return_event = 380 } trigger_event = afs.0380 }
+ else_if = { limit = { var:afs_return_event = 381 } trigger_event = afs.0381 }
+ else_if = { limit = { var:afs_return_event = 382 } trigger_event = afs.0382 }
+ else_if = { limit = { var:afs_return_event = 383 } trigger_event = afs.0383 }
+ else_if = { limit = { var:afs_return_event = 384 } trigger_event = afs.0384 }
+ else_if = { limit = { var:afs_return_event = 385 } trigger_event = afs.0385 }
+ else_if = { limit = { var:afs_return_event = 386 } trigger_event = afs.0386 }
+ else_if = { limit = { var:afs_return_event = 387 } trigger_event = afs.0387 }
+ else_if = { limit = { var:afs_return_event = 388 } trigger_event = afs.0388 }
+ else_if = { limit = { var:afs_return_event = 389 } trigger_event = afs.0389 }
+ else_if = { limit = { var:afs_return_event = 390 } trigger_event = afs.0390 }
+ else_if = { limit = { var:afs_return_event = 391 } trigger_event = afs.0391 }
+ else_if = { limit = { var:afs_return_event = 392 } trigger_event = afs.0392 }
+ else_if = { limit = { var:afs_return_event = 393 } trigger_event = afs.0393 }
+ else_if = { limit = { var:afs_return_event = 394 } trigger_event = afs.0394 }
+ else_if = { limit = { var:afs_return_event = 395 } trigger_event = afs.0395 }
+ else_if = { limit = { var:afs_return_event = 396 } trigger_event = afs.0396 }
+ else_if = { limit = { var:afs_return_event = 397 } trigger_event = afs.0397 }
+ else_if = { limit = { var:afs_return_event = 398 } trigger_event = afs.0398 }
+ else_if = { limit = { var:afs_return_event = 399 } trigger_event = afs.0399 }
+ else_if = { limit = { var:afs_return_event = 401 } trigger_event = afs.0401 }
+ else_if = { limit = { var:afs_return_event = 6001 } trigger_event = afs.6001 }
+ else_if = { limit = { var:afs_return_event = 6002 } trigger_event = afs.6002 }
+ else_if = { limit = { var:afs_return_event = 6003 } trigger_event = afs.6003 }
+ else_if = { limit = { var:afs_return_event = 6004 } trigger_event = afs.6004 }
+ else_if = { limit = { var:afs_return_event = 6005 } trigger_event = afs.6005 }
+ else_if = { limit = { var:afs_return_event = 6006 } trigger_event = afs.6006 }
+ else_if = { limit = { var:afs_return_event = 6007 } trigger_event = afs.6007 }
+ else_if = { limit = { var:afs_return_event = 6008 } trigger_event = afs.6008 }
+ else_if = { limit = { var:afs_return_event = 6009 } trigger_event = afs.6009 }
+ else_if = { limit = { var:afs_return_event = 6010 } trigger_event = afs.6010 }
+ else_if = { limit = { var:afs_return_event = 6011 } trigger_event = afs.6011 }
+ else_if = { limit = { var:afs_return_event = 6012 } trigger_event = afs.6012 }
+ else_if = { limit = { var:afs_return_event = 6013 } trigger_event = afs.6013 }
+ else_if = { limit = { var:afs_return_event = 6014 } trigger_event = afs.6014 }
+ else_if = { limit = { var:afs_return_event = 6015 } trigger_event = afs.6015 }
+ else_if = { limit = { var:afs_return_event = 6016 } trigger_event = afs.6016 }
+ else_if = { limit = { var:afs_return_event = 6017 } trigger_event = afs.6017 }
+ else_if = { limit = { var:afs_return_event = 6018 } trigger_event = afs.6018 }
+ else_if = { limit = { var:afs_return_event = 6019 } trigger_event = afs.6019 }
+ else_if = { limit = { var:afs_return_event = 6020 } trigger_event = afs.6020 }
+ else = { trigger_event = afs.0100 }
+}
+afs_choose_site_effect = {
+    if = {
+        limit = { exists = $SITE$ $SITE$ = { afs_picker_valid_site = yes } }
+        $SITE$ = { save_scope_as = afs_site }
+        afs_return_from_picker_effect = yes
+    }
+    else = { trigger_event = afs.0150 }
+}
+
+# Only called for actual players by the watchdog; also reusable in isolated regression tests.
+afs_check_founder_effect = {
+ # Retire saved decision timers from versions before 14.0.2.
+ if = { limit = { is_decision_on_cooldown = afs_additional_seat_decision } remove_decision_cooldown = afs_additional_seat_decision }
+ if = { limit = { has_trait = afs_founders_ambition }
+  if = { limit = { has_character_flag = afs_pending }
+   remove_trait = afs_founders_ambition
+   trigger_event = afs.0005
+  }
+  else = {
+   if = { limit = { has_character_flag = afs_scheduled NOT = { has_variable = afs_schedule_guard } } remove_character_flag = afs_scheduled }
+   afs_schedule_effect = yes
+  }
+ }
+}
+afs_train_mariner_effect = {
+    if = {
+        limit = { is_adult = yes is_imprisoned = no }
+        if = {
+            limit = { any_held_title = { tier = tier_barony title_province = { OR = { has_building = afs_lantern_quay_01 has_building = afs_sailmakers_close_01 } agot_generic_is_special_building_enabled = yes } } }
+            if = { limit = { NOT = { has_trait = lifestyle_mariner } } add_trait = lifestyle_mariner }
+            add_trait_xp = { trait = lifestyle_mariner value = 0.75 }
+        }
+        else_if = {
+            limit = { any_held_title = { tier = tier_barony title_province = { OR = { has_building = afs_saltwake_landing_01 has_building = afs_lockwarden_quay_01 } agot_generic_is_special_building_enabled = yes } } }
+            if = { limit = { NOT = { has_trait = lifestyle_mariner } } add_trait = lifestyle_mariner }
+            add_trait_xp = { trait = lifestyle_mariner value = 0.625 }
+        }
+        else_if = {
+            limit = { any_held_title = { tier = tier_barony title_province = { OR = { has_building = afs_tidegate_harbour_01 has_building = afs_chainwater_arsenal_01 has_building = afs_saltchain_hall_01 } agot_generic_is_special_building_enabled = yes } } }
+            if = { limit = { NOT = { has_trait = lifestyle_mariner } } add_trait = lifestyle_mariner }
+            add_trait_xp = { trait = lifestyle_mariner value = 0.5 }
+        }
+        else_if = {
+            limit = { any_held_title = { tier = tier_barony title_province = { OR = { has_building = afs_silent_harbour_01 has_building = afs_saltglass_harbour_01 } agot_generic_is_special_building_enabled = yes } } }
+            if = { limit = { NOT = { has_trait = lifestyle_mariner } } add_trait = lifestyle_mariner }
+            add_trait_xp = { trait = lifestyle_mariner value = 0.375 }
+        }
+        else_if = {
+            limit = { any_held_title = { tier = tier_barony title_province = { has_building = afs_aleport_01 agot_generic_is_special_building_enabled = yes } } }
+            if = { limit = { NOT = { has_trait = lifestyle_mariner } } add_trait = lifestyle_mariner }
+            add_trait_xp = { trait = lifestyle_mariner value = 0.25 }
+        }
+    }
+}
+
+# Native decision cost is paid by the engine before this effect. The durable
+# pending opportunity survives losing the selected site and can be resumed.
+afs_paid_seat_effect = { add_character_flag = afs_paid_receipt add_trait = afs_founders_ambition afs_schedule_effect = yes }
+
+# Receipt is created only by a successful new paid purchase. Never infer it from legacy flags.
+afs_cancel_effect = {
+ if = { limit = { has_character_flag = afs_paid_receipt }
+  remove_character_flag = afs_paid_receipt
+  add_gold = 6000
+  add_prestige = 1000
+ }
+ remove_trait = afs_founders_ambition
+ remove_character_flag = afs_pending
+ remove_character_flag = afs_scheduled
+ remove_character_flag = afs_reminder_used
+ remove_character_flag = afs_reminder_scheduled
+ remove_variable = afs_schedule_guard
+ if = { limit = { NOT = { has_variable = afs_cycle } } set_variable = { name = afs_cycle value = 0 } }
+ change_variable = { name = afs_cycle add = 1 }
+}
+
+# Province scope. Legacy effect ID retained for saves; no ordinary dragonpit is added.
+afs_install_native_dragonpit_effect = {
+ if = { limit = { has_holding_type = castle_holding OR = { has_building = afs_valyrian_spire_01 has_building = afs_wyrmrest_terraces_01 has_building = afs_cinderwing_aerie_01 } }
+  # Preserve a separately constructed native pit when first integrating an unmarked seat.
+  if = { limit = { NOT = { has_variable = afs_native_pit_installed } has_building = generic_dragon_pit_01 } set_variable = { name = afs_preserve_native_pit value = 1 } }
+  # Collapse the old two-building representation only in a marked legacy AFS seat.
+  # Native pits in other holdings, and unmarked independently built pits, remain intact.
+  if = { limit = { has_variable = afs_native_pit_installed NOT = { has_variable = afs_preserve_native_pit } has_building = generic_dragon_pit_01 }
+   remove_building = generic_dragon_pit_01
+  }
+  set_variable = { name = afs_native_pit_installed value = 1 }
+  afs_initialize_native_dragonpit_effect = yes
+ }
+}
+afs_initialize_native_dragonpit_effect = {
+  if = { limit = { county = { NOT = { has_variable = has_dragonkeeper_order } any_county_province = { has_any_dragonpits = yes } } }
+   county = {
+    set_variable = { name = has_dragonkeeper_order }
+    holder = {
+     if = { limit = { agot_has_any_dragonpit_access_law = no } add_realm_law = dragonpit_close_family_law }
+     if = { limit = { NOT = { exists = court_position:head_dragonkeeper_court_position } NOT = { has_character_flag = afs_keeper_appointment_queued } }
+      add_character_flag = { flag = afs_keeper_appointment_queued days = 30 }
+      trigger_event = agot_dragonkeepers.0001
+     }
+     if = { limit = { has_ep1_dlc_trigger = yes has_royal_court = yes } set_amenity_level = { type = agot_dragonpit_amenities value = 3 } }
+    }
+   }
+  }
+}
+afs_migrate_dragon_seats_effect = {
+ every_held_title = { limit = { tier = tier_barony }
+  title_province = { afs_install_native_dragonpit_effect = yes }
+ }
+}

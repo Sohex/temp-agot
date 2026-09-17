@@ -1,0 +1,168 @@
+﻿namespace = agot_magic
+
+# Vision of What Is to Come - the R'hllor finisher (see V3_FIXPLAN.md
+# Block 1). Started by agot_rhllor_vision_of_what_is_to_come_decision.
+#
+# A real vision, not a coin flip: it looks at actual game state, and
+# where it applies, it names a real character.
+#   1. Someone is already scheming against you (murder/abduct/claim
+#      throne/fabricate hook/steal artifact) -> the vision names them.
+#      Purely informational - the reveal itself is the whole point.
+#   2. A vassal or courtier of yours is a plausible future pretender
+#      (ambitious, or already resents you) -> deliberately NOT someone
+#      you are already at war with, this is a NEW threat, not the one
+#      you already know about. They are granted a real, pressed claim
+#      on your primary title - a future civil war risk, not flavor.
+#   3. Neither of the above -> the vision falls on someone in your
+#      orbit - spouse, heir, a child, a courtier, a vassal, or your
+#      liege, weighted so it is not always your own family - and marks
+#      them with the Marked for Death trait (a real, lasting health
+#      penalty in the same range as vanilla's own consumption trait).
+#      Mechanically, this vision is what starts their decline - but the
+#      text plays it exactly the other way around ("you did not cause
+#      this, you were only shown it early"), the same way R'hllor's
+#      priests always insist the flames only ever reveal, never decide.
+#      The player is not meant to be able to tell the difference from
+#      the text alone.
+#   4. None of the above apply -> a generic vision of ruin, unattached
+#      to anyone specific.
+agot_magic.0090 = {
+	type = character_event
+	title = agot_magic.0090.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:agot_rhllor_vision_flavor = 1 }
+				desc = agot_magic.0090.desc.betrayal
+			}
+			triggered_desc = {
+				trigger = { var:agot_rhllor_vision_flavor = 2 }
+				desc = agot_magic.0090.desc.war
+			}
+			triggered_desc = {
+				trigger = { var:agot_rhllor_vision_flavor = 3 }
+				desc = agot_magic.0090.desc.death
+			}
+			desc = agot_magic.0090.desc.generic
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				any_targeting_scheme = { hostile_scheme_trigger = yes }
+			}
+			random_targeting_scheme = {
+				limit = { hostile_scheme_trigger = yes }
+				scheme_owner = { save_scope_as = agot_rhllor_vision_target }
+			}
+			set_variable = { name = agot_rhllor_vision_flavor value = 1 }
+		}
+		else_if = {
+			limit = {
+				exists = primary_title
+				OR = {
+					any_vassal = { agot_magic_plausible_pretender_trigger = yes }
+					any_courtier = { agot_magic_plausible_pretender_trigger = yes }
+				}
+			}
+			if = {
+				limit = {
+					any_vassal = { agot_magic_plausible_pretender_trigger = yes }
+				}
+				random_vassal = {
+					limit = { agot_magic_plausible_pretender_trigger = yes }
+					save_scope_as = agot_rhllor_vision_target
+				}
+			}
+			else = {
+				random_courtier = {
+					limit = { agot_magic_plausible_pretender_trigger = yes }
+					save_scope_as = agot_rhllor_vision_target
+				}
+			}
+			set_variable = { name = agot_rhllor_vision_flavor value = 2 }
+		}
+		else_if = {
+			limit = {
+				OR = {
+					exists = primary_spouse
+					exists = primary_heir
+					any_child = { always = yes }
+					any_courtier = { always = yes }
+					any_vassal = { always = yes }
+					exists = liege
+				}
+			}
+			random_list = {
+				15 = {
+					trigger = { exists = primary_spouse }
+					primary_spouse = { save_scope_as = agot_rhllor_vision_target }
+				}
+				15 = {
+					trigger = { exists = primary_heir }
+					primary_heir = { save_scope_as = agot_rhllor_vision_target }
+				}
+				15 = {
+					trigger = { any_child = { always = yes } }
+					random_child = { save_scope_as = agot_rhllor_vision_target }
+				}
+				25 = {
+					trigger = { any_courtier = { always = yes } }
+					random_courtier = { save_scope_as = agot_rhllor_vision_target }
+				}
+				25 = {
+					trigger = { any_vassal = { always = yes } }
+					random_vassal = { save_scope_as = agot_rhllor_vision_target }
+				}
+				5 = {
+					trigger = { exists = liege }
+					liege = { save_scope_as = agot_rhllor_vision_target }
+				}
+			}
+			set_variable = { name = agot_rhllor_vision_flavor value = 3 }
+		}
+		else = {
+			set_variable = { name = agot_rhllor_vision_flavor value = 4 }
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality
+	}
+
+	right_portrait = {
+		trigger = { exists = scope:agot_rhllor_vision_target }
+		character = scope:agot_rhllor_vision_target
+		animation = worry
+	}
+
+	theme = witchcraft
+
+	option = {
+		name = agot_magic.0090.a
+		add_character_modifier = {
+			modifier = agot_rhllor_touched_by_prophecy_modifier
+			years = 2
+		}
+		if = {
+			limit = { var:agot_rhllor_vision_flavor = 2 }
+			scope:agot_rhllor_vision_target = {
+				add_pressed_claim = root.primary_title
+			}
+		}
+		if = {
+			limit = { var:agot_rhllor_vision_flavor = 3 }
+			scope:agot_rhllor_vision_target = {
+				add_trait = agot_rhllor_marked_for_death
+			}
+		}
+		send_interface_toast = {
+			type = event_toast_effect_good
+			title = agot_rhllor_vision_toast
+			left_icon = root
+		}
+		remove_variable = agot_rhllor_vision_flavor
+	}
+}

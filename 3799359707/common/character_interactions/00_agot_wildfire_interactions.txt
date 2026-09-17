@@ -1,0 +1,75 @@
+﻿# AGOT: Magic of Westeros v3 - Wildfire
+# Distinct from every other hostile ability in the mod: wildfire does not
+# discriminate. It can kill the intended target, kill someone else in
+# their household entirely, or kill the actor instead - no other tradition
+# has a three-way, fully lethal outcome table like this.
+
+agot_wildfire_plant_a_cache_interaction = {
+	interface_priority = 92
+	category = interaction_category_hostile
+	icon = agot_wildfire_plant_a_cache
+
+	desc = agot_wildfire_plant_a_cache_interaction_desc
+
+	cooldown = { years = 3 }
+
+	is_shown = {
+		scope:actor = {
+			has_variable = agot_wildfire_knowledge
+		}
+		scope:actor != scope:recipient
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_magic_not_self_target_tooltip
+			scope:actor != scope:recipient
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			NOT = { is_at_war_with = scope:recipient }
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			set_variable = {
+				name = agot_wildfire_target
+				value = scope:recipient
+			}
+			trigger_event = agot_wildfire.0010
+		}
+	}
+
+	auto_accept = yes
+
+	# Covert sabotage, not battlefield magic - war targets are already
+	# excluded above, so only rival/nemesis/hatred can justify this to
+	# the AI, never an active war enemy.
+	ai_potential = {
+		has_variable = agot_wildfire_knowledge
+	}
+
+	ai_targets = {
+		ai_recipients = scripted_relations
+		ai_recipients = courtiers
+		ai_recipients = guests
+		max = 15
+	}
+
+	ai_frequency = 3
+
+	ai_will_do = {
+		base = -70
+		modifier = {
+			add = 90
+			scope:actor = { has_relation_nemesis = scope:recipient }
+		}
+		modifier = {
+			add = 60
+			scope:actor = { has_relation_rival = scope:recipient }
+		}
+	}
+}

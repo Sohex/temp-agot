@@ -1,0 +1,75 @@
+﻿# Administrative succession can create ordinary county-tier Noble Family
+# estates even when the government definition does not request them. They are
+# required to keep replacement governors landed and must not be destroyed.
+# Only titles marked dragonlord_family_title are political Dragonlord Families.
+
+# Character scope. Keep the old effect name as harmless save compatibility for
+# cleanup events already queued by an earlier version.
+dragonlord_remove_unregistered_noble_family_effect = {
+	if = {
+		limit = {
+			top_liege = { government_has_flag = government_is_dragonlord_oligarchy }
+			NOT = { dragonlord_is_colonial_city_subject_trigger = yes }
+			any_held_title = { is_noble_family_title = yes }
+		}
+		if = {
+			limit = { NOT = { has_government = dragonlord_oligarchy_government } }
+			change_government = dragonlord_oligarchy_government
+		}
+	}
+}
+
+# Independent First Lord scope. Normalize all in-realm Noble Family holders
+# without converting ordinary administrative families into Dragonlord seats.
+dragonlord_normalize_noble_family_governments_effect = {
+	every_vassal_or_below = {
+		limit = {
+			any_held_title = { is_noble_family_title = yes }
+			NOT = { has_government = dragonlord_oligarchy_government }
+			NOT = { dragonlord_is_colonial_city_subject_trigger = yes }
+		}
+		change_government = dragonlord_oligarchy_government
+	}
+}
+
+# Old callers in existing saves and external patches remain harmless.
+dragonlord_cleanup_unregistered_noble_families_effect = {
+	dragonlord_normalize_noble_family_governments_effect = yes
+}
+
+# Character scope. A Dragonlord administrative vassal with territorial land
+# must use governor Appointment succession. Acclamation is reserved for an
+# independent administrative ruler and can be selected accidentally while a
+# fresh county grant is still resolving.
+dragonlord_normalize_vassal_appointment_succession_effect = {
+	if = {
+		limit = {
+			is_independent_ruler = no
+			has_government = dragonlord_oligarchy_government
+			top_liege = { government_has_flag = government_is_dragonlord_oligarchy }
+			has_realm_law = acclamation_succession_law
+			any_held_title = {
+				tier >= tier_county
+				is_landless_type_title = no
+			}
+		}
+		remove_realm_law = acclamation_succession_law
+		add_realm_law_skip_effects = appointment_succession_law
+	}
+}
+
+# Independent First Lord scope. Repair old saves and AI realms as well as new
+# grants handled by on_vassal_change.
+dragonlord_normalize_realm_vassal_appointment_succession_effect = {
+	every_vassal_or_below = {
+		limit = {
+			has_government = dragonlord_oligarchy_government
+			has_realm_law = acclamation_succession_law
+			any_held_title = {
+				tier >= tier_county
+				is_landless_type_title = no
+			}
+		}
+		dragonlord_normalize_vassal_appointment_succession_effect = yes
+	}
+}

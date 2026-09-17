@@ -1,0 +1,249 @@
+﻿activity_dragonlord_council = {
+	is_shown = {
+		government_has_flag = government_is_dragonlord_oligarchy
+		top_liege = this
+		has_variable = dragonlord_council_pending_agenda
+	}
+
+	can_start_showing_failures_only = {
+		government_has_flag = government_is_dragonlord_oligarchy
+		top_liege = this
+		is_available_adult = yes
+		is_at_war = no
+		has_variable = dragonlord_council_pending_agenda
+		NOT = { has_character_flag = dragonlord_council_meeting_scheduled }
+	}
+
+	can_always_plan = no
+
+	is_valid = {
+		scope:host = {
+			is_alive = yes
+			government_has_flag = government_is_dragonlord_oligarchy
+			has_variable = dragonlord_council_pending_agenda
+		}
+	}
+
+	on_invalidated = {
+		scope:host = {
+			remove_character_flag = dragonlord_council_meeting_scheduled
+			dragonlord_council_clear_meeting_state_effect = yes
+			dragonlord_council_clear_pending_agenda_effect = yes
+		}
+	}
+
+	# Keep the capital prominent, but let the player choose any valid seat in
+	# their domain (or their domicile if the government is landless).
+	province_filter = domicile_domain
+	ai_province_filter = capital
+	is_single_location = yes
+	planner_type = province
+	max_province_icons = 12
+
+	is_location_valid = {
+		has_holding = yes
+	}
+
+	province_description = {
+		desc = activity_dragonlord_council_province_desc
+	}
+
+	province_score = {
+		value = 10
+		if = {
+			limit = { this = scope:host.capital_province }
+			add = 100
+		}
+	}
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 1
+		hegemony = 0
+	}
+
+	ai_will_do = {
+		value = 100
+	}
+
+	# Short testing cooldown; restore the intended two years after the activity
+	# flow has been verified in-game.
+	cooldown = { years = 2 }
+
+	phases = {
+		dragonlord_council_phase_proposal = {
+			order = 1
+			is_predefined = yes
+			on_phase_active = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = { progress_activity_phase_after = { days = 7 } }
+					scope:host = {
+						dragonlord_council_initialize_meeting_effect = yes
+						dragonlord_council_apply_player_absence_opinion_effect = yes
+					}
+					scope:host = { trigger_event = dragonlord_council_proposal.1000 }
+				}
+			}
+		}
+
+		dragonlord_council_phase_discussion = {
+			order = 2
+			is_predefined = yes
+			on_enter_phase = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = { progress_activity_phase_after = { days = 1 } }
+				}
+			}
+			on_phase_active = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = { progress_activity_phase_after = { days = 7 } }
+					scope:host = {
+						trigger_event = { id = dragonlord_council_discussion.2000 days = 1 }
+						trigger_event = { id = dragonlord_council_discussion.2010 days = 4 }
+					}
+					if = {
+						limit = { scope:host = { is_ai = yes } }
+						scope:activity = {
+							every_attending_character = {
+								limit = {
+									this != scope:host
+									is_ai = no
+									has_variable = dragonlord_council_meeting_base_support
+								}
+								trigger_event = { id = dragonlord_council_discussion.2020 days = 2 }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		dragonlord_council_phase_persuasion = {
+			order = 3
+			is_predefined = yes
+			on_enter_phase = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = { progress_activity_phase_after = { days = 1 } }
+				}
+			}
+			on_phase_active = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = { progress_activity_phase_after = { days = 7 } }
+					scope:host = {
+						trigger_event = { id = dragonlord_council_persuasion.3000 days = 1 }
+						trigger_event = { id = dragonlord_council_persuasion.3000 days = 4 }
+					}
+				}
+			}
+		}
+
+		dragonlord_council_phase_voting = {
+			order = 4
+			is_predefined = yes
+			on_enter_phase = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = { progress_activity_phase_after = { days = 1 } }
+				}
+			}
+			on_phase_active = {
+				if = {
+					limit = { this = scope:host }
+					scope:activity = { progress_activity_phase_after = { days = 7 } }
+					scope:host = {
+						trigger_event = { id = dragonlord_council_voting.4000 days = 3 }
+					}
+					if = {
+						limit = { scope:host = { is_ai = yes } }
+						scope:activity = {
+							every_attending_character = {
+								limit = {
+									this != scope:host
+									is_ai = no
+									has_variable = dragonlord_council_meeting_base_support
+								}
+								trigger_event = { id = dragonlord_council_voting.4030 days = 1 }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	open_invite = no
+	allow_zero_guest_invites = yes
+
+	# The shared activity planner always presents an intent selector.  Give the
+	# council one meaningful, always-valid choice so it never falls back to the
+	# empty `_desc` placeholder.
+	host_intents = {
+		intents = { dragonlord_council_influence_agenda_intent }
+		default = dragonlord_council_influence_agenda_intent
+	}
+
+	guest_intents = {
+		intents = { dragonlord_council_influence_agenda_intent }
+		default = dragonlord_council_influence_agenda_intent
+	}
+
+	max_guests = {
+		value = 100
+	}
+
+	reserved_guest_slots = 5
+
+	can_be_activity_guest = {
+		is_available_adult = yes
+		is_house_head = yes
+		dragonlord_is_registered_family_member_trigger = yes
+		top_liege = scope:host
+	}
+
+	guest_invite_rules = {
+		defaults = {
+			1 = activity_invite_rule_dragonlord_council_members
+		}
+	}
+
+	guest_join_chance = {
+		base = 100
+	}
+
+	wait_time_before_start = { months = 1 }
+	max_guest_arrival_delay_time = { days = 80 }
+
+	on_start = {
+		scope:host = {
+			add_character_flag = dragonlord_council_meeting_scheduled
+		}
+	}
+
+	on_complete = {
+		if = {
+			limit = { this = scope:host }
+			remove_character_flag = dragonlord_council_meeting_scheduled
+			dragonlord_council_clear_meeting_state_effect = yes
+			dragonlord_council_clear_pending_agenda_effect = yes
+			send_interface_message = {
+				type = event_generic_good
+				title = dragonlord_council_activity_completed_message
+				left_icon = root
+			}
+		}
+	}
+
+	background = {
+		texture = "gfx/interface/illustrations/decisions/dragonlord_council.png"
+		environment = "environment_tgp_study_asia"
+		ambience = "event:/DLC/EP4/SFX/Events/Event_Backgrounds/tgp_study_asia"
+	}
+}

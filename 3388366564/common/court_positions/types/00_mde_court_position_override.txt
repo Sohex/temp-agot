@@ -1,0 +1,267 @@
+﻿head_dragonkeeper_court_position = {
+	sort_order = 981
+	skill = learning
+	max_available_positions = 1
+	court_position_asset = {
+		animation = agot_egg_yellow
+		background = "gfx/interface/illustrations/event_scenes/agot_dragonpit.dds"
+	}
+	opinion = {
+		value = regular_court_position_opinion
+	}
+
+	# How high the aptitude has to be to reach the 5 different modifier levels
+	# Terrible, Poor, Average, Good, Excellent
+	aptitude_level_breakpoints = { 30 50 70 90 }
+	# 0-30 - Terrible
+	# 31-50 Poor
+	# 51-70 - Average
+	# 71-90 - Good
+	# 91+ - Excellent
+
+	# How good is this character in this position? root scope is the holder of the court position
+	aptitude = {
+		value = 1
+		add = {
+			value = learning
+			multiply = 1.15
+			max = 50
+			desc = court_position_skill_learning
+		}
+		add = {
+			value = stewardship
+			multiply = 1.15
+			max = 50
+			desc = court_position_skill_stewardship
+		}
+		add = {
+			value = prowess
+			multiply = 1.25
+			max = 50
+			desc = court_position_skill_prowess
+		}
+		if = {
+			limit = {
+				dynasty ?= {
+					has_dynasty_modifier = valyrian_heritage_dynasty_modifier
+				}
+			}
+			add = {
+				value = 10
+				desc = court_position_blood_of_old_valyria
+			}
+		}
+		if = {
+			limit = {
+				liege ?= {
+					has_royal_court = yes
+					amenity_level = { target = agot_dragonpit_amenities value >= 4 }
+				}
+			}
+			add = {
+				value = 10
+				desc = court_position_professional_dragonkeeper_training
+			}
+		}
+		if = {
+			limit = {
+				liege ?= {
+					has_royal_court = yes
+					amenity_level = { target = agot_dragonpit_amenities value = 3 }
+				}
+			}
+			add = {
+				value = 5
+				desc = court_position_standardized_dragonkeeper_training
+			}
+		}
+		if = {
+			limit = {
+				knows_language = language_agot_valyrian # Valyrian Speaker
+			}
+			add = {
+				value = 5
+				desc = court_position_knows_valyrian_language
+			}
+		}
+		add = court_position_aptitude_family_business_value
+		add = court_position_aptitude_low_penalty_value
+	}
+
+	# Is this an available position for this court? (root is court owner)
+	is_shown = {
+		OR = {
+            domicile ?= { 
+				has_domicile_building_or_higher = dragon_coop_01
+				has_domicile_parameter = camp_unlocks_dragonkeeper
+			}
+            any_held_title = {
+                agot_title_is_an_active_dragonpit = yes
+            }
+        }
+	}
+	is_shown_character = {
+		scope:employee = {
+			is_courtier_of = scope:liege
+		}
+	}
+
+	valid_character = {
+		scope:employee = {
+			base_court_position_validity_trigger = { EMPLOYER = scope:liege }
+			NOR = {
+				is_imprisoned = yes
+				is_landed = yes
+			}
+			trigger_if = {
+				limit = { NOT = { has_court_position = head_dragonkeeper_court_position } }
+				court_position_does_not_already_have_a_job_trigger = yes # This positions is considered a job, and cannot be held at the same tims as another similar position
+			}
+		}
+	}
+
+	revoke_cost = {
+		prestige = {
+			#value = major_court_position_prestige_revoke_cost
+			value = 0
+			# Set to 0 with Dynasty Perk Inner Circle
+			if = {
+				limit = {
+					exists = dynasty
+					dynasty = { has_dynasty_perk = fp2_coterie_legacy_1 }
+
+					employs_court_position = maester_court_position
+					any_court_position_holder = {
+						type = maester_court_position
+						exists = dynasty
+						house = prev.house
+					}
+				}
+				multiply = 0
+			}
+		}
+	}
+
+	salary = {
+		gold = {
+			value = court_position_physician_salary
+			# Set to 0 with Dynasty Perk Inner Circle
+			if = {
+				limit = {
+					scope:liege = {
+						exists = dynasty
+						dynasty = { has_dynasty_perk = fp2_coterie_legacy_1 }
+
+						employs_court_position = maester_court_position
+						any_court_position_holder = {
+							type = maester_court_position
+							exists = dynasty
+							house = prev.house
+						}
+					}
+				}
+				multiply = {
+					value = 0.0
+					desc = inner_circle_salary_mod
+					format = "BASE_VALUE_FORMAT_DECIMALS_MINUS_POSITIVE"
+				}
+			}
+		}
+		prestige = {
+			value = minor_court_position_prestige_salary
+			# Set to 0 with Dynasty Perk Inner Circle
+			if = {
+				limit = {
+					scope:liege = {
+						exists = dynasty
+						dynasty = { has_dynasty_perk = fp2_coterie_legacy_1 }
+
+						employs_court_position = maester_court_position
+						any_court_position_holder = {
+							type = maester_court_position
+							exists = dynasty
+							house = prev.house
+						}
+					}
+				}
+				multiply = {
+					value = 0.0
+					desc = inner_circle_salary_mod
+					format = "BASE_VALUE_FORMAT_DECIMALS_MINUS_POSITIVE"
+				}
+			}
+		}
+		round = no
+	}
+
+	# These modifiers are employed based on what level the aptitude reaches (levels are defined as breakpoints)
+	scaling_employer_modifiers = {
+		terrible = {
+			steal_back_artifact_enemy_scheme_phase_duration_add = -1
+			bond_with_dragon_scheme_scheme_phase_duration_add = -1
+
+		}
+		poor = {
+			court_grandeur_baseline_add = 1
+			steal_back_artifact_enemy_scheme_phase_duration_add = -2
+			bond_with_dragon_scheme_scheme_phase_duration_add = -2
+			deepen_bond_with_dragon_scheme_scheme_phase_duration_add = -2
+		}
+		average = {
+			court_grandeur_baseline_add = 1
+			steal_back_artifact_enemy_scheme_phase_duration_add = -5
+			bond_with_dragon_scheme_scheme_phase_duration_add = -4
+			deepen_bond_with_dragon_scheme_scheme_phase_duration_add = -5
+		}
+		good = {
+			court_grandeur_baseline_add = 2
+			steal_back_artifact_enemy_scheme_phase_duration_add = -7
+			bond_with_dragon_scheme_scheme_phase_duration_add = -6
+			deepen_bond_with_dragon_scheme_scheme_phase_duration_add = -7
+		}
+		excellent = {
+			court_grandeur_baseline_add = 3
+			steal_back_artifact_enemy_scheme_phase_duration_add = -10
+			bond_with_dragon_scheme_scheme_phase_duration_add = -8
+			deepen_bond_with_dragon_scheme_scheme_phase_duration_add = -10
+		}
+	}
+
+	custom_employer_modifier_description = head_dragonkeeper_court_position_custom_effect_description
+
+	# Perks to the Employee
+	modifier = {
+		learning = 2
+	}
+
+	on_court_position_received = {
+		agot_head_dragonkeeper_title_accepted_effect = yes
+	}
+	on_court_position_revoked = {
+		agot_head_dragonkeeper_title_revoked_effect = yes
+	}
+	on_court_position_invalidated = {
+		agot_head_dragonkeeper_title_invalidated_effect = yes
+	}
+	on_court_position_vacated = {
+		court_position_vacated_event_effect = {
+			COURT_POSITION_TYPE = head_dragonkeeper_court_position
+		}
+	}
+
+	# Scripted value to determine whether an AI will hire/fire a position or not. Hires over 0, fires under -50. Look in _court_positions.info for more extensive documentation!
+	ai_candidate_score = {
+		value = 150
+		add = scope:base_value
+		add = court_position_candidate_score_base_value
+		add = court_position_candidate_aptitude_value
+		# No debt considerations for Physicians, they are too important
+		# AI should never fire maesters.
+		if = {
+			limit = {
+				exists = scope:firing_court_position
+			}
+			add = 200
+		}
+	}
+}

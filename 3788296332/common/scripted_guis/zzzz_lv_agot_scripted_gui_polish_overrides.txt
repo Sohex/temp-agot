@@ -1,0 +1,210 @@
+﻿capture_wild_dragon = {
+	scope = character
+
+	is_shown = {
+		scope:owner ?= {
+			agot_has_an_active_dragonpit = yes
+		}
+		has_trait = dragon
+		is_alive = yes
+		OR = {
+			any_liege_or_above = { this = scope:owner }
+			location.county = {
+				holder = {
+					OR = {
+						any_liege_or_above = { this = scope:owner }
+						this = scope:owner
+					}
+				}
+				agot_title_is_an_active_dragonpit = yes
+			}
+		}
+		NOT = { has_character_flag = owned_dragon }
+		NOT = { has_character_flag = in_dragonpit }
+	}
+
+	is_valid = {
+		scope:owner = {
+			custom_tooltip = {
+				text = agot_capture_dragon_cd_gui_tt
+				NOT = { has_variable = capture_cd }
+			}
+		}
+		NOT = { lv_is_firewyrm = yes }
+	}
+
+	ai_is_valid = {
+		scope:owner ?= { agot_has_an_active_dragonpit = yes }
+		has_trait = dragon
+		exists = employer
+		NOT = { has_character_flag = owned_dragon }
+		NOT = { has_character_flag = in_dragonpit }
+		NOT = { lv_is_firewyrm = yes }
+	}
+
+	effect = {
+		agot_change_dragonpit_status = yes
+	}
+}
+
+agot_dragonpit_amenities_gui = {
+	scope = character
+
+	is_shown = {
+		any_held_title = {
+			tier = tier_county
+			OR = {
+				any_county_province = {
+					has_holding_type = castle_holding
+					has_building_or_higher = generic_dragon_pit_01
+				}
+				any_county_province = {
+					OR = {
+						has_building_or_higher = dragonpit_01 # Historical Version
+						has_building = dragonpit_ruins_03 # Fully Restored Ruin Version
+						has_building = agot_dragonmont_01 # Dragonmont
+					}
+				}
+				any_county_province = {
+OR = {
+						has_building = valyria_volcano_01
+						has_building = valyria_volcano_02
+						has_building = valyria_volcano_03
+						has_building = valyria_volcano_04
+						has_building = valyria_volcano_05
+						has_building = zanpur_volcano_01
+						has_building = yovesh_volcano_01
+						has_building = last_dragon_tower_01
+						has_building_or_higher = procrazion_01
+						has_building = valyria_dead_volcano_01
+						has_building = valyria_dead_volcano_02
+					}
+				}
+			}
+			has_variable = has_dragonkeeper_order
+		}
+	}
+}
+
+agot_view_dragons_in_dragonpit = {
+	scope = title
+
+	is_shown = {
+		OR = {
+			has_building_or_higher = generic_dragon_pit_01
+			has_building_or_higher = dragonpit_01 # Historical Version
+			has_building = dragonpit_ruins_03 # Fully Restored Ruin Version
+			has_building = agot_dragonmont_01 # Dragonmont
+			has_building = valyria_volcano_01
+			has_building = valyria_volcano_02
+			has_building = valyria_volcano_03
+			has_building = valyria_volcano_04
+			has_building = valyria_volcano_05
+			has_building = zanpur_volcano_01
+			has_building = yovesh_volcano_01
+			has_building = last_dragon_tower_01
+			has_building_or_higher = procrazion_01
+			has_building = valyria_dead_volcano_01
+			has_building = valyria_dead_volcano_02
+		}
+	}
+
+	effect = {
+		trigger_event = agot_dragon_pits.0999
+	}
+}
+
+agot_can_colonize = {
+	scope = character
+
+	# Triggered at yearly_on_action.txt -> and then agot_colonization_events.0006 at agot_colonization_events.txt
+	ai_is_valid = { always = no }
+
+	is_valid = {
+		exists = root
+
+		trigger_if = {
+			limit = {
+				has_treasury = yes
+				treasury >= colonize_cost_val
+			}
+			treasury >= colonize_cost_val
+		}
+		trigger_else = {
+			gold >= colonize_cost_val
+		}
+
+		NOT = { government_has_flag = government_is_nw }
+		NOT = { government_has_flag = government_is_uninteractable }
+
+		trigger_if = {
+			limit = {
+				scope:wilderness ?= { geographical_region = world_westeros_beyond_the_wall }
+				culture = { agot_is_wildling_culture = no }
+				NOT = {
+					any_sub_realm_county = {
+						any_neighboring_county = {
+							this = scope:wilderness.county
+						}
+					}
+				}
+			}
+			custom_tooltip = {
+				text = colonize_btw
+				always = no
+			}
+		}
+		trigger_else_if = {
+			limit = {
+				primary_title = {
+					agot_is_pirate_domicile_title_trigger = yes
+				}
+			}
+			custom_tooltip = {
+				text = pirates_must_use_decision_to_colonize
+				always = no
+			}
+		}
+		trigger_else = {
+			custom_tooltip = {
+				text = colonize_border_county_trigger_tooltip
+				OR = {
+					any_sub_realm_county = {
+						any_title_to_title_neighboring_and_across_water_county = {
+							this = scope:wilderness.county
+						}
+					}
+					scope:wilderness = { lv_agot_lov_special_access_trigger = { ACTOR = root } }
+				}
+			}
+		}
+
+		any_sub_realm_county = {
+			any_title_to_title_neighboring_and_across_water_county = {
+				NOT = { has_county_modifier = block_settlement_ability }
+			}
+		}
+
+		custom_tooltip = {
+			text = colonization_cooldown
+			NOT = { has_variable = colonization_cooldown }
+		}
+	}
+
+	## Check agot_colonization_effects.txt
+	effect = {
+		custom_tooltip = colonize_land_cost_desc
+		if = {
+			limit = {
+				has_government = pirate_government
+			}
+			custom_tooltip = colonize_land_holding_pirates_desc
+		}
+		else = {
+			custom_tooltip = colonize_land_holding_desc
+		}
+		hidden_effect = { ai_colonization_effect = { WILDERNESS = scope:wilderness ROOT_SCOPE = root } }
+	}
+}
+
+

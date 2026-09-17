@@ -1,0 +1,1173 @@
+﻿namespace = agot_bla_custom_house_legacy
+
+agot_bla_custom_house_legacy.0099 = {
+	hidden = yes
+
+	trigger = {
+		is_ai = no
+		exists = dynasty
+		OR = {
+			dynasty = {
+				has_dynasty_perk = bla_custom_coin_legacy_5
+			}
+			has_character_modifier = bla_long_counting_full_coffers
+			has_character_modifier = bla_long_counting_deep_reserves
+			has_character_modifier = bla_long_counting_house_of_means
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				dynasty = {
+					has_dynasty_perk = bla_custom_coin_legacy_5
+				}
+			}
+
+			bla_update_long_counting_effect = yes
+		}
+		else = {
+			remove_character_modifier = bla_long_counting_full_coffers
+			remove_character_modifier = bla_long_counting_deep_reserves
+			remove_character_modifier = bla_long_counting_house_of_means
+		}
+
+		if = {
+			limit = {
+				OR = {
+					has_character_modifier = bla_whisper_network_eyes_within
+					has_character_modifier = bla_whisper_network_among_banners
+					has_character_modifier = bla_whisper_network_beyond_borders
+				}
+			}
+
+			random = {
+				chance = 20
+
+				if = {
+					limit = {
+						has_character_modifier = bla_whisper_network_eyes_within
+					}
+
+					trigger_event = {
+						id = agot_bla_custom_house_legacy.0121
+					}
+				}
+				else_if = {
+					limit = {
+						has_character_modifier = bla_whisper_network_among_banners
+					}
+
+					trigger_event = {
+						id = agot_bla_custom_house_legacy.0122
+					}
+				}
+				else_if = {
+					limit = {
+						has_character_modifier = bla_whisper_network_beyond_borders
+					}
+
+					trigger_event = {
+						id = agot_bla_custom_house_legacy.0123
+					}
+				}
+			}
+		}
+	}
+}
+
+# ------------------------------------------------------------
+# 0001 — House Age (framing + renown + splendor + unlock count)
+# ------------------------------------------------------------
+agot_bla_custom_house_legacy.0001 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0001.t
+	desc  = agot_bla_custom_house_legacy.0001.desc
+	theme = family
+	override_background = study
+
+	trigger = {
+		is_ai = no
+		has_trait = bla_legacy_customizer
+		exists = dynasty
+		NOT = { dynasty = { has_variable = bla_custom_house_legacy_done } }
+	}
+
+	immediate = {
+
+		 create_character = {
+        		template = maester_character
+        		location = root.capital_province
+        		dynasty = none
+        		save_scope_as = new_maester
+    		}
+		scope:new_maester = {
+				add_character_flag = traveling_maester
+		}
+
+		dynasty = {
+			# reset scores
+			set_variable = { name = bla_score_coin value = 0 }
+			set_variable = { name = bla_score_banner value = 0 }
+			set_variable = { name = bla_score_steel value = 0 }
+			set_variable = { name = bla_score_veil value = 0 }
+			set_variable = { name = bla_score_candle value = 0 }
+
+			# clear track flags
+			remove_variable = bla_custom_track_coin
+			remove_variable = bla_custom_track_banner
+			remove_variable = bla_custom_track_steel
+			remove_variable = bla_custom_track_veil
+			remove_variable = bla_custom_track_candle
+			remove_variable = bla_custom_track_mosaic
+
+			# clear house guard
+			remove_variable = bla_custom_guard_heavy_infantry
+			remove_variable = bla_custom_guard_skirmishers
+			remove_variable = bla_custom_guard_heavy_cavalry
+			remove_variable = bla_custom_guard_light_cavalry
+			remove_variable = bla_custom_guard_pikemen
+			remove_variable = bla_custom_guard_archers
+
+			# age + framing
+			set_variable = { name = bla_custom_age_unlocks value = 0 }
+			set_variable = { name = bla_custom_house_is_new value = 0 }
+		}
+	}
+
+	right_portrait = {
+		character = scope:new_maester
+		animation = throne_room_writer
+	}
+
+	# NEW: 0 unlocked, +0 renown
+	option = {
+		name = agot_bla_custom_house_legacy.0001.a1
+		dynasty = {
+			set_variable = { name = bla_custom_age_unlocks value = 0 }
+			set_variable = { name = bla_custom_house_is_new value = 1 }
+		}
+		trigger_event = { id = agot_bla_custom_house_legacy.0015 days = 1 }
+	}
+
+	# ~100: 1 unlocked, +250 renown
+	option = {
+		name = agot_bla_custom_house_legacy.0001.a2
+		dynasty = {
+			set_variable = { name = bla_custom_age_unlocks value = 1 }
+			set_variable = { name = bla_custom_house_is_new value = 0 }
+			add_dynasty_prestige = 250
+		}
+		trigger_event = { id = agot_bla_custom_house_legacy.0015 days = 1 }
+	}
+
+	# ~250: 2 unlocked, +1000 renown, -2 splendor level
+	option = {
+		name = agot_bla_custom_house_legacy.0001.a3
+		dynasty = {
+			set_variable = { name = bla_custom_age_unlocks value = 2 }
+			set_variable = { name = bla_custom_house_is_new value = 0 }
+			add_dynasty_prestige = 1000
+			if = { limit = { dynasty_prestige_level > 0 } add_dynasty_prestige_level = -1 }
+			if = { limit = { dynasty_prestige_level > 0 } add_dynasty_prestige_level = -1 }
+		}
+		trigger_event = { id = agot_bla_custom_house_legacy.0015 days = 1 }
+	}
+
+	# ~500: 3 unlocked, +2250 renown, -2 splendor level
+	option = {
+		name = agot_bla_custom_house_legacy.0001.a4
+		dynasty = {
+			set_variable = { name = bla_custom_age_unlocks value = 3 }
+			set_variable = { name = bla_custom_house_is_new value = 0 }
+			add_dynasty_prestige = 2250
+			if = { limit = { dynasty_prestige_level > 0 } add_dynasty_prestige_level = -1 }
+			if = { limit = { dynasty_prestige_level > 0 } add_dynasty_prestige_level = -1 }
+		}
+		trigger_event = { id = agot_bla_custom_house_legacy.0015 days = 1 }
+	}
+
+	# ~1000: 4 unlocked, +4000 renown, -3 splendor levels
+	option = {
+		name = agot_bla_custom_house_legacy.0001.a5
+		dynasty = {
+			set_variable = { name = bla_custom_age_unlocks value = 4 }
+			set_variable = { name = bla_custom_house_is_new value = 0 }
+			add_dynasty_prestige = 4000
+			if = { limit = { dynasty_prestige_level > 0 } add_dynasty_prestige_level = -1 }
+			if = { limit = { dynasty_prestige_level > 0 } add_dynasty_prestige_level = -1 }
+			if = { limit = { dynasty_prestige_level > 0 } add_dynasty_prestige_level = -1 }
+		}
+		trigger_event = { id = agot_bla_custom_house_legacy.0015 days = 1 }
+	}
+}
+
+# ------------------------------------------------------------
+# 0015 — Dragonrider House?
+# ------------------------------------------------------------
+agot_bla_custom_house_legacy.0015 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0015.t
+	desc = agot_bla_custom_house_legacy.0015.desc
+	theme = family
+	override_background = {
+		reference = study
+	}
+
+
+	right_portrait = {
+		character = scope:new_maester
+		animation = throne_room_writer
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0015.a
+
+		if = {
+			limit = { exists = house }
+			house = {
+				add_house_modifier = dragonrider_house_modifier
+			}
+		}
+
+		trigger_event = { id = agot_bla_custom_house_legacy.0002 days = 1 }
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0015.b
+		trigger_event = { id = agot_bla_custom_house_legacy.0002 days = 1 }
+	}
+}
+
+# ------------------------------------------------------------
+# 0002 — Q1 (Founding) [Hidden scoring]
+# ------------------------------------------------------------
+agot_bla_custom_house_legacy.0002 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.q1.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { dynasty = { var:bla_custom_house_is_new = 1 } }
+				desc = agot_bla_custom_house_legacy.q1.desc_new
+			}
+			triggered_desc = { trigger = { always = yes } desc = agot_bla_custom_house_legacy.q1.desc_old }
+		}
+	}
+	theme = family
+	override_background = {
+		reference = study
+	}
+	right_portrait = {
+		character = scope:new_maester
+		animation = throne_room_writer
+	}
+
+
+	option = { name = agot_bla_custom_house_legacy.q1.a1 dynasty = { change_variable = { name = bla_score_coin   add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0003 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q1.a2 dynasty = { change_variable = { name = bla_score_banner add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0003 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q1.a3 dynasty = { change_variable = { name = bla_score_steel  add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0003 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q1.a4 dynasty = { change_variable = { name = bla_score_veil   add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0003 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q1.a5 dynasty = { change_variable = { name = bla_score_candle add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0003 days = 1 } }
+}
+
+# ------------------------------------------------------------
+# 0003 — Q2 (Crisis) [Hidden scoring]
+# ------------------------------------------------------------
+agot_bla_custom_house_legacy.0003 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.q2.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { dynasty = { var:bla_custom_house_is_new = 1 } } desc = agot_bla_custom_house_legacy.q2.desc_new }
+			triggered_desc = { trigger = { always = yes } desc = agot_bla_custom_house_legacy.q2.desc_old }
+		}
+	}
+	theme = family
+	override_background = {
+		reference = study
+	}
+	right_portrait = {
+		character = scope:new_maester
+		animation = throne_room_writer
+	}
+
+
+	option = { name = agot_bla_custom_house_legacy.q2.a1 dynasty = { change_variable = { name = bla_score_coin   add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0004 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q2.a2 dynasty = { change_variable = { name = bla_score_banner add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0004 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q2.a3 dynasty = { change_variable = { name = bla_score_steel  add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0004 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q2.a4 dynasty = { change_variable = { name = bla_score_veil   add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0004 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q2.a5 dynasty = { change_variable = { name = bla_score_candle add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0004 days = 1 } }
+}
+
+# ------------------------------------------------------------
+# 0004 — Q3 (Division) [Hidden scoring]
+# ------------------------------------------------------------
+agot_bla_custom_house_legacy.0004 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.q3.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { dynasty = { var:bla_custom_house_is_new = 1 } } desc = agot_bla_custom_house_legacy.q3.desc_new }
+			triggered_desc = { trigger = { always = yes } desc = agot_bla_custom_house_legacy.q3.desc_old }
+		}
+	}
+	theme = family
+	override_background = {
+		reference = study
+	}
+	right_portrait = {
+		character = scope:new_maester
+		animation = throne_room_writer
+	}
+
+	option = { name = agot_bla_custom_house_legacy.q3.a1 dynasty = { change_variable = { name = bla_score_banner add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0005 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q3.a2 dynasty = { change_variable = { name = bla_score_coin   add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0005 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q3.a3 dynasty = { change_variable = { name = bla_score_steel  add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0005 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q3.a4 dynasty = { change_variable = { name = bla_score_veil   add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0005 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q3.a5 dynasty = { change_variable = { name = bla_score_candle add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0005 days = 1 } }
+}
+
+# ------------------------------------------------------------
+# 0005 — Q4 (Royal Pressure) [Hidden scoring]
+# ------------------------------------------------------------
+agot_bla_custom_house_legacy.0005 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.q4.t
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { dynasty = { var:bla_custom_house_is_new = 1 } } desc = agot_bla_custom_house_legacy.q4.desc_new }
+			triggered_desc = { trigger = { always = yes } desc = agot_bla_custom_house_legacy.q4.desc_old }
+		}
+	}
+	theme = family
+	override_background = {
+		reference = study
+	}
+	right_portrait = {
+		character = scope:new_maester
+		animation = throne_room_writer
+	}
+
+	option = { name = agot_bla_custom_house_legacy.q4.a1 dynasty = { change_variable = { name = bla_score_coin   add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0006 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q4.a2 dynasty = { change_variable = { name = bla_score_banner add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0006 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q4.a3 dynasty = { change_variable = { name = bla_score_steel  add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0006 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q4.a4 dynasty = { change_variable = { name = bla_score_veil   add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0006 days = 1 } }
+	option = { name = agot_bla_custom_house_legacy.q4.a5 dynasty = { change_variable = { name = bla_score_candle add = 1 } } trigger_event = { id = agot_bla_custom_house_legacy.0006 days = 1 } }
+}
+
+
+# ------------------------------------------------------------
+# 0006 — Q5 (Ambition) [Hidden scoring]
+# ------------------------------------------------------------
+agot_bla_custom_house_legacy.0006 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.q5.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					dynasty = {
+						var:bla_custom_house_is_new = 1
+					}
+				}
+				desc = agot_bla_custom_house_legacy.q5.desc_new
+			}
+			triggered_desc = {
+				trigger = {
+					always = yes
+				}
+				desc = agot_bla_custom_house_legacy.q5.desc_old
+			}
+		}
+	}
+
+	theme = family
+
+	override_background = {
+		reference = study
+	}
+
+	right_portrait = {
+		character = scope:new_maester
+		animation = throne_room_writer
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.q5.a1
+
+		dynasty = {
+			change_variable = {
+				name = bla_score_coin
+				add = 1
+			}
+		}
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0008
+			days = 1
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.q5.a2
+
+		dynasty = {
+			change_variable = {
+				name = bla_score_banner
+				add = 1
+			}
+		}
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0008
+			days = 1
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.q5.a3
+
+		dynasty = {
+			change_variable = {
+				name = bla_score_steel
+				add = 1
+			}
+		}
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0008
+			days = 1
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.q5.a4
+
+		dynasty = {
+			change_variable = {
+				name = bla_score_veil
+				add = 1
+			}
+		}
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0008
+			days = 1
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.q5.a5
+
+		dynasty = {
+			change_variable = {
+				name = bla_score_candle
+				add = 1
+			}
+		}
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0008
+			days = 1
+		}
+	}
+}
+# ------------------------------------------------------------
+# 0007 — Resolve winner + unlock N perks + summary tooltips
+# ------------------------------------------------------------
+agot_bla_custom_house_legacy.0007 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0007.t
+	desc  = agot_bla_custom_house_legacy.0007.desc
+	theme = family
+	override_background = {
+		reference = study
+	}
+	right_portrait = {
+		character = scope:new_maester
+		animation = throne_room_writer
+	}
+
+
+	option = {
+		name = agot_bla_custom_house_legacy.0007.a
+
+		hidden_effect = {
+
+			dynasty = {
+
+				remove_variable = bla_custom_track_coin
+				remove_variable = bla_custom_track_banner
+				remove_variable = bla_custom_track_steel
+				remove_variable = bla_custom_track_veil
+				remove_variable = bla_custom_track_candle
+				remove_variable = bla_custom_track_mosaic
+
+
+				if = {
+					limit = {
+						var:bla_score_steel > var:bla_score_coin
+						var:bla_score_steel > var:bla_score_banner
+						var:bla_score_steel > var:bla_score_veil
+						var:bla_score_steel > var:bla_score_candle
+					}
+
+					set_variable = {
+						name = bla_custom_track_steel
+						value = 1
+					}
+				}
+				else_if = {
+					limit = {
+						var:bla_score_coin > var:bla_score_steel
+						var:bla_score_coin > var:bla_score_banner
+						var:bla_score_coin > var:bla_score_veil
+						var:bla_score_coin > var:bla_score_candle
+					}
+
+					set_variable = {
+						name = bla_custom_track_coin
+						value = 1
+					}
+				}
+				else_if = {
+					limit = {
+						var:bla_score_banner > var:bla_score_steel
+						var:bla_score_banner > var:bla_score_coin
+						var:bla_score_banner > var:bla_score_veil
+						var:bla_score_banner > var:bla_score_candle
+					}
+
+					set_variable = {
+						name = bla_custom_track_banner
+						value = 1
+					}
+				}
+				else_if = {
+					limit = {
+						var:bla_score_veil > var:bla_score_steel
+						var:bla_score_veil > var:bla_score_coin
+						var:bla_score_veil > var:bla_score_banner
+						var:bla_score_veil > var:bla_score_candle
+					}
+
+					set_variable = {
+						name = bla_custom_track_veil
+						value = 1
+					}
+				}
+				else_if = {
+					limit = {
+						var:bla_score_candle > var:bla_score_steel
+						var:bla_score_candle > var:bla_score_coin
+						var:bla_score_candle > var:bla_score_banner
+						var:bla_score_candle > var:bla_score_veil
+					}
+
+					set_variable = {
+						name = bla_custom_track_candle
+						value = 1
+					}
+				}
+				else = {
+					set_variable = {
+						name = bla_custom_track_mosaic
+						value = 1
+					}
+				}
+				
+				if = {
+					limit = { has_variable = bla_custom_track_mosaic }
+					if = { limit = { var:bla_custom_age_unlocks >= 1 } add_dynasty_perk = bla_custom_mosaic_legacy_1 }
+					if = { limit = { var:bla_custom_age_unlocks >= 2 } add_dynasty_perk = bla_custom_mosaic_legacy_2 }
+					if = { limit = { var:bla_custom_age_unlocks >= 3 } add_dynasty_perk = bla_custom_mosaic_legacy_3 }
+					if = { limit = { var:bla_custom_age_unlocks >= 4 } add_dynasty_perk = bla_custom_mosaic_legacy_4 }
+				}
+				else_if = {
+					limit = { has_variable = bla_custom_track_steel }
+					if = { limit = { var:bla_custom_age_unlocks >= 1 } add_dynasty_perk = bla_custom_steel_legacy_1 }
+					if = { limit = { var:bla_custom_age_unlocks >= 2 } add_dynasty_perk = bla_custom_steel_legacy_2 }
+					if = { limit = { var:bla_custom_age_unlocks >= 3 } add_dynasty_perk = bla_custom_steel_legacy_3 }
+					if = { limit = { var:bla_custom_age_unlocks >= 4 } add_dynasty_perk = bla_custom_steel_legacy_4 }
+				}
+				else_if = {
+					limit = { has_variable = bla_custom_track_coin }
+					if = { limit = { var:bla_custom_age_unlocks >= 1 } add_dynasty_perk = bla_custom_coin_legacy_1 }
+					if = { limit = { var:bla_custom_age_unlocks >= 2 } add_dynasty_perk = bla_custom_coin_legacy_2 }
+					if = { limit = { var:bla_custom_age_unlocks >= 3 } add_dynasty_perk = bla_custom_coin_legacy_3 }
+					if = { limit = { var:bla_custom_age_unlocks >= 4 } add_dynasty_perk = bla_custom_coin_legacy_4 }
+				}
+				else_if = {
+					limit = { has_variable = bla_custom_track_banner }
+					if = { limit = { var:bla_custom_age_unlocks >= 1 } add_dynasty_perk = bla_custom_banner_legacy_1 }
+					if = { limit = { var:bla_custom_age_unlocks >= 2 } add_dynasty_perk = bla_custom_banner_legacy_2 }
+					if = { limit = { var:bla_custom_age_unlocks >= 3 } add_dynasty_perk = bla_custom_banner_legacy_3 }
+					if = { limit = { var:bla_custom_age_unlocks >= 4 } add_dynasty_perk = bla_custom_banner_legacy_4 }
+				}
+				else_if = {
+					limit = { has_variable = bla_custom_track_veil }
+					if = { limit = { var:bla_custom_age_unlocks >= 1 } add_dynasty_perk = bla_custom_veil_legacy_1 }
+					if = { limit = { var:bla_custom_age_unlocks >= 2 } add_dynasty_perk = bla_custom_veil_legacy_2 }
+					if = { limit = { var:bla_custom_age_unlocks >= 3 } add_dynasty_perk = bla_custom_veil_legacy_3 }
+					if = { limit = { var:bla_custom_age_unlocks >= 4 } add_dynasty_perk = bla_custom_veil_legacy_4 }
+				}
+				else = {
+					if = { limit = { var:bla_custom_age_unlocks >= 1 } add_dynasty_perk = bla_custom_candle_legacy_1 }
+					if = { limit = { var:bla_custom_age_unlocks >= 2 } add_dynasty_perk = bla_custom_candle_legacy_2 }
+					if = { limit = { var:bla_custom_age_unlocks >= 3 } add_dynasty_perk = bla_custom_candle_legacy_3 }
+					if = { limit = { var:bla_custom_age_unlocks >= 4 } add_dynasty_perk = bla_custom_candle_legacy_4 }
+				}
+
+				set_variable = { name = bla_custom_house_legacy_done value = 1 }
+			}
+
+			remove_trait = bla_legacy_customizer
+		}
+
+		if = { limit = { dynasty = { var:bla_custom_age_unlocks = 0 } } custom_tooltip = bla_custom_summary_new_intro }
+
+		if = { limit = { dynasty = { has_variable = bla_custom_track_coin } } custom_tooltip = bla_custom_summary_coin }
+		if = { limit = { dynasty = { has_variable = bla_custom_track_banner } } custom_tooltip = bla_custom_summary_banner }
+		if = { limit = { dynasty = { has_variable = bla_custom_track_steel } } custom_tooltip = bla_custom_summary_steel }
+		if = { limit = { dynasty = { has_variable = bla_custom_track_veil } } custom_tooltip = bla_custom_summary_veil }
+		if = { limit = { dynasty = { has_variable = bla_custom_track_candle } } custom_tooltip = bla_custom_summary_candle }
+		if = { limit = { dynasty = { has_variable = bla_custom_track_mosaic } } custom_tooltip = bla_custom_summary_mosaic }
+
+		custom_tooltip = agot_bla_custom_house_legacy_summary_tt
+	}
+}
+
+# ------------------------------------------------------------
+# 0008 — House Guard
+# ------------------------------------------------------------
+agot_bla_custom_house_legacy.0008 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0008.t
+	desc = agot_bla_custom_house_legacy.0008.desc
+	theme = martial
+
+	override_background = {
+		reference = study
+	}
+
+	right_portrait = {
+		character = scope:new_maester
+		animation = throne_room_writer
+	}
+
+	immediate = {
+		dynasty = {
+			remove_variable = bla_custom_guard_heavy_infantry
+			remove_variable = bla_custom_guard_skirmishers
+			remove_variable = bla_custom_guard_heavy_cavalry
+			remove_variable = bla_custom_guard_light_cavalry
+			remove_variable = bla_custom_guard_pikemen
+			remove_variable = bla_custom_guard_archers
+		}
+	}
+
+	# Heavy Infantry
+	option = {
+		name = agot_bla_custom_house_legacy.0008.a
+
+		dynasty = {
+			set_variable = {
+				name = bla_custom_guard_heavy_infantry
+				value = 1
+			}
+		}
+
+		custom_tooltip = bla_custom_guard_heavy_infantry_tt
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0007
+			days = 1
+		}
+	}
+
+	# Skirmishers
+	option = {
+		name = agot_bla_custom_house_legacy.0008.b
+
+		dynasty = {
+			set_variable = {
+				name = bla_custom_guard_skirmishers
+				value = 1
+			}
+		}
+
+		custom_tooltip = bla_custom_guard_skirmishers_tt
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0007
+			days = 1
+		}
+	}
+
+	# Heavy Cavalry
+	option = {
+		name = agot_bla_custom_house_legacy.0008.c
+
+		dynasty = {
+			set_variable = {
+				name = bla_custom_guard_heavy_cavalry
+				value = 1
+			}
+		}
+
+		custom_tooltip = bla_custom_guard_heavy_cavalry_tt
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0007
+			days = 1
+		}
+	}
+
+	# Light Cavalry
+	option = {
+		name = agot_bla_custom_house_legacy.0008.d
+
+		dynasty = {
+			set_variable = {
+				name = bla_custom_guard_light_cavalry
+				value = 1
+			}
+		}
+
+		custom_tooltip = bla_custom_guard_light_cavalry_tt
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0007
+			days = 1
+		}
+	}
+
+	# Pikemen
+	option = {
+		name = agot_bla_custom_house_legacy.0008.e
+
+		dynasty = {
+			set_variable = {
+				name = bla_custom_guard_pikemen
+				value = 1
+			}
+		}
+
+		custom_tooltip = bla_custom_guard_pikemen_tt
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0007
+			days = 1
+		}
+	}
+
+	# Archers
+	option = {
+		name = agot_bla_custom_house_legacy.0008.f
+
+		dynasty = {
+			set_variable = {
+				name = bla_custom_guard_archers
+				value = 1
+			}
+		}
+
+		custom_tooltip = bla_custom_guard_archers_tt
+
+		trigger_event = {
+			id = agot_bla_custom_house_legacy.0007
+			days = 1
+		}
+	}
+}
+
+agot_bla_custom_house_legacy.0100 = {
+	hidden = yes
+
+	immediate = {
+
+		if = {
+			limit = {
+				highest_held_title_tier = tier_empire
+			}
+
+			spawn_army = {
+				levies = 5000
+				inheritable = no
+				location = capital_province
+				name = bla_called_banners_army
+			}
+		}
+		else_if = {
+			limit = {
+				highest_held_title_tier = tier_kingdom
+			}
+
+			spawn_army = {
+				levies = 2500
+				inheritable = no
+				location = capital_province
+				name = bla_called_banners_army
+			}
+		}
+		else_if = {
+			limit = {
+				highest_held_title_tier = tier_duchy
+			}
+
+			spawn_army = {
+				levies = 1000
+				inheritable = no
+				location = capital_province
+				name = bla_called_banners_army
+			}
+		}
+		else = {
+			spawn_army = {
+				levies = 500
+				inheritable = no
+				location = capital_province
+				name = bla_called_banners_army
+			}
+		}
+
+		add_character_modifier = {
+			modifier = bla_banners_called
+			years = 10
+		}
+	}
+}
+
+agot_bla_custom_house_legacy.0110 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0110.t
+	desc = agot_bla_custom_house_legacy.0110.desc
+	theme = martial
+	left_portrait = root
+
+	immediate = {
+		add_martial_lifestyle_xp = 100
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0110.a
+
+		add_martial_lifestyle_xp = 150
+
+		if = {
+			limit = {
+				any_knight = {
+					is_adult = yes
+					is_imprisoned = no
+					is_incapable = no
+				}
+			}
+
+			random_knight = {
+				limit = {
+					is_imprisoned = no
+					is_incapable = no
+				}
+				save_scope_as = muster_knight
+			}
+
+			trigger_event = {
+				id = agot_bla_custom_house_legacy.0111
+			}
+		}
+		else = {
+			add_character_modifier = {
+				modifier = bla_muster_knights_tested
+				years = 5
+			}
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0110.b
+
+		add_character_modifier = {
+			modifier = bla_muster_men_drilled
+			years = 5
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0110.c
+
+		add_martial_lifestyle_xp = 250
+
+		add_character_modifier = {
+			modifier = bla_muster_captains_schooled
+			years = 5
+		}
+	}
+}
+
+agot_bla_custom_house_legacy.0111 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0111.t
+	desc = agot_bla_custom_house_legacy.0111.desc
+	theme = martial
+
+	left_portrait = {
+		character = scope:muster_knight
+		animation = personality_bold
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0111.a
+
+		scope:muster_knight = {
+			add_character_modifier = {
+				modifier = bla_household_knight_distinguished
+				years = 5
+			}
+		}
+
+		add_prestige = minor_prestige_gain
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0111.b
+
+		add_character_modifier = {
+			modifier = bla_muster_knights_tested
+			years = 5
+		}
+	}
+}
+
+agot_bla_custom_house_legacy.0120 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0120.t
+	desc = agot_bla_custom_house_legacy.0120.desc
+	theme = intrigue
+	left_portrait = root
+
+	option = {
+		name = agot_bla_custom_house_legacy.0120.a
+
+		add_character_modifier = {
+			modifier = bla_whisper_network_eyes_within
+			years = 10
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0120.b
+
+		add_character_modifier = {
+			modifier = bla_whisper_network_among_banners
+			years = 10
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0120.c
+
+		add_character_modifier = {
+			modifier = bla_whisper_network_beyond_borders
+			years = 10
+		}
+	}
+}
+
+agot_bla_custom_house_legacy.0121 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0121.t
+	desc = agot_bla_custom_house_legacy.0121.desc
+	theme = intrigue
+
+	left_portrait = root
+
+	trigger = {
+		has_character_modifier = bla_whisper_network_eyes_within
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0121.a
+
+		add_intrigue_lifestyle_xp = 200
+
+		add_character_modifier = {
+			modifier = bla_whisper_network_household_watched
+			years = 3
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0121.b
+
+		add_dread = 10
+
+		add_character_modifier = {
+			modifier = bla_whisper_network_nervous_court
+			years = 3
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0121.c
+
+		add_prestige = minor_prestige_gain
+	}
+}
+
+agot_bla_custom_house_legacy.0122 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0122.t
+	desc = agot_bla_custom_house_legacy.0122.desc
+	theme = intrigue
+
+	left_portrait = root
+
+	trigger = {
+		has_character_modifier = bla_whisper_network_among_banners
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0122.a
+
+		add_diplomacy_lifestyle_xp = 200
+
+		add_character_modifier = {
+			modifier = bla_whisper_network_grievances_heard
+			years = 3
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0122.b
+
+		add_dread = 10
+
+		add_character_modifier = {
+			modifier = bla_whisper_network_vassals_watched
+			years = 3
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0122.c
+
+		add_stewardship_lifestyle_xp = 200
+		add_prestige = minor_prestige_gain
+	}
+}
+
+agot_bla_custom_house_legacy.0123 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0123.t
+	desc = agot_bla_custom_house_legacy.0123.desc
+	theme = intrigue
+
+	left_portrait = root
+
+	trigger = {
+		has_character_modifier = bla_whisper_network_beyond_borders
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0123.a
+
+		add_intrigue_lifestyle_xp = 250
+
+		add_character_modifier = {
+			modifier = bla_whisper_network_foreign_intelligence
+			years = 3
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0123.b
+
+		add_martial_lifestyle_xp = 150
+
+		add_character_modifier = {
+			modifier = bla_whisper_network_foreign_dispositions
+			years = 3
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0123.c
+
+		add_gold = 100
+	}
+}
+
+agot_bla_custom_house_legacy.0140 = {
+	hidden = yes
+
+	trigger = {
+		is_alive = yes
+		exists = dynasty
+		dynasty = {
+			has_dynasty_perk = bla_custom_candle_legacy_5
+		}
+	}
+
+	immediate = {
+		bla_candle_against_the_dark_education_effect = yes
+	}
+}
+
+agot_bla_custom_house_legacy.0150 = {
+	type = character_event
+	title = agot_bla_custom_house_legacy.0150.t
+	desc = agot_bla_custom_house_legacy.0150.desc
+
+	theme = stewardship
+
+	left_portrait = {
+		character = root
+		animation = personality_thoughtful
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0150.a
+
+		add_character_modifier = {
+			modifier = bla_mosaic_warrior_tradition
+			years = 10
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0150.b
+
+		add_character_modifier = {
+			modifier = bla_mosaic_steward_tradition
+			years = 10
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0150.c
+
+		add_character_modifier = {
+			modifier = bla_mosaic_envoy_tradition
+			years = 10
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0150.d
+
+		add_character_modifier = {
+			modifier = bla_mosaic_whisperer_tradition
+			years = 10
+		}
+	}
+
+	option = {
+		name = agot_bla_custom_house_legacy.0150.e
+
+		add_character_modifier = {
+			modifier = bla_mosaic_scholar_tradition
+			years = 10
+		}
+	}
+}

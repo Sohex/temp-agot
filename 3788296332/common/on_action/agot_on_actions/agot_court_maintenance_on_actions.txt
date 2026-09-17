@@ -1,0 +1,447 @@
+﻿on_join_court_nights_watch = {
+	effect = {
+		if = {
+			limit = {
+				exists = scope:old_employer
+				has_trait = nightswatch
+				is_ruler = no
+				scope:old_employer = {
+					has_trait = nightswatch
+					is_landed = yes
+					court_owner = scope:old_employer
+				}
+				NOT = {
+					scope:new_employer = { has_trait = nightswatch }
+				}
+				exists = title:k_the_wall.holder
+			}
+			scope:old_employer = {
+				add_courtier ?= prev
+			}
+		}
+		else_if = {
+			limit = {
+				has_trait = nightswatch
+				is_ruler = no
+				NOT = {
+					scope:new_employer = { has_trait = nightswatch }
+				}
+				exists = title:k_the_wall.holder
+				title:k_the_wall.holder = {
+					has_trait = nightswatch
+					court_owner = title:k_the_wall.holder
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier ?= prev
+			}
+		}
+	}
+}
+
+on_leave_court_nights_watch = {
+	trigger = {
+		has_trait = nightswatch
+		is_ruler = no
+		NOT = { this = title:d_nw_landless_first_ranger.holder }
+		trigger_if = {
+			limit = { exists = employer }
+			employer = {
+				NOT = { has_trait = nightswatch }
+			}
+		}
+		exists = title:k_the_wall.holder
+	}
+	effect = {
+		if = {
+			limit = {
+				scope:old_employer ?= {
+					has_trait = nightswatch
+					court_owner = scope:old_employer
+				}
+			}
+			scope:old_employer = {
+				add_courtier ?= prev
+			}
+		}
+		else_if = {
+			limit = {
+				title:k_the_wall.holder ?= {
+					has_trait = nightswatch
+					court_owner = title:k_the_wall.holder
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier ?= prev
+			}
+		}
+	}
+}
+
+on_join_court_silent_sisterhood = {
+	effect = {
+		if = {
+			limit = {
+				exists = scope:old_employer
+				has_trait = silent_sister
+				scope:old_employer = {
+					has_trait = silent_sister
+					is_ruler = yes
+				}
+				NOT = {
+					scope:new_employer = { has_trait = silent_sister }
+				}
+			}
+			scope:old_employer = {
+				add_courtier ?= root
+			}
+		}
+		else_if = {
+			limit = {
+				has_trait = silent_sister
+				NOT = {
+					scope:new_employer = { has_trait = silent_sister }
+				}
+			}
+			title:d_the_silent_sisterhood.holder = {
+				add_courtier ?= root
+			}
+		}
+		# Bloating count - technically will never remove itself but unless the player TRIES to kill sisters it's really not going to matter since it resets on silent mother death anyway
+		if = {
+			limit = {
+				exists = title:d_the_silent_sisterhood.holder # To prevent errors on game start
+				title:d_the_silent_sisterhood.holder = {
+					any_courtier = {
+						count > 80
+					}
+				}
+			}
+			if = {
+				limit = {
+					title:d_the_silent_sisterhood.holder = {
+						any_courtier = {
+							count > 120
+						}
+					}
+				}
+				title:d_the_silent_sisterhood.holder = {
+					add_character_flag = silent_sisterhood_full
+				}
+			}
+			else = {
+				title:d_the_silent_sisterhood.holder = {
+					add_character_flag = silent_sisterhood_bloated
+				}
+			}
+		}
+		else_if = { # If <20 silent sisters, each new sister makes two to prevent elimination of sisterhood without serious effort
+			limit = {
+				exists = title:d_the_silent_sisterhood.holder # To prevent errors on game start
+				title:d_the_silent_sisterhood.holder = {
+					NOT = { has_character_flag = just_inherited_sisterhood } # Prevents sisters from being created on inheritance court transfer
+					any_courtier = {
+						count < 20
+					}
+				}
+			}
+			title:d_the_silent_sisterhood.holder = {
+				create_character = {
+					template = silent_sister_character
+					employer = title:d_the_silent_sisterhood.holder
+					after_creation = {
+						agot_send_to_silent_sisters_effect = {
+							ACTOR = title:d_the_silent_sisterhood.holder
+							SILENT_SISTER_CANDIDATE = this
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+on_leave_court_silent_sisterhood = {
+	effect = {
+		if = {
+			limit = {
+				exists = scope:old_employer
+				has_trait = silent_sister
+				scope:old_employer = {
+					has_trait = silent_sister
+				}
+			}
+			scope:old_employer = {
+				add_courtier ?= root
+			}
+		}
+		else_if = {
+			limit = {
+				has_trait = silent_sister
+			}
+			title:d_the_silent_sisterhood.holder = {
+				add_courtier ?= root
+			}
+		}
+	}
+}
+
+on_join_court_wildlings = {
+	effect = {
+		#Wildlings coming to the north become secret wildlings
+		if = {
+			limit = {
+				exists = scope:old_employer
+				culture = { agot_is_wildling_culture = yes }
+				is_lowborn = yes
+				any_traveling_family_member = { count = 1 }
+				scope:new_employer = {
+					OR = {
+						AND = {
+							exists = capital_province
+							capital_province = { geographical_region = world_westeros_the_north }
+						}
+						AND = {
+							 NOT = { exists = capital_province }
+							 location = { geographical_region = world_westeros_the_north }
+						}
+					}
+				}
+				NOT = { has_trait = nightswatch }
+			}
+
+			if = {
+				limit = { is_female = yes }
+				change_first_name = Alarra
+			}
+			else = {
+				change_first_name = Alaric
+			}
+			set_variable = {
+				name = orig_culture
+				value = culture
+			}
+			set_variable = {
+				name = orig_faith
+				value = faith
+			}
+			culture:northman = {
+				random_culture_county = {
+					limit = { holder.culture = culture:northman }
+					holder = {
+						random_courtier = {
+							limit = {
+								culture = culture:northman
+								OR = {
+									AND = {
+										is_male = yes
+										root = { is_male = yes }
+									}
+									AND = {
+										is_female = yes
+										root = { is_female = yes }
+									}
+								}
+							}
+							save_scope_as = identity_theft_target
+						}
+					}
+				}
+			}
+			if = {
+				limit = { exists = scope:identity_theft_target }
+				change_first_name = { template_character = scope:identity_theft_target }
+			}
+			set_culture = culture:northman
+			set_character_faith = faith:old_gods_wnw
+			add_secret = { type = secret_agot_wildling }
+		}
+		else_if = {
+			limit = {
+				exists = scope:old_employer
+				culture = { agot_is_wildling_culture = yes }
+				scope:new_employer = {
+					culture = { agot_is_wildling_culture = no }
+				}
+				scope:old_employer = {
+					culture = { agot_is_wildling_culture = yes }
+				}
+				# Allow banished characters, recruited prisoners, and nightswatch to stay
+				NOR = {
+					has_variable = {
+						name = agot_banisher
+						name = recruited_prisoner_var
+					}
+					is_imprisoned_by = scope:new_employer
+					has_trait = nightswatch
+				}
+			}
+			every_traveling_family_member = {
+				scope:old_employer = {
+					add_courtier ?= prev
+				}
+			}
+		}
+		#westeros stay in westeros
+		if = {
+			limit = {
+				exists = scope:old_employer
+				culture = { agot_is_wildling_culture = no }
+				scope:new_employer = {
+					culture = { agot_is_wildling_culture = yes }
+				}
+				scope:old_employer = {
+					culture = { agot_is_wildling_culture = no }
+				}
+				NOT = {
+					any_traveling_family_member = {
+						culture = { agot_is_wildling_culture = yes }
+					}
+				}
+				# Allow banished characters, maesters, recruited prisoners, and nightswatch to stay
+				NOR = {
+					has_variable = {
+						name = agot_banisher
+						name = recruited_prisoner_var
+					}
+					is_imprisoned_by = scope:new_employer
+					has_trait = nightswatch
+					has_character_flag = recruited_maester
+				}
+				NAND = {
+					scope:new_employer ?= title:h_the_iron_throne.holder
+					OR = {
+						has_trait = kingsguard
+						has_inactive_trait = grandmaester
+					}
+				}
+			}
+			every_traveling_family_member = {
+				scope:old_employer = {
+					add_courtier ?= prev
+				}
+			}
+		}
+	}
+}
+
+on_join_court_culture_conversion = {
+	effect = {
+		every_traveling_family_member = {
+			agot_automatic_culture_conversion = yes
+		}
+	}
+}
+
+on_join_court_faith_conversion = {
+	effect = {
+		every_traveling_family_member = {
+			agot_automatic_faith_conversion = yes
+		}
+	}
+}
+
+on_join_court_uninteractable = {
+	effect = {
+		if = {
+			limit = {
+				exists = scope:new_employer
+				scope:new_employer = {
+					government_has_flag = government_is_uninteractable
+				}
+			}
+			agot_redirect_to_appropiate_court_effect = yes
+		}
+	}
+}
+
+on_join_court_dragonriders = { # Dragons should follow their riders
+	effect = {
+		if = {
+			limit = {
+				has_local_variable = current_dragon
+				exists = scope:new_employer
+			}
+			var:current_dragon = {
+				set_employer = scope:new_employer
+			}
+		}
+	}
+}
+
+on_join_court_return_to_sender = {
+	trigger = {
+		has_character_flag = return_to_sender
+	}
+	effect = {
+		every_traveling_family_member = {
+			remove_character_flag = return_to_sender
+
+			if = {
+				limit = {
+					exists = scope:old_employer
+				}
+				scope:old_employer = {
+					add_courtier ?= prev
+				}
+			}
+			else = {
+				move_to_pool = yes
+			}
+			if = {
+				limit = {
+					has_character_flag = return_to_spymaster
+				}
+				remove_character_flag = return_to_spymaster
+				scope:old_employer = {
+					assign_councillor_type = {
+						remove_existing_councillor = yes
+						target = root
+						type = councillor_spymaster
+					}
+				}
+				if = {
+					limit = {
+						scope:old_employer = { is_ai = yes }
+					}
+					block_firing_councillor_effect = { COURT_OWNER = scope:old_employer }
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = return_to_hand
+				}
+				remove_character_flag = return_to_hand
+				scope:old_employer = {
+					assign_councillor_type = {
+						remove_existing_councillor = yes
+						target = root
+						type = councillor_castellan
+					}
+				}
+				if = {
+					limit = {
+						scope:old_employer = { is_ai = yes }
+					}
+					block_firing_councillor_effect = { COURT_OWNER = scope:old_employer }
+				}
+			}
+			trigger_event = {
+				id = agot_court_maintenance.1000
+				days = 1
+			}
+		}
+	}
+}
+
+on_leave_court_with_pirate_landless_heir_variables = {
+	trigger = {
+		has_variable = pirate_jank_succession_variable
+	}
+	effect = {
+		every_relation = {
+			type = pirate_ship_designated_heir
+			remove_relation_pirate_ship_designated_heir = prev
+		}
+	}
+}

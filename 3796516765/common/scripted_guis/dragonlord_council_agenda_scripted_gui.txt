@@ -1,0 +1,1336 @@
+﻿# Dragonlord Council agenda planner.
+# All choices are temporary until the player confirms a complete motion.
+
+dragonlord_council_agenda_window = {
+	scope = character
+	is_shown = { has_variable = dragonlord_council_agenda_window_open }
+	is_valid = { has_variable = dragonlord_council_agenda_window_open }
+	effect = {
+		remove_variable = dragonlord_council_agenda_window_open
+		remove_variable = dragonlord_council_selected_agenda_category
+		remove_variable = dragonlord_council_selected_law_menu
+		remove_variable = dragonlord_council_selected_war_type
+		remove_variable = dragonlord_council_selected_target
+		remove_variable = dragonlord_council_selected_law
+		remove_variable = dragonlord_council_selected_development_type
+		remove_variable = dragonlord_council_selected_development_target
+		remove_variable = dragonlord_council_selected_estate_target
+		remove_variable = dragonlord_council_development_contributor_count
+		remove_variable = dragonlord_council_vote_forecast_open
+		remove_variable = dragonlord_council_budget_salary
+		remove_variable = dragonlord_council_budget_military
+		remove_variable = dragonlord_council_budget_salary_original
+		remove_variable = dragonlord_council_budget_military_original
+		clear_variable_list = dragonlord_council_target_candidates
+		clear_variable_list = dragonlord_council_development_county_candidates
+		clear_variable_list = dragonlord_council_development_estate_candidates
+		clear_variable_list = dragonlord_council_development_contributors
+		clear_variable_list = dragonlord_council_forecast_supporters
+		clear_variable_list = dragonlord_council_forecast_opponents
+		remove_variable = dragonlord_council_forecast_support_votes
+		remove_variable = dragonlord_council_forecast_opposition_votes
+	}
+}
+
+# Run after the player exits Dragonlord Council planning without creating the
+# activity.  Activity creation sets meeting_scheduled in on_start, making this
+# command invalid and protecting a successfully scheduled meeting.
+dragonlord_council_cancel_pending_planning = {
+	scope = character
+	is_shown = { has_variable = dragonlord_council_pending_agenda }
+	is_valid = {
+		has_variable = dragonlord_council_pending_agenda
+		NOT = { has_character_flag = dragonlord_council_meeting_scheduled }
+	}
+	effect = {
+		# Restore the enacted allocations for a fresh finance proposal.  The
+		# defaults are only a compatibility fallback for saves made before the
+		# original-value variables were introduced.
+		if = {
+			limit = { has_variable = dragonlord_council_pending_budget_salary_original }
+			set_variable = { name = dragonlord_council_budget_salary value = var:dragonlord_council_pending_budget_salary_original }
+		}
+		else = {
+			set_variable = { name = dragonlord_council_budget_salary value = 30 }
+		}
+		if = {
+			limit = { has_variable = dragonlord_council_pending_budget_military_original }
+			set_variable = { name = dragonlord_council_budget_military value = var:dragonlord_council_pending_budget_military_original }
+		}
+		else = {
+			set_variable = { name = dragonlord_council_budget_military value = 20 }
+		}
+		set_variable = { name = dragonlord_council_budget_salary_original value = var:dragonlord_council_budget_salary }
+		set_variable = { name = dragonlord_council_budget_military_original value = var:dragonlord_council_budget_military }
+
+		dragonlord_council_clear_pending_agenda_effect = yes
+		remove_character_flag = dragonlord_council_meeting_cooldown
+
+		remove_variable = dragonlord_council_selected_agenda_category
+		remove_variable = dragonlord_council_selected_law_menu
+		remove_variable = dragonlord_council_selected_war_type
+		remove_variable = dragonlord_council_selected_target
+		remove_variable = dragonlord_council_selected_law
+		remove_variable = dragonlord_council_selected_development_type
+		remove_variable = dragonlord_council_selected_development_target
+		remove_variable = dragonlord_council_selected_estate_target
+		remove_variable = dragonlord_council_development_contributor_count
+		remove_variable = dragonlord_council_vote_forecast_open
+		clear_variable_list = dragonlord_council_target_candidates
+		clear_variable_list = dragonlord_council_development_county_candidates
+		clear_variable_list = dragonlord_council_development_estate_candidates
+		clear_variable_list = dragonlord_council_development_contributors
+		clear_variable_list = dragonlord_council_forecast_supporters
+		clear_variable_list = dragonlord_council_forecast_opponents
+		remove_variable = dragonlord_council_forecast_support_votes
+		remove_variable = dragonlord_council_forecast_opposition_votes
+		set_variable = { name = dragonlord_council_agenda_window_open value = yes }
+	}
+}
+
+dragonlord_council_select_war_agenda = {
+	scope = character
+	is_shown = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda }
+	is_valid = { has_variable = dragonlord_council_agenda_window_open }
+	effect = { set_variable = { name = dragonlord_council_selected_agenda_category value = flag:dragonlord_war_agenda } }
+}
+
+dragonlord_council_select_law_agenda = {
+	scope = character
+	is_shown = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda }
+	is_valid = { has_variable = dragonlord_council_agenda_window_open }
+	effect = {
+		set_variable = { name = dragonlord_council_selected_agenda_category value = flag:dragonlord_law_agenda }
+		if = {
+			limit = { NOT = { has_variable = dragonlord_council_selected_law_menu } }
+			set_variable = { name = dragonlord_council_selected_law_menu value = flag:dragonlord_national_laws }
+		}
+	}
+}
+
+dragonlord_council_select_national_laws = {
+	scope = character
+	is_shown = { var:dragonlord_council_selected_law_menu = flag:dragonlord_national_laws }
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda
+	}
+	effect = { set_variable = { name = dragonlord_council_selected_law_menu value = flag:dragonlord_national_laws } }
+}
+
+dragonlord_council_select_provincial_laws = {
+	scope = character
+	is_shown = { var:dragonlord_council_selected_law_menu = flag:dragonlord_provincial_laws }
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda
+	}
+	effect = { set_variable = { name = dragonlord_council_selected_law_menu value = flag:dragonlord_provincial_laws } }
+}
+
+dragonlord_council_select_noble_laws = {
+	scope = character
+	is_shown = { var:dragonlord_council_selected_law_menu = flag:dragonlord_noble_laws }
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda
+	}
+	effect = { set_variable = { name = dragonlord_council_selected_law_menu value = flag:dragonlord_noble_laws } }
+}
+
+dragonlord_council_select_development_agenda = {
+	scope = character
+	is_shown = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda }
+	is_valid = { has_variable = dragonlord_council_agenda_window_open }
+	effect = {
+		remove_variable = dragonlord_council_selected_law
+		remove_variable = dragonlord_council_selected_war_type
+		remove_variable = dragonlord_council_selected_target
+		set_variable = { name = dragonlord_council_selected_agenda_category value = flag:dragonlord_development_agenda }
+		if = {
+			limit = { NOT = { has_variable = dragonlord_council_selected_development_type } }
+			set_variable = { name = dragonlord_council_selected_development_type value = flag:dragonlord_city_development }
+		}
+		dragonlord_council_rebuild_development_target_pool_effect = yes
+	}
+}
+
+dragonlord_council_select_city_development = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+		var:dragonlord_council_selected_development_type = flag:dragonlord_city_development
+	}
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+	}
+	effect = {
+		set_variable = { name = dragonlord_council_selected_development_type value = flag:dragonlord_city_development }
+		dragonlord_council_rebuild_development_target_pool_effect = yes
+	}
+}
+
+dragonlord_council_select_territorial_recovery = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+		var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery
+	}
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+	}
+	effect = {
+		set_variable = { name = dragonlord_council_selected_development_type value = flag:dragonlord_territorial_recovery }
+		dragonlord_council_rebuild_development_target_pool_effect = yes
+	}
+}
+
+dragonlord_council_select_estate_subsidy = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+		var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy
+	}
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+	}
+	effect = {
+		set_variable = { name = dragonlord_council_selected_development_type value = flag:dragonlord_estate_subsidy }
+		dragonlord_council_rebuild_development_target_pool_effect = yes
+	}
+}
+
+dragonlord_council_select_development_county_target = {
+	scope = character
+	saved_scopes = { target }
+	is_shown = { var:dragonlord_council_selected_development_target ?= scope:target }
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+		OR = {
+			AND = {
+				var:dragonlord_council_selected_development_type = flag:dragonlord_city_development
+				scope:target = {
+					tier = tier_county
+					holder = {
+						top_liege = root
+						dragonlord_is_registered_family_member_trigger = yes
+					}
+					NOT = { has_county_modifier = dragonlord_council_city_development_modifier }
+				}
+			}
+			AND = {
+				var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery
+				scope:target = {
+					tier = tier_county
+					county_control < 100
+					holder = {
+						top_liege = root
+						dragonlord_is_registered_family_member_trigger = yes
+					}
+					NOT = { has_county_modifier = dragonlord_council_territorial_recovery_modifier }
+				}
+			}
+		}
+	}
+	effect = { set_variable = { name = dragonlord_council_selected_development_target value = scope:target } }
+}
+
+dragonlord_council_select_development_estate_target = {
+	scope = character
+	saved_scopes = { target }
+	is_shown = { var:dragonlord_council_selected_estate_target ?= scope:target }
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda
+		var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy
+		scope:target = {
+			is_alive = yes
+			dragonlord_is_registered_family_member_trigger = yes
+			exists = domicile
+			NOT = { has_character_modifier = dragonlord_council_estate_subsidy_modifier }
+		}
+	}
+	effect = { set_variable = { name = dragonlord_council_selected_estate_target value = scope:target } }
+}
+
+dragonlord_council_select_finance_agenda = {
+	scope = character
+	is_shown = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda }
+	is_valid = { has_variable = dragonlord_council_agenda_window_open }
+	effect = {
+		remove_variable = dragonlord_council_selected_war_type
+		remove_variable = dragonlord_council_selected_target
+		if = {
+			limit = {
+				has_variable = dragonlord_council_selected_law
+				NOT = { var:dragonlord_council_selected_law = flag:dragonlord_treasury_budget_agenda }
+			}
+			remove_variable = dragonlord_council_selected_law
+		}
+		set_variable = { name = dragonlord_council_selected_agenda_category value = flag:dragonlord_finance_agenda }
+	}
+}
+
+dragonlord_council_select_ritual_agenda = {
+	scope = character
+	is_shown = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_ritual_agenda }
+	is_valid = { has_variable = dragonlord_council_agenda_window_open }
+	effect = { set_variable = { name = dragonlord_council_selected_agenda_category value = flag:dragonlord_ritual_agenda } }
+}
+
+dragonlord_council_select_dragon_affairs_agenda = {
+	scope = character
+	is_shown = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_dragon_affairs_agenda }
+	is_valid = { has_variable = dragonlord_council_agenda_window_open }
+	effect = { set_variable = { name = dragonlord_council_selected_agenda_category value = flag:dragonlord_dragon_affairs_agenda } }
+}
+
+dragonlord_council_is_placeholder_agenda = {
+	scope = character
+	is_shown = {
+		OR = {
+			var:dragonlord_council_selected_agenda_category = flag:dragonlord_ritual_agenda
+			var:dragonlord_council_selected_agenda_category = flag:dragonlord_dragon_affairs_agenda
+		}
+	}
+}
+
+dragonlord_council_return_to_category_selection = {
+	scope = character
+	is_shown = { has_variable = dragonlord_council_selected_agenda_category }
+	is_valid = { has_variable = dragonlord_council_agenda_window_open }
+	effect = { remove_variable = dragonlord_council_selected_agenda_category }
+}
+
+dragonlord_council_toggle_vote_forecast = {
+	scope = character
+	is_shown = { has_variable = dragonlord_council_vote_forecast_open }
+	is_valid = { has_variable = dragonlord_council_agenda_window_open }
+	effect = {
+		if = {
+			limit = { has_variable = dragonlord_council_vote_forecast_open }
+			remove_variable = dragonlord_council_vote_forecast_open
+		}
+		else = {
+			dragonlord_council_rebuild_vote_forecast_effect = yes
+			set_variable = { name = dragonlord_council_vote_forecast_open value = yes }
+		}
+	}
+}
+
+dragonlord_council_select_colonization_war = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		var:dragonlord_council_selected_war_type = flag:dragonlord_colonization_war_agenda
+	}
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+	}
+	effect = {
+		remove_variable = dragonlord_council_selected_law
+		set_variable = { name = dragonlord_council_selected_war_type value = flag:dragonlord_colonization_war_agenda }
+		dragonlord_council_rebuild_war_target_pool_effect = yes
+	}
+}
+
+dragonlord_council_select_conquest_war = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		var:dragonlord_council_selected_war_type = flag:dragonlord_conquest_war_agenda
+	}
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+	}
+	effect = {
+		remove_variable = dragonlord_council_selected_law
+		set_variable = { name = dragonlord_council_selected_war_type value = flag:dragonlord_conquest_war_agenda }
+		dragonlord_council_rebuild_war_target_pool_effect = yes
+	}
+}
+
+dragonlord_council_select_tributary_war = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		var:dragonlord_council_selected_war_type = flag:dragonlord_tributary_war_agenda
+	}
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+	}
+	effect = {
+		remove_variable = dragonlord_council_selected_law
+		set_variable = { name = dragonlord_council_selected_war_type value = flag:dragonlord_tributary_war_agenda }
+		dragonlord_council_rebuild_war_target_pool_effect = yes
+	}
+}
+
+dragonlord_council_select_slave_raid_war = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda
+		has_realm_law = slavery_allowed_law
+	}
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		has_realm_law = slavery_allowed_law
+	}
+	effect = {
+		if = {
+			limit = { has_realm_law = slavery_allowed_law }
+			remove_variable = dragonlord_council_selected_law
+			set_variable = { name = dragonlord_council_selected_war_type value = flag:dragonlord_slave_raid_war_agenda }
+			dragonlord_council_rebuild_war_target_pool_effect = yes
+		}
+	}
+}
+
+dragonlord_council_select_war_target = {
+	scope = character
+	saved_scopes = { target }
+	is_shown = { var:dragonlord_council_selected_target ?= scope:target }
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		scope:target = {
+			is_alive = yes
+			is_landed = yes
+			NOT = { has_trait = ruin }
+			NOT = { has_government = ruins_government }
+			NOT = { has_trait = wilderness }
+			NOT = { has_government = wilderness_government }
+			top_liege = this
+			this != root
+			in_diplomatic_range = root
+			NOT = { is_at_war_with = root }
+			OR = {
+				AND = {
+					root = { var:dragonlord_council_selected_war_type = flag:dragonlord_colonization_war_agenda }
+					highest_held_title_tier = tier_kingdom
+				}
+				AND = {
+					root = { var:dragonlord_council_selected_war_type = flag:dragonlord_conquest_war_agenda }
+					highest_held_title_tier >= tier_county
+					highest_held_title_tier <= tier_duchy
+				}
+				AND = {
+					root = { var:dragonlord_council_selected_war_type = flag:dragonlord_tributary_war_agenda }
+					character_is_realm_neighbor = root
+				}
+				AND = {
+					root = { var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda }
+					root = { has_realm_law = slavery_allowed_law }
+				}
+			}
+		}
+	}
+	effect = { set_variable = { name = dragonlord_council_selected_target value = scope:target } }
+}
+
+dragonlord_council_has_selected_colonization_war = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		var:dragonlord_council_selected_war_type = flag:dragonlord_colonization_war_agenda
+	}
+}
+dragonlord_council_has_selected_conquest_war = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		var:dragonlord_council_selected_war_type = flag:dragonlord_conquest_war_agenda
+	}
+}
+dragonlord_council_has_selected_tributary_war = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		var:dragonlord_council_selected_war_type = flag:dragonlord_tributary_war_agenda
+	}
+}
+dragonlord_council_has_selected_slave_raid_war = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda
+		var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda
+	}
+}
+
+dragonlord_council_dragonpit_laws_available = {
+	scope = character
+	is_shown = { any_held_title = { has_variable = has_dragonkeeper_order } }
+}
+
+# The authority-principle row needs to distinguish the enacted law from
+# non-adjacent laws that are temporarily unavailable.
+dragonlord_council_authority_law_is_current = {
+	scope = character
+	saved_scopes = {
+		imperial_bureaucracy_0
+		imperial_bureaucracy_1
+		imperial_bureaucracy_2
+		imperial_bureaucracy_3
+	}
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda
+		OR = {
+			AND = {
+				scope:imperial_bureaucracy_0 ?= yes
+				has_realm_law = imperial_bureaucracy_0
+			}
+			AND = {
+				scope:imperial_bureaucracy_1 ?= yes
+				has_realm_law = imperial_bureaucracy_1
+			}
+			AND = {
+				scope:imperial_bureaucracy_2 ?= yes
+				has_realm_law = imperial_bureaucracy_2
+			}
+			AND = {
+				scope:imperial_bureaucracy_3 ?= yes
+				has_realm_law = imperial_bureaucracy_3
+			}
+		}
+	}
+}
+
+dragonlord_council_select_law = {
+	scope = character
+	saved_scopes = {
+		imperial_bureaucracy_0
+		imperial_bureaucracy_1
+		imperial_bureaucracy_2
+		imperial_bureaucracy_3
+		male_only_law
+		male_preference_law
+		equal_law
+		female_preference_law
+		female_only_law
+		slavery_disallowed_law
+		slavery_allowed_law
+		province_war_law_0
+		province_war_law_1
+		province_war_law_2
+		province_war_law_3
+		province_border_law_0
+		province_border_law_1
+		province_border_law_2
+		term_length_short
+		term_length_long
+		term_length_life
+		franchise_democratic_full
+		franchise_lean_democratic
+		franchise_lean_aristocratic
+		franchise_aristocratic_full
+		franchise_theocratic
+		policy_mercantile_full
+		policy_lean_mercantile
+		policy_lean_militaristic
+		policy_militaristic_full
+		top_liege_redirected_to_border_wars_law
+		top_liege_not_redirected_to_border_wars_law
+		dragonpit_close_family_law
+		dragonpit_house_law
+		dragonpit_dynasty_law
+		dragonpit_everyone_law
+		dragonlord_culture_high_valyrian_law
+		dragonlord_culture_valyrian_heritage_law
+		dragonlord_culture_all_law
+		dragonlord_religion_fourteen_flames_law
+		dragonlord_religion_valyrian_law
+		dragonlord_religion_all_law
+	}
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda
+		has_variable = dragonlord_council_selected_law
+		trigger_if = {
+			limit = { has_variable = dragonlord_council_selected_law }
+			OR = {
+		AND = {
+			scope:imperial_bureaucracy_0 ?= yes
+			var:dragonlord_council_selected_law = flag:imperial_bureaucracy_0
+		}
+		AND = {
+			scope:imperial_bureaucracy_1 ?= yes
+			var:dragonlord_council_selected_law = flag:imperial_bureaucracy_1
+		}
+		AND = {
+			scope:imperial_bureaucracy_2 ?= yes
+			var:dragonlord_council_selected_law = flag:imperial_bureaucracy_2
+		}
+		AND = {
+			scope:imperial_bureaucracy_3 ?= yes
+			var:dragonlord_council_selected_law = flag:imperial_bureaucracy_3
+		}
+		AND = {
+			scope:male_only_law ?= yes
+			var:dragonlord_council_selected_law = flag:male_only_law
+		}
+		AND = {
+			scope:male_preference_law ?= yes
+			var:dragonlord_council_selected_law = flag:male_preference_law
+		}
+		AND = {
+			scope:equal_law ?= yes
+			var:dragonlord_council_selected_law = flag:equal_law
+		}
+		AND = {
+			scope:female_preference_law ?= yes
+			var:dragonlord_council_selected_law = flag:female_preference_law
+		}
+		AND = {
+			scope:female_only_law ?= yes
+			var:dragonlord_council_selected_law = flag:female_only_law
+		}
+		AND = {
+			scope:slavery_disallowed_law ?= yes
+			var:dragonlord_council_selected_law = flag:slavery_disallowed_law
+		}
+		AND = {
+			scope:slavery_allowed_law ?= yes
+			var:dragonlord_council_selected_law = flag:slavery_allowed_law
+		}
+		AND = {
+			scope:province_war_law_0 ?= yes
+			var:dragonlord_council_selected_law = flag:province_war_law_0
+		}
+		AND = {
+			scope:province_war_law_1 ?= yes
+			var:dragonlord_council_selected_law = flag:province_war_law_1
+		}
+		AND = {
+			scope:province_war_law_2 ?= yes
+			var:dragonlord_council_selected_law = flag:province_war_law_2
+		}
+		AND = {
+			scope:province_war_law_3 ?= yes
+			var:dragonlord_council_selected_law = flag:province_war_law_3
+		}
+		AND = {
+			scope:province_border_law_0 ?= yes
+			var:dragonlord_council_selected_law = flag:province_border_law_0
+		}
+		AND = {
+			scope:province_border_law_1 ?= yes
+			var:dragonlord_council_selected_law = flag:province_border_law_1
+		}
+		AND = {
+			scope:province_border_law_2 ?= yes
+			var:dragonlord_council_selected_law = flag:province_border_law_2
+		}
+		AND = {
+			scope:term_length_short ?= yes
+			var:dragonlord_council_selected_law = flag:term_length_short
+		}
+		AND = {
+			scope:term_length_long ?= yes
+			var:dragonlord_council_selected_law = flag:term_length_long
+		}
+		AND = {
+			scope:term_length_life ?= yes
+			var:dragonlord_council_selected_law = flag:term_length_life
+		}
+		AND = {
+			scope:franchise_democratic_full ?= yes
+			var:dragonlord_council_selected_law = flag:franchise_democratic_full
+		}
+		AND = {
+			scope:franchise_lean_democratic ?= yes
+			var:dragonlord_council_selected_law = flag:franchise_lean_democratic
+		}
+		AND = {
+			scope:franchise_lean_aristocratic ?= yes
+			var:dragonlord_council_selected_law = flag:franchise_lean_aristocratic
+		}
+		AND = {
+			scope:franchise_aristocratic_full ?= yes
+			var:dragonlord_council_selected_law = flag:franchise_aristocratic_full
+		}
+		AND = {
+			scope:franchise_theocratic ?= yes
+			var:dragonlord_council_selected_law = flag:franchise_theocratic
+		}
+		AND = {
+			scope:policy_mercantile_full ?= yes
+			var:dragonlord_council_selected_law = flag:policy_mercantile_full
+		}
+		AND = {
+			scope:policy_lean_mercantile ?= yes
+			var:dragonlord_council_selected_law = flag:policy_lean_mercantile
+		}
+		AND = {
+			scope:policy_lean_militaristic ?= yes
+			var:dragonlord_council_selected_law = flag:policy_lean_militaristic
+		}
+		AND = {
+			scope:policy_militaristic_full ?= yes
+			var:dragonlord_council_selected_law = flag:policy_militaristic_full
+		}
+		AND = {
+			scope:top_liege_redirected_to_border_wars_law ?= yes
+			var:dragonlord_council_selected_law = flag:top_liege_redirected_to_border_wars_law
+		}
+		AND = {
+			scope:top_liege_not_redirected_to_border_wars_law ?= yes
+			var:dragonlord_council_selected_law = flag:top_liege_not_redirected_to_border_wars_law
+		}
+		AND = {
+			scope:dragonpit_close_family_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonpit_close_family_law
+		}
+		AND = {
+			scope:dragonpit_house_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonpit_house_law
+		}
+		AND = {
+			scope:dragonpit_dynasty_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonpit_dynasty_law
+		}
+		AND = {
+			scope:dragonpit_everyone_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonpit_everyone_law
+		}
+		AND = {
+			scope:dragonlord_culture_high_valyrian_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonlord_culture_high_valyrian_law
+		}
+		AND = {
+			scope:dragonlord_culture_valyrian_heritage_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonlord_culture_valyrian_heritage_law
+		}
+		AND = {
+			scope:dragonlord_culture_all_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonlord_culture_all_law
+		}
+		AND = {
+			scope:dragonlord_religion_fourteen_flames_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonlord_religion_fourteen_flames_law
+		}
+		AND = {
+			scope:dragonlord_religion_valyrian_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonlord_religion_valyrian_law
+		}
+		AND = {
+			scope:dragonlord_religion_all_law ?= yes
+			var:dragonlord_council_selected_law = flag:dragonlord_religion_all_law
+		}
+			}
+		}
+	}
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda
+		OR = {
+		# Power Principle proposals may move only one tier from the law in force.
+		AND = {
+			scope:imperial_bureaucracy_0 ?= yes
+			has_realm_law = imperial_bureaucracy_1
+		}
+		AND = {
+			scope:imperial_bureaucracy_1 ?= yes
+			OR = {
+				has_realm_law = imperial_bureaucracy_0
+				has_realm_law = imperial_bureaucracy_2
+			}
+		}
+		AND = {
+			scope:imperial_bureaucracy_2 ?= yes
+			OR = {
+				has_realm_law = imperial_bureaucracy_1
+				has_realm_law = imperial_bureaucracy_3
+			}
+		}
+		AND = {
+			scope:imperial_bureaucracy_3 ?= yes
+			has_realm_law = imperial_bureaucracy_2
+		}
+		AND = {
+			scope:male_only_law ?= yes
+			NOT = { has_realm_law = male_only_law }
+		}
+		AND = {
+			scope:male_preference_law ?= yes
+			NOT = { has_realm_law = male_preference_law }
+		}
+		AND = {
+			scope:equal_law ?= yes
+			NOT = { has_realm_law = equal_law }
+		}
+		AND = {
+			scope:female_preference_law ?= yes
+			NOT = { has_realm_law = female_preference_law }
+		}
+		AND = {
+			scope:female_only_law ?= yes
+			NOT = { has_realm_law = female_only_law }
+		}
+		AND = {
+			scope:slavery_disallowed_law ?= yes
+			NOT = { has_realm_law = slavery_disallowed_law }
+		}
+		AND = {
+			scope:slavery_allowed_law ?= yes
+			NOT = { has_realm_law = slavery_allowed_law }
+		}
+		AND = {
+			scope:province_war_law_0 ?= yes
+			NOT = { has_realm_law = province_war_law_0 }
+		}
+		AND = {
+			scope:province_war_law_1 ?= yes
+			NOT = { has_realm_law = province_war_law_1 }
+		}
+		AND = {
+			scope:province_war_law_2 ?= yes
+			NOT = { has_realm_law = province_war_law_2 }
+		}
+		AND = {
+			scope:province_war_law_3 ?= yes
+			NOT = { has_realm_law = province_war_law_3 }
+		}
+		AND = {
+			scope:province_border_law_0 ?= yes
+			NOT = { has_realm_law = province_border_law_0 }
+		}
+		AND = {
+			scope:province_border_law_1 ?= yes
+			NOT = { has_realm_law = province_border_law_1 }
+		}
+		AND = {
+			scope:province_border_law_2 ?= yes
+			NOT = { has_realm_law = province_border_law_2 }
+		}
+		AND = {
+			scope:term_length_short ?= yes
+			NOT = { has_realm_law = term_length_short }
+		}
+		AND = {
+			scope:term_length_long ?= yes
+			NOT = { has_realm_law = term_length_long }
+		}
+		AND = {
+			scope:term_length_life ?= yes
+			NOT = { has_realm_law = term_length_life }
+		}
+		AND = {
+			scope:franchise_democratic_full ?= yes
+			NOT = { has_realm_law = franchise_democratic_full }
+		}
+		AND = {
+			scope:franchise_lean_democratic ?= yes
+			NOT = { has_realm_law = franchise_lean_democratic }
+		}
+		AND = {
+			scope:franchise_lean_aristocratic ?= yes
+			NOT = { has_realm_law = franchise_lean_aristocratic }
+		}
+		AND = {
+			scope:franchise_aristocratic_full ?= yes
+			NOT = { has_realm_law = franchise_aristocratic_full }
+		}
+		AND = {
+			scope:franchise_theocratic ?= yes
+			NOT = { has_realm_law = franchise_theocratic }
+		}
+		AND = {
+			scope:policy_mercantile_full ?= yes
+			NOT = { has_realm_law = policy_mercantile_full }
+		}
+		AND = {
+			scope:policy_lean_mercantile ?= yes
+			NOT = { has_realm_law = policy_lean_mercantile }
+		}
+		AND = {
+			scope:policy_lean_militaristic ?= yes
+			NOT = { has_realm_law = policy_lean_militaristic }
+		}
+		AND = {
+			scope:policy_militaristic_full ?= yes
+			NOT = { has_realm_law = policy_militaristic_full }
+		}
+		AND = {
+			scope:top_liege_redirected_to_border_wars_law ?= yes
+			NOT = { has_realm_law = top_liege_redirected_to_border_wars_law }
+		}
+		AND = {
+			scope:top_liege_not_redirected_to_border_wars_law ?= yes
+			NOT = { has_realm_law = top_liege_not_redirected_to_border_wars_law }
+		}
+		AND = {
+			scope:dragonpit_close_family_law ?= yes
+			NOT = { has_realm_law = dragonpit_close_family_law }
+			any_held_title = { has_variable = has_dragonkeeper_order }
+		}
+		AND = {
+			scope:dragonpit_house_law ?= yes
+			NOT = { has_realm_law = dragonpit_house_law }
+			any_held_title = { has_variable = has_dragonkeeper_order }
+		}
+		AND = {
+			scope:dragonpit_dynasty_law ?= yes
+			NOT = { has_realm_law = dragonpit_dynasty_law }
+			any_held_title = { has_variable = has_dragonkeeper_order }
+		}
+		AND = {
+			scope:dragonpit_everyone_law ?= yes
+			NOT = { has_realm_law = dragonpit_everyone_law }
+			any_held_title = { has_variable = has_dragonkeeper_order }
+		}
+		AND = {
+			scope:dragonlord_culture_high_valyrian_law ?= yes
+			NOT = { has_realm_law = dragonlord_culture_high_valyrian_law }
+		}
+		AND = {
+			scope:dragonlord_culture_valyrian_heritage_law ?= yes
+			NOT = { has_realm_law = dragonlord_culture_valyrian_heritage_law }
+		}
+		AND = {
+			scope:dragonlord_culture_all_law ?= yes
+			NOT = { has_realm_law = dragonlord_culture_all_law }
+		}
+		AND = {
+			scope:dragonlord_religion_fourteen_flames_law ?= yes
+			NOT = { has_realm_law = dragonlord_religion_fourteen_flames_law }
+		}
+		AND = {
+			scope:dragonlord_religion_valyrian_law ?= yes
+			NOT = { has_realm_law = dragonlord_religion_valyrian_law }
+		}
+		AND = {
+			scope:dragonlord_religion_all_law ?= yes
+			NOT = { has_realm_law = dragonlord_religion_all_law }
+		}
+		}
+	}
+	effect = {
+		remove_variable = dragonlord_council_selected_war_type
+		remove_variable = dragonlord_council_selected_target
+		if = {
+			limit = { scope:imperial_bureaucracy_0 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:imperial_bureaucracy_0 }
+		}
+		else_if = {
+			limit = { scope:imperial_bureaucracy_1 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:imperial_bureaucracy_1 }
+		}
+		else_if = {
+			limit = { scope:imperial_bureaucracy_2 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:imperial_bureaucracy_2 }
+		}
+		else_if = {
+			limit = { scope:imperial_bureaucracy_3 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:imperial_bureaucracy_3 }
+		}
+		else_if = {
+			limit = { scope:male_only_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:male_only_law }
+		}
+		else_if = {
+			limit = { scope:male_preference_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:male_preference_law }
+		}
+		else_if = {
+			limit = { scope:equal_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:equal_law }
+		}
+		else_if = {
+			limit = { scope:female_preference_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:female_preference_law }
+		}
+		else_if = {
+			limit = { scope:female_only_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:female_only_law }
+		}
+		else_if = {
+			limit = { scope:slavery_disallowed_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:slavery_disallowed_law }
+		}
+		else_if = {
+			limit = { scope:slavery_allowed_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:slavery_allowed_law }
+		}
+		else_if = {
+			limit = { scope:province_war_law_0 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:province_war_law_0 }
+		}
+		else_if = {
+			limit = { scope:province_war_law_1 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:province_war_law_1 }
+		}
+		else_if = {
+			limit = { scope:province_war_law_2 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:province_war_law_2 }
+		}
+		else_if = {
+			limit = { scope:province_war_law_3 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:province_war_law_3 }
+		}
+		else_if = {
+			limit = { scope:province_border_law_0 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:province_border_law_0 }
+		}
+		else_if = {
+			limit = { scope:province_border_law_1 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:province_border_law_1 }
+		}
+		else_if = {
+			limit = { scope:province_border_law_2 ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:province_border_law_2 }
+		}
+		else_if = {
+			limit = { scope:term_length_short ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:term_length_short }
+		}
+		else_if = {
+			limit = { scope:term_length_long ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:term_length_long }
+		}
+		else_if = {
+			limit = { scope:term_length_life ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:term_length_life }
+		}
+		else_if = {
+			limit = { scope:franchise_democratic_full ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:franchise_democratic_full }
+		}
+		else_if = {
+			limit = { scope:franchise_lean_democratic ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:franchise_lean_democratic }
+		}
+		else_if = {
+			limit = { scope:franchise_lean_aristocratic ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:franchise_lean_aristocratic }
+		}
+		else_if = {
+			limit = { scope:franchise_aristocratic_full ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:franchise_aristocratic_full }
+		}
+		else_if = {
+			limit = { scope:franchise_theocratic ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:franchise_theocratic }
+		}
+		else_if = {
+			limit = { scope:policy_mercantile_full ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:policy_mercantile_full }
+		}
+		else_if = {
+			limit = { scope:policy_lean_mercantile ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:policy_lean_mercantile }
+		}
+		else_if = {
+			limit = { scope:policy_lean_militaristic ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:policy_lean_militaristic }
+		}
+		else_if = {
+			limit = { scope:policy_militaristic_full ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:policy_militaristic_full }
+		}
+		else_if = {
+			limit = { scope:top_liege_redirected_to_border_wars_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:top_liege_redirected_to_border_wars_law }
+		}
+		else_if = {
+			limit = { scope:top_liege_not_redirected_to_border_wars_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:top_liege_not_redirected_to_border_wars_law }
+		}
+		else_if = {
+			limit = { scope:dragonpit_close_family_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonpit_close_family_law }
+		}
+		else_if = {
+			limit = { scope:dragonpit_house_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonpit_house_law }
+		}
+		else_if = {
+			limit = { scope:dragonpit_dynasty_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonpit_dynasty_law }
+		}
+		else_if = {
+			limit = { scope:dragonpit_everyone_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonpit_everyone_law }
+		}
+		else_if = {
+			limit = { scope:dragonlord_culture_high_valyrian_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_culture_high_valyrian_law }
+		}
+		else_if = {
+			limit = { scope:dragonlord_culture_valyrian_heritage_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_culture_valyrian_heritage_law }
+		}
+		else_if = {
+			limit = { scope:dragonlord_culture_all_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_culture_all_law }
+		}
+		else_if = {
+			limit = { scope:dragonlord_religion_fourteen_flames_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_religion_fourteen_flames_law }
+		}
+		else_if = {
+			limit = { scope:dragonlord_religion_valyrian_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_religion_valyrian_law }
+		}
+		else_if = {
+			limit = { scope:dragonlord_religion_all_law ?= yes }
+			set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_religion_all_law }
+		}
+	}
+}
+
+dragonlord_council_has_selected_budget = {
+	scope = character
+	is_shown = {
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda
+		var:dragonlord_council_selected_law = flag:dragonlord_treasury_budget_agenda
+		OR = {
+			dragonlord_council_budget_salary_change != 0
+			dragonlord_council_budget_military_change != 0
+		}
+	}
+}
+
+dragonlord_council_budget_salary_up = {
+	scope = character
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda
+		dragonlord_council_budget_allocation_total < 100
+	}
+	effect = {
+		change_variable = { name = dragonlord_council_budget_salary add = 5 }
+		set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_treasury_budget_agenda }
+	}
+}
+
+dragonlord_council_budget_salary_down = {
+	scope = character
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda
+		var:dragonlord_council_budget_salary > 0
+	}
+	effect = {
+		change_variable = { name = dragonlord_council_budget_salary add = -5 }
+		set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_treasury_budget_agenda }
+	}
+}
+
+dragonlord_council_budget_military_up = {
+	scope = character
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda
+		dragonlord_council_budget_allocation_total < 100
+	}
+	effect = {
+		change_variable = { name = dragonlord_council_budget_military add = 5 }
+		set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_treasury_budget_agenda }
+	}
+}
+
+dragonlord_council_budget_military_down = {
+	scope = character
+	is_valid = {
+		has_variable = dragonlord_council_agenda_window_open
+		var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda
+		var:dragonlord_council_budget_military > 0
+	}
+	effect = {
+		change_variable = { name = dragonlord_council_budget_military add = -5 }
+		set_variable = { name = dragonlord_council_selected_law value = flag:dragonlord_treasury_budget_agenda }
+	}
+}
+
+dragonlord_council_confirm_war_agenda = {
+	scope = character
+	is_shown = { has_variable = dragonlord_council_agenda_window_open }
+	is_valid = {
+		top_liege = this
+		government_has_flag = government_is_dragonlord_oligarchy
+		is_at_war = no
+		NOT = { has_character_flag = dragonlord_council_meeting_cooldown }
+		NOT = { has_variable = dragonlord_council_pending_agenda }
+		trigger_if = {
+			limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda }
+			has_variable = dragonlord_council_selected_target
+			OR = {
+				var:dragonlord_council_selected_war_type = flag:dragonlord_colonization_war_agenda
+				var:dragonlord_council_selected_war_type = flag:dragonlord_conquest_war_agenda
+				var:dragonlord_council_selected_war_type = flag:dragonlord_tributary_war_agenda
+				AND = {
+					var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda
+					has_realm_law = slavery_allowed_law
+				}
+			}
+			var:dragonlord_council_selected_target = {
+				is_alive = yes
+				is_landed = yes
+				NOT = { has_trait = ruin }
+				NOT = { has_government = ruins_government }
+				NOT = { has_trait = wilderness }
+				NOT = { has_government = wilderness_government }
+				top_liege = this
+				this != root
+				in_diplomatic_range = root
+				NOT = { is_at_war_with = root }
+				OR = {
+					AND = {
+						root = { var:dragonlord_council_selected_war_type = flag:dragonlord_colonization_war_agenda }
+						highest_held_title_tier = tier_kingdom
+					}
+					AND = {
+						root = { var:dragonlord_council_selected_war_type = flag:dragonlord_conquest_war_agenda }
+						highest_held_title_tier >= tier_county
+						highest_held_title_tier <= tier_duchy
+					}
+					AND = {
+						root = { var:dragonlord_council_selected_war_type = flag:dragonlord_tributary_war_agenda }
+						character_is_realm_neighbor = root
+					}
+					AND = {
+						root = { var:dragonlord_council_selected_war_type = flag:dragonlord_slave_raid_war_agenda }
+						root = { has_realm_law = slavery_allowed_law }
+					}
+				}
+			}
+		}
+		trigger_else_if = {
+			limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda }
+			has_variable = dragonlord_council_selected_law
+			NOT = { var:dragonlord_council_selected_law = flag:dragonlord_treasury_budget_agenda }
+		}
+		trigger_else_if = {
+			limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda }
+			OR = {
+				AND = {
+					var:dragonlord_council_selected_development_type = flag:dragonlord_city_development
+					has_variable = dragonlord_council_selected_development_target
+					var:dragonlord_council_selected_development_target = {
+						tier = tier_county
+						holder = {
+								top_liege = root
+								dragonlord_is_registered_family_member_trigger = yes
+							}
+						NOT = { has_county_modifier = dragonlord_council_city_development_modifier }
+					}
+				}
+				AND = {
+					var:dragonlord_council_selected_development_type = flag:dragonlord_territorial_recovery
+					has_variable = dragonlord_council_selected_development_target
+					var:dragonlord_council_selected_development_target = {
+						tier = tier_county
+						county_control < 100
+						holder = {
+							top_liege = root
+							dragonlord_is_registered_family_member_trigger = yes
+						}
+						NOT = { has_county_modifier = dragonlord_council_territorial_recovery_modifier }
+					}
+				}
+				AND = {
+					var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy
+					has_variable = dragonlord_council_selected_estate_target
+					var:dragonlord_council_selected_estate_target = {
+						is_alive = yes
+						dragonlord_is_registered_family_member_trigger = yes
+						exists = domicile
+						NOT = { has_character_modifier = dragonlord_council_estate_subsidy_modifier }
+					}
+				}
+			}
+			var:dragonlord_council_development_contributor_count > 0
+		}
+		trigger_else_if = {
+			limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_finance_agenda }
+			var:dragonlord_council_selected_law = flag:dragonlord_treasury_budget_agenda
+			OR = {
+				dragonlord_council_budget_salary_change != 0
+				dragonlord_council_budget_military_change != 0
+			}
+		}
+		trigger_else = { always = no }
+	}
+	effect = {
+		# Preserve the enacted allocations so cancelling activity planning can
+		# rebuild the finance page without inventing new values.
+		set_variable = { name = dragonlord_council_pending_budget_salary_original value = var:dragonlord_council_budget_salary_original }
+		set_variable = { name = dragonlord_council_pending_budget_military_original value = var:dragonlord_council_budget_military_original }
+		if = {
+			limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_war_agenda }
+			set_variable = { name = dragonlord_council_pending_agenda value = flag:dragonlord_war_agenda }
+			set_variable = { name = dragonlord_council_pending_war_type value = var:dragonlord_council_selected_war_type }
+			set_variable = { name = dragonlord_council_pending_target value = var:dragonlord_council_selected_target }
+			remove_variable = dragonlord_council_pending_law
+		}
+		else_if = {
+			limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_law_agenda }
+			set_variable = { name = dragonlord_council_pending_agenda value = flag:dragonlord_law_agenda }
+			set_variable = { name = dragonlord_council_pending_law value = var:dragonlord_council_selected_law }
+			remove_variable = dragonlord_council_pending_war_type
+			remove_variable = dragonlord_council_pending_target
+		}
+		else_if = {
+			limit = { var:dragonlord_council_selected_agenda_category = flag:dragonlord_development_agenda }
+			set_variable = { name = dragonlord_council_pending_agenda value = flag:dragonlord_development_agenda }
+			set_variable = { name = dragonlord_council_pending_development_type value = var:dragonlord_council_selected_development_type }
+			set_variable = { name = dragonlord_council_pending_development_contribution value = dragonlord_council_development_contribution }
+			if = {
+				limit = { var:dragonlord_council_selected_development_type = flag:dragonlord_estate_subsidy }
+				set_variable = { name = dragonlord_council_pending_estate_target value = var:dragonlord_council_selected_estate_target }
+				remove_variable = dragonlord_council_pending_development_target
+			}
+			else = {
+				set_variable = { name = dragonlord_council_pending_development_target value = var:dragonlord_council_selected_development_target }
+				remove_variable = dragonlord_council_pending_estate_target
+			}
+			remove_variable = dragonlord_council_pending_war_type
+			remove_variable = dragonlord_council_pending_target
+			remove_variable = dragonlord_council_pending_law
+		}
+		else = {
+			set_variable = { name = dragonlord_council_pending_agenda value = flag:dragonlord_finance_agenda }
+			set_variable = { name = dragonlord_council_pending_law value = flag:dragonlord_treasury_budget_agenda }
+			set_variable = { name = dragonlord_council_pending_budget_salary value = var:dragonlord_council_budget_salary }
+			set_variable = { name = dragonlord_council_pending_budget_military value = var:dragonlord_council_budget_military }
+			remove_variable = dragonlord_council_pending_war_type
+			remove_variable = dragonlord_council_pending_target
+		}
+		add_character_flag = { flag = dragonlord_council_meeting_cooldown years = 2 }
+		send_interface_message = {
+			type = event_generic_good
+			title = dragonlord_council_agenda_saved_message
+			left_icon = root
+		}
+		remove_variable = dragonlord_council_agenda_window_open
+		remove_variable = dragonlord_council_selected_agenda_category
+		remove_variable = dragonlord_council_selected_law_menu
+		remove_variable = dragonlord_council_selected_war_type
+		remove_variable = dragonlord_council_selected_target
+		remove_variable = dragonlord_council_selected_law
+		remove_variable = dragonlord_council_selected_development_type
+		remove_variable = dragonlord_council_selected_development_target
+		remove_variable = dragonlord_council_selected_estate_target
+		remove_variable = dragonlord_council_development_contributor_count
+		remove_variable = dragonlord_council_vote_forecast_open
+		remove_variable = dragonlord_council_budget_salary
+		remove_variable = dragonlord_council_budget_military
+		remove_variable = dragonlord_council_budget_salary_original
+		remove_variable = dragonlord_council_budget_military_original
+		clear_variable_list = dragonlord_council_target_candidates
+		clear_variable_list = dragonlord_council_development_county_candidates
+		clear_variable_list = dragonlord_council_development_estate_candidates
+		clear_variable_list = dragonlord_council_forecast_supporters
+		clear_variable_list = dragonlord_council_forecast_opponents
+		remove_variable = dragonlord_council_forecast_support_votes
+		remove_variable = dragonlord_council_forecast_opposition_votes
+	}
+}
