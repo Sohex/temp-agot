@@ -1,0 +1,996 @@
+﻿ride_dragon_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_dragons.dds"
+	}
+
+	desc = ride_dragon_decision_desc		
+	selection_tooltip = ride_dragon_decision_tooltip
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+
+	cooldown = { days = ride_dragon_decision_value } #change
+	#cooldown = { days = 0 } #change
+
+
+	is_shown = {
+		has_trait = dragonrider
+		NOT = { has_character_flag = cant_go_dragonriding }
+	}
+
+	is_valid_showing_failures_only = {
+		is_available = yes
+		any_relation = {
+			type = agot_dragon
+			is_alive = yes
+			save_temporary_scope_as = dragon_for_trigger
+		}
+		NOT = {
+			dragon_homed_separate_from_rider = { DRAGON = scope:dragon_for_trigger }
+		}
+		NOT = {
+			OR = {
+				has_trait = wounded_1
+				has_trait = wounded_2
+				has_trait = wounded_3
+				has_trait = incapable
+			}
+		}
+	}
+
+	effect = {
+		custom_tooltip = ride_dragon_effect_tooltip
+		if = {
+			limit = {
+				has_character_flag = has_grand_dragon_ride_procession
+			}
+			add_prestige = 100
+		}
+		hidden_effect = {
+			#scopes
+			var:current_dragon = {
+				save_scope_as = ridden_dragon
+			}
+			primary_partner = {
+				save_scope_as = spouse
+			}	
+			primary_partner = {
+				var:current_dragon = {
+					save_scope_as = ridden_dragon_spouse
+				}
+			}
+			primary_title = {
+				random_title_heir = {
+					limit = { 
+						exists = primary_partner
+						has_trait = brave
+					}
+				save_scope_as = enemy_claim
+				}	
+			scope:enemy_claim = {
+					primary_partner = {
+						save_scope_as = enemy_spouse
+					}
+				}
+			}
+
+
+			if = { # Large cannibal lives nearby
+				limit = {
+					NOT = { has_character_flag = attacked_by_cannibal }
+					any_living_dragon = {
+						has_trait = dragon_cannibal
+						NOT = { has_character_flag = owned_dragon }
+						location = { duchy = root.location.duchy }
+						save_temporary_scope_as = chomper
+						root.var:current_dragon = { save_temporary_scope_as = chompee }
+						can_dragon_chomp = {
+							CHOMPING_DRAGON = scope:chomper
+							CHOMPED_DRAGON = scope:chompee
+						}
+					}
+				}
+				random_list = {
+					80 = {
+						trigger_event = agot_dragon.0010
+					}
+					5 = {
+						add_character_flag = dragon_night_ride
+						trigger_event = agot_dragon.0010
+					}
+					15 = {
+						trigger_event = agot_dragon.0023
+					}
+				}
+			}
+
+			else = {
+				random_list = {
+					0 = {
+						# trigger = {
+						# 	scope:ridden_dragon = { has_character_flag = in_dragonpit } 
+						# 	NOT = { has_character_flag = mde_lost_dragon }
+						# }					
+						modifier = {
+							has_trait = drunkard #trait gurarantees event
+							add = 100
+						}
+						random_list = {
+							70 = {
+								trigger_event = agot_dragon.0010
+							}
+							20 = {
+								trigger_event = agot_dragon.0011
+							}
+							10 = {
+								trigger_event = agot_dragon.0012
+							}
+						}
+					}
+					10 = { ### LOST DRAGON IN DRAGON PIT / small fun event 
+						trigger = {
+							scope:ridden_dragon = { has_character_flag = in_dragonpit } 
+							NOT = { has_character_flag = mde_lost_dragon }
+						}
+						modifier = { #cooperative dragon gurarentees event 
+							scope:ridden_dragon = { has_trait = dragon_cooperative }
+							add = 70
+						}
+						trigger_event = mde_dragon.0101
+					}
+					0 = { ### in dragonpit WHY AM I HERE?
+						trigger = { #has to be in dragonpit, plus timer 5 years?
+							scope:ridden_dragon = { has_character_flag = in_dragonpit } 
+							NOT = { has_character_flag = mde_why_am_i_here }
+						}
+						modifier = { #has to be depressed 
+							OR = {
+								has_trait = depressed_1
+								has_trait = depressed_genetic
+							}
+							add = 75
+						}
+						modifier = { #or paranoid
+							OR = {
+								has_trait = paranoid
+								has_trait = craven
+							}
+							add = 35
+						}
+						modifier = { #or sad
+							OR = {
+								has_trait = fickle
+								has_trait = shy
+								has_trait = lazy
+								has_trait = eccentric
+								has_trait = possessed_1
+								has_trait = possessed_genetic
+								has_trait = widowed
+							}
+							add = 10
+						}
+						trigger_event = mde_dragon.0001
+					}
+					0 = { ## rough day in the pit 
+						trigger = {
+							#scope:ridden_dragon = { has_character_flag = in_dragonpit } #can happen outside also?
+							employs_court_position = head_dragonkeeper_court_position
+							NOT = { has_character_flag = mde_rough_day }
+						}
+
+						modifier = {
+							aptitude = {
+								court_position = head_dragonkeeper_court_position
+								value = 5 #terrible
+							}
+							add = 100
+						}					
+						modifier = {
+							aptitude = {
+								court_position = head_dragonkeeper_court_position
+								value = 4
+							}
+							add = 30
+						}		
+						modifier = {
+							aptitude = {
+								court_position = head_dragonkeeper_court_position
+								value = 3
+							}
+							add = 10
+						}				
+						modifier = { #angry dragon
+							scope:ridden_dragon = {
+								OR = {
+									has_trait = dragon_bloodthirsty
+									has_trait = dragon_aggressive
+									has_trait = dragon_defiant
+									has_trait = dragon_impulsive
+									has_trait = dragon_imperious
+								}
+							}
+							add = 50
+						}
+
+						trigger_event = mde_dragon.0201
+						}
+					0 = { #fly with your dragon and die
+						modifier = { #guraranteed to happen?
+							OR = {
+								has_trait = lunatic_1
+								has_trait = lunatic_genetic
+							}
+							add = 75
+						}
+						modifier = { #small chance if possessed
+							OR = {
+								has_trait = possessed_1
+								has_trait = possessed_genetic
+							}
+							add = 10
+						}
+						trigger_event = mde_dragon.0002
+					}
+					0 = { #lets go higher than ever!
+						trigger = { 
+							NOT = { has_character_flag = mde_said_no_to_higher }
+						}
+						modifier = { #33% chance if trait 
+							OR = {
+								has_trait = brave
+								has_trait = ambitious
+								has_trait = arrogant
+								has_trait = eccentric
+							}
+							add = 35
+						}
+						modifier = {
+							OR = {
+								has_trait = craven
+								has_trait = shy
+								has_trait = lazy
+							}
+							factor = 0
+						}
+						modifier = {
+							has_trait_xp = {
+								trait = dragonrider
+								track = dragon_bond
+								value >= 30
+							}
+							add = 5
+						}
+						modifier = {
+							has_trait_xp = {
+								trait = dragonrider
+								track = dragon_bond
+								value >= 65
+							}
+							add = 10
+						}
+						modifier = {
+							has_trait_xp = {
+								trait = dragonrider
+								track = dragon_bond
+								value >= 100
+							}
+							add = 25
+						}					
+						trigger_event = mde_dragon.0301
+					}
+					0 = { # forgot to strap in
+						trigger = { 
+							NOT = { has_character_flag = mde_forgot_to_strap }
+						}
+						modifier = { #small with minor traits
+							OR = {
+								has_trait = fickle
+								has_trait = stubborn
+								has_trait = eccentric
+								has_trait = arrogant
+							}
+							add = 10
+						}
+						modifier = { #33% chance
+							OR = {
+								has_trait = lazy
+								has_trait = impatient
+								has_trait = intellect_bad_1
+								has_trait = intellect_bad_2
+								has_trait = intellect_bad_3
+							}
+							add = 50
+						}
+						trigger_event = mde_dragon.0003
+					}
+					5 = { #broken strap
+						trigger = { 
+							NOT = { has_character_flag = mde_broken_strap }
+						}
+						modifier = {
+							OR = {
+								has_trait = paranoid
+								has_trait = craven
+								has_trait = greedy
+								has_trait = trusting
+								has_trait = depressed_1
+								has_trait = depressed_genetic
+							}
+							add = 10
+						}
+						trigger_event = mde_dragon.0004
+					}
+					10 = { #pay per view
+						trigger = { #has to be in dragonpit
+							scope:ridden_dragon = { has_character_flag = in_dragonpit } 
+							NOT = { has_character_flag = mde_pay_per_view }
+						}
+						modifier = { #matching traits
+							OR = { 
+								has_trait = greedy
+								has_trait = gregarious
+								has_trait = just
+								has_trait = eccentric
+							}
+							add = 10
+						}
+						modifier = { #stewardship fokus mkaes it more likely
+							has_education_stewardship_trigger = yes
+							add = 40
+						}
+						trigger_event = mde_dragon.0401
+					}
+					0 = { #small dragon shit happens
+						trigger = {
+							NOT = { has_character_flag = mde_gust_of_wind }
+						}
+						modifier = {
+							scope:ridden_dragon = { dragon_size <= level_four_dragon_size } #size 60
+							add = 25
+						}
+
+						trigger_event = mde_dragon.0501
+					}
+					0 = { #a missed meal ALONE
+						trigger = { #has to be not in pit 
+							NOT = { scope:ridden_dragon = { has_character_flag = in_dragonpit } }
+							NOT = { has_character_flag = mde_forgot_to_feed }
+							NOT = { scope:ridden_dragon = { location.county ?= title:c_dragonstone } }
+						}					
+						modifier = { #small chance
+							OR = {
+								has_trait = content
+								has_trait = arrogant
+								has_trait = arbitrary
+								has_trait = fickle
+							}
+							add = 5
+						}
+						modifier = {
+							OR = {
+								has_trait = lazy
+								has_trait = paranoid
+								has_trait = callous
+								has_trait = sadistic
+							}
+							add = 33
+						}
+						trigger_event = mde_dragon.0005
+					}
+					0 = { #Struggle alone
+						trigger = { #has to be not in pit 
+							NOT = { scope:ridden_dragon = { has_character_flag = in_dragonpit } }
+							NOT = { has_character_flag = mde_struggle_alone }
+						}					
+						modifier = { #small chance
+							OR = {
+								has_trait = lazy
+								has_trait = paranoid
+								has_trait = callous
+								has_trait = sadistic
+							}
+							add = 2
+						}
+						modifier = { #big boy
+							OR = {
+								scope:ridden_dragon = { level_five_dragon_size_trigger = yes } #size 80
+								scope:ridden_dragon = { level_six_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+								scope:ridden_dragon = { level_seven_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+								scope:ridden_dragon = { level_eight_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+								scope:ridden_dragon = { level_nine_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+								scope:ridden_dragon = { level_ten_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+							}
+							add = 25
+						}
+						modifier = { #less chance if he likes you?
+							has_trait_xp = {
+								trait = dragonrider
+								track = dragon_bond
+								value >= 30
+							}
+							factor = 0.9
+						}
+						modifier = {
+							has_trait_xp = {
+								trait = dragonrider
+								track = dragon_bond
+								value >= 65
+							}
+							factor = 0.7
+						}
+						modifier = {
+							has_trait_xp = {
+								trait = dragonrider
+								track = dragon_bond
+								value >= 100
+							}
+							factor = 0.2
+						}
+						modifier = { #angry dragon
+							scope:ridden_dragon = {
+								OR = {
+									has_trait = dragon_bloodthirsty
+									has_trait = dragon_aggressive
+									has_trait = dragon_defiant
+									has_trait = dragon_impulsive
+									has_trait = dragon_imperious
+								}
+							}
+							add = 25
+						}
+						modifier = { #less if nice dragooooooooooooooo
+							scope:ridden_dragon = {
+								OR = {
+									has_trait = dragon_friendly
+									has_trait = dragon_skittish
+									has_trait = dragon_accepting
+									has_trait = dragon_supporting
+									has_trait = dragon_cooperative
+								}
+							}
+							factor = 0.5
+						}
+						trigger_event = mde_dragon.0006
+					}
+					0 = { #spouse joins 1
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+							}
+							NOT = { has_character_flag = mde_spouse_one }
+						}
+						modifier = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+							}
+							add = 5
+						}
+						modifier = {
+							has_trait = compassionate
+							add = 15
+						}
+						trigger_event = mde_dragon.0007
+						}
+					0 = { #spouse joins 2
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+								has_culture = culture:high_valyrian
+							}
+							NOT = { has_character_flag = mde_spouse_two }
+						}
+						modifier = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+							}
+							add = 5
+						}
+						modifier = {
+							has_trait = compassionate
+							add = 15
+						}
+						modifier = {
+							OR = {
+								has_trait = zealous
+								has_trait = lunatic_1
+								has_trait = lunatic_genetic
+								has_trait = ambitious
+							}
+							add = 15
+						}
+						trigger_event = mde_dragon.0008
+						}				
+					0 = { #spouse joins 3
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+							}
+							NOT = { has_character_flag = mde_spouse_three }
+						}
+						modifier = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+							}
+							add = 5
+						}
+						modifier = {
+							has_trait = lustful
+							add = 15
+						}
+						trigger_event = mde_dragon.0009
+						}					
+					0 = { #dangerous manuvors 
+						trigger = {
+							NOT = { has_character_flag = mde_dangerous_maneuvors }
+						}
+						modifier = {
+							OR = {
+								has_trait = brave
+								has_trait = ambitious
+							}
+							add = 15
+						}
+						modifier = {
+							OR = {
+								has_trait = eccentric
+								has_trait = arrogant
+								has_trait = authoritative
+								has_education_martial_trigger = yes
+							}
+							add = 5
+						}
+						trigger_event = mde_dragon.0010
+					}
+					0 = { #low altitude over water
+						trigger = {
+							NOT = { has_character_flag = mde_above_water }
+						}
+						modifier = {
+							OR = {
+								has_trait = brave
+								has_trait = ambitious
+							}
+							add = 25
+						}
+						modifier = {
+							OR = {
+								has_trait = eccentric
+								has_trait = arrogant
+								has_trait = authoritative
+								has_education_martial_trigger = yes
+							}
+							add = 5
+						}
+						trigger_event = mde_dragon.0011
+					}					
+					0 = { #public stunt
+						trigger = {
+							NOT = { has_character_flag = mde_stunt_one }
+						}
+						modifier = {
+							OR = {
+								has_trait = brave
+								has_trait = ambitious
+							}
+							add = 25
+						}
+						modifier = {
+							OR = {
+								has_trait = eccentric
+								has_trait = arrogant
+								has_trait = authoritative
+								has_education_martial_trigger = yes
+							}
+							add = 5
+						}
+						modifier = {
+							OR = {
+								has_trait = gregarious
+								has_trait = compassionate
+							}
+							add = 5
+						}
+						trigger_event = mde_dragon.0012
+					}						
+					0 = { #fear in the pit
+						trigger = {
+							NOT = { has_character_flag = mde_fear_in_pit }
+						}
+						modifier = {
+							OR = {
+								has_trait = craven
+								has_trait = lazy
+							}
+							add = 25
+						}
+						modifier = {
+							OR = {
+								has_trait = shy
+								has_trait = content
+								has_trait = paranoid
+							}
+							add = 10
+						}
+						trigger_event = mde_dragon.0013
+					}		
+					0 = { # A Wretched Ride
+						trigger = {
+							OR = {
+								has_trait = craven
+								has_trait = shy
+							}
+							NOT = { has_character_flag = mde_wretched_ride }
+						}						
+						modifier = {
+							OR = {
+								has_trait = craven
+								has_trait = shy
+							}
+							add = 20
+						}
+						modifier = {
+							OR = {
+								has_trait = lazy
+								has_trait = paranoid
+							}
+							add = 5
+						}
+						modifier = {
+							OR = {
+								scope:ridden_dragon = { level_one_dragon_size_trigger = yes } #size 0 
+								scope:ridden_dragon = { level_two_dragon_size_trigger = yes } #size 20
+								scope:ridden_dragon = { level_three_dragon_size_trigger = yes } #size 40
+								scope:ridden_dragon = { level_four_dragon_size_trigger = yes } #size 60
+							}
+							factor = 0.5
+						}
+						modifier = {
+							OR = {
+								scope:ridden_dragon = { level_five_dragon_size_trigger = yes } #size 80
+								scope:ridden_dragon = { level_six_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+								scope:ridden_dragon = { level_seven_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+								scope:ridden_dragon = { level_eight_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+								scope:ridden_dragon = { level_nine_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+								scope:ridden_dragon = { level_ten_dragon_size_trigger = yes } #size 100 #cant trigger if bigger
+							}
+							add = 40
+						}
+						trigger_event = mde_dragon.0701
+					}
+					0 = { #spouse wants to die 
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+							}
+							NOT = { has_character_flag = mde_spouse_four }
+						}
+						modifier = {
+						scope:spouse = {
+							age >= 50
+						}
+						add = 10
+						}
+						modifier = {
+						scope:spouse = {
+							OR = {
+							has_trait = depressed_1
+							has_trait = depressed_genetic
+							}
+						}
+						add = 2
+						}
+						trigger_event = mde_dragon.0014
+					}
+					10 = { #spouse joyful moment
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+							}
+							NOT = { has_character_flag = mde_spouse_five }
+						}
+						trigger_event = mde_dragon.0015
+					}
+					0 = { #assassinate spouse?
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+							}
+							NOT = { has_character_flag = mde_spouse_six }
+						}
+						modifier = {
+							OR = {
+							has_trait = lunatic_1
+							has_trait = lunatic_genetic
+							}
+						add = 10
+						}
+						modifier = {
+							OR = {
+							has_trait = callous
+							has_trait = eccentric
+							}
+						add = 2
+						}
+						trigger_event = mde_dragon.0016
+					} 
+					10 = { #spouse only tear drops
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+							}
+							NOT = { has_character_flag = mde_spouse_seven }
+						}
+						trigger_event = mde_dragon.0022
+					}
+					10 = { #spouse endlessteasing
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+								OR = {
+									has_trait = arrogant
+									has_trait = arbitrary
+									has_trait = callous
+									has_trait = sadistic
+									has_trait = lunatic_1
+									has_trait = lunatic_genetic
+									has_trait = possessed_1
+									has_trait = possessed_genetic
+								}
+							}
+							NOT = { has_character_flag = mde_spouse_eight }
+						}
+						trigger_event = mde_dragon.0023
+					}
+					50 = { #clear skys
+						trigger = {
+							NOT = { has_character_flag = mde_clear_sky }
+							}
+						trigger_event = mde_dragon.0017
+					}
+					20 = { #beneath the rain
+						trigger = {
+							NOT = { has_character_flag = mde_beneath_rain }
+							}
+						trigger_event = mde_dragon.0801
+					}
+					0 = { #super calm flight
+						trigger = {
+							NOT = { has_character_flag = mde_super_relaxing_flight }
+							}
+							modifier = {# major traits
+								OR = {
+									has_trait = calm
+									has_trait = chaste
+									has_trait = content
+									has_trait = shy
+								}
+								add = 33
+							}
+							modifier = { #minor traits 
+								OR = {
+									has_trait = diligent
+									has_trait = honest
+									has_trait = humble
+									has_trait = patient
+									has_trait = temperate
+									has_trait = compassionate
+									has_trait = fickle
+								}
+								add = 10
+							}
+						trigger_event = mde_dragon.0019
+					}
+					0 = { #doesn't feel right
+						trigger = {
+							NOT = { has_character_flag = mde_doesnt_feel_right }
+							}
+							modifier = {# major traits
+								OR = {
+									has_trait = shy
+									has_trait = depressed_1
+									has_trait = depressed_genetic
+								}
+								add = 33
+							}
+							modifier = { #minor traits 
+								OR = {
+									has_trait = craven
+									has_trait = lazy
+									has_trait = paranoid
+									has_trait = lunatic_1
+									has_trait = lunatic_genetic
+								}
+								add = 10
+							}
+						trigger_event = mde_dragon.0018
+					}
+					10 = {
+						trigger = {
+							NOT = { has_character_flag = mde_within_the_storm }
+							NOR = {
+								has_trait = shy
+								has_trait = craven
+								has_trait = fickle
+								has_trait = paranoid
+								has_trait = lazy
+							}
+						}
+						trigger_event = mde_dragon.0020					
+					}
+					15 = {
+						trigger = {
+							NOT = { has_character_flag = mde_regularly_flying }
+							NOR = {
+								has_trait = humble
+								has_trait = fickle
+								has_trait = shy
+								has_trait = craven
+							}
+							is_landless_adventurer = no
+						}					
+						trigger_event = mde_dragon.0021
+					}
+					5 = {
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+								NOT = { has_trait = chaste }
+							}
+
+
+							scope:current_dragon = {
+								AND = {
+									age > 15
+									age < 150
+									is_female = yes
+									num_of_relation_soulmate = 0
+									NOT = { has_trait = dragon_cannibal }
+									NOT = { has_variable = dragon_gender_hidden }
+								}
+							}
+							scope:ridden_dragon_spouse = {
+								AND = {
+									age > 15
+									age < 150
+									is_male = yes
+									num_of_relation_soulmate = 0 
+									NOT = { has_trait = dragon_cannibal }
+									NOT = { has_variable = dragon_gender_hidden }
+								}
+							}
+							NOT = { has_character_flag = mde_spouse_nine }
+						}
+						trigger_event = mde_dragon.0024
+					}
+					5 = {
+						trigger = {
+							scope:spouse = {
+								has_trait = dragonrider
+								age >= 16
+								NOT = { has_trait = chaste }
+							}
+
+
+							scope:ridden_dragon = {
+								AND = {
+									age > 15
+									age < 150
+									is_male = yes
+									num_of_relation_soulmate = 0
+									NOT = { has_trait = dragon_cannibal }
+									NOT = { has_variable = dragon_gender_hidden }
+								}
+							}
+							scope:ridden_dragon_spouse = {
+								AND = {
+									age > 15
+									age < 150
+									is_female = yes
+									num_of_relation_soulmate = 0 
+									NOT = { has_trait = dragon_cannibal }
+									NOT = { has_variable = dragon_gender_hidden }
+								}
+							}
+							NOT = { has_character_flag = mde_spouse_nine }
+						}
+						trigger_event = mde_dragon.0024
+					}
+
+
+
+
+
+					# 10 = { #the big boy heir challenge
+					# 	trigger = {
+					# 		OR = {
+					# 			scope:enemy_claim = {
+					# 				OR = {
+					# 					has_trait = brave
+					# 					has_trait = arbitrary
+					# 					has_trait = ambitious
+					# 					has_trait = lunatic_1
+					# 					has_trait = lunatic_genetic
+					# 				}	
+					# 				has_trait = dragonrider
+					# 				opinion = {
+					# 					target = ROOT
+					# 					value > 20
+					# 					}
+					# 				}			
+					# 			scope:enemy_spouse = {
+					# 				OR = {
+					# 					has_trait = brave
+					# 					has_trait = arbitrary
+					# 					has_trait = ambitious
+					# 					has_trait = lunatic_1
+					# 					has_trait = lunatic_genetic
+					# 				}	
+					# 				has_trait = dragonrider
+					# 				opinion = {
+					# 					target = ROOT
+					# 					value > 60
+					# 					}
+					# 			}								
+					# 		}
+					# 		scope:enemy_claim = {
+					# 			OR = {
+					# 				NOT = { root = primary_partner }
+					# 				NOT = { is_parent_of = ROOT }
+					# 			}
+					# 		}	
+					# 		age <= 25
+					# 	}
+					# 	trigger_event = mde_dragon.0601
+					# }
+
+
+
+					150 = { #agot simple event back up fallback
+						random_list = {
+							0 = {
+								modifier = {
+									add = 45
+									has_any_lifestyle_focus_trigger = yes
+								}
+								trigger_event = agot_dragon.0024
+							}
+							90 = {
+								trigger_event = agot_dragon.0010
+							}
+							10 = {
+								add_character_flag = dragon_night_ride
+								trigger_event = agot_dragon.0010
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}

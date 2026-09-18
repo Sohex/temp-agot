@@ -1,0 +1,2505 @@
+﻿namespace = mde_filler_dragon
+
+###############################################################################
+# Dragon filler works by having a hidden event on the dragon which then sends the real
+# event to either the dragon, its owner, or the dragon's location owner. These should
+# be arranged in sequence in order to maintain readability.
+#
+# As these necessitate many handler events, please write the id of the hidden event
+# that should be called on the dragon in the on_action for all events in this file below:
+###############################################################################
+#
+#0002 # children fight egg prank? #written by shaera
+#0004 # child wants a different egg #written by shaera
+#0006 # childs first real test #written by whatdoesmyult
+#0008 # child sleeps with dragons	
+#0009 # Storming of dragonpit during war 
+#0014 # child wants to take a ride togethe #written by whatdoesmyult
+#0016 # Child crushes their dragon
+#0018 # A dragon menagerie
+#0020 # Wasting dragon
+#0022 # Storming of Dragonpit during plague
+#0024 # nice dragon eats well
+#0026 # Picky eater
+#0028 # A wild Beast
+#0030 # An Old Beast
+#
+###############################################################################
+# Some ideas:
+# agot_filler_dragon.XXXX - XXXX, Dragon in same province as another dragon is attacked
+#							- Dragon can be killed
+#							- Dragon is injured
+#							- Dragon is fine
+# agot_filler_dragon.XXXX - XXXX, Dragon is refusing to eat (event chain)
+#							- Dragon is sick
+#							- Dragon is hiding injury
+#							- Dragon is just a picky eater
+# agot_filler_dragon.XXXX - XXXX, Dragonrider senses dragon is in danger
+#							- Coward dragon is scared of mouse
+#							- Dragonkeeper is actually a spy
+#							- Food is being prepared badly
+#							- Dragon is sick
+# agot_filler_dragon.XXXX - XXXX, Dragonrider knight with low opinion wants to duel you
+#						    on the ground
+# agot_filler_dragon.XXXX - XXXX, Dull courtier tried to pet dragon and was burned / died (50/50)
+# agot_filler_dragon.XXXX - XXXX, Eccentric courtier wants you to kill your dragon and have you
+#							eat their bones and blood to gain their power
+# agot_filler_dragon.XXXX - XXXX, Eccentric courtier wants to make armor out of your dragon's bones
+# agot_filler_dragon.XXXX - XXXX, Dragon seems restless, wants to do something
+# agot_filler_dragon.XXXX - XXXX, Local lord offers money for dragons help clearing forest
+# agot_filler_dragon.XXXX - XXXX, Nearby scholar lord wants to study your dragon
+# agot_filler_dragon.XXXX - XXXX, You (journaller / scholar) write a book about your dragon
+# agot_filler_dragon.XXXX - XXXX, Zealous court chaplin wants you to kill or release your dragon
+# agot_filler_dragon.XXXX - XXXX, Court chaplin wants to bless your dragon
+###############################################################################
+
+############################################
+# CHILD PRANKS YOUNGER       (0001 - 0002) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0001 = { #children fight
+	hidden = yes
+	cooldown = {
+		years = 10 #doesnt happen to the same kids?
+	}
+	trigger = {
+		has_character_flag = owned_dragon
+		exists = var:current_rider 
+
+		AND = {
+			var:current_rider = {
+				is_available = yes
+				is_landed = yes
+				location = capital_province
+				any_court_position_holder = {
+					type = wet_nurse_court_position
+					has_court_event_flag = no
+					is_available_ai_adult = yes
+				}
+				any_character_artifact = {
+					artifact_type = dragon_egg 
+				}
+				any_child = { #missing traits trigger
+					NOT = { has_trait = dragonrider }
+					is_available = yes
+					count > 2
+					age >= 4
+					age <= 15
+					NOT = { has_character_flag = mde_mummers_egg }
+				}
+			}
+			location = var:current_rider.capital_province
+		}
+		location = var:current_rider.capital_province
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0002
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0002 = { #children fight
+	type = character_event
+	title = mde_filler_dragon.0002.t
+	desc = mde_filler_dragon.0002.desc
+	theme = dragon
+	override_background = {
+		reference = sitting_room
+	}
+
+	right_portrait = {
+		character = root
+		animation = personality_bold
+	}
+
+	left_portrait = {
+		character = scope:nursemaid
+		animation = worry
+	}
+
+	lower_right_portrait = {
+		character = scope:older_child
+	}
+
+	lower_left_portrait = {
+		character = scope:younger_child
+	}
+
+	artifact = { # To display the artifact in the event-window
+		target = scope:egg
+		position = lower_center_portrait
+	}
+
+	immediate = {
+		ordered_child = {
+			limit = {
+				is_available = yes
+				NOT = { has_trait = dragonrider }
+				age >= 4
+				age <= 15
+				NOT = { has_character_flag = mde_mummers_egg }
+			}		
+			order_by = age
+			save_scope_as = older_child
+			add_character_flag = {
+				flag = mde_mummers_egg
+				years = 15
+			}
+		}
+		ordered_child = {
+			limit = {
+				NOT = { this = scope:older_child } 
+				is_available = yes
+				age >= 4
+				age <= 15
+				NOT = { has_character_flag = mde_mummers_egg }
+			}		
+			order_by = age
+			save_scope_as = younger_child
+			add_character_flag = {
+				flag = mde_mummers_egg
+				years = 15
+			}
+		}
+		random_court_position_holder = {
+			type = wet_nurse_court_position
+			save_scope_as = nursemaid
+		}
+		random_character_artifact = {
+			limit = { artifact_type = dragon_egg }			
+			save_scope_as = egg
+		}
+	}
+
+
+	option = {
+	name = mde_filler_dragon.0002.a		
+		reverse_add_opinion = {
+			target = scope:older_child
+			modifier = amused_opinion
+			opinion = 35
+		}		
+		reverse_add_opinion = {
+			target = scope:younger_child
+			modifier = angry_opinion
+			opinion = -50
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:older_child
+				modifier = amused_opinion
+				opinion = 35
+			}		
+			add_opinion = {
+				target = scope:younger_child
+				modifier = angry_opinion
+				opinion = -50
+			}					
+		}
+	scope:younger_child = {
+		add_prestige = major_prestige_loss
+		}
+	}
+
+	option = {
+	name = mde_filler_dragon.0002.b	
+		reverse_add_opinion = {
+			target = scope:younger_child
+			modifier = pleased_opinion
+			opinion = 25
+		}		
+		reverse_add_opinion = {
+			target = scope:older_child
+			modifier = disappointed_opinion
+			opinion = -35
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:younger_child
+				modifier = amused_opinion
+				opinion = 25
+			}		
+			add_opinion = {
+				target = scope:older_child
+				modifier = angry_opinion
+				opinion = -40
+			}					
+		}
+	scope:older_child = {
+		add_prestige = major_prestige_loss
+		}
+	}
+
+	option = {
+	name = mde_filler_dragon.0002.c	
+		reverse_add_opinion = {
+			target = scope:younger_child
+			modifier = disappointed_opinion
+			opinion = -20
+		}		
+		reverse_add_opinion = {
+			target = scope:older_child
+			modifier = disappointed_opinion
+			opinion = -20
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:younger_child
+				modifier = disappointed_opinion
+				opinion = -20
+			}		
+			add_opinion = {
+				target = scope:older_child
+				modifier = disappointed_opinion
+				opinion = -20
+			}					
+		}
+	scope:younger_child = {
+		add_prestige = minor_prestige_loss
+		}
+	scope:older_child = {
+		add_prestige = minor_prestige_gain
+		}
+	}
+}
+
+
+############################################
+# CHILD WANTS A DIFFERENT EGG(0003 - 0004) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0003 = { #children fight
+	hidden = yes
+	cooldown = {
+		years = 10 #doesnt happen to the same kids?
+	}
+	trigger = {
+		var:current_rider = {
+			is_available = yes
+			is_landed = yes
+			#location = capital_province
+			any_character_artifact = {
+				artifact_type = dragon_egg 			
+				count >= 1
+				}
+			any_child = { #missing traits trigger
+				NOT = { has_trait = dragonrider }
+				is_available = yes
+				#location = root.location breaks it?
+				count > 1
+				age >= 3
+				age <= 7
+				NOT = { has_character_flag = mde_new_egg }
+				any_character_artifact = {
+					artifact_type = dragon_egg 			
+					count >= 1
+				}
+				#has_trait = bossy
+			}
+		}
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0004
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0004 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = mde_filler_dragon.0004.t
+	desc = mde_filler_dragon.0004.desc
+	theme = dragon
+	override_background = { reference = bedchamber }
+
+	right_portrait = {
+		character = root
+		animation = disappointed
+	}
+
+	left_portrait = {
+		character = scope:child
+		animation = personality_bold
+	}
+
+	artifact = { # To display the artifact in the event-window
+		target = scope:egg_child
+		position = lower_left_portrait
+	}
+
+	artifact = { # To display the artifact in the event-window
+		target = scope:egg
+		position = lower_right_portrait
+	}
+
+	immediate = {
+		random_child = {
+			limit = {
+				is_available = yes
+				NOT = { has_trait = dragonrider }
+				age >= 3
+				age <= 7
+				NOT = { has_character_flag = agot_child_asked_to_ride_dragon }
+				any_character_artifact = {
+					artifact_type = dragon_egg 			
+					count >= 1
+				}
+			}
+			save_scope_as = child
+			add_character_flag = {
+				flag = mde_new_egg
+				years = 15
+			}
+		}
+	random_character_artifact = {
+		limit = { artifact_type = dragon_egg }			
+		save_scope_as = egg
+	}
+	scope:child = {
+		random_character_artifact = {
+			limit = { artifact_type = dragon_egg }			
+			save_scope_as = egg_child
+		}
+	}
+
+
+	}
+
+
+	option = { #indugle him
+		name = mde_filler_dragon.0004.a
+		scope:egg_child = {
+			set_owner = root
+		}
+		scope:egg = {
+			set_owner = scope:child
+		}
+		reverse_add_opinion = {
+			target = scope:child
+			modifier = pleased_opinion
+			opinion = 25
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:younger_child
+				modifier = annoyed_opinion
+				opinion = -15
+			}				
+		}
+	scope:child = {
+		add_prestige = minor_prestige_gain
+		hidden_effect = {
+			random_list = {
+				8 = { }
+				1 = { add_trait = arrogant }
+				1 = { add_trait = stubborn }
+				}
+			}
+		}
+	}
+
+	option = { #take his egg
+		name = mde_filler_dragon.0004.b
+		scope:egg_child = {
+			set_owner = root
+		}
+		reverse_add_opinion = {
+			target = scope:child
+			modifier = angry_opinion
+			opinion = -50
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:younger_child
+				modifier = annoyed_opinion
+				opinion = -15
+			}				
+		}
+	scope:child = {
+		hidden_effect = {
+			random_list = {
+				8 = { }
+				1 = { add_trait = shy }
+				1 = { add_trait = craven }
+				}
+			}
+		}
+	}
+	option = { #He will forget it tomorrow
+		name = mde_filler_dragon.0004.c
+		reverse_add_opinion = {
+			target = scope:child
+			modifier = disappointed_opinion
+			opinion = -25
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:younger_child
+				modifier = annoyed_opinion
+				opinion = -15
+			}				
+		}
+	scope:child = {
+		hidden_effect = {
+			random_list = {
+				8 = { }
+				1 = { add_trait = vengeful }
+				1 = { add_trait = arbitrary }
+				}
+			}
+		}
+	}
+
+}
+
+############################################
+# CHILDS FIRST REAL TEST     (0005 - 0006) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0005 = { #childs first real test
+	hidden = yes
+	cooldown = {
+		years = 10 #doesnt happen to the same kids?
+	}
+	trigger = {
+		exists = var:current_rider
+		var:current_rider = {
+			is_available = yes
+			is_landed = yes
+			location = capital_province
+			any_child = { #missing traits trigger
+				has_trait = dragonrider
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value <= 25
+				}
+				is_available = yes
+				#location = root.location #breaks it for some reason
+				count >= 1
+				age >= 6
+				age <= 20
+				NOT = { has_character_flag = mde_first_real_test }
+			}
+		}
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0006
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0006 = { #childs first real test 2
+	type = character_event
+	window = agot_dragon_character_event
+	title = mde_filler_dragon.0006.t
+	desc = mde_filler_dragon.0006.desc
+	theme = dragon
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	right_portrait = {
+		character = scope:child_dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	lower_right_portrait = {
+		character = scope:child_rider
+	}
+
+	immediate = {
+		random_child = { #missing traits trigger
+			limit = {
+				has_trait = dragonrider
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value <= 25
+				}
+				is_available = yes
+				location = root.location
+				age >= 6
+				age <= 20
+				NOT = { has_character_flag = mde_first_real_test }
+			}
+			save_scope_as = child_rider
+		}
+		scope:child_rider = {
+			var:current_dragon = {
+				save_scope_as = child_dragon
+			}
+		}
+		root = { #for localization
+			save_scope_as = root_char
+		}
+		play_music_cue = CK3AGOT_dragonflight_wonder
+	}
+
+	option = { #let the child attempt
+		name = mde_filler_dragon.0006.a
+		scope:child_rider = {
+			duel = {
+				skill = learning
+				value = low_skill_rating
+				10 = {
+					desc = mde_filler_dragon.0006.a.a
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = 10
+					}
+					add_prestige = minor_prestige_gain
+					add_trait_xp = {
+						trait = dragonrider
+						track = dragon_bond
+						value = 10
+					}	
+					add_stress = medium_stress_loss
+
+					random_list = {
+						50 = {
+							add_learning_skill = 1
+						}
+						50 = { }
+						}
+					root = {
+						send_interface_toast = {
+							title = mde_filler_dragon.0006.a.one
+							left_icon = scope:child_rider
+							reverse_add_opinion = {
+								target = scope:child_rider
+								modifier = friendliness_opinion
+								opinion = 20
+							}
+						}	
+					}
+				}
+				10 = {
+					desc = mde_filler_dragon.0006.a.b
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = 1
+					}
+
+					add_prestige = minor_prestige_loss
+					add_trait_xp = {
+						trait = dragonrider
+						track = dragon_bond
+						value = -15
+					}	
+					add_stress = massive_stress_gain
+					root = {
+						send_interface_toast = {
+							title = mde_filler_dragon.0006.a.two
+							left_icon = scope:child_rider
+							add_opinion = {
+								target = scope:child_rider
+								modifier = disappointed_opinion
+								opinion = -25
+							}
+						}	
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { #im taking over
+		name = mde_filler_dragon.0006.b
+
+		scope:child_rider = {
+			add_prestige = minor_prestige_loss
+			add_opinion = {
+				target = root
+				modifier = disappointed_opinion
+				opinion = -15
+			}
+			add_trait_xp = {
+				trait = dragonrider
+				track = dragon_bond
+				value = -5
+			}	
+			add_stress = minor_stress_gain
+		}
+		
+		add_opinion = {
+			target = scope:child_rider
+			modifier = disappointed_opinion
+			opinion = -15
+		}
+
+		ai_chance = { # mostly for player
+			base = 10
+		}
+	}
+	after = {
+		remove_character_flag = dragon_flying
+		if = {
+			limit = { has_character_flag = dragon_night_ride }
+			remove_character_flag = dragon_night_ride
+		}
+		agot_clear_dragon_animation_flags = yes
+		scope:child_rider = {
+			remove_character_flag = dragon_flying
+			if = {
+				limit = { has_character_flag = dragon_night_ride }
+				remove_character_flag = dragon_night_ride
+			}
+			agot_clear_dragon_animation_flags = yes
+		}
+		add_character_flag = {
+			flag = mde_first_real_test
+			days = 7280
+		}		
+	}
+}
+
+############################################
+# CHILD SLEEPS IN PIT        (0005 - 0006) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0007 = { #child sleeps with dragons
+	hidden = yes
+	cooldown = {
+		years = 10 #doesnt happen to the same kids?
+	}
+	trigger = {
+		exists = var:current_rider
+		var:current_rider = {
+			is_available = yes
+			is_landed = yes
+			location = capital_province
+			any_court_position_holder = {
+				type = wet_nurse_court_position	
+				is_available_ai_adult = yes
+			}
+			any_child = { #missing traits trigger
+				NOT = { 						
+					any_relation = {
+						type = agot_dragon
+						count > 0
+						}
+				}
+				#location = capital_province #breaks it for some reason?
+				is_available = yes
+				#count >= 1
+				age >= 5
+				age <= 14
+				NOT = { has_character_flag = mde_child_sleeps_in_pit }
+			}
+		}
+		#has_character_flag = in_dragonpit
+	}
+	immediate = {
+		save_scope_as = active_dragon
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0008
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0008 = { #child sleeps with dragons
+	type = character_event
+	window = agot_dragon_character_event
+	title = mde_filler_dragon.0008.t
+	desc = {
+		desc = mde_filler_dragon.0008.desc
+		first_valid = {
+			#if = {
+			triggered_desc = {
+				trigger = {
+					scope:ridden_dragon = { has_character_flag = in_dragonpit } 
+					}
+				desc = mde_filler_dragon.0008.desc.inpit
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { scope:ridden_dragon = { has_character_flag = in_dragonpit } }
+				}
+				desc = mde_filler_dragon.0008.desc.outpit
+			}
+		}
+	}
+
+	theme = dragon
+	left_portrait = {
+		character = root
+		animation = disapproval
+	}
+
+	right_portrait = {
+		character = scope:nursemaid
+		animation = worry
+	}
+
+	lower_center_portrait = {
+		character = scope:active_dragon
+		# animation = dragon_main
+		# camera = camera_dragon_event_standing
+
+		# #Add this so dragon fits within event window
+		# outfit_tags = { linear_camera_zoom }
+	}
+
+	lower_right_portrait = {
+		character = scope:child_lost
+	}
+
+	override_background = {
+		reference = sitting_room
+	}
+
+	immediate = {
+		if = {
+			random_held_county = {
+				limit = {
+					OR = {
+						any_county_province = {
+							has_holding_type = castle_holding
+							has_building_or_higher = generic_dragon_pit_01
+						}
+						any_county_province = {
+							OR = {
+								has_building_or_higher = dragonpit_01 # Historical Version
+								has_building = dragonpit_ruins_03 # Fully Restored Ruin Version
+								has_building = agot_dragonmont_01 # Dragonmont Version
+							}
+						}
+					}
+					has_variable = has_dragonkeeper_order
+				}
+				save_scope_as = dragon_pit_location
+			}
+		}
+
+
+		random_child = { #missing traits trigger
+			limit = {
+				# NOT = { 						
+				# 	AND = {
+				# 		any_relation = {
+				# 			type = agot_dragon
+				# 			count > 0
+				# 		}
+				# 		has_character_flag = mde_child_sleeps_in_pit
+				# 	}
+				# }
+				location = root.location
+				is_available = yes
+				age >= 5
+				age <= 14
+			}
+			save_scope_as = child_lost
+		}
+		random_court_position_holder = {
+			type = wet_nurse_court_position
+			save_scope_as = nursemaid
+		}
+	}
+
+	option = { #scold child
+		name = mde_filler_dragon.0008.a
+
+		scope:child_lost = {
+			add_prestige = minor_prestige_loss
+		}
+
+		reverse_add_opinion = {
+			target = scope:child_lost
+			modifier = angry_opinion
+			opinion = -40
+		}		
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	option = { #excourage dragon dreams
+		name = mde_filler_dragon.0008.b
+
+		trigger = {
+			scope:child_lost = {
+				NOT = { has_trait = dragon_dreams }
+			}
+		}
+
+		add_prestige = minor_prestige_loss
+
+		reverse_add_opinion = {
+			target = scope:child_lost
+			modifier = pleased_opinion
+			opinion = 15
+		}
+
+		scope:child_lost = {
+			random_list = {
+				25 = {
+					desc = mde_filler_dragon.0008.b.a
+					add_trait = dragon_dreams
+				}
+				75 = { 
+					desc = mde_filler_dragon.0008.b.b
+				}
+			}
+		}
+
+		ai_chance = { # mostly for player
+			base = 10
+		}
+	}
+
+	option = { #have the dragon be moved to pit
+		name = mde_filler_dragon.0008.c
+
+		trigger = {
+			scope:active_dragon = {
+				NOT = { has_character_flag = in_dragonpit }
+			}
+		}
+
+		scope:active_dragon = {
+			agot_set_as_owned_dragon = { OWNER = root DRAGON = scope:active_dragon}
+			agot_send_to_dragonpit_effect = { DRAGON = scope:active_dragon DRAGONPIT_HOLDER = root DRAGONPIT_COUNTY = scope:dragon_pit_location }
+		}
+
+		ai_chance = { # mostly for player
+			base = 10
+		}
+	}
+
+	after = {
+		remove_character_flag = dragon_flying
+		if = {
+			limit = { has_character_flag = dragon_night_ride }
+			remove_character_flag = dragon_night_ride
+		}
+		agot_clear_dragon_animation_flags = yes
+		scope:child_lost = {
+			remove_character_flag = dragon_flying
+			if = {
+				limit = { has_character_flag = dragon_night_ride }
+				remove_character_flag = dragon_night_ride
+			}
+			agot_clear_dragon_animation_flags = yes
+		}
+		add_character_flag = {
+			flag = mde_child_sleeps_in_pit
+			days = 7280
+		}		
+	}
+}
+
+############################################
+# STORMING DRAGONPIT WAR     (0009 - 0012) #
+# by: Gropy                                #
+############################################
+
+#trigger
+
+mde_filler_dragon.0009 = { #its so fucking broken but it triggers
+	hidden = yes
+	cooldown = {
+		years = 30
+	}
+	trigger = {
+		exists = var:current_rider
+		has_character_flag = in_dragonpit
+		#has_variable = current_rider
+		# root.var:current_rider = { 
+		#  	is_at_war = yes 
+		#   	exists = cp:councillor_castellan
+		# }
+		liege = { is_at_war = yes }
+		location = {
+			#root.var:current_rider = { is_alive = yes }
+			# An event about dragonpits should probably check for the dragonpit buildings
+			#has_any_dragonpits = yes
+			# OR = {
+			# 	root.var:current_rider = province_owner
+			# 	root.var:current_rider.employer ?= province_owner
+			# }
+			NOT = { county = title:c_dragonstone } # Dragonmont doesn't really make sense
+			county.holder = {
+				NOT = { has_character_flag = mde_forever_fed }
+				any_courtier = {
+					has_trait = dragon # Is a dragon
+					age <= 60 #only small dragons
+					exists = var:pitted_dragon_location # Is in the dragonpit
+					#var:pitted_dragon_location = scope:dragonpit_location # Is in the same dragonp	it
+					#count > 2 # There is more than two dragons in the dragonpit (mainly done to avoid 200 loc permutations)
+				}
+			}
+		}
+	}
+	immediate = {
+		location.county = {
+			save_scope_as = dragonpit_location
+		}
+		location.county.holder = {
+			random_courtier_or_guest = {
+				limit = {
+					has_trait = dragon # Is a dragon
+					exists = var:pitted_dragon_location # Is in the dragonpit
+					var:pitted_dragon_location = scope:dragonpit_location # Is in the same dragonpit
+					age <= 60 #only small dragons
+				}
+				save_scope_as = dead_dragon #for not cheating
+			}
+			trigger_event = {
+				id = mde_filler_dragon.0010
+			}
+			add_character_flag = mde_forever_fed
+		}
+	}
+}
+
+mde_filler_dragon.0010 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = mde_filler_dragon.0010.t
+	desc = mde_filler_dragon.0010.desc
+	theme = dragon
+
+	override_background = {
+		reference = council_chamber
+	}
+
+	left_portrait = {
+		character = root
+		animation = stress
+	}
+	
+	right_portrait = {
+		character = scope:hand
+		animation = anger
+	}
+
+	immediate = {
+		cp:councillor_castellan = { save_scope_as = hand }
+	}
+
+	option = {
+		name = mde_filler_dragon.0010.a
+
+		remove_short_term_gold = medium_gold_max_value
+
+		stress_impact = {
+			diligent = major_stress_impact_loss
+			greedy = major_stress_impact_gain
+			arbitrary = major_stress_impact_gain
+
+		}
+
+		trigger_event = {
+			id = mde_filler_dragon.0011
+			days = { 30 160 }
+		}
+		ai_chance = {
+			base = 50
+		}
+	}
+
+	option = {
+		name = mde_filler_dragon.0010.b
+
+		stress_impact = {
+			brave = minor_stress_impact_loss
+			craven = minor_stress_impact_loss
+			lazy = minor_stress_impact_loss
+			arrogant = minor_stress_impact_loss
+			just = major_stress_impact_gain
+		}
+
+		hidden_effect = { #possible modifiers? 
+			random_list = {
+				50 = {
+					trigger_event = {
+						id = mde_filler_dragon.0012
+						days = { 90 280 }
+					}
+				}
+				50 = { 
+					trigger_event = {
+						id = mde_filler_dragon.0011
+						days = { 90 280 }
+					}					
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = {
+		name = mde_filler_dragon.0010.c
+
+		add_stress = medium_stress_loss
+
+		capital_county = {
+			add_county_modifier = {
+				modifier = agot_roaming_dragon 
+				years = 1	
+			}
+		}
+		capital_county = {
+			add_county_modifier = {
+				modifier = agot_dragon_damage_1
+				years = 1	
+			}
+		}
+		trigger = {
+			OR = {
+				has_trait = callous
+				has_trait = sadistic
+				has_trait = wrathful
+				has_trait = lunatic_1
+				has_trait = lunatic_genetic
+				has_trait = fire_obsessed
+			}
+		}
+
+	}
+}
+
+mde_filler_dragon.0011 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = mde_filler_dragon.0010.t
+	desc = mde_filler_dragon.0011.desc
+	theme = dragon
+
+	override_background = {
+		reference = council_chamber
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_content 
+	}
+
+	right_portrait = {
+		character = scope:hand
+		animation = anger
+	}
+
+	immediate = {
+		cp:councillor_castellan = { save_scope_as = hand }
+	}
+
+	option = {
+		name = mde_filler_dragon.0011.a
+
+	}	
+}
+
+mde_filler_dragon.0012 = {
+	type = character_event
+	window = dragon_character_event
+	title = mde_filler_dragon.0010.t
+	desc = mde_filler_dragon.0012.desc
+	theme = dragon
+
+	override_background = {
+		reference = council_chamber
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_vengeful 
+	}
+
+	lower_right_portrait = {
+		character = scope:dead_dragon
+	}
+
+	right_portrait = {
+		character = scope:hand
+		animation = rage
+	}
+
+	immediate = {
+		cp:councillor_castellan = { save_scope_as = hand }
+		scope:dead_dragon = {
+			death = {
+				death_reason = death_hacked_to_pieces
+			}
+		}
+	}
+
+	option = {
+		name = mde_filler_dragon.0012.a
+
+		add_stress = medium_stress_gain
+		add_prestige = major_prestige_loss
+
+		scope:dragonpit_location = {
+			add_county_modifier = {
+				modifier = smallfolk_dragonpit_attack_aftermatch
+				years = 1	
+			}
+		}
+	}	
+}
+
+############################################
+# TRIP WITH DRAGON CHILD    (00013 - 0014) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0013 = { #child wants to fly together
+	hidden = yes
+	cooldown = {
+		years = 25 #doesnt happen to the same kids?
+	}
+	trigger = {
+		has_character_flag = owned_dragon
+		exists = var:current_rider 
+
+		AND = {
+			var:current_rider = {
+				is_available = yes
+				is_landed = yes
+				location = capital_province
+
+				any_child = { #missing traits trigger
+					has_trait = dragonrider
+					NOR = {
+						has_trait = wrathful
+						has_trait = callous
+						has_trait = sadistic
+					}
+					is_available = yes
+					#count > 2
+					is_landed = no
+					age <= 25
+					NOT = { has_character_flag = mde_flying_together }
+				}
+			}
+			location = var:current_rider.capital_province
+		}
+		location = var:current_rider.capital_province
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0014
+			}
+		}
+	}
+}
+
+
+mde_filler_dragon.0014 = { 
+	type = character_event
+	title = mde_filler_dragon.0014.t
+	desc = mde_filler_dragon.0014.desc
+	theme = dragon
+	override_background = {
+		reference = sitting_room
+	}
+
+	right_portrait = {
+		character = root
+		animation = thinking 
+	}
+
+	left_portrait = {
+		character = scope:child
+		animation = personality_bold
+	}
+
+	immediate = {
+		random_child = {
+			limit = {
+				has_trait = dragonrider
+				NOR = {
+					has_trait = wrathful
+					has_trait = callous
+					has_trait = sadistic
+				}
+				is_available = yes
+				age >= 10
+				age <= 25
+				NOT = { has_character_flag = mde_flying_together }
+			}		
+			save_scope_as = child
+			add_character_flag = {
+				flag = mde_flying_together
+				years = 15
+			}
+		}
+		add_character_flag = {
+			flag = mde_flying_together
+			years = 5
+		}
+		var:current_dragon = {
+			save_scope_as = ridden_dragon
+		}			
+		scope:child = {
+			var:current_dragon = {
+				save_scope_as = child_dragon
+			}			
+		}
+		root = { #for localization
+			save_scope_as = root_char
+		}
+	}
+
+
+	option = {
+		name = mde_filler_dragon.0014.a		
+		add_stress = medium_stress_loss
+		add_character_modifier = {
+			modifier = dragon_taking_time_off
+			years = 1
+		}
+		reverse_add_opinion = {
+			target = scope:child
+			modifier = pleased_opinion
+			opinion = 35
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:child
+				modifier = amused_opinion
+				opinion = 35
+			}		
+		}
+		scope:child = {
+			add_prestige = medium_prestige_gain
+			add_stress = medium_stress_loss
+			random_list = {
+				10 = {
+					desc = mde_filler_dragon.0014.a.a
+					add_trait = dragon_dreams
+				}
+				90 = { 
+					desc = mde_filler_dragon.0014.a.b
+				}
+			}	
+		}
+
+		ai_chance = {
+				base = 100
+		}
+	}
+
+	option = {
+		name = mde_filler_dragon.0014.b	
+		add_stress = minor_stress_loss
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = 4
+		}
+		agot_add_dragon_training_xp = { VALUE = 2 }
+
+		scope:child = {
+			add_stress = minor_stress_loss
+			add_trait_xp = {
+				trait = dragonrider
+				track = dragon_bond
+				value = 4
+			}
+			agot_add_dragon_training_xp = { VALUE = 2 }
+		}
+		ai_Chance = {
+			base = 50
+		}
+	}
+}
+
+
+############################################
+# KID CRUSHES THEIR DRAGON  (00015 - 0016) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0015 = { #young dragon and young rider
+	hidden = yes
+	cooldown = {
+		years = 25 #doesnt happen to the same kids?
+	}
+	trigger = {
+		has_character_flag = owned_dragon
+		exists = var:current_rider 
+
+		AND = {
+			var:current_rider = {
+				is_available = yes
+				is_landed = yes
+				location = {
+					county.holder = {
+						AND = {
+							has_royal_court = yes
+							amenity_level = { target = agot_dragonpit_amenities value >= 5 }
+						}
+					}
+				}
+
+				any_child = { #missing traits trigger
+					#variable has owned dragon?
+					any_relation = {
+						type = agot_dragon
+						count = 1
+					}
+					NOT = { has_trait = dragonrider }
+
+					is_available = yes
+					is_landed = no
+					age >= 2
+					age <= 19
+					NOT = { has_character_flag = mde_crushed_dragon_child }
+				}
+				# any_courtier_or_guest = {
+				# 	has_trait = dragon
+				# 	any_relation = {
+				# 		type = agot_dragon
+				# 		count = 1
+				# 	}
+				# 	age < 10
+				# }
+			}
+			location = var:current_rider.capital_province
+		}
+		location = var:current_rider.capital_province
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0016
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0016 = { 
+	type = character_event
+	title = mde_filler_dragon.0016.t
+	desc = mde_filler_dragon.0016.desc
+	theme = dragon
+
+	right_portrait = {
+		character = root
+		animation = sadness
+	}
+
+	left_portrait = {
+		character = scope:child
+		animation = grief
+	}
+	
+	lower_center_portrait = {
+		character = scope:dragon_child
+	}
+
+	immediate = {
+		random_child = {
+			limit = {
+				NOR = {
+					has_trait = patient
+					has_trait = diligent
+				}
+				is_available = yes
+				age >= 2
+				age <= 19
+					any_relation = {
+						type = agot_dragon
+						count = 1
+					}
+					NOT = { has_trait = dragonrider }
+				#NOT = { has_character_flag = mde_crushed_dragon_child }
+			}		
+			save_scope_as = child
+			add_character_flag = {
+				flag = mde_crushed_dragon_child
+				years = 25
+			}
+		}
+		add_character_flag = {
+			flag = mde_crushed_dragon_child
+			years = 10
+		}
+
+		scope:child = {
+			random_relation = {
+				type = agot_dragon
+				save_scope_as = dragon_child
+			}
+		}
+	}
+
+
+	option = { #what have you done?
+		name = mde_filler_dragon.0016.a		
+		add_stress = medium_stress_gain
+		root.dynasty = { add_dynasty_prestige = miniscule_dynasty_prestige_loss }
+
+		reverse_add_opinion = {
+			target = scope:child
+			modifier = humiliated_opinion
+			opinion = -25
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:child
+				modifier = angry_opinion
+				opinion = -40
+			}		
+		}
+		scope:child = {
+			add_prestige = massive_prestige_loss
+			add_stress = monumental_stress_gain
+			random_list = {
+				10 = {
+					desc = mde_filler_dragon.0016.a.a
+					add_trait = depressed_1
+				}
+				90 = { 
+					desc = mde_filler_dragon.0016.a.b
+				}
+			}	
+		}
+
+
+		scope:dragon_child = {
+			random_list = {
+				33 = {
+					death = {
+						death_reason = death_crushed
+					}
+				}
+				33 = {
+					add_trait = dragon_withered_wings
+				}
+				33 = {
+					add_trait = dragon_toothless
+				}
+				33 = {
+					add_trait = dragon_wounded_4
+				}
+			}
+		}
+
+
+		ai_chance = {
+				base = 100
+		}
+	}
+
+	option = { #beat her bloody
+		name = mde_filler_dragon.0016.b	
+		add_stress = minor_stress_loss
+
+
+		reverse_add_opinion = {
+			target = scope:child
+			modifier = humiliated_opinion
+			opinion = -50
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:child
+				modifier = angry_opinion
+				opinion = -70
+			}		
+		}
+
+		scope:child = {
+			add_prestige = minor_prestige_loss
+			add_stress = monumental_stress_gain
+			random_list = {
+				55 = {
+					add_trait = wounded_1
+				}
+				35 = {
+					add_trait = wounded_2
+				}
+				10 = {
+					add_trait = incapable
+				}
+			}
+		}
+
+
+		scope:dragon_child = {
+			random_list = {
+				33 = {
+					death = {
+						death_reason = death_crushed
+					}
+				}
+				33 = {
+					add_trait = dragon_withered_wings
+				}
+				33 = {
+					add_trait = dragon_toothless
+				}
+				33 = {
+					add_trait = dragon_wounded_4
+				}
+			}
+		}
+
+
+		ai_Chance = {
+			base = 50
+		}
+	}
+	option = { #finish it off
+		name = mde_filler_dragon.0016.c
+
+		reverse_add_opinion = {
+			target = scope:child
+			modifier = angry_opinion
+			opinion = -50
+		}		
+		hidden_effect = {
+			add_opinion = {
+				target = scope:child
+				modifier = angry_opinion
+				opinion = -70
+			}		
+		}
+		scope:child = {
+			add_prestige = medium_prestige_loss
+			add_stress = major_stress_gain
+			random_list = {
+				10 = {
+					desc = mde_filler_dragon.0016.a.a
+					add_trait = depressed_1
+				}
+				90 = { 
+					desc = mde_filler_dragon.0016.a.b
+				}
+			}	
+		}
+		scope:dragon_child = {
+			death = {
+				death_reason = death_execution
+				killer = root
+			}
+		}
+
+	}
+}
+
+############################################
+# sell petting session      (00017 - 0018) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0017 = { #young dragon and young rider
+	hidden = yes
+	cooldown = {
+		years = 50 #doesnt happen again?
+	}
+	trigger = {
+		has_character_flag = owned_dragon
+		exists = var:current_rider 
+
+		AND = {
+			var:current_rider = {
+				is_available = yes
+				is_landed = yes
+				# location = {
+				# 	has_any_dragonpits = yes	
+				# }
+
+				OR = {
+					has_trait = greedy
+					has_trait = arrogant 
+					has_trait = eccentric
+					has_trait = education_stewardship
+				}
+
+				exists = cp:councillor_steward
+
+				NOT = { has_character_flag = mde_sold_petting }
+			}
+		}
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0018
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0018 = { 
+	type = character_event
+	title = mde_filler_dragon.0018.t
+	desc = mde_filler_dragon.0018.desc
+	theme = dragon
+
+	override_background = {
+		reference = council_chamber
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_greedy
+	}
+
+	right_portrait = {
+		character = scope:steward
+		animation = steward
+	}
+
+	lower_center_portrait = {
+		character = var:current_dragon
+	}
+
+	immediate = {
+		cp:councillor_steward = {
+			save_scope_as = steward
+		}		
+
+		add_character_flag = {
+			flag = mde_sold_petting
+			years = 25
+		}
+		var:current_dragon = {
+			save_scope_as = ridden_dragon
+		}
+	}
+
+
+	option = { #lets do it
+		name = mde_filler_dragon.0018.a		
+
+		stress_impact = {
+			greedy = major_stress_impact_loss
+			shy = medium_stress_impact_gain
+		}
+
+		add_gold = 125
+
+		root.dynasty = { add_dynasty_prestige = minor_dynasty_prestige_loss }
+
+		random_list = {
+			90 = { #everything goes as planned
+				desc = mde_filler_dragon.0018.a.a
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value = 2
+				}						
+			}
+			10 = { #the dragon lashes out
+				desc = mde_filler_dragon.0018.a.b
+				modifier = {
+						scope:ridden_dragon = { dragon_size >= level_four_dragon_size } #size 60
+					add = 25				
+				}
+				modifier = {
+						scope:ridden_dragon = { dragon_size >= level_eight_dragon_size } #size 60
+					add = 75				
+				}
+
+				capital_county = {
+					add_county_modifier = {
+						modifier = dragon_loose_dragon
+						years = 1	
+					}
+				}
+
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value = -15
+				}		
+						
+			}
+		}
+
+		ai_chance = {
+				base = 100
+		}
+	}
+
+	option = { #no dragon in the menegarie
+		name = mde_filler_dragon.0018.b	
+
+		stress_impact = {
+			stubborn = medium_stress_impact_loss
+			arrogant = medium_stress_impact_loss
+		}
+
+		root.dynasty = { add_dynasty_prestige = miniscule_dynasty_prestige_gain }
+
+
+		ai_Chance = {
+			base = 50
+		}
+	}
+
+	option = { #you pet it
+		name = mde_filler_dragon.0018.c
+
+		trigger = {
+			OR = {
+				has_trait = wrathful
+				has_trait = callous
+				has_trait = lunatic_1
+				has_trait = lunatic_genetic
+				has_trait = fire_obsessed
+				has_trait = arrogant
+			}
+		}
+
+		scope:steward = {
+			death = {
+				death_reason = death_fed_to_dragon
+				killer = scope:current_dragon
+			}
+		}
+		ai_Chance = {
+			base = 15
+		}
+	}
+}
+
+############################################
+# dragon suddenly rot       (00019 - 0020) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0019 = { #young dragon and young rider
+	hidden = yes
+	cooldown = {
+		years = 50 #doesnt happen again?
+	}
+	trigger = {
+
+		any_in_global_list = {
+			variable = living_dragons
+			count >= 8
+		}
+
+		has_character_flag = owned_dragon
+		exists = var:current_rider 
+		age > 75
+		AND = {
+			var:current_rider = {
+				location = {
+					county.holder = {
+						AND = {
+							has_royal_court = yes
+							amenity_level = { target = agot_dragonpit_amenities value >= 5 }
+						}
+					}
+				}
+				has_faith = faith:fots_seven
+				is_available = yes
+				OR = {
+					has_trait = paranoid
+					has_trait = lunatic_1
+					has_trait = lunatic_genetic
+					has_trait = cynical
+					has_trait = diligent
+				}
+				NOT = { has_character_flag = mde_wasting_dragon }
+			}
+		}
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0020
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0020 = { 
+	type = character_event
+	title = mde_filler_dragon.0020.t
+	desc = mde_filler_dragon.0020.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = personality_greedy
+	}
+
+	right_portrait = {
+		character = var:current_dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {	
+		add_character_flag = {
+			flag = mde_wasting_dragon
+		}
+		var:current_dragon = {
+			save_scope_as = ridden_dragon
+		}
+		scope:ridden_dragon = {
+			add_trait = dragon_toothless
+		}
+	}
+
+
+	option = { # I'm lost for words...
+		name = mde_filler_dragon.0020.a		
+
+		add_stress = major_stress_gain
+
+		root.dynasty = { add_dynasty_prestige = minor_dynasty_prestige_loss }
+
+		ai_chance = {
+				base = 100
+		}
+	}
+
+	option = { #finish it off
+		name = mde_filler_dragon.0020.b	
+
+		trigger = {
+			OR = {
+				has_trait = wrathful
+				has_trait = callous
+				has_trait = lunatic_1
+				has_trait = lunatic_genetic
+				has_trait = fire_obsessed
+				has_trait = arrogant
+			}
+		}
+
+		scope:ridden_dragon = {
+			death = {
+				death_reason = death_execution
+				killer = root
+			}
+		}		
+
+		ai_Chance = {
+			base = 1
+		}
+	}
+}
+
+############################################
+# storming during plague    (00021 - 0022) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0021 = { #its so fucking broken but it triggers
+	hidden = yes
+	cooldown = {
+		years = 50
+	}
+	trigger = {
+		exists = var:current_rider
+		has_character_flag = in_dragonpit
+		#has_variable = current_rider
+		# root.var:current_rider = { 
+		#  	is_at_war = yes 
+		#   	exists = cp:councillor_castellan
+		# }
+		location = {
+			#root.var:current_rider = { is_alive = yes }
+			# An event about dragonpits should probably check for the dragonpit buildings
+			#has_any_dragonpits = yes
+			# OR = {
+			# 	root.var:current_rider = province_owner
+			# 	root.var:current_rider.employer ?= province_owner
+			# }
+			NOT = { county = title:c_dragonstone } # Dragonmont doesn't really make sense
+			county.holder = {
+				AND = {
+					NOT = { has_character_flag = mde_plagued_storming }
+					any_courtier = {
+						has_trait = dragon # Is a dragon
+						age <= 40 #only small dragons
+						exists = var:pitted_dragon_location # Is in the dragonpit
+						#var:pitted_dragon_location = scope:dragonpit_location # Is in the same dragonp	it
+						#count > 2 # There is more than two dragons in the dragonpit (mainly done to avoid 200 loc permutations)
+					}		
+					any_sub_realm_county = {
+						any_county_province = {
+							any_province_epidemic = {
+								count >= 1
+								outbreak_intensity > major
+							}
+						}
+					}
+				}					
+			}
+		}
+	}
+	immediate = {
+		location.county = {
+			save_scope_as = dragonpit_location
+		}
+		location.county.holder = {
+			random_courtier_or_guest = {
+				limit = {
+					has_trait = dragon # Is a dragon
+					exists = var:pitted_dragon_location # Is in the dragonpit
+					var:pitted_dragon_location = scope:dragonpit_location # Is in the same dragonpit
+					age <= 60 #only small dragons
+				}
+				save_scope_as = dead_dragon #for not cheating
+			}
+			trigger_event = {
+				id = mde_filler_dragon.0022
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0022 = { 
+	type = character_event
+	title = mde_filler_dragon.0022.t
+	desc = mde_filler_dragon.0022.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = shock 
+	}
+
+	lower_right_portrait = {
+		character = scope:dead_dragon
+	}
+
+	override_background = {
+		reference = council_chamber
+	}
+
+	immediate = {	
+		add_character_flag = {
+			flag = mde_plagued_storming
+		}
+		var:current_dragon = {
+			save_scope_as = ridden_dragon
+		}
+		scope:dead_dragon = {
+			death = {
+				death_reason = death_hacked_to_pieces
+			}
+		}
+	}
+
+
+	option = { # I'm lost for words...
+		name = mde_filler_dragon.0022.a		
+
+		add_stress = major_stress_gain
+
+		root.dynasty = { add_dynasty_prestige = minor_dynasty_prestige_loss }
+		scope:dragonpit_location = {
+			add_county_modifier = {
+				modifier = smallfolk_dragonpit_attack_aftermatch
+				years = 1	
+			}
+		}
+		ai_chance = {
+				base = 100
+		}
+	}
+}
+
+############################################
+# A nice dragon             (00023 - 0024) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0023 = { #young dragon and young rider
+	hidden = yes
+	cooldown = {
+		years = 25 #doesnt happen to the same kids?
+	}
+	trigger = {
+		has_character_flag = owned_dragon
+		exists = var:current_rider 
+		NOR = {
+			has_trait = dragon_picky_eater
+			has_trait = dragon_aggressive
+			has_trait = dragon_bloodthirsty
+			has_trait = dragon_defiant
+			has_trait = dragon_impulsive
+			has_trait = dragon_voracious
+		}
+
+		AND = {
+			var:current_rider = {
+				is_available = yes
+				location = {
+					county.holder = {
+						AND = {
+							has_royal_court = yes
+							amenity_level = { target = agot_dragonpit_amenities value >= 5 }
+						}
+					}
+				}
+				NOT = { has_character_flag = mde_a_nice_dragon }
+			}
+			location = var:current_rider.capital_province
+		}
+		location = var:current_rider.capital_province
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0024
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0024 = { 
+	type = character_event
+	title = mde_filler_dragon.0024.t
+	desc = mde_filler_dragon.0024.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = personality_content 
+	}
+
+	right_portrait = {
+		character = var:current_dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {	
+		add_character_flag = {
+			flag = mde_a_nice_dragon
+		}
+		var:current_dragon = {
+			save_scope_as = ridden_dragon
+		}
+
+	}
+
+	option = { #What a nice dragon.
+		name = mde_filler_dragon.0024.a		
+		custom_tooltip = mde_filler_dragon.0024.a.tt
+
+		add_stress = minor_stress_loss
+
+		var:current_dragon = {
+			change_temperament = {
+				VALUE = 5
+			}
+		}
+
+		ai_chance = {
+				base = 100
+		}
+	}
+
+	option = { #Let's encourage it
+		name = mde_filler_dragon.0024.b
+
+		scope:ridden_dragon = {
+			add_trait = dragon_picky_eater
+		}
+	}
+}
+
+############################################
+# Picky eater dragon        (00025 - 0026) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0025 = { #young dragon and young rider
+	hidden = yes
+	cooldown = {
+		years = 25 #doesnt happen to the same kids?
+	}
+	trigger = {
+		has_character_flag = owned_dragon
+		exists = var:current_rider 
+		NOR = {
+			has_trait = dragon_picky_eater
+			has_trait = dragon_bloodthirsty
+			has_trait = dragon_voracious
+		}
+
+		AND = {
+			var:current_rider = {
+				is_available = yes
+				location = {
+					county.holder = {
+						AND = {
+							has_royal_court = yes
+							amenity_level = { target = agot_dragonpit_amenities value <= 5 }
+						}
+					}
+				}
+				NOT = { has_character_flag = mde_picky_eater }
+			}
+			location = var:current_rider.capital_province
+		}
+		location = var:current_rider.capital_province
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0026
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0026 = { 
+	type = character_event
+	title = mde_filler_dragon.0026.t
+	desc = mde_filler_dragon.0026.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = personality_rational 
+	}
+
+	right_portrait = {
+		character = var:current_dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	override_background = {
+		trigger ={
+			NOT = { scope:ridden_dragon = { has_character_flag = in_dragonpit } }
+		}
+		reference = plains
+	}
+
+	immediate = {	
+		add_character_flag = {
+			flag = mde_picky_eater
+		}
+		var:current_dragon = {
+			save_scope_as = ridden_dragon
+		}
+
+	}
+
+	option = { #What a nice dragon.
+		name = mde_filler_dragon.0026.a		
+
+		scope:ridden_dragon = {
+			add_trait = dragon_picky_eater
+		}
+
+
+		ai_chance = {
+				base = 100
+		}
+	}
+
+	option = { #Let's encourage it
+		name = mde_filler_dragon.0026.b
+		custom_tooltip = mde_filler_dragon.0026.b.tt
+
+		var:current_dragon = {
+			change_temperament = {
+				VALUE = -5
+			}
+		}
+	}
+}
+
+############################################
+# A wild beast              (00027 - 0028) #
+# by: Gropy                                #
+############################################
+
+mde_filler_dragon.0027 = { #wild beast
+	hidden = yes
+	cooldown = {
+		years = 25 #doesnt happen to the same kids?
+	}
+	trigger = {
+		has_character_flag = owned_dragon
+		NOT = { has_character_flag = in_dragonpit }
+		exists = var:current_rider 
+		OR = {
+			has_trait = dragon_picky_eater
+			has_trait = dragon_bloodthirsty
+			has_trait = dragon_voracious
+		}
+
+		AND = {
+			var:current_rider = {
+				is_available = yes
+				# location = {
+				# 	county.holder = {
+				# 		AND = {
+				# 			has_royal_court = yes
+				# 			amenity_level = { target = agot_dragonpit_amenities value >= 5 }
+				# 		}
+				# 	}
+				# }
+				NOT = { has_character_flag = mde_a_wild_beast }
+			}
+			location = var:current_rider.capital_province
+		}
+		location = var:current_rider.capital_province
+	}
+	immediate = {
+		var:current_rider = {
+			trigger_event = {
+				id = mde_filler_dragon.0028
+			}
+		}
+	}
+}
+
+mde_filler_dragon.0028 = { 
+	type = character_event
+	title = mde_filler_dragon.0028.t
+	desc = mde_filler_dragon.0028.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = personality_rational 
+	}
+
+	lower_center_portrait = {
+		character = scope:ridden_dragon
+		# animation = dragon_main
+		# camera = camera_dragon_event_standing
+
+		# #Add this so dragon fits within event window
+		# outfit_tags = { linear_camera_zoom }
+	}
+
+	override_background = {
+		reference = sitting_room
+	}
+
+	immediate = {	
+		add_character_flag = {
+			flag = mde_a_wild_beast
+		}
+		var:current_dragon = {
+			save_scope_as = ridden_dragon
+		}
+
+	}
+
+	option = { #The smallfolk are not my concern.
+		name = mde_filler_dragon.0028.a		
+
+		add_piety = -250
+
+
+		random_list = {
+			95 = {
+
+			}
+			5 = {
+				scope:ridden_dragon = {
+					add_trait = dragon_picky_eater
+				}
+			}
+		}
+
+
+
+		ai_chance = {
+				base = 100
+		}
+	}
+
+	option = { #Provide aid to the ruined families.
+		name = mde_filler_dragon.0028.b
+
+		custom_tooltip = mde_filler_dragon.0028.c.tt
+
+		var:current_dragon = {
+			change_temperament = {
+				VALUE = -3
+			}
+		}
+
+		remove_short_term_gold = 100
+		
+		ai_chance = {
+			base = 50
+		}
+	}
+
+	option = {
+		name = mde_filler_dragon.0028.c
+
+		trigger ={
+			NOT = { scope:ridden_dragon = { has_character_flag = in_dragonpit } }
+		}
+
+		scope:ridden_dragon = {
+			agot_set_as_owned_dragon = { OWNER = root DRAGON = scope:ridden_dragon}
+			agot_send_to_dragonpit_effect = { DRAGON = scope:ridden_dragon DRAGONPIT_HOLDER = root DRAGONPIT_COUNTY = scope:dragon_pit_location }
+		}	
+
+		ai_chance = {
+			base = 150
+		}
+	}
+}
+
+###########################################
+#An Old Beast              (00029 - 0030) #
+#by: Gropy                                #
+###########################################
+
+mde_filler_dragon.0029 = { #wild beast
+	hidden = yes
+	cooldown = {
+		years = 250 #doesnt happen to the same kids?
+	}
+	trigger = {
+		has_character_flag = owned_dragon
+		exists = var:current_rider 
+		age > 150
+
+		AND = {
+			var:current_rider = {
+				is_available = yes
+				# location = {
+				# 	county.holder = {
+				# 		AND = {
+				# 			has_royal_court = yes
+				# 			amenity_level = { target = agot_dragonpit_amenities value >= 5 }
+				# 		}
+				# 	}
+				# }
+				NOT = { has_character_flag = dragon_too_old_flag }
+			}
+			location = var:current_rider.capital_province
+		}
+		location = var:current_rider.capital_province
+	}
+	immediate = {
+		if = {
+			var:current_rider = {
+				trigger_event = {
+					id = mde_filler_dragon.0030
+				}
+			}
+		}
+		else = {
+			add_trait = dragon_too_old
+		}
+	}
+}
+
+mde_filler_dragon.0030 = { 
+	type = character_event
+	title = mde_filler_dragon.0030.t
+	desc = mde_filler_dragon.0030.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = personality_rational 
+	}
+
+	right_portrait = {
+		character = var:current_dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	override_background = {
+		trigger ={
+			NOT = { scope:ridden_dragon = { has_character_flag = in_dragonpit } }
+		}
+		reference = plains
+	}
+
+	immediate = {	
+		add_character_flag = {
+			flag = dragon_too_old_flag
+		}
+		var:current_dragon = {
+			save_scope_as = ridden_dragon
+		}
+		scope:ridden_dragon = {
+			add_trait = dragon_too_old
+		}
+	}
+
+	option = { #kill it
+		name = mde_filler_dragon.0030.a		
+
+		add_prestige = -1000
+
+		scope:ridden_dragon = {
+			death = { death_reason = death_execution killer = root }
+		}
+
+		ai_chance = {
+				base = 10
+		}
+	}
+
+	option = { #Accept this reality.
+		name = mde_filler_dragon.0030.b
+
+		remove_short_term_gold = 50
+
+		var:current_dragon = {
+			change_temperament = {
+				VALUE = -15
+			}
+		}
+		
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+
+
+
+
+
