@@ -1,0 +1,228 @@
+# A council-authorized war to seize exactly one coastal county as a directly
+# held Valyrian trade enclave. No culture/faith conversion or bespoke economic
+# modifier is applied: this is deliberately just territorial acquisition.
+dragonlord_trade_enclave_cb = {
+    icon = dragon_county_conquest_cb
+    group = dragonlord_trade_enclave
+
+    combine_into_one = yes
+    should_show_war_goal_subview = yes
+    mutually_exclusive_titles = { always = yes }
+
+    allowed_for_character = {
+        government_has_flag = government_is_dragonlord_oligarchy
+        is_independent_ruler = yes
+        highest_held_title_tier >= tier_empire
+    }
+
+    allowed_against_character = {
+        is_alive = yes
+        is_landed = yes
+        agot_is_independent_ruler = yes
+        in_diplomatic_range = scope:attacker
+        NOT = { has_trait = ruin }
+        NOT = { has_government = ruins_government }
+        NOT = { has_government = wilderness_government }
+        NOT = { government_has_flag = government_is_nw }
+        NOT = { any_held_title = { is_holy_order = yes } }
+        agot_mw_war_valid_during_megawar = yes
+    }
+
+    target_titles = all
+    target_title_tier = county
+    target_top_liege_if_outside_realm = yes
+    ignore_effect = change_title_holder
+
+    valid_to_start = {
+        scope:target = {
+            tier = tier_county
+            is_coastal_county = yes
+            NOT = { agot_invalid_war_target = yes }
+            holder ?= {
+                OR = {
+                    this = scope:defender
+                    any_liege_or_above = { this = scope:defender }
+                }
+            }
+        }
+    }
+
+    should_invalidate = {
+        OR = {
+            scope:attacker = {
+                NOT = { government_has_flag = government_is_dragonlord_oligarchy }
+            }
+            scope:defender = { is_independent_ruler = no }
+            NOT = {
+                any_in_list = {
+                    list = target_titles
+                    tier = tier_county
+                    is_coastal_county = yes
+                    holder ?= {
+                        OR = {
+                            this = scope:defender
+                            any_liege_or_above = { this = scope:defender }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    cost = {
+        piety = {
+            value = 0
+            if = {
+                limit = { scope:defender.faith = scope:attacker.faith }
+                add = {
+                    value = minor_piety_value
+                    desc = CB_SAME_FAITH_COST
+                }
+            }
+            multiply = common_cb_piety_cost_multiplier
+        }
+        prestige = {
+            value = 0
+            add = {
+                value = minor_prestige_value
+                desc = CB_BASE_COST
+            }
+            multiply = common_cb_prestige_cost_multiplier
+        }
+    }
+
+    on_declaration = { on_declared_war = yes }
+
+    on_invalidated_desc = msg_county_conquest_war_invalidated_message
+    on_invalidated = {}
+
+    on_victory_desc = {
+        first_valid = {
+            triggered_desc = {
+                trigger = { scope:attacker = { is_local_player = yes } }
+                desc = county_conquest_cb_victory_desc_attacker
+            }
+            desc = county_conquest_cb_victory_desc
+        }
+    }
+
+    on_victory = {
+        scope:attacker = { show_pow_release_message_effect = yes }
+        add_legitimacy_attacker_victory_effect = yes
+        scope:attacker = { accolade_attacker_war_end_glory_gain_low_effect = yes }
+
+        create_title_and_vassal_change = {
+            type = conquest
+            save_scope_as = change
+            add_claim_on_loss = yes
+        }
+
+        # Mutually-exclusive targeting above means this list contains only the
+        # one county selected at declaration.
+        every_in_list = {
+            list = target_titles
+            change_title_holder = {
+                holder = scope:attacker
+                change = scope:change
+            }
+        }
+
+        resolve_title_and_vassal_change = scope:change
+
+        scope:attacker = { add_prestige_experience = minor_prestige_value }
+
+        modify_allies_of_participants_fame_values = {
+            WINNER = scope:attacker
+            FAME_BASE = minor_prestige_value
+            IS_RELIGIOUS_WAR = no
+            WINNER_ALLY_FAME_SCALE = 1
+            LOSER_ALLY_FAME_SCALE = 1
+        }
+
+        add_truce_attacker_victory_effect = yes
+        scope:attacker = { fp1_remember_recent_conquest_victory_effect = yes }
+        agot_war_victory_effects = yes
+    }
+
+    on_white_peace_desc = {
+        first_valid = {
+            triggered_desc = {
+                trigger = { scope:defender = { is_local_player = yes } }
+                desc = county_conquest_cb_white_peace_desc_defender
+            }
+            desc = county_conquest_cb_white_peace_desc
+        }
+    }
+
+    on_white_peace = {
+        scope:attacker = {
+            show_pow_release_message_effect = yes
+            add_prestige = {
+                value = minor_prestige_value
+                multiply = -1
+            }
+        }
+        modify_allies_of_participants_fame_values = {
+            WINNER = scope:attacker
+            FAME_BASE = minor_prestige_value
+            IS_RELIGIOUS_WAR = no
+            WINNER_ALLY_FAME_SCALE = 1
+            LOSER_ALLY_FAME_SCALE = 1
+        }
+        add_truce_white_peace_effect = yes
+    }
+
+    on_defeat_desc = {
+        first_valid = {
+            triggered_desc = {
+                trigger = { scope:defender = { is_local_player = yes } }
+                desc = county_conquest_cb_defeat_desc_defender
+            }
+            desc = county_conquest_cb_defeat_desc
+        }
+    }
+
+    on_defeat = {
+        scope:attacker = {
+            show_pow_release_message_effect = yes
+            pay_short_term_gold_reparations_effect = { GOLD_VALUE = 2 }
+            add_prestige = {
+                value = medium_prestige_value
+                multiply = -1
+            }
+        }
+        add_legitimacy_attacker_defeat_effect = yes
+        scope:defender = {
+            accolade_defender_war_end_glory_gain_low_effect = yes
+            add_prestige_war_defender_effect = { PRESTIGE_VALUE = major_prestige_value }
+        }
+        modify_allies_of_participants_fame_values = {
+            WINNER = scope:defender
+            FAME_BASE = major_prestige_value
+            IS_RELIGIOUS_WAR = no
+            WINNER_ALLY_FAME_SCALE = 1
+            LOSER_ALLY_FAME_SCALE = 1
+        }
+        add_truce_attacker_defeat_effect = yes
+        on_lost_aggression_war_discontent_loss = yes
+    }
+
+    transfer_behavior = transfer
+
+    on_primary_attacker_death = inherit
+    on_primary_defender_death = inherit
+    attacker_allies_inherit = yes
+    defender_allies_inherit = yes
+
+    war_name = DRAGONLORD_TRADE_ENCLAVE_WAR_NAME
+    war_name_base = DRAGONLORD_TRADE_ENCLAVE_WAR_NAME_BASE
+    cb_name = dragonlord_trade_enclave_cb
+
+    interface_priority = 70
+    use_de_jure_wargoal_only = yes
+    attacker_wargoal_percentage = 0.8
+    max_defender_score_from_occupation = 150
+    max_attacker_score_from_occupation = 150
+
+    ai_score_mult = { value = 0 }
+}

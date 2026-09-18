@@ -1,0 +1,41 @@
+# Compatibility patch for AGOT Dragonlord Regime + Ancient Birthright.
+#
+# Ancient Birthright uses k_dragon_throne (a kingdom-tier landless title) as
+# the temporal Head-of-Faith title for Imperial Valyrian. Dragonlord Regime's
+# hierarchy normalization normally destroys every non-primary kingdom/empire,
+# accidentally destroying this HoF title too. Preserve it while still
+# dissolving ordinary territorial high titles.
+
+dragonlord_enforce_single_high_title_effect = {
+    primary_title = { save_scope_as = dragonlord_constitutional_primary_title }
+
+    every_held_title = {
+        limit = {
+            OR = {
+                tier = tier_kingdom
+                tier = tier_empire
+            }
+            NOT = { this = scope:dragonlord_constitutional_primary_title }
+            NOT = { this = title:k_dragon_throne }
+        }
+        add_to_temporary_list = dragonlord_subordinate_high_titles
+    }
+    every_vassal_or_below = {
+        every_held_title = {
+            limit = {
+                OR = {
+                    tier = tier_kingdom
+                    tier = tier_empire
+                }
+                NOT = { this = title:k_dragon_throne }
+            }
+            add_to_temporary_list = dragonlord_subordinate_high_titles
+        }
+    }
+
+    every_in_list = {
+        list = dragonlord_subordinate_high_titles
+        save_scope_as = dragonlord_subordinate_high_title
+        holder = { destroy_title = scope:dragonlord_subordinate_high_title }
+    }
+}
