@@ -65,3 +65,14 @@ A fallback minor decision, "Propose a Trade Enclave War", is also included.
 It opens the ordinary Dragonlord Council planner directly with Trade Enclave
 War selected. The actual vote, cooldown, authorization, and CB remain the same;
 the fallback does not grant a free authorization or bypass the council.
+
+v1.2 native council UI integration
+----------------------------------
+The fifth war selector is now merged into Dragonlord Regime's native
+gui/custom_gui/dragonlord_council_agenda.gui rather than displayed as a
+standalone overlay. This fixes the selector failing to appear while retaining
+the existing target-pool, vote, authorization, fallback decision, and CB logic.
+
+The native four description rows are reduced from 54px to 44px and the war
+column spacing from 8px to 4px so all five war types fit in the existing
+590px column without changing the rest of the council layout.

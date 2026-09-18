@@ -9,4 +9,4 @@ dependencies={
 	"Ancient Birthright - More Valyrian Faiths and Flavours"
 }
 supported_version="1.19.*"
-path="/home/cfutro/.local/share/Paradox Interactive/Crusader Kings III/mod/agot_dragonlord_regime_ab_compat"
+path="/home/cfutro/git/temp-agot/agot_dragonlord_regime_ab_compat"

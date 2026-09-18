@@ -4,4 +4,4 @@ tags={
 	"Utilities"
 }
 supported_version="1.19.*"
-path="/home/cfutro/.local/share/Paradox Interactive/Crusader Kings III/mod/no_cultural_tradition_cooldown"
+path="/home/cfutro/git/temp-agot/no_cultural_tradition_cooldown"

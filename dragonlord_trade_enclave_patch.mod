@@ -1,5 +1,5 @@
 name="Dragonlord Regime - Trade Enclave War"
-version="1.1.0"
+version="1.2.0"
 tags={
 	"Gameplay"
 	"Governments"
@@ -9,4 +9,4 @@ dependencies={
 	"AGOT Dragonlord Regime"
 }
 supported_version="1.19.*"
-path="/home/cfutro/.local/share/Paradox Interactive/Crusader Kings III/mod/dragonlord_trade_enclave_patch"
+path="/home/cfutro/git/temp-agot/dragonlord_trade_enclave_patch"
