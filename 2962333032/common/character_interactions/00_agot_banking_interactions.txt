@@ -1,0 +1,1063 @@
+﻿##########################################
+# Banking system by Ronko
+##########################################
+
+take_vassal_loan_interaction = {
+	category = interaction_category_vassal
+	icon = icon_gold
+
+	desc = take_vassal_loan_interaction_desc
+	interface_priority = 40
+	use_diplomatic_range = no
+
+	ai_frequency = 4
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_targets = { ai_recipients = vassals }
+
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = 20
+			gold < 0
+		}
+		modifier = {
+			add = 20
+			gold < uncomfortable_ai_bancruptcy_for_wars
+		}
+		modifier = {
+			add = 20
+			gold < minimum_ai_gold_value_for_tyranny_wars
+			is_at_war = yes
+		}
+		modifier = {
+			add = 6.67
+			gold < minimum_ai_gold_value_for_tyranny_wars
+		}
+		modifier = {
+			add = 35
+			is_imprisoned = yes
+			gold < ransom_cost_value
+		}
+		modifier = {
+			add = 35
+			primary_heir ?= { is_imprisoned = yes }
+			gold < ransom_cost_value
+		}
+		modifier = {
+			NOR = {  # only if Iron bank loans are impossible
+				has_character_flag = has_a_loan_flag
+				has_character_flag = final_default
+			}
+			factor = 0
+		}
+	}
+
+	on_send = {
+		scope:actor = {
+			set_variable = {
+				name = vassal_loan_amount
+				value = scope:actor.low_loan_value
+			}
+		}
+		scope:recipient = {
+			set_variable = {
+				name = liege_loan_amount
+				value = scope:actor.low_loan_value
+			}
+		}
+	}
+
+	notification_text = {
+		desc = liege_requests_loan
+	}
+
+	is_shown = {
+		scope:actor = {
+			is_incapable = no
+			is_landed = yes
+			is_human = yes
+			NOR = {
+				has_trait = kingsguard
+				has_trait = nightswatch
+				has_trait = dragon
+				has_trait = devoted
+			}
+
+			#OR = {  # only if Iron bank loans are impossible
+			#	has_character_flag = has_a_loan_flag
+			#	has_character_flag = final_default
+			#}
+
+			# you need vassals
+			government_has_flag = government_is_feudal
+			highest_held_title_tier >= tier_duchy
+
+			NOT = {
+				has_character_flag = loan_requested
+			}
+
+			NOT = {
+				has_character_flag = has_a_vassal_loan
+			}
+
+			location = {
+				NOT = {
+					geographical_region = world_westeros_beyond_the_wall
+				}
+			}
+		}
+		scope:recipient = {
+			NOT = { has_character_flag = has_granted_liege_loan }
+			government_has_flag = government_is_feudal
+			is_incapable = no
+			is_vassal_of = scope:actor
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:recipient = {
+			gold >= scope:actor.low_loan_value
+			is_landed = yes
+			highest_held_title_tier >= tier_county
+			NOR = {
+				has_trait = kingsguard
+				has_trait = nightswatch
+				has_trait = dragon
+				has_trait = devoted
+			}
+			is_human = yes
+		}
+	}
+
+	cooldown_against_recipient = { years = 3 }
+
+	auto_accept = no
+
+	ai_accept = {
+		base = -25
+
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 1
+			desc = AI_OPINION_REASON
+		}
+
+		modifier = {
+			add = 25
+			scope:recipient = {
+				has_trait = loyal
+			}
+			desc = INTERACTION_LOYAL
+		}
+
+		modifier = {
+			add = -25
+			scope:recipient = {
+				has_trait = disloyal
+			}
+			desc = INTERACTION_DISLOYAL
+		}
+
+		modifier = {
+			add = 25
+			scope:recipient = {
+				has_trait = trusting
+			}
+			desc = INTERACTION_TRUSTING
+		}
+
+		modifier = {
+			add = -25
+			scope:recipient = {
+				has_trait = paranoid
+			}
+			desc = INTERACTION_PARANOID
+		}
+
+		modifier = {
+			add = 50
+			scope:recipient = {
+				has_trait = ambitious
+			}
+			desc = INTERACTION_AMBITIOUS
+		}
+
+		modifier = { # Say no to rivals
+			add = -100
+			scope:recipient = {
+				has_relation_rival = scope:actor
+				NOT = { has_relation_nemesis = scope:actor }
+			}
+			desc = "ACTOR_RIVAL_TO_ME_REASON"
+		}
+
+		modifier = {
+			add = 25
+			scope:recipient = {
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 1
+				}
+			}
+			desc = INTIMIDATED_REASON
+		}
+		modifier = {
+			add = 50
+			scope:recipient = {
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 2
+				}
+			}
+			desc = COWED_REASON
+		}
+
+		modifier = {
+			add = 50
+			scope:hook = yes
+			desc = SCHEME_HOOK_USED
+		}
+	}
+
+	send_options_exclusive = no
+
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = GENERIC_SPEND_A_HOOK
+	}
+
+	on_accept = {	# Money is paid in separate event
+		scope:recipient = {
+			save_scope_as = loan_vassal
+
+			#set_variable = {
+			#	name = liege_loan_amount
+			#	value = scope:actor.low_loan_value
+			#}
+
+			set_variable = {
+				name = vassal_loan_debtor
+				value = scope:actor
+			}
+			add_character_flag = has_granted_liege_loan
+		}
+		scope:actor = {
+			set_variable = {
+				name = vassal_loan_total_amount
+				value = var:vassal_loan_amount
+			}
+			change_variable = {
+				name = vassal_loan_total_amount
+				multiply = 1.25
+			}
+			set_variable = {
+				name = vassal_loan_interest
+				value = var:vassal_loan_amount
+			}
+			change_variable = {
+				name = vassal_loan_interest
+				multiply = 0.25
+			}
+			set_variable = {
+				name = vassal_loan_creditor
+				value = scope:recipient
+			}
+
+			add_character_flag = has_a_vassal_loan
+
+			trigger_event = {   #inform, pay the gold and trigger repayment event
+				id = agot_banking.0501
+			}
+		}
+	}
+
+	on_decline = {
+		scope:recipient = {
+			save_scope_as = loan_vassal
+			if = {
+				limit = { has_variable = liege_loan_amount }
+				remove_variable = liege_loan_amount
+			}
+		}
+		scope:actor = {
+			if = {
+				limit = { has_variable = vassal_loan_amount }
+				remove_variable = vassal_loan_amount
+			}
+			trigger_event = {   #inform about decline and opinion malus
+				id = agot_banking.0502
+			}
+		}
+	}
+}
+
+gift_share_interaction = {
+	category = interaction_category_friendly
+	icon = icon_gold
+
+	desc = gift_share_interaction_desc
+	interface_priority = 40
+	use_diplomatic_range = no
+
+	on_send = {
+	}
+
+	notification_text = {
+		desc = gift_share
+	}
+
+	is_shown = {
+		scope:actor = {
+			NOT = { this = scope:recipient }
+			OR = {
+				AND = {
+					has_variable = IB_Shares
+					var:IB_Shares > 1
+				}
+				AND = {
+					has_variable = bank1_Shares
+					var:bank1_Shares > 1
+				}
+				AND = {
+					has_variable = bank2_Shares
+					var:bank2_Shares > 1
+				}
+				AND = {
+					has_variable = bank3_Shares
+					var:bank3_Shares > 1
+				}
+			}
+		}
+		scope:recipient = {
+			is_human = yes
+			top_liege = scope:actor.top_liege
+			NOT = {
+				AND = {
+					scope:actor = {
+						AND = {
+							has_variable = IB_Shares
+							var:IB_Shares > 0
+						}
+					}
+					OR = {
+						AND = {
+							has_variable = bank1_Shares
+							var:bank1_Shares > 0
+						}
+						AND = {
+							has_variable = bank2_Shares
+							var:bank2_Shares > 0
+						}
+						AND = {
+							has_variable = bank3_Shares
+							var:bank3_Shares > 0
+						}
+					}
+				}
+				AND = {
+					scope:actor = {
+						AND = {
+							has_variable = bank1_Shares
+							var:bank1_Shares > 0
+						}
+					}
+					OR = {
+						AND = {
+							has_variable = IB_Shares
+							var:IB_Shares > 0
+						}
+						AND = {
+							has_variable = bank2_Shares
+							var:bank2_Shares > 0
+						}
+						AND = {
+							has_variable = bank3_Shares
+							var:bank3_Shares > 0
+						}
+					}
+				}
+				AND = {
+					scope:actor = {
+						AND = {
+							has_variable = bank2_Shares
+							var:bank2_Shares > 0
+						}
+					}
+					OR = {
+						AND = {
+							has_variable = IB_Shares
+							var:IB_Shares > 0
+						}
+						AND = {
+							has_variable = bank1_Shares
+							var:bank1_Shares > 0
+						}
+						AND = {
+							has_variable = bank3_Shares
+							var:bank3_Shares > 0
+						}
+					}
+				}
+				AND = {
+					scope:actor = {
+						AND = {
+							has_variable = bank3_Shares
+							var:bank3_Shares > 0
+						}
+					}
+					OR = {
+						AND = {
+							has_variable = IB_Shares
+							var:IB_Shares > 0
+						}
+						AND = {
+							has_variable = bank1_Shares
+							var:bank1_Shares > 0
+						}
+						AND = {
+							has_variable = bank2_Shares
+							var:bank2_Shares > 0
+						}
+					}
+				}
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:recipient = {
+			NOR = {
+				has_trait = kingsguard
+				has_trait = nightswatch
+				has_trait = devoted
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	on_accept = {
+		scope:recipient = {
+			add_opinion = {
+				target = scope:actor
+				modifier = pleased_opinion
+				opinion = 20
+			}
+
+			if = {
+				limit = {
+					scope:actor = {
+						AND = {
+							has_variable = IB_Shares
+							var:IB_Shares > 1
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_variable = IB_Shares
+						var:IB_Shares > 0
+					}
+					change_variable = {
+						name = IB_Shares
+						add = 1
+					}
+				}
+				else = {
+					set_variable = {
+						name = IB_Shares
+						value = 1
+					}
+					add_to_global_variable_list = {
+						name = IB_Shareholder
+						target = this
+					}
+					add_to_global_variable_list = {
+						name = Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:IB_founder
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:actor = {
+						AND = {
+							has_variable = bank1_Shares
+							var:bank1_Shares > 1
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_variable = bank1_Shares
+						var:bank1_Shares > 0
+					}
+					change_variable = {
+						name = bank1_Shares
+						add = 1
+					}
+				}
+				else = {
+					set_variable = {
+						name = bank1_Shares
+						value = 1
+					}
+					add_to_global_variable_list = {
+						name = bank1_Shareholder
+						target = this
+					}
+					add_to_global_variable_list = {
+						name = Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:bank1_founder
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:actor = {
+						AND = {
+							has_variable = bank2_Shares
+							var:bank2_Shares > 1
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_variable = bank2_Shares
+						var:bank2_Shares > 0
+					}
+					change_variable = {
+						name = bank2_Shares
+						add = 1
+					}
+				}
+				else = {
+					set_variable = {
+						name = bank2_Shares
+						value = 1
+					}
+					add_to_global_variable_list = {
+						name = bank2_Shareholder
+						target = this
+					}
+					add_to_global_variable_list = {
+						name = Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:bank2_founder
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:actor = {
+						AND = {
+							has_variable = bank3_Shares
+							var:bank3_Shares > 1
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_variable = bank3_Shares
+						var:bank3_Shares > 0
+					}
+					change_variable = {
+						name = bank3_Shares
+						add = 1
+					}
+				}
+				else = {
+					set_variable = {
+						name = bank3_Shares
+						value = 1
+					}
+					add_to_global_variable_list = {
+						name = bank3_Shareholder
+						target = this
+					}
+					add_to_global_variable_list = {
+						name = Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:bank3_founder
+					}
+				}
+			}
+		}
+		scope:actor = {
+			if = {
+				limit = {
+					AND = {
+						has_variable = IB_Shares
+						var:IB_Shares > 1
+					}
+				}
+				change_variable = {
+					name = IB_Shares
+					subtract = 1
+				}
+			}
+			else_if = {
+				limit = {
+					AND = {
+						has_variable = bank1_Shares
+						var:bank1_Shares > 1
+					}
+				}
+				change_variable = {
+					name = bank1_Shares
+					subtract = 1
+				}
+			}
+			else_if = {
+				limit = {
+					AND = {
+						has_variable = bank2_Shares
+						var:bank2_Shares > 1
+					}
+				}
+				change_variable = {
+					name = bank2_Shares
+					subtract = 1
+				}
+			}
+			else_if = {
+				limit = {
+					AND = {
+						has_variable = bank3_Shares
+						var:bank3_Shares > 1
+					}
+				}
+				change_variable = {
+					name = bank3_Shares
+					subtract = 1
+				}
+			}
+		}
+	}
+
+	on_decline = {
+	}
+}
+
+take_share_interaction = {
+	category = interaction_category_friendly
+	icon = icon_gold
+
+	desc = take_share_interaction_desc
+	interface_priority = 40
+	use_diplomatic_range = no
+
+	on_send = {
+	}
+
+	notification_text = {
+		desc = take_share
+	}
+
+	is_shown = {
+		scope:actor = {
+			top_liege = scope:recipient.top_liege
+			is_house_head = yes
+			NOT = { this = scope:recipient }
+		}
+		scope:recipient = {
+			is_human = yes
+			top_liege = scope:actor.top_liege
+			house.house_head = scope:actor
+			OR = {
+				AND = {
+					has_variable = IB_Shares
+					var:IB_Shares > 0
+				}
+				AND = {
+					has_variable = bank1_Shares
+					var:bank1_Shares > 0
+				}
+				AND = {
+					has_variable = bank2_Shares
+					var:bank2_Shares > 0
+				}
+				AND = {
+					has_variable = bank3_Shares
+					var:bank3_Shares > 0
+				}
+			}
+			NOR = {
+				has_character_flag = IB_Director
+				has_character_flag = bank1_Director
+				has_character_flag = bank2_Director
+				has_character_flag = bank3_Director
+			}
+			NOT = {
+				AND = {
+					AND = {
+						has_variable = IB_Shares
+						var:IB_Shares > 0
+					}
+					scope:actor = {
+						OR = {
+							AND = {
+								has_variable = bank1_Shares
+								var:bank1_Shares > 0
+							}
+							AND = {
+								has_variable = bank2_Shares
+								var:bank2_Shares > 0
+							}
+							AND = {
+								has_variable = bank3_Shares
+								var:bank3_Shares > 0
+							}
+						}
+					}
+				}
+				AND = {
+					AND = {
+						has_variable = bank1_Shares
+						var:bank1_Shares > 0
+					}
+					scope:actor = {
+						OR = {
+							AND = {
+								has_variable = IB_Shares
+								var:IB_Shares > 0
+							}
+							AND = {
+								has_variable = bank2_Shares
+								var:bank2_Shares > 0
+							}
+							AND = {
+								has_variable = bank3_Shares
+								var:bank3_Shares > 0
+							}
+						}
+					}
+				}
+				AND = {
+					AND = {
+						has_variable = bank2_Shares
+						var:bank2_Shares > 0
+					}
+					scope:actor = {
+						OR = {
+							AND = {
+								has_variable = IB_Shares
+								var:IB_Shares > 0
+							}
+							AND = {
+								has_variable = bank1_Shares
+								var:bank1_Shares > 0
+							}
+							AND = {
+								has_variable = bank3_Shares
+								var:bank3_Shares > 0
+							}
+						}
+					}
+				}
+				AND = {
+					AND = {
+						has_variable = bank3_Shares
+						var:bank3_Shares > 0
+					}
+					scope:actor = {
+						OR = {
+							AND = {
+								has_variable = IB_Shares
+								var:IB_Shares > 0
+							}
+							AND = {
+								has_variable = bank1_Shares
+								var:bank1_Shares > 0
+							}
+							AND = {
+								has_variable = bank2_Shares
+								var:bank2_Shares > 0
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:recipient = {
+			NOR = {
+				has_trait = kingsguard
+				has_trait = nightswatch
+				has_trait = devoted
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	on_accept = {
+		scope:actor = {
+			if = {
+				limit = {
+					scope:recipient = {
+						AND = {
+							has_variable = IB_Shares
+							var:IB_Shares > 0
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_variable = IB_Shares
+						var:IB_Shares > 0
+					}
+					change_variable = {
+						name = IB_Shares
+						add = scope:recipient.var:IB_Shares
+					}
+				}
+				else = {
+					set_variable = {
+						name = IB_Shares
+						value = scope:recipient.var:IB_Shares
+					}
+					add_to_global_variable_list = {
+						name = IB_Shareholder
+						target = this
+					}
+					add_to_global_variable_list = {
+						name = Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:IB_founder
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:recipient = {
+						AND = {
+							has_variable = bank1_Shares
+							var:bank1_Shares > 0
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_variable = bank1_Shares
+						var:bank1_Shares > 0
+					}
+					change_variable = {
+						name = bank1_Shares
+						add = scope:recipient.var:bank1_Shares
+					}
+				}
+				else = {
+					set_variable = {
+						name = bank1_Shares
+						value = scope:recipient.var:bank1_Shares
+					}
+					add_to_global_variable_list = {
+						name = bank1_Shareholder
+						target = this
+					}
+					add_to_global_variable_list = {
+						name = Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:bank1_founder
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:recipient = {
+						AND = {
+							has_variable = bank2_Shares
+							var:bank2_Shares > 0
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_variable = bank2_Shares
+						var:bank2_Shares > 0
+					}
+					change_variable = {
+						name = bank2_Shares
+						add = scope:recipient.var:bank2_Shares
+					}
+				}
+				else = {
+					set_variable = {
+						name = bank2_Shares
+						value = scope:recipient.var:bank2_Shares
+					}
+					add_to_global_variable_list = {
+						name = bank2_Shareholder
+						target = this
+					}
+					add_to_global_variable_list = {
+						name = Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:bank2_founder
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:recipient = {
+						AND = {
+							has_variable = bank3_Shares
+							var:bank3_Shares > 0
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_variable = bank3_Shares
+						var:bank3_Shares > 0
+					}
+					change_variable = {
+						name = bank3_Shares
+						add = scope:recipient.var:bank3_Shares
+					}
+				}
+				else = {
+					set_variable = {
+						name = bank3_Shares
+						value = scope:recipient.var:bank3_Shares
+					}
+					add_to_global_variable_list = {
+						name = bank3_Shareholder
+						target = this
+					}
+					add_to_global_variable_list = {
+						name = Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:bank3_founder
+					}
+				}
+			}
+		}
+		scope:recipient = {
+			add_opinion = {
+				target = scope:actor
+				modifier = disappointed_opinion
+				opinion = -20
+			}
+
+			if = {
+				limit = {
+					AND = {
+						has_variable = IB_Shares
+						var:IB_Shares > 0
+					}
+				}
+
+				remove_variable = IB_Shares
+
+				remove_list_global_variable = {
+					name = IB_Shareholder
+					target = this
+				}
+				remove_list_global_variable = {
+					name = Shareholder
+					target = this
+				}
+			}
+			else_if = {
+				limit = {
+					AND = {
+						has_variable = bank1_Shares
+						var:bank1_Shares > 0
+					}
+				}
+
+				remove_variable = bank1_Shares
+
+				remove_list_global_variable = {
+					name = bank1_Shareholder
+					target = this
+				}
+				remove_list_global_variable = {
+					name = Shareholder
+					target = this
+				}
+			}
+			else_if = {
+				limit = {
+					AND = {
+						has_variable = bank2_Shares
+						var:bank2_Shares > 0
+					}
+				}
+
+				remove_variable = bank2_Shares
+
+				remove_list_global_variable = {
+					name = bank2_Shareholder
+					target = this
+				}
+				remove_list_global_variable = {
+					name = Shareholder
+					target = this
+				}
+			}
+			else_if = {
+				limit = {
+					AND = {
+						has_variable = bank3_Shares
+						var:bank3_Shares > 0
+					}
+				}
+
+				remove_variable = bank3_Shares
+
+				remove_list_global_variable = {
+					name = bank3_Shareholder
+					target = this
+				}
+				remove_list_global_variable = {
+					name = Shareholder
+					target = this
+				}
+			}
+		}
+	}
+
+	on_decline = {
+	}
+}

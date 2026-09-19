@@ -1,0 +1,63 @@
+﻿# Start councillor travel to their target court if needed
+# Use in on_start_task_court and on_monthly_court councillor task on_actions
+agot_start_councillor_travel_effect = {
+	# Save target character as agot_councillor_target_court
+	set_variable = {
+		name = agot_councillor_target_court
+		value = scope:target_character
+	}
+
+	if = {
+		limit = {
+			exists = scope:target_character
+			exists = scope:target_character.capital_province
+			NOT = { location = scope:target_character.capital_province }
+
+			# Either not traveling, or another councillor travel was cancelled
+			# and the councillor is traveling back home
+			OR = {
+				is_travelling = no
+				current_travel_plan ?= {
+					has_variable = agot_councillor_travel
+					is_cancelled = yes
+				}
+			}
+		}
+
+		# Abort previous councillor travel if needed
+		location = { save_temporary_scope_as = current_location }
+		current_travel_plan ?= {
+			abort_travel_plan = yes
+		}
+		set_location = scope:current_location
+
+		# Start new travel to target character's capital and mark it as councillor travel
+		start_travel_plan = {
+			destination = scope:target_character.capital_province
+			return_trip = yes
+			on_arrival_on_action = agot_on_arrival_councillor_travel
+			on_arrival_destinations = all_but_last
+		}
+		current_travel_plan = {
+			set_variable = agot_councillor_travel
+		}
+	}
+}
+
+# Cancel councillor travel to make the councillor return to their home court
+# Use in on_cancel_task_court councillor task on_actions
+agot_cancel_councillor_travel_effect = {
+	if = {
+		limit = {
+			current_travel_plan ?= {
+				has_variable = agot_councillor_travel
+				is_cancelled = no
+			}
+		}
+		current_travel_plan = {
+			cancel_travel_plan = yes
+		}
+	}
+
+	remove_variable = agot_councillor_target_court
+}

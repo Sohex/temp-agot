@@ -1,0 +1,2280 @@
+﻿namespace = agot_sailing_at_sea
+
+##################################################
+# #Standard Events
+# 0001 - 0020	At Sea
+##################################################
+
+
+##################################################
+# STANDARD EVENTS
+
+# A Knight Gets Knocked Overboard!
+agot_sailing_at_sea.0001 = {
+	type = character_event
+	title = agot_sailing_at_sea.0001.t
+	desc = agot_sailing_at_sea.0001.desc
+	theme = agot_at_sea
+	cooldown = { years = 20 }
+
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:KnightDisaster
+		animation = fear
+	}
+
+	trigger = {
+		OR = {
+			AND = {
+				is_commanding_army = yes
+				location = {
+					is_sea_province = yes
+				}
+				commanding_army.location = {
+					is_sea_province = yes
+				}
+			}
+			AND = {
+				is_available_travelling = yes
+				is_landed = yes
+				location = {
+					has_sea_danger_type = { TRAVEL = root.current_travel_plan }
+				}
+				current_travel_plan = {
+					any_entourage_character = {
+						NOT = { this = root }
+						count >= 2
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		#set_variable = agot_event_window_wide
+		play_sound_effect = "event:/SFX/UI/Siege/sfx_ui_siege_vfx_fire_02"
+		if = {
+			limit = {
+				is_commanding_army = yes
+				location = {
+					is_sea_province = yes
+				}
+				commanding_army.location ?= { is_sea_province = yes }
+			}
+			commanding_army.location = { save_scope_as = current_location }
+		}
+		if = {
+			limit = {
+				is_travelling = yes
+			}
+			location = { save_scope_as = current_location }
+		}
+
+		if = {
+			limit = {
+				any_knight = {
+					is_human = yes
+					is_at_same_location = root
+				}
+			}
+			random_knight = {
+				limit = {
+					is_at_same_location = root
+				}
+				save_scope_as = KnightDisaster
+			}
+		}
+
+		if = {
+			limit = {
+				is_travelling = yes
+				current_travel_plan = {
+					any_entourage_character = {
+						NOT = { this = root }
+						count >= 2
+					}
+				}
+			}
+			current_travel_plan = {
+				random_entourage_character = {
+					limit = { NOT = { this = root } }
+					save_scope_as = KnightDisaster
+				}
+			}
+		}
+	}
+
+	# Jump In Anyways! *(Chance YOU die)*
+	option = {
+		name = agot_sailing_at_sea.0001.a
+
+		random_list = {
+			30 = {
+				scope:KnightDisaster = {
+					death = {
+						death_reason = death_lost_at_sea
+					}
+				}
+				hidden_effect = {
+					send_interface_toast = {
+						title = agot_sailing_at_sea.0001.a.toast1.t
+						tooltip = agot_sailing_at_sea.0001.a.toast1.d
+						left_icon = scope:KnightDisaster
+						show_as_tooltip = {
+							scope:KnightDisaster = {
+								death = {
+									death_reason = death_lost_at_sea
+								}
+							}
+						}
+					}
+				}
+			}
+			25 = {
+				scope:KnightDisaster = {
+					increase_wounds_effect = { REASON = drowned }
+				}
+			}
+			25 = {
+				scope:KnightDisaster = {
+					increase_wounds_effect = { REASON = drowned }
+				}
+				increase_wounds_effect = { REASON = drowned }
+			}
+		}
+	}
+	#Depressed + Lunatic characters can jump in also
+
+	#Throw Rope Out! *(Medium Chance he lives, but chance he misses the rope and drowns anyways)*
+	#Small Small Chance that he grabs and pulls the rope too hard and pulls in another knight with him
+
+	#Leave Him! *(Chance he does live and gets back and become rival)*
+
+	# after = {
+	# 	remove_variable = agot_event_window_wide
+	# }
+}
+
+# Get Scurvy
+# Follow up about oranges,
+# CK2 Event reads,
+#EVTOPTA_RIP_5055;Er... door hinge?
+# agot_sailing_at_sea.0002 = {
+# 	hidden = yes
+
+# 	trigger = {
+# 		agot_travel_or_leading_armies_at_sea_trigger = yes
+# 	}
+
+# 	immediate = {
+# 		if = {
+# 			limit = {
+# 				is_commanding_army = yes
+# 				location = {
+# 					is_sea_province = yes
+# 				}
+# 				commanding_army.location ?= { is_sea_province = yes }
+# 			}
+# 			commanding_army.location = { save_scope_as = current_location }
+# 		}
+# 		if = {
+# 			limit = {
+# 				is_travelling = yes
+# 			}
+# 			location = { save_scope_as = current_location }
+# 		}
+
+# 		random_list = {
+# 			10 = { # Scurvy
+# 				modifier = {
+# 					add = 30
+# 					has_trait = gluttonous
+# 				}
+# 				modifier = {
+# 					add = -10
+# 					NOT = {
+# 						OR = {
+# 							has_character_flag = been_at_sea_1
+# 							has_character_flag = been_at_sea_2
+# 							has_character_flag = been_at_sea_3
+# 						}
+# 					}
+# 				}
+# 				modifier = {
+# 					add = 2
+# 					has_character_flag = been_at_sea_1
+# 				}
+# 				modifier = {
+# 					add = 6
+# 					has_character_flag = been_at_sea_2
+# 				}
+# 				modifier = {
+# 					add = 17
+# 					has_character_flag = been_at_sea_3
+# 				}
+# 				trigger_event = agot_sailing_at_sea.0003
+# 			}
+# 			90 = { # Still healthy
+# 				if = {
+# 					limit = {
+# 						has_character_flag = been_at_sea_1
+# 					}
+# 					remove_character_flag = been_at_sea_1
+# 					add_character_flag = been_at_sea_2
+# 				}
+# 				if = {
+# 					limit = {
+# 						has_character_flag = been_at_sea_2
+# 					}
+# 					remove_character_flag = been_at_sea_2
+# 					add_character_flag = been_at_sea_3
+# 				}
+# 				if = {
+# 					limit = {
+# 						NOR = {
+# 							has_character_flag = been_at_sea_1
+# 							has_character_flag = been_at_sea_2
+# 							has_character_flag = been_at_sea_3
+# 						}
+# 					}
+# 					add_character_flag = been_at_sea_1
+# 				}
+# 				trigger_event = agot_sailing_at_sea.0005 #Clearing Scenario
+
+# 				trigger_event = {
+# 					id = agot_sailing_at_sea.0002
+# 					days = { 30 60 }
+# 				}
+# 			}
+# 		}
+# 	}
+# }
+
+#you got scurvy
+# agot_sailing_at_sea.0003 = {
+# 	type = character_event
+# 	title = agot_sailing_at_sea.0003.t
+# 	desc = agot_sailing_at_sea.0003.desc
+# 	override_background = {
+# 		reference = fp1_ocean
+# 	}
+# 	theme = agot_at_sea
+
+# 	left_portrait = {
+# 		character = root
+# 		animation = sick
+# 	}
+
+# 	trigger = {
+# 		OR = {
+# 			AND = {
+# 				is_commanding_army = yes
+# 				location = {
+# 					is_sea_province = yes
+# 				}
+# 				commanding_army.location = {
+# 					is_sea_province = yes
+# 				}
+# 			}
+# 			AND = {
+# 				is_available_travelling = yes
+# 				is_landed = yes
+# 				location = {
+# 					has_sea_danger_type = { TRAVEL = root.current_travel_plan }
+# 				}
+# 			}
+# 		}
+# 		NOT = {
+# 			has_trait = scurvy
+# 		}
+# 	}
+
+# 	immediate = {
+# 		play_music_cue = "mx_cue_illness"
+# 		add_character_flag = had_event_agot_sailing_at_sea_0004
+# 		hidden_effect = {
+# 			add_trait = scurvy
+# 		}
+# 		save_scope_as = sick_character
+# 		save_scope_value_as = {
+# 			name = disease_type
+# 			value = flag:scurvy
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_sailing_at_sea.0003.a
+# 		show_as_tooltip = {
+# 			add_trait_force_tooltip = scurvy
+# 		}
+# 		trigger_event = {
+# 			id = agot_sailing_at_sea.0004
+# 			days = 30
+# 		}
+# 		remove_character_flag = been_at_sea_1
+# 		remove_character_flag = been_at_sea_2
+# 		remove_character_flag = been_at_sea_3
+# 	}
+# }
+
+#Back on shore, Lose scurvy / Treatment event?
+# agot_sailing_at_sea.0004 = {
+# 	hidden = yes
+# 	#type = chracter_event
+# 	immediate = {
+# 		add_character_flag = had_event_agot_sailing_at_sea_0004
+
+# 		if = {
+# 			limit = {
+# 				has_trait = scurvy
+# 				location = {
+# 					NOT = { is_sea_province = yes }
+# 				}
+# 			}
+# 			if = {
+# 				limit = {
+# 					OR = {
+# 						AND = {
+# 							employs_court_position = maester_court_position
+# 							any_court_position_holder = {
+# 								type = maester_court_position
+# 							}
+# 						}
+# 						AND = {
+# 							employs_court_position = court_physician_court_position
+# 							any_court_position_holder = {
+# 								type = court_physician_court_position
+# 							}
+# 						}
+# 					}
+# 				}
+# 				add_character_flag = physician_scurvy_treatment
+# 				trigger_event = {
+# 					id = agot_sailing_at_sea.00044
+# 					days = 3
+# 				}
+# 			}
+# 			if = {
+# 				limit = {
+# 					has_character_flag = physician_scurvy_treatment
+# 				}
+# 				remove_character_flag = physician_scurvy_treatment
+# 			}
+# 			if = {
+# 				limit = {
+# 					NOT = { has_character_flag = physician_scurvy_treatment }
+# 				}
+# 				trigger_event = {
+# 					id = agot_sailing_at_sea.0005
+# 					days = { 40 70 }
+# 				}
+# 			}
+# 		}
+
+# 		if = {
+# 			limit = {
+# 				has_trait = scurvy
+# 				location = { is_sea_province = yes }
+# 			}
+# 			trigger_event = { id = agot_sailing_at_sea.0004 days = 60 }
+# 		}
+# 	}
+# }
+
+# scripted_trigger health_event_is_worried_trigger = {
+# 	OR = {
+# 		ai_compassion >= medium_positive_ai_value
+# 		dread_modified_ai_boldness = {
+# 			dreaded_character = $CHARACTER$
+# 			value <= medium_negative_ai_value
+# 		}
+# 		has_relation_friend = $CHARACTER$
+# 		has_relation_lover = $CHARACTER$
+# 		opinion = {
+# 			target = $CHARACTER$
+# 			value >= high_positive_opinion
+# 		}
+# 	}
+# 	$CHARACTER$.health < fine_health
+# }
+
+#heath event
+# agot_sailing_at_sea.00044 = {
+# 	type = character_event
+# 	title = health.1001.t
+# 	desc = {
+# 		desc = agot_sailing_at_sea.00044.d
+# 		triggered_desc = {
+# 			trigger = {
+# 				court_physician_available_trigger = yes
+# 				liege_picks_treatment_trigger = no
+# 			}
+# 			desc = agot_sailing_at_sea.00044.d.court_physician.desc
+# 		}
+# 	}
+# 	theme = healthcare
+# 	left_portrait = {
+# 		character = root
+# 		animation = sick
+# 	}
+# 	right_portrait = {
+# 		character = scope:physician
+# 		triggered_animation = {
+# 			trigger = { scope:physician = { health_event_is_worried_trigger = { CHARACTER = root } } }
+# 			animation = worry
+# 		}
+# 		triggered_animation = {
+# 			trigger = { scope:physician = { ai_rationality >= 0 } } #Don't look rational if you're not
+# 			animation = personality_rational
+# 		}
+# 		animation = idle
+# 	}
+
+# 	immediate = {
+# 		add_character_flag = had_event_agot_sailing_at_sea_00044
+# 		save_court_physician_as_effect = { SCOPE_NAME = physician }
+# 	}
+
+# 	###COURT PHYSICIAN OPTIONS###
+# 	#Safe treatment
+# 	option = {
+# 		trigger = {
+# 			exists = scope:physician
+# 			liege_picks_treatment_trigger = no
+# 		}
+# 		name = health.3101.a
+# 		safe_disease_treatment_effect = { PATIENT = root TREATMENT_PICKER = root }
+# 		ai_chance = { base = 10 }
+# 	}
+
+# 	#Risky treatment
+# 	option = {
+# 		trigger = {
+# 			exists = scope:physician
+# 			liege_picks_treatment_trigger = no
+# 		}
+# 		name = health.3101.b
+# 		risky_disease_treatment_effect = { PATIENT = root TREATMENT_PICKER = root }
+# 		ai_chance = { base = 1 }
+# 	}
+
+# 	#Mystic treatment
+# 	option = {
+# 		trigger = {
+# 			court_physician_available_trigger = yes
+# 			liege_picks_treatment_trigger = no
+# 			scope:physician = { has_trait = lifestyle_mystic }
+# 		}
+# 		name = health.3101.c
+# 		mystic_disease_treatment_effect = { PATIENT = root TREATMENT_PICKER = root }
+# 		ai_chance = {
+# 			base = 0.5
+# 			modifier = {
+# 				add = -0.5
+# 				ai_zeal >= 0
+# 			}
+# 		}
+# 	}
+
+# 	#No treatment
+# 	option = {
+# 		trigger = {
+# 			exists = scope:physician
+# 			liege_picks_treatment_trigger = no
+# 		}
+# 		name = health.3101.d
+# 		no_disease_treatment_effect = yes
+# 		ai_chance = { base = 0 }
+# 	}
+# }
+
+#SAFE TREATMENT: SUCCESS
+# agot_sailing_at_sea.000444 = {
+# 	type = character_event
+# 	title = agot_sailing_at_sea.000444.t
+# 	desc = {
+# 		#Treatment type
+# 		random_valid = {
+# 			triggered_desc = {
+# 				trigger = { court_physician_available_trigger = yes }
+# 				desc = agot_health.safe_treatment.2.desc
+# 			}
+# 		}
+# 		desc = agot_sailing_at_sea.000444.end.desc
+# 	}
+# 	theme = healthcare
+# 	left_portrait = {
+# 		character = scope:physician
+# 		triggered_animation = {
+# 			trigger = {
+# 				OR = {
+# 					opinion = {
+# 						target = root
+# 						value >= high_positive_opinion
+# 					}
+# 					ai_compassion >= medium_positive_compassion
+# 				}
+# 			}
+# 			animation = happiness
+# 		}
+# 		animation = personality_rational
+# 	}
+
+# 	immediate = {
+# 		#Adds modifiers, sends return visit event in 1-5 years, shows a tooltip if physician ranked up
+# 		disease_treatment_results_effect = { TREATMENT = safe OUTCOME = success }
+
+# 		#Message for close relatives
+# 		inform_liege_about_disease_treatment_effect = { TREATMENT = safe OUTCOME = success }
+# 	}
+
+# 	option = {
+# 		#name = health.3103.a
+# 		name = agot_sailing_at_sea.000444.a
+# 		custom_tooltip = agot_sailing_at_sea.000444.a.t
+# 		remove_trait = scurvy
+# 		remove_character_flag = had_event_agot_sailing_at_sea_00044
+# 		remove_character_flag = had_event_agot_sailing_at_sea_0004
+# 	}
+# }
+
+#Clear scenario
+# agot_sailing_at_sea.0005 = {
+# 	hidden = yes
+
+# 	option = {
+# 		name = agot_sailing_at_sea.0005.a
+# 		trigger = {
+# 			NOT = { location = { is_sea_province = yes } }
+# 		}
+# 		remove_character_flag = been_at_sea_1
+# 		remove_character_flag = been_at_sea_2
+# 		remove_character_flag = been_at_sea_3
+# 	}
+
+# 	option = {
+# 		name = agot_sailing_at_sea.0005.b
+# 		trigger = {
+# 			location = { is_sea_province = yes }
+# 		}
+# 		trigger_event = {
+# 			id = agot_sailing_at_sea.0005
+# 			days = 60
+# 		}
+# 	}
+# }
+
+#EVENT BEGINING Story about how you and a few crew members had seen a good bout of cargo/treasure off the side of the ship, you and a few crew members are to hop in a rowboat to investigate the boxes.
+agot_sailing_at_sea.0007 = {
+	type = character_event
+	title = agot_sailing_at_sea.0007.t
+	desc = agot_sailing_at_sea.0007.desc
+	override_background = {
+		reference = AGOT_ocean_no_sound #This is a No Sound Variation as it's covered by the Siren's call
+	}
+	theme = agot_at_sea #Use fp1_ocean if you want sounds in the event
+	cooldown = { years = 60 }
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+
+	right_portrait = {
+		character = scope:fellow_sailor
+		animation = throne_room_conversation_1
+	}
+
+	trigger = {
+		OR = {
+			AND = {
+				any_army = {
+					location = {
+						is_sea_province = yes
+					}
+					exists = army_commander
+					army_commander = {
+						this = root
+					}
+				}
+				location = {
+					is_sea_province = yes
+				}
+			}
+			AND = {
+				is_available_travelling = yes
+				is_landed = yes
+				location = {
+					has_sea_danger_type = { TRAVEL = root.current_travel_plan }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		commanding_army.location = { save_scope_as = current_location }
+		random_knight = {
+			limit = {
+				is_at_same_location = root
+			}
+			save_scope_as = fellow_sailor
+		}
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0007.a
+		#Approach the voice
+
+		trigger_event = {
+			id = agot_sailing_at_sea.0008
+			days = 2
+		}
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0007.b
+		#Approach the voice
+
+	}
+}
+
+#You and the crew near the boxes you wanted to investigate but then the most enchanting voice, a voice of a woman, calls
+agot_sailing_at_sea.0008 = {
+	type = character_event
+	title = agot_sailing_at_sea.0008.t
+	desc = agot_sailing_at_sea.0008.desc
+	override_background = {
+		reference = AGOT_rowboat_night #This is a No Sound Variation as it's covered by the Siren's call
+	}
+	theme = agot_at_sea
+	override_sound = { reference = "event:/SFX/Events/Themes/sfx_event_theme_type_generic" }
+	left_portrait = {
+		character = root
+		animation = love
+	}
+
+	# right_portrait = {
+	# 	character = scope:siren
+	# 	#animation = ecstasy
+	# 	animation = flirtation_left
+	# 	#animation = schadenfreude
+	# 	outfit_tags = { long_straight_hair }
+	# 	#outfit_tags = { no_clothes }
+	# }
+
+	immediate = {
+		create_character = {
+			location = root.location
+			template = cinderella_character
+			age = 19
+			gender = female
+			save_scope_as = siren
+		}
+		play_music_cue = CK3AGOT_siren
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0008.a
+		#Get Closer, lose stress
+
+		#Play with this
+		add_stress = medium_stress_loss
+
+		trigger_event = {
+			id = agot_sailing_at_sea.0009
+			days = 1
+		}
+	}
+
+
+	option = {
+		name = agot_sailing_at_sea.0008.b
+		#It's time to sail away, gain stress
+		##Play with this
+		add_stress = major_stress_gain
+
+		hidden_effect = {
+			random_list = {
+				30 = {
+					#add_character_flag = agot_sailing_at_sea_0008_b_failed AGOT TODO - Unused, reenable once it is used
+					trigger_event = {
+						id = agot_sailing_at_sea.0009
+						days = 1
+					}
+				}
+			}
+		}
+	}
+}
+
+#Face to Face with the Siren
+agot_sailing_at_sea.0009 = {
+	type = character_event
+	title = agot_sailing_at_sea.0009.t
+	desc = agot_sailing_at_sea.0009.desc
+	override_background = {
+		reference = AGOT_rowboat_night #This is a No Sound Variation as it's covered by the Siren's call
+	}
+	theme = agot_at_sea
+
+	left_portrait = {
+		character = root
+		animation = love
+	}
+
+	right_portrait = {
+		character = scope:siren
+		#animation = ecstasy
+		animation = flirtation_left
+		#animation = schadenfreude
+		#outfit_tags = { long_straight_hair }
+		#outfit_tags = { no_clothes }
+	}
+
+	immediate = {
+		play_music_cue = CK3AGOT_siren
+		scope:siren = {
+			add_character_flag = no_headgear
+			add_character_flag = siren
+			add_character_flag = single_combat_stripped_to_waist
+			hidden_effect = {
+				copy_inheritable_appearance_from = character:AGOT_At_Sea_Siren_1
+			}
+		}
+		hidden_effect = {
+			#Find some things the player might "want?"
+			#has_de_jure_claim_on
+
+			#Mermaid promises to kill a title claimant!
+			if = {
+				limit = {
+					has_trait = paranoid
+					ai_compassion <= low_negative_ai_value
+					ai_rationality <= 0
+					is_landed = yes
+					primary_title.tier >= tier_duchy
+					any_held_title = {
+						any_claimant = {
+							add_to_temporary_list = title_claimant_murder_targets
+						}
+					}
+				}
+			}
+
+			#Mermaid promises to kill the leader of a claimant faction!
+			if = {
+				limit = {
+					is_landed = yes
+					primary_title.tier >= tier_duchy
+					any_targeting_faction = {
+						faction_is_type = claimant_faction
+						special_character = {
+							add_to_temporary_list = claimant_faction_murder_targets
+						}
+					}
+				}
+			}
+			#Mermaid promises to kill your tyrannus liege!
+			if = {
+				limit = {
+					highest_held_title_tier > tier_barony
+					exists = liege
+					liege = {
+						tyranny >= medium_tyranny
+					}
+					opinion = {
+						target = liege
+						value <= high_negative_opinion
+					}
+					ai_rationality >= medium_positive_ai_value
+				}
+				liege = {
+					add_to_temporary_list = tyranny_liege_murder_targets
+				}
+			}
+			#Mermaid promises to kill your unfaithful wife!
+			if = {
+				limit = {
+					exists = primary_spouse
+					any_consort = { # Unfaithful spouses
+						root = {
+							ai_compassion <= 0
+							can_start_scheme = {
+								target_character = prev
+								type = murder
+							}
+						}
+						exposed_cheating_on_spouse_trigger = { SPOUSE = root }
+						add_to_temporary_list = unfaithful_wife_murder_targets
+					}
+				}
+			}
+			#Mermaid promises to murder, to move your way up the succession
+			if = {
+				limit = {
+					ai_greed >= low_positive_ai_value
+					exists = dynasty
+				}
+				dynasty = {
+					every_dynasty_member = {
+						limit = {
+							is_good_familial_murder_target_trigger = yes
+						}
+						add_to_temporary_list = succession_dynasty_murder_targets
+					}
+				}
+				every_close_or_extended_family_member = {
+					limit = {
+						NOT = { is_in_list = succession_dynasty_murder_targets }
+						is_good_familial_murder_target_trigger = yes
+					}
+					add_to_temporary_list = succession_family_murder_targets
+				}
+			}
+			#Mermaid promises to murder a rival of yours!
+			if = {
+				limit = {
+					any_relation = { # Rivals are good targets for murder schemes
+						type = rival
+						count = all
+						trigger_if = {
+							limit = {
+								root = {
+									ai_honor <= low_positive_ai_value
+									can_start_scheme = {
+										target_character = prev
+										type = murder
+									}
+								}
+							}
+							add_to_temporary_list = rival_murder_targets
+						}
+					}
+				}
+			}
+
+			#PROMISES TO GIVE YOU A GENIUS HEIR
+
+			random_in_list = {
+				list = title_claimant_murder_targets
+				save_scope_as = title_claimant_murder_target
+			}
+			random_in_list = {
+				list = claimant_faction_murder_targets
+				save_scope_as = claimant_faction_murder_targets
+			}
+			random_in_list = {
+				list = tyranny_liege_murder_targets
+				save_scope_as = tyranny_liege_murder_targets
+			}
+			random_in_list = {
+				list = unfaithful_wife_murder_targets
+				save_scope_as = unfaithful_wife_murder_target
+			}
+			random_in_list = {
+				list = succession_dynasty_murder_targets
+				save_scope_as = succession_dynasty_murder_targets
+			}
+			random_in_list = {
+				list = succession_family_murder_targets
+				save_scope_as = succession_family_murder_targets
+			}
+			random_in_list = {
+				list = rival_murder_targets
+				save_scope_as = rival_murder_targets
+			}
+		}
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0009.a
+		trigger = {
+			exists = scope:title_claimant_murder_target
+		}
+		custom_description_no_bullet = { text = agot_sailing_at_sea.0009_a_tt }
+		show_as_tooltip = {
+			scope:title_claimant_murder_target = {
+				death = {
+					death_reason = death_natural_causes
+				}
+			}
+		}
+		hidden_effect = {
+			trigger_event = agot_sailing_at_sea.0010
+		}
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0009.b
+		trigger = {
+			exists = scope:claimant_faction_murder_targets
+		}
+		custom_description_no_bullet = { text = agot_sailing_at_sea.0009_b_tt }
+		show_as_tooltip = {
+			scope:claimant_faction_murder_targets = {
+				death = {
+					death_reason = death_natural_causes
+				}
+			}
+		}
+		hidden_effect = {
+			trigger_event = agot_sailing_at_sea.0010
+		}
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0009.c
+		trigger = {
+			exists = scope:tyranny_liege_murder_targets
+		}
+		custom_description_no_bullet = { text = agot_sailing_at_sea.0009_c_tt }
+		show_as_tooltip = {
+			scope:tyranny_liege_murder_targets = {
+				death = {
+					death_reason = death_natural_causes
+				}
+			}
+		}
+		hidden_effect = {
+			trigger_event = agot_sailing_at_sea.0010
+		}
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0009.d
+		trigger = {
+			exists = scope:unfaithful_wife_murder_target
+		}
+		custom_description_no_bullet = { text = agot_sailing_at_sea.0009_d_tt }
+		show_as_tooltip = {
+			scope:unfaithful_wife_murder_target = {
+				death = {
+					death_reason = death_natural_causes
+				}
+			}
+		}
+		hidden_effect = {
+			trigger_event = agot_sailing_at_sea.0010
+		}
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0009.e
+		trigger = {
+			exists = scope:succession_dynasty_murder_targets
+		}
+		custom_description_no_bullet = { text = agot_sailing_at_sea.0009_e_tt }
+		show_as_tooltip = {
+			scope:succession_dynasty_murder_targets = {
+				death = {
+					death_reason = death_natural_causes
+				}
+			}
+		}
+		hidden_effect = {
+			trigger_event = agot_sailing_at_sea.0010
+		}
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0009.f
+		trigger = {
+			exists = scope:succession_family_murder_targets
+		}
+		custom_description_no_bullet = { text = agot_sailing_at_sea.0009_f_tt }
+		show_as_tooltip = {
+			scope:succession_family_murder_targets = {
+				death = {
+					death_reason = death_natural_causes
+				}
+			}
+		}
+		hidden_effect = {
+			trigger_event = agot_sailing_at_sea.0010
+		}
+	}
+
+
+	option = {
+		name = agot_sailing_at_sea.0009.g
+		trigger = {
+			exists = scope:rival_murder_targets
+		}
+		custom_description_no_bullet = { text = agot_sailing_at_sea.0009_g_tt }
+		show_as_tooltip = {
+			scope:rival_murder_targets = {
+				death = {
+					death_reason = death_natural_causes
+				}
+			}
+		}
+		hidden_effect = {
+			trigger_event = agot_sailing_at_sea.0010
+		}
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0009.h
+		custom_description_no_bullet = { text = agot_sailing_at_sea.0009_h_tt }
+		add_stress = major_stress_gain
+		trigger_event = agot_sailing_at_sea.0010
+	}
+}
+
+agot_sailing_at_sea.0010 = {
+	type = character_event
+	title = agot_sailing_at_sea.0010.t
+	desc = agot_sailing_at_sea.0010.desc
+	theme = agot_at_sea
+	override_background = {
+		reference = AGOT_rowboat_night #This is a No Sound Variation as it's covered by the Siren's call
+	}
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:siren
+		#animation = ecstasy
+		animation = scheme # this is kinda cool for other things
+		#animation = schadenfreude
+		#outfit_tags = { long_straight_hair }
+		#outfit_tags = { no_clothes }
+	}
+
+	immediate = {
+		play_music_cue = CK3AGOT_whale
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0010.a
+		duel = {
+			skill = prowess
+			target = scope:siren
+
+			50 = {
+				desc = agot_sailing_at_sea.0010.a.success
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 0.5
+				}
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0010.a.success
+					left_icon = root
+					add_stress = major_stress_gain
+				}
+			}
+			50 = {
+				desc = agot_sailing_at_sea.0010.a.failure
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0010.a.failure
+					left_icon = root
+					death = {
+						death_reason = death_lost_at_sea
+					}
+				}
+			}
+		}
+	}
+}
+#agot_sailing_at_sea.0009 + 0010 reserved for Siren Events
+
+## Whale sighting in the shivering sea, Options "Woah that's cool" "Ignore it", third option depending on a trait to hunt the whale *(moby dick reference)*
+# Friendly /Whale/ Dolphins #Lose Stress
+agot_sailing_at_sea.0011 = {
+	type = character_event
+	title = agot_sailing_at_sea.0011.t
+	desc = {
+		random_valid = {
+			triggered_desc = {
+				trigger = {
+					has_character_flag = dolphins
+				}
+				desc = agot_sailing_at_sea.0011.desc.dolphins
+			}
+			triggered_desc = {
+				trigger = {
+					has_character_flag = whale
+				}
+				desc = agot_sailing_at_sea.0011.desc.whale
+			}
+		}
+	}
+	theme = agot_at_sea
+
+	trigger = {
+		location = {
+			is_sea_province = yes
+		}
+	}
+
+	override_background = {
+		reference = AGOT_ocean_no_sound
+	}
+
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+
+	immediate = {
+		hidden_effect ={
+			random_list = {
+				50 = {
+					add_character_flag = dolphins
+					play_music_cue = CK3AGOT_dolphins
+				}
+				50 = {
+					add_character_flag = whale
+					play_music_cue = CK3AGOT_ocean_whale
+				}
+			}
+		}
+	}
+
+	option = { # General Lose Stress
+		name = agot_sailing_at_sea.0011.a
+		add_stress = minor_stress_loss
+		add_prestige = 50
+	}
+
+	option = { # Lets sing a song!
+		name = agot_sailing_at_sea.0011.b
+		add_stress = minor_stress_loss
+		if = {
+			limit = {
+				any_knight = {
+					location = root.location
+					is_human = yes
+				}
+			}
+			every_knight = {
+				limit = {
+					location = root.location
+				}
+				add_stress = minor_stress_loss
+			}
+
+		}
+	}
+	option = {
+		name = agot_sailing_at_sea.0011.c
+		trigger = {
+			has_character_flag = whale
+		}
+		duel = {
+			skill = prowess
+			value = 10
+			50 = {
+				desc = agot_sailing_at_sea.0011.c.successtt
+				show_chance = no
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 0.5
+				}
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0011.c.success
+					left_icon = root
+					add_stress = major_stress_gain
+				}
+			}
+			40 = {
+				desc = agot_sailing_at_sea.0011.c.failurett
+				show_chance = no
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0011.c.failure
+					left_icon = root
+				}
+			}
+			10 = {
+				desc = agot_sailing_at_sea.0011.c.injuredfailurett
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0011.c.injuredfailure
+					left_icon = root
+					increase_wounds_effect = { REASON = drowned }
+				}
+			}
+			10 = {
+				desc = agot_sailing_at_sea.0011.c.injuredsuccesstt
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0011.c.injuredsuccess
+					left_icon = root
+					increase_wounds_effect = { REASON = drowned }
+				}
+			}
+			5 = {
+				desc = agot_sailing_at_sea.0011.c.deathtt
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0011.c.death
+					left_icon = root
+					death = {
+						death_reason = death_lost_at_sea
+					}
+				}
+			}
+		}
+	}
+	after = {
+		if = {
+			limit = {
+				has_character_flag = dolphins
+			}
+			remove_character_flag = dolphins
+		}
+		else = {
+			if = {
+				limit = {
+					has_character_flag = whale
+				}
+				remove_character_flag = whale
+			}
+		}
+	}
+}
+
+# Pirate Duel Test
+agot_sailing_at_sea.0012 = {
+	type = character_event
+	window = duel_event
+	title = agot_sailing_at_sea.0012.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					has_character_flag = triedtorun
+				}
+				desc = agot_sailing_at_sea.0012.desc.triedtorun
+			}
+			desc = agot_sailing_at_sea.0012.desc
+		}
+	}
+	theme = agot_at_sea
+	override_background = {
+		reference = AGOT_ocean_no_sound
+	}
+
+	left_portrait = {
+		character = scope:rulingsailor
+		animation = aggressive_sword
+		#remove_default_outfit = yes
+	}
+
+	right_portrait = {
+		character = scope:playerattacker
+		animation = aggressive_sword
+		#outfit_tags = { viking }
+	}
+
+	immediate = {
+		save_scope_as = rulingsailor
+
+		create_character = {
+			location = root.location
+			template = agot_pirate_character_leader
+			save_scope_as = playerattacker
+		}
+		#Uber you stinker you're not doing anything with this flag
+		# scope:playerattacker = {
+		# 	add_character_flag = pirate
+		# }
+		if = {
+			limit = {
+				any_knight = {
+					location = root.location
+					is_human = yes
+				}
+			}
+			every_knight = {
+				limit = {
+					location = root.location
+					can_start_single_combat_trigger = yes
+				}
+				add_to_list = defendingknights
+
+			}
+
+			if = {
+				limit = {
+					any_in_list = {
+						list = defendingknights
+						count >= 1
+					}
+				}
+				ordered_in_list = {
+					list = defendingknights
+					order_by = prowess
+					save_scope_as = knight_1
+					assign_quirk_effect = yes
+					#set_variable = friendly_knight Unused, reenable when used again
+				}
+
+				create_character = {
+					location = root.location
+					template = agot_pirate_character
+					save_scope_as = knightattacker_1
+				}
+				scope:knightattacker_1 = {
+					#set_variable = pirate_knight Unused, reenable when used again
+				}
+			}
+			if = {
+				limit = {
+					any_in_list = {
+						list = defendingknights
+						count >= 2
+					}
+				}
+				ordered_in_list = {
+					list = defendingknights
+					limit = {
+						NOR = {
+							THIS = scope:knight_1
+						}
+					}
+					order_by = prowess
+					save_scope_as = knight_2
+					assign_quirk_effect = yes
+					#set_variable = friendly_knight Unused, reenable when used again
+				}
+				create_character = {
+					location = root.location
+					template = agot_pirate_character
+					save_scope_as = knightattacker_2
+				}
+				scope:knightattacker_2 = {
+					#set_variable = pirate_knight Unused, reenable when used again
+				}
+			}
+			if = {
+				limit = {
+					any_in_list = {
+						list = defendingknights
+						count >= 3
+					}
+				}
+				ordered_in_list = {
+					list = defendingknights
+					limit = {
+						NOR = {
+							THIS = scope:knight_1
+							THIS = scope:knight_2
+						}
+					}
+					order_by = prowess
+					save_scope_as = knight_3
+					assign_quirk_effect = yes
+					#set_variable = friendly_knight Unused, reenable when used again
+				}
+				create_character = {
+					location = root.location
+					template = agot_pirate_character
+					save_scope_as = knightattacker_3
+				}
+				scope:knightattacker_3 = {
+					#set_variable = pirate_knight Unused, reenable when used again
+				}
+			}
+			if = {
+				limit = {
+					any_in_list = {
+						list = defendingknights
+						count >= 4
+					}
+				}
+				ordered_in_list = {
+					list = defendingknights
+					limit = {
+						NOR = {
+							THIS = scope:knight_1
+							THIS = scope:knight_2
+							THIS = scope:knight_3
+						}
+					}
+					order_by = prowess
+					save_scope_as = knight_4
+					assign_quirk_effect = yes
+					#set_variable = friendly_knight Unused, reenable when used again
+				}
+				create_character = {
+					location = root.location
+					template = agot_pirate_character
+					save_scope_as = knightattacker_4
+				}
+				scope:knightattacker_4 = {
+					#set_variable = pirate_knight Unused, reenable when used again
+				}
+			}
+			if = {
+				limit = {
+					any_in_list = {
+						list = defendingknights
+						count >= 4
+					}
+				}
+				ordered_in_list = {
+					list = defendingknights
+					limit = {
+						NOR = {
+							THIS = scope:knight_1
+							THIS = scope:knight_2
+							THIS = scope:knight_3
+							THIS = scope:knight_4
+						}
+					}
+					order_by = prowess
+					save_scope_as = knight_5
+					assign_quirk_effect = yes
+					#set_variable = friendly_knight Unused, reenable when used again
+				}
+				create_character = {
+					location = root.location
+					template = agot_pirate_character
+					save_scope_as = knightattacker_5
+				}
+				scope:knightattacker_5 = {
+					#set_variable = pirate_knight Unused, reenable when used again
+				}
+			}
+		}
+	}
+
+	option = { # Lets fight!
+		name = agot_sailing_at_sea.0012.a
+		custom_tooltip = agot_sailing_at_sea.0012.tooltip
+		#First Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_1
+				exists = scope:knightattacker_1
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_1
+				SC_ATTACKER = scope:knightattacker_1
+				SC_DEFENDER = scope:knight_1
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+		#Second Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_2
+				exists = scope:knightattacker_2
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_2
+				SC_ATTACKER = scope:knightattacker_2
+				SC_DEFENDER = scope:knight_2
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+		#Third Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_3
+				exists = scope:knightattacker_3
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_3
+				SC_ATTACKER = scope:knightattacker_3
+				SC_DEFENDER = scope:knight_3
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+		#Fourth Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_4
+				exists = scope:knightattacker_4
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_4
+				SC_ATTACKER = scope:knightattacker_4
+				SC_DEFENDER = scope:knight_4
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+		#Fifth Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_5
+				exists = scope:knightattacker_5
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_5
+				SC_ATTACKER = scope:knightattacker_5
+				SC_DEFENDER = scope:knight_5
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+		# You and the Leader Fight
+		configure_start_single_combat_effect = {
+			SC_INITIATOR = scope:playerattacker
+			SC_ATTACKER = scope:playerattacker
+			SC_DEFENDER = root
+			FATALITY = always
+			FIXED = no
+			LOCALE = docks
+			OUTPUT_EVENT = agot_sailing_at_sea.0013
+			INVALIDATION_EVENT = perk_interaction.0102
+		}
+	}
+
+	# option = { # debug option
+	# 	name = agot_sailing_at_sea.0011.b
+
+	# 	scope:knightattacker_1 = {
+	# 		add_gold = 10
+	# 	}
+
+	# 	scope:knightattacker_3 = {
+	# 		add_gold = 10
+	# 	}
+	# }
+}
+	#Delayed Follow-up event for Knights to fight!
+agot_sailing_at_sea.00133 = {
+	hidden = yes
+	orphan = yes
+	immediate = {
+		#First Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_1
+				exists = scope:knightattacker_1
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_1
+				SC_ATTACKER = scope:knightattacker_1
+				SC_DEFENDER = scope:knight_1
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+		#Second Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_2
+				exists = scope:knightattacker_2
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_2
+				SC_ATTACKER = scope:knightattacker_2
+				SC_DEFENDER = scope:knight_2
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+		#Third Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_3
+				exists = scope:knightattacker_3
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_3
+				SC_ATTACKER = scope:knightattacker_3
+				SC_DEFENDER = scope:knight_3
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+		#Fourth Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_4
+				exists = scope:knightattacker_4
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_4
+				SC_ATTACKER = scope:knightattacker_4
+				SC_DEFENDER = scope:knight_4
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+		#Fifth Knights Fight!
+		if = {
+			limit = {
+				exists = scope:knight_5
+				exists = scope:knightattacker_5
+			}
+			configure_start_single_combat_effect = {
+				SC_INITIATOR = scope:knightattacker_5
+				SC_ATTACKER = scope:knightattacker_5
+				SC_DEFENDER = scope:knight_5
+				FATALITY = always
+				FIXED = no
+				LOCALE = docks
+				OUTPUT_EVENT = agot_sailing_at_sea.0014
+				INVALIDATION_EVENT = perk_interaction.0102
+			}
+		}
+	}
+}
+
+#	Follow-up event to delay toasts
+agot_sailing_at_sea.0013 = {
+	hidden = yes
+
+	immediate = {
+		# Fire the follow-up stuff; delay this by a day so the toasts appear _after_ the final event.
+		trigger_event = {
+			id = agot_sailing_at_sea.0014
+			days = 1
+		}
+	}
+}
+
+scripted_effect agot_perk_interaction_0101_apply_effects_effect = {
+	scope:sc_victor = { add_stress = major_stress_loss }
+	scope:sc_loser = { add_stress = major_stress_gain }
+}
+
+#	Follow-up event.
+agot_sailing_at_sea.0014 = {
+	hidden = yes
+
+	immediate = {
+		# # Send out a toast to the victor.
+		scope:sc_victor = {
+			if = {
+				limit = {
+					OR = {
+						this = scope:knight_1
+						this = scope:knight_2
+						this = scope:knight_3
+						this = scope:knight_4
+						this = scope:knight_5
+					}
+				}
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0013.friendlydefendervictory.t
+					left_icon = scope:sc_victor
+					right_icon = scope:sc_loser
+					show_as_tooltip = { agot_perk_interaction_0101_apply_effects_effect = yes }
+				}
+				scope:rulingsailor = {
+					debug_log = "Sending Toast about friendlyoutcome_toast to sailor!"
+					send_interface_toast = {
+						title = agot_sailing_at_sea.0013.toast.title
+						custom_tooltip = agot_sailing_at_sea.0013.friendlyoutcome_toast.t
+						left_icon = scope:sc_victor
+						right_icon = scope:sc_loser
+						show_as_tooltip = { agot_perk_interaction_0101_apply_effects_effect = yes }
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						this = scope:knightattacker_1
+						this = scope:knightattacker_2
+						this = scope:knightattacker_3
+						this = scope:knightattacker_4
+						this = scope:knightattacker_5
+					}
+				}
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0013.pirateattackervictory.t
+					left_icon = scope:sc_victor
+					right_icon = scope:sc_loser
+					show_as_tooltip = { agot_perk_interaction_0101_apply_effects_effect = yes }
+				}
+				scope:rulingsailor = {
+					debug_log = "Sending Toast about piratewinoutcome_toast to sailor!"
+					send_interface_toast = {
+						title = agot_sailing_at_sea.0013.toast.title
+						custom_tooltip = agot_sailing_at_sea.0013.piratewinoutcome_toast.t
+						left_icon = scope:sc_victor
+						right_icon = scope:sc_loser
+						show_as_tooltip = { agot_perk_interaction_0101_apply_effects_effect = yes }
+					}
+					send_interface_message = {
+						type = notable_has_died
+						desc = agot_sailing_at_sea.0013.piratewinoutcome_message
+						left_icon = scope:sc_loser
+					}
+				}
+			}
+			else = {
+				send_interface_toast = {
+					title = perk_interaction.0101.victor_toast.t
+					left_icon = scope:sc_victor
+					right_icon = scope:sc_loser
+					show_as_tooltip = { agot_perk_interaction_0101_apply_effects_effect = yes }
+				}
+			}
+		}
+
+		# And to the loser.
+		scope:sc_loser = {
+			if = {
+				limit = {
+					OR = {
+						this = scope:knight_1
+						this = scope:knight_2
+						this = scope:knight_3
+						this = scope:knight_4
+						this = scope:knight_5
+					}
+				}
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0013.friendlydefenderloser.t
+					left_icon = scope:sc_victor
+					right_icon = scope:sc_loser
+					show_as_tooltip = { agot_perk_interaction_0101_apply_effects_effect = yes }
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						this = scope:knightattacker_1
+						this = scope:knightattacker_2
+						this = scope:knightattacker_3
+						this = scope:knightattacker_4
+						this = scope:knightattacker_5
+					}
+				}
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0013.pirateattackerloser.t
+					left_icon = scope:sc_victor
+					right_icon = scope:sc_loser
+					show_as_tooltip = { agot_perk_interaction_0101_apply_effects_effect = yes }
+				}
+			}
+			else = {
+				send_interface_toast = {
+					title = perk_interaction.0101.loser_toast.t
+					left_icon = scope:sc_loser
+					right_icon = scope:sc_victor
+					show_as_tooltip = { agot_perk_interaction_0101_apply_effects_effect = yes }
+				}
+			}
+		}
+
+		# Then execute the actual effects.
+		agot_perk_interaction_0101_apply_effects_effect = yes
+	}
+}
+
+#Pirate start event, fires the above events
+agot_sailing_at_sea.0015 = {
+	type = character_event
+	title = agot_sailing_at_sea.0015.t
+	desc = agot_sailing_at_sea.0015.desc
+	theme = agot_at_sea
+	override_background = {
+		reference = AGOT_ocean_no_sound
+	}
+	orphan = yes
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	trigger = {
+		is_commanding_army = yes
+		location = {
+			is_sea_province = yes
+			OR = {
+				is_stepstones_trigger = yes
+				is_ironmans_bay_trigger = yes
+			}
+		}
+		commanding_army.location = {
+			is_sea_province = yes
+		}
+	}
+	immediate = {
+		location = { save_scope_as = current_location }
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = {
+			add = 0.8
+			location = {
+				is_stepstones_trigger = yes
+			}
+		}
+	}
+	#try to run!
+	option = {
+		name = agot_sailing_at_sea.0015.a
+		random_list = {
+			#Perhaps add a chance later depending on ship upgrade?
+			50 = {
+				custom_tooltip = agot_sailing_at_sea.0015.option_tooltip
+				hidden_effect = {
+					send_interface_toast = {
+						title = agot_sailing_at_sea.0015.toast1
+						left_icon = root
+						custom_tooltip = agot_sailing_at_sea.0015.toast_tooltip1
+					}
+				}
+				add_character_flag = {
+					flag = triedtorun
+					days = 3
+				}
+				trigger_event = {
+					id = agot_sailing_at_sea.0012
+					days = 2
+				}
+			}
+			50 = {
+				send_interface_toast = {
+					title = agot_sailing_at_sea.0015.toast
+					left_icon = root
+					custom_tooltip = agot_sailing_at_sea.0015.toast_tooltip
+				}
+			}
+		}
+	}
+
+	#Stand and fight!
+	option = {
+		name = agot_sailing_at_sea.0015.b
+		custom_tooltip = agot_sailing_at_sea.0015.b.option_tooltip
+		trigger_event = {
+			id = agot_sailing_at_sea.0012
+			days = 2
+		}
+	}
+}
+
+#You Get Blown off Course!
+agot_sailing_at_sea.0016 = {
+	type = character_event
+	title = agot_sailing_at_sea.0016.t
+	desc = agot_sailing_at_sea.0016.desc
+	theme = agot_at_sea
+	override_background = {
+		reference = AGOT_ocean_no_sound
+	}
+	orphan = yes
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	trigger = {
+		is_commanding_army = yes
+		location = {
+			is_sea_province = yes
+		}
+		commanding_army.location = {
+			is_sea_province = yes
+		}
+	}
+	immediate = {
+		location = { save_scope_as = current_location }
+	}
+
+	# weight_multiplier = {
+	# 	base = 1
+	# 	modifier = {
+	# 		add = 0.8
+	# 		location = {
+	# 			is_stepstones_trigger = yes
+	# 		}
+	# 	}
+	# }
+	#try to run!
+	option = {
+		name = agot_sailing_at_sea.0016.a
+		custom_tooltip = agot_sailing_at_sea.0016.a.tooltip
+		hidden_effect = {
+			agot_move_off_ship_course_effect = yes
+		}
+	}
+}
+
+# #You Get Blown off Course!
+# agot_sailing_at_sea.0017 = {
+# 	type = character_event
+# 	title = agot_sailing_at_sea.0017.t
+# 	desc = agot_sailing_at_sea.0017.desc
+# 	theme = agot_at_sea
+# 	override_background = {
+# 		reference = AGOT_ocean_no_sound
+# 	}
+# 	orphan = yes
+# 	left_portrait = {
+# 		character = root
+# 		animation = personality_rational
+# 	}
+# 	trigger = {
+# 		is_commanding_army = yes
+# 		location = {
+# 			is_sea_province = yes
+# 		}
+# 		commanding_army.location = {
+# 			is_sea_province = yes
+# 		}
+# 	}
+# 	immediate = {
+# 		location = { save_scope_as = current_location }
+# 	}
+
+# 	# weight_multiplier = {
+# 	# 	base = 1
+# 	# 	modifier = {
+# 	# 		add = 0.8
+# 	# 		location = {
+# 	# 			is_stepstones_trigger = yes
+# 	# 		}
+# 	# 	}
+# 	# }
+# 	#try to run!
+# 	option = {
+# 		name = agot_sailing_at_sea.0017.a
+# 		custom_tooltip = agot_sailing_at_sea.0017.a.tooltip
+# 		hidden_effect = {
+# 			agot_find_coast_of_sea_region = yes
+# 		}
+# 	}
+# }
+
+# Ghost Ship # You see it in the distance, you think at the least, can add stressed or paranoid, or you can search for it and never find it #make a 2% chance for Jon Snow for it to be about his Direwolf Ghost
+# You see a ghost ship, encounter or ignore!
+agot_sailing_at_sea.0018 = {
+	type = character_event
+	title = agot_sailing_at_sea.0018.t
+	desc = agot_sailing_at_sea.0018.desc
+	theme = agot_at_sea
+	override_background = {
+		reference = AGOT_ghost_ship
+	}
+	orphan = yes
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	trigger = {
+		is_commanding_army = yes
+		location = {
+			is_sea_province = yes
+		}
+		commanding_army.location = {
+			is_sea_province = yes
+		}
+	}
+	immediate = {
+		#Play some spooky ghost sound
+		location = { save_scope_as = current_location }
+	}
+
+	#Leave *(but it follows)*
+	option = {
+		name = agot_sailing_at_sea.0018.a
+		custom_tooltip = agot_sailing_at_sea.0018.a.tooltip
+		if = {
+			limit = {
+				has_trait = brave
+			}
+			add_stress = minor_stress_gain
+		}
+		hidden_effect = {
+			create_character = {
+				location = root.location
+				template = agot_friendly_pirate_character_leader
+				save_scope_as = friendlysailor
+			}
+			scope:friendlysailor = {
+				#UBER STINKY
+				# add_character_flag = pirate
+				death = {
+					death_reason = death_lost_at_sea_red
+				}
+			}
+		}
+		trigger_event = {
+			id = agot_sailing_at_sea.0019
+			days = { 5 10 }
+		}
+	}
+	# Chase ship
+	option = {
+		name = agot_sailing_at_sea.0018.b
+		custom_tooltip = agot_sailing_at_sea.0018.b.tooltip
+		trigger_event = {
+			id = agot_sailing_at_sea.0020
+			days = { 5 10 }
+		}
+	}
+}
+
+# You leave, but it seems to follow you as nights pass
+agot_sailing_at_sea.0019 = {
+	type = character_event
+	title = agot_sailing_at_sea.0019.t
+	desc = agot_sailing_at_sea.0019.desc
+	theme = agot_at_sea
+	override_background = {
+		reference = AGOT_ghost_ship
+	}
+	# orphan = yes #Not orphan anymore
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:friendlysailor
+		animation = pain
+		outfit_tags = { viking }
+	}
+	trigger = {
+		is_commanding_army = yes
+		location = {
+			is_sea_province = yes
+		}
+		commanding_army.location = {
+			is_sea_province = yes
+		}
+	}
+	immediate = {
+		location = { save_scope_as = current_location }
+		play_music_cue = mx_cue_murder
+	}
+
+
+	#Try to reengage
+	option = {
+		name = agot_sailing_at_sea.0019.a
+
+	}
+	#
+	option = {
+		name = agot_sailing_at_sea.0019.b
+		trigger = {
+			has_trait = lunatic
+		}
+
+
+	}
+
+	# Lustful event option
+	option = {
+		name = agot_sailing_at_sea.0019.c
+		trigger = {
+			this = character:Baratheon_2
+		}
+		hidden_effect = {
+			death = {
+				death_reason = death_lost_at_sea
+			}
+		}
+	}
+}
+
+# You Engage the Ghost Ship up close!
+agot_sailing_at_sea.0020 = {
+	type = character_event
+	title = agot_sailing_at_sea.0020.t
+	desc = agot_sailing_at_sea.0020.desc
+	theme = agot_at_sea
+	override_background = {
+		reference = AGOT_ocean_no_sound
+	}
+	# orphan = yes #Not orphan anymore
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	trigger = {
+		is_commanding_army = yes
+		location = {
+			is_sea_province = yes
+		}
+		commanding_army.location = {
+			is_sea_province = yes
+		}
+	}
+	immediate = {
+		location = { save_scope_as = current_location }
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0020.a
+		custom_tooltip = agot_sailing_at_sea.0020.a.tooltip
+
+	}
+	# You are lunatic, lose stress
+	option = {
+		name = agot_sailing_at_sea.0020.c
+		trigger = {
+			has_trait = lunatic
+		}
+
+		custom_tooltip = agot_sailing_at_sea.0020.c.tooltip
+
+	}
+}
+
+# Message in a bottle!
+agot_sailing_at_sea.0022 = {
+	type = character_event
+	title = agot_sailing_at_sea.0022.t
+	desc = agot_sailing_at_sea.0022.desc
+	theme = agot_at_sea
+	override_background = {
+		reference = AGOT_ocean_no_sound
+	}
+	orphan = yes
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	trigger = {
+		is_commanding_army = yes
+		location = {
+			is_sea_province = yes
+		}
+		commanding_army.location = {
+			is_sea_province = yes
+		}
+	}
+	immediate = {
+		location = { save_scope_as = current_location }
+	}
+
+	option = {
+		name = agot_sailing_at_sea.0022.a
+
+	}
+	option = {
+		name = agot_sailing_at_sea.0022.b
+
+	}
+}
+
+# event_shipboard_romance.46 = {
+# 	type = character_event
+# 	title = "A Shipboard Romance"
+# 	desc = "During a voyage at sea, you have struck up a romantic relationship with another member of the crew. What will you do now that you've reached land and must return to your normal lives?"
+# 	theme = romance
+# 	override_background = {
+# 		reference = AGOT_ocean_no_sound
+# 	}
+
+# 	trigger = {
+# 		location = {
+# 			is_sea_province = yes
+# 		}
+# 	}
+
+# 	#End the relationship
+# 	option = {
+# 		name = "End the relationship"
+# 	}
+
+# 	#Try to make the relationship work despite the distance
+# 	option = {
+# 		name = "Try to make the relationship work despite the distance"
+# 	}
+
+# 	#Make a clean break and move on
+# 	option = {
+# 		name = "Make a clean break and move on"
+# 	}
+# }
+# agot_sailing_at_sea.0016 = {
+
+# }
+
+
+#Imposter Meme Event Chain
+# Someone on the ship is trying to sabotage the journey,
+# Story Cycle
+# Involves daily tasks
+# Fixing the Rigging
+# Mopping the Deck
+# Tidy Sleeping Quarters
+# Possibly involves a rival, or someone who dislikes, *(possibly hired someone to sabotage the journey)*
+
+##You are sailing when suddenly the air seems to be enriched by the great nasty stench of something, you look around to all horizons seeing nothing..... you could start to be scared under certain conditions, what is that smell, you can leave, try to follow the smell, etc. A while later a second event fires, you come across an Ibbenese whaling ship, the source of the smell. You'll be given an option to trade with the Ibbenese ship or not an Silver Ibbenese Whaling Harpoon.
+
+
+# The Kraken, super rare event, will likely have a slim chance to survive, mostly die, if you DO survive and or the smallest chance of killing it, will be nicknamed the Kraken Killer + get a bunch of prestige.
+
+# Giant Sea Monsters *Not the Kraken*
+
+# Sea Dragon
+
+# Nagga, legendary sea dragon, Returns??
+
+# After spending very long at sea, crew goes sligtly mad, some fights, mass hysteria  over the sounds of a Sirens
+
+# While sailing, you find a small island unmapped with two people on them, could become courtiers?
+# Rogue Wave # A strong rogue wave in as storm slams the ship! A % chance to lose an artifact trinket / a small to medium sum of gold / knight falling overboard *(Legends of the Kraken say that it sends rogue waves for the sole purpose of knocking victims to the depths of the sea)*
+# Find a small island
+
+# You *re* discover / encounter the Komodo Dragons in AGOT, those islands in the south west from the Sun Chaser adventure
+
+#PIRATES!
+
+# Message in a Bottle,
+# Can give a map to a specific province! Sail to it to retrieve it's treasure!
+# Chance of giving, Nothing, A mysterious or random scroll , A really good wine artifact,
+
+
+# Distress Call # You find a ship nearby in distress, notice a bad situtation, you can help and maybe get gold
+
+# Floating Chest #if you stop for it, chances for nothing, some gold, lot of gold, an alright artifact, a fantastic artifact - weighted most common to most rare
+
+# https://awoiaf.westeros.org/index.php/Squishers # Make event about the Squishers!
+
+# Good Fishing Spot #while sailing near a coast the crew comes across what looks to be a fantastic place to fish,
+# Helpful Fisher Connected, % of finding, nothing, common fish, rare fish, a sailors boot, a bottle, an artifact
+
+# Pearl Diving, # Go diving for pearls!
+
+# Rough Seas # I want to do damage and stuff but really can't, will think more here.
+
+# The Case of a broken Sea Lantern, your Sea lantern at the front of the ship has broken, leaving the front end of the ship dark, making it slightly diffult to see ahead
+
+# The Coral Reef / The Shallow Coral Reef. Your out sailing around an island when you feel something drag and scrap the bottom of the ship, to the crew and your surpise, you find a large amount of wonderful coral reef! Stress loss / an option to cut a piece but it just kinda dies of color immedietely.
+
+# Shark Attack! While out on your rowboat to grab a piece of overfelled cargo, a crewmate calls out to you to warn you of most terrible news, he swears he has seen a shark fin!
+
+# A Strong Current pushes agaisnt your crew, adds slower movement speed and or, teleports you to nearby sea province?
+
+# Whirpool! # While sailing out at sea your crew has come across what seems to be a massive whirlpool! Worst of all it seems to be pulling your ship towards it! One from legends! % of you dying / all knights on board dying / getting wounded traits / getting around it
+
+# The only shipwreck! #You come across a ship, torn to bits, barely afloat, you see three chests on board, untounched. Regardles of why said ship is wrecked, your quartermaster rekons the force of boarding would leave you with a chance of hopping aboard and running to only ONE of the chests before the ship began to collapse into the sea, choose one!
+
+# The wreckage! You come across a coastal shipwrenck of a ship who became eaten by the rocks upon the closest shore % chance of maybe finding something aboard this ship, maybe nothing, maybe a *map*, maybe you also crash into the rocks

@@ -1,0 +1,658 @@
+﻿agot_8259_11_1_ninepenny_setup = {
+
+	#The Iron Throne
+	#Aegon V - Targaryen_122
+	#Jaeherys II - Targaryen_127
+	#Ormund Baratheon - Baratheon_75
+
+	#The Kings
+	#Maelys the Monstrous- Blackfyre_14
+	#The Old Mother - Old_Mother_1
+	#The Bad Apple - Fossoway_58
+	#Silvertongue - Adarys_1
+
+	#Reyne Rebellion
+	#Roger Reyne - Reyne_45
+	#Walderan Tarbeck - Tarbeck_27
+	#Tytos Lannister - Lannister_127
+	#Tywin Lannister - Lannister_1
+
+	##### SCENARIO STORY CYCLES SETUP #####
+
+	#Ninepenny Kings Story Cycle
+	if = {
+		limit = {
+			character:Blackfyre_14 ?= { is_alive = yes }
+			title:e_blackfyre_rebellion.holder = character:Blackfyre_14
+		}
+		title:e_blackfyre_rebellion.holder = {
+			create_story = { # Initialize Ninepenny Kings
+				type = story_agot_ninepenny_kings
+				save_scope_as = ninepenny_kings_story
+			}
+		}
+	}
+	else_if = {
+		limit = { character:Blackfyre_14 ?= { is_alive = yes } }
+		character:Blackfyre_14 = { destroy_title = title:e_blackfyre_rebellion }
+	}
+
+	if = {
+		limit = { title:h_the_iron_throne.holder = character:Targaryen_122 }
+		character:Targaryen_122 = {
+			create_story = { # Initialize Summerhall
+				type = story_agot_summerhall
+				save_scope_as = summerhall_story
+			}
+		}
+	}
+
+	#Reyne Rebellion Story Cycle
+	if = {
+		limit = {
+			title:e_the_westerlands.holder = character:Lannister_129
+			title:d_castamere.holder = character:Reyne_45
+		}
+		character:Lannister_129 = {
+			create_story = {
+				type = story_agot_reyne_rebellion
+				save_scope_as = reyne_rebellion
+			}
+		}
+	}
+}
+
+maelys_title_distribution_effect = {
+	$MAELYS$ = { save_scope_as = blackfyre }
+	scope:blackfyre = {
+		every_held_title = {
+			add_to_list = titles
+		}
+	}
+	#If Spotted Tom is alive and Maelys isn't he can take Disputed Lands
+	if = {
+		limit = {
+			any_in_list = {
+				list = titles
+				this = title:k_disputed_lands
+			}
+			character:Blackfyre_14 ?= {
+				is_alive = no
+			}
+			character:Butcher_1 ?= {
+				is_alive = yes
+			}
+		}
+		title:k_disputed_lands = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					holder = scope:blackfyre
+					tier >= tier_county
+				}
+				add_to_list = disputed_titles
+			}
+		}
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = disputed_change
+			add_claim_on_loss = no
+		}
+		every_in_list = {
+			list = disputed_titles
+			change_title_holder = {
+				holder = character:Butcher_1
+				change = scope:disputed_change
+			}
+		}
+		resolve_title_and_vassal_change = scope:disputed_change
+
+		title:k_disputed_lands = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					holder.liege = scope:blackfyre
+					de_jure_liege = title:k_disputed_lands
+				}
+				add_to_list = disputed_vassals
+			}
+		}
+
+		create_title_and_vassal_change = {
+			type = swear_fealty
+			save_scope_as = disputed_change_vassals
+			add_claim_on_loss = no
+		}
+		every_in_list = {
+			list = disputed_vassals
+			this.holder = {
+				change_liege = {
+					liege = character:Butcher_1
+					change = scope:disputed_change_vassals
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:disputed_change_vassals
+
+		character:Butcher_1 = {
+			every_held_title = {
+				remove_from_list = titles
+			}
+		}
+	}
+
+	every_in_list = {  #Blow up Disputed Lands titles
+		list = titles
+		limit = {
+			OR = {
+				de_jure_liege = title:k_disputed_lands
+				this = title:k_disputed_lands
+			}
+			this != title:h_the_iron_throne
+			tier >= tier_county
+		}
+		hidden_effect = {
+			scope:blackfyre = {
+				destroy_title = prev
+			}
+		}
+	}
+	every_in_list = {  #Blow up Disputed Lands titles
+		list = titles
+		limit = {
+			target_is_de_jure_liege_or_above = title:k_disputed_lands
+			tier = tier_duchy
+		}
+		create_title_and_vassal_change = {
+			type = independency
+			save_scope_as = exclave_change
+			add_claim_on_loss = no
+		}
+		holder ?= {
+			becomes_independent = {
+				change = scope:exclave_change
+			}
+		}
+		resolve_title_and_vassal_change = scope:exclave_change
+	}
+	every_in_list = {  #Blow up Disputed Lands titles
+		list = titles
+		limit = {
+			target_is_de_jure_liege_or_above = title:k_disputed_lands
+			tier = tier_county
+			NOT = { this = holder.capital_county }
+		}
+
+		#Make a character to fill the power vacuum
+		create_character = {
+			template = agot_pirate_character_leader
+			save_scope_as = new_county_holder
+			location = scope:blackfyre.location
+		}
+
+		create_title_and_vassal_change = {
+			type = independency
+			save_scope_as = exclave_change
+			add_claim_on_loss = no
+		}
+		change_title_holder = {
+			holder = scope:new_county_holder
+			change = scope:exclave_change
+		}
+		scope:new_county_holder = {
+			becomes_independent = {
+				change = scope:exclave_change
+			}
+		}
+		resolve_title_and_vassal_change = scope:exclave_change
+	}
+	#Release Essosi Vassals
+	scope:blackfyre = {
+		every_vassal = {
+			limit = {
+				NOT = {  #Don't Release your heir moron
+					this.house = scope:blackfyre.house
+				}
+				OR = {
+					primary_title = {
+						target_is_de_jure_liege_or_above = title:e_daoryrdembos
+					}
+					primary_title = {
+						target_is_de_jure_liege_or_above = title:e_narrow_sea
+					}
+				}
+				#Stepstone boys hang around in case old mother gets them
+				NOT = {
+					primary_title = {
+						target_is_de_jure_liege_or_above = title:k_the_stepstones
+					}
+				}
+				primary_title.tier >= tier_county
+			}
+			add_to_list = essosi_vassals
+		}
+	}
+	every_in_list = {  #Release Essosi Holdings
+		list = essosi_vassals
+		create_title_and_vassal_change = {
+			type = independency
+			save_scope_as = essosi_independence
+			add_claim_on_loss = no
+		}
+		becomes_independent = { change = scope:essosi_independence }
+		resolve_title_and_vassal_change = scope:essosi_independence
+	}
+
+	#Transfer the Stepstones to Old Mother for her "Kingdom"
+	if = {
+		limit = {
+			any_in_list = {
+				list = titles
+				this = title:k_the_stepstones
+			}
+			character:Old_Mother_1 ?= {
+				is_alive = yes
+			}
+		}
+		title:k_the_stepstones = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					holder = scope:blackfyre
+					tier >= tier_county
+				}
+				add_to_list = stepstone_titles
+			}
+		}
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = stepstones_change
+			add_claim_on_loss = no
+		}
+		every_in_list = {
+			list = stepstone_titles
+			change_title_holder = {
+				holder = character:Old_Mother_1
+				change = scope:stepstones_change
+			}
+		}
+		resolve_title_and_vassal_change = scope:stepstones_change
+
+		title:k_the_stepstones = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					holder.liege = scope:blackfyre
+				}
+				add_to_list = stepstone_vassals
+			}
+		}
+
+		create_title_and_vassal_change = {
+			type = swear_fealty
+			save_scope_as = stepstones_change_vassals
+			add_claim_on_loss = no
+		}
+		every_in_list = {
+			list = stepstone_vassals
+			holder = {
+				change_liege = {
+					liege = character:Old_Mother_1
+					change = scope:stepstones_change_vassals
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:stepstones_change_vassals
+	}
+	else = { #If she's not alive they can just go independent
+		every_in_list = {  #Blow up Stepstones titles
+			list = titles
+			limit = {
+				OR = {
+					de_jure_liege = title:k_the_stepstones
+					this = title:k_the_stepstones
+				}
+				this != title:h_the_iron_throne
+				tier >= tier_county
+			}
+			scope:blackfyre = {
+				destroy_title = prev
+			}
+		}
+		every_in_list = {  #Blow up Disputed Lands titles
+			list = titles
+			limit = {
+				target_is_de_jure_liege_or_above = title:k_the_stepstones
+			}
+
+			#Make a character to fill the power vacuum
+			create_character = {
+				template = agot_pirate_character_leader
+				save_scope_as = new_county_holder
+				location = scope:blackfyre.location
+			}
+
+			create_title_and_vassal_change = {
+				type = independency
+				save_scope_as = exclave_change
+				add_claim_on_loss = no
+			}
+			change_title_holder = {
+				holder = scope:new_county_holder
+				change = scope:exclave_change
+			}
+			scope:new_county_holder = {
+				becomes_independent = {
+					change = scope:exclave_change
+				}
+			}
+			resolve_title_and_vassal_change = scope:exclave_change
+		}
+		scope:blackfyre = {
+			every_vassal = {
+				limit = {
+					primary_title = {
+						target_is_de_jure_liege_or_above = title:k_the_stepstones
+					}
+					NOT = {  #Don't Release your heir moron
+						this.house = scope:blackfyre.house
+					}
+				}
+				add_to_list = stepstone_vassals
+			}
+		}
+		every_in_list = {  #Release Essosi Holdings
+			list = stepstone_vassals
+			create_title_and_vassal_change = {
+				type = independency
+				save_scope_as = essosi_independence
+				add_claim_on_loss = no
+			}
+			becomes_independent = {
+				change = scope:essosi_independence
+			}
+			resolve_title_and_vassal_change = scope:essosi_independence
+		}
+	}
+	scope:blackfyre = {
+		if = {
+			limit = {
+				any_held_title = {
+					this = title:e_blackfyre_rebellion
+				}
+			}
+			destroy_title = title:e_blackfyre_rebellion
+		}
+	}
+}
+
+create_band_of_nine_alliances_effect = {
+	save_scope_as = new_ruler
+	if = {
+		limit = {
+			NOT = { this = character:Blackfyre_14 }
+			character:Blackfyre_14 = { is_alive = yes }
+			character:Blackfyre_14 = { is_ruler = yes }
+			NOT = { is_allied_to = character:Blackfyre_14 }
+		}
+
+		scope:new_ruler = {
+			add_opinion = {
+				target = character:Blackfyre_14
+				modifier = event_negotiated_alliance_opinion
+			}
+		}
+
+		character:Blackfyre_14 = {
+			create_alliance = {
+				target = scope:new_ruler
+				allied_through_owner = character:Blackfyre_14
+				allied_through_target = scope:new_ruler
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			NOT = { this = character:Saan_1 }
+			character:Saan_1 = { is_alive = yes }
+			character:Saan_1 = { is_ruler = yes }
+			NOT = { is_allied_to = character:Saan_1 }
+		}
+
+		scope:new_ruler = {
+			add_opinion = {
+				target = character:Saan_1
+				modifier = event_negotiated_alliance_opinion
+			}
+		}
+
+		character:Saan_1 = {
+			create_alliance = {
+				target = scope:new_ruler
+				allied_through_owner = character:Saan_1
+				allied_through_target = scope:new_ruler
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			NOT = { this = character:Old_Mother_1 }
+			character:Old_Mother_1 = { is_alive = yes }
+			character:Old_Mother_1 = { is_ruler = yes }
+			NOT = { is_allied_to = character:Old_Mother_1 }
+		}
+
+		scope:new_ruler = {
+			add_opinion = {
+				target = character:Old_Mother_1
+				modifier = event_negotiated_alliance_opinion
+			}
+		}
+
+		character:Old_Mother_1 = {
+			create_alliance = {
+				target = scope:new_ruler
+				allied_through_owner = character:Old_Mother_1
+				allied_through_target = scope:new_ruler
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			NOT = { this = character:Butcher_1 }
+			character:Butcher_1 = { is_alive = yes }
+			character:Butcher_1 = { is_ruler = yes }
+			NOT = { is_allied_to = character:Butcher_1 }
+		}
+
+		scope:new_ruler = {
+			add_opinion = {
+				target = character:Butcher_1
+				modifier = event_negotiated_alliance_opinion
+			}
+		}
+
+		character:Butcher_1 = {
+			create_alliance = {
+				target = scope:new_ruler
+				allied_through_owner = character:Butcher_1
+				allied_through_target = scope:new_ruler
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			NOT = { this = character:Fossoway_58 }
+			character:Fossoway_58 = { is_alive = yes }
+			character:Fossoway_58 = { is_ruler = yes }
+			NOT = { is_allied_to = character:Fossoway_58 }
+		}
+
+		scope:new_ruler = {
+			add_opinion = {
+				target = character:Fossoway_58
+				modifier = event_negotiated_alliance_opinion
+			}
+		}
+
+		character:Fossoway_58 = {
+			create_alliance = {
+				target = scope:new_ruler
+				allied_through_owner = character:Fossoway_58
+				allied_through_target = scope:new_ruler
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			NOT = { this = character:Nine_Eyes_1 }
+			character:Nine_Eyes_1 = { is_alive = yes }
+			character:Nine_Eyes_1 = { is_ruler = yes }
+			NOT = { is_allied_to = character:Nine_Eyes_1 }
+		}
+
+		scope:new_ruler = {
+			add_opinion = {
+				target = character:Nine_Eyes_1
+				modifier = event_negotiated_alliance_opinion
+			}
+		}
+
+		character:Nine_Eyes_1 = {
+			create_alliance = {
+				target = scope:new_ruler
+				allied_through_owner = character:Nine_Eyes_1
+				allied_through_target = scope:new_ruler
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			NOT = { this = character:Qhoqua_1 }
+			character:Qhoqua_1 = { is_alive = yes }
+			character:Qhoqua_1 = { is_ruler = yes }
+			NOT = { is_allied_to = character:Qhoqua_1 }
+		}
+
+		scope:new_ruler = {
+			add_opinion = {
+				target = character:Qhoqua_1
+				modifier = event_negotiated_alliance_opinion
+			}
+		}
+
+		character:Qhoqua_1 = {
+			create_alliance = {
+				target = scope:new_ruler
+				allied_through_owner = character:Qhoqua_1
+				allied_through_target = scope:new_ruler
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			NOT = { this = character:Lashare_1 }
+			character:Lashare_1 = { is_alive = yes }
+			character:Lashare_1 = { is_ruler = yes }
+			NOT = { is_allied_to = character:Lashare_1 }
+		}
+
+		scope:new_ruler = {
+			add_opinion = {
+				target = character:Lashare_1
+				modifier = event_negotiated_alliance_opinion
+			}
+		}
+
+		character:Lashare_1 = {
+			create_alliance = {
+				target = scope:new_ruler
+				allied_through_owner = character:Lashare_1
+				allied_through_target = scope:new_ruler
+			}
+		}
+	}
+}
+
+shatter_band_of_nine_alliances_effect = {
+	save_scope_as = oathbreaker
+
+	add_to_variable_list = {
+		name = band_of_nine
+		target = character:Blackfyre_14 #Maelys
+	}
+	add_to_variable_list = {
+		name = band_of_nine
+		target = character:Saan_1 #Saan
+	}
+	add_to_variable_list = {
+		name = band_of_nine
+		target = character:Adarys_1 #Silvertongue
+	}
+	add_to_variable_list = {
+		name = band_of_nine
+		target = character:Fossoway_58 #The Bad Apple
+	}
+	add_to_variable_list = {
+		name = band_of_nine
+		target = character:Lashare_1 #The Lord of Battles
+	}
+	add_to_variable_list = {
+		name = band_of_nine
+		target = character:Nine_Eyes_1 #Nine-Eyes
+	}
+	add_to_variable_list = {
+		name = band_of_nine
+		target = character:Old_Mother_1 #Old Mother
+	}
+	add_to_variable_list = {
+		name = band_of_nine
+		target = character:Butcher_1 #The Spotted Butcher
+	}
+	add_to_variable_list = {
+		name = band_of_nine
+		target = character:Qhoqua_1 #The Ebon Prince
+	}
+
+	#Band of Nine Opinions
+	every_in_list = {
+		variable = band_of_nine
+		add_to_list = band_of_nine_temp
+		add_character_modifier = shattered_oaths
+
+		if = {
+			limit = {
+				NOT = { primary_title.tier >= tier_kingdom }
+				NOT = { this = scope:oathbreaker }
+			}
+			add_opinion = {
+				target = scope:oathbreaker
+				modifier = betrayed_our_promise
+			}
+		}
+	}
+
+	every_in_list = {
+		variable = band_of_nine
+
+		save_scope_as = nine_member
+
+		scope:nine_member = {
+			every_in_list = {
+				list = band_of_nine_temp
+				if = {
+					limit = {
+						NOT = {
+							this = scope:nine_member
+						}
+						is_allied_to = scope:nine_member
+					}
+					break_alliance = scope:nine_member
+				}
+			}
+		}
+	}
+}

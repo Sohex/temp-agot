@@ -1,0 +1,589 @@
+﻿namespace = agot_nightswatch_maintenance
+
+# Remove all women from court
+agot_nightswatch_maintenance.0001 = {
+	hidden = yes
+
+	immediate = {
+		title:k_the_wall.holder = {
+			agot_nightswatch_ruler_on_start_effect = yes
+
+			every_courtier_or_guest = {
+				agot_nightswatch_courtier_on_start_effect = yes
+
+				if = {
+					limit = {
+						has_trait = nightswatch
+						is_courtier = no
+					}
+					prev = {
+						add_courtier = prev
+					}
+				}
+			}
+
+			every_vassal_or_below = {
+				agot_nightswatch_ruler_on_start_effect = yes
+			}
+
+			every_vassal_or_below = {
+				limit = { has_trait = nightswatch }
+
+				every_courtier_or_guest = {
+					agot_nightswatch_courtier_on_start_effect = yes
+
+					if = {
+						limit = {
+							has_trait = nightswatch
+							is_courtier = no
+						}
+						prev = {
+							add_courtier = prev
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+scripted_effect agot_nightswatch_maintenance_effect = {
+	save_scope_as = nw_brother
+
+	# Depose and expell if female, add to NW if male
+	if = {
+		limit = { agot_valid_potential_nw_member = no }
+		if = {
+			limit = { is_ruler = yes }
+			depose = yes
+		}
+		agot_remove_nightswatch_traits_effect = yes
+		move_to_pool_at = title:d_winterfell.holder.capital_province
+	}
+	else_if = {
+		limit = {
+			NOT = { has_trait = nightswatch }
+		}
+		agot_add_to_nightswatch_effect = yes
+	}
+
+	# Change government to NW if castle holding
+	if = {
+		limit = {
+			has_trait = nightswatch
+			is_ruler = yes
+			NOT = { agot_is_landless_nw_character = yes }
+			primary_title.title_province = {
+				has_holding_type = castle_holding
+			}
+			NOT = { government_has_flag = government_is_nw }
+		}
+		change_government = nights_watch_government
+		add_realm_law_skip_effects = nights_watch_realm_succession_law
+	}
+
+	# Take NW vows or improve NW lifecycle traits
+	if = {
+		limit = {
+			has_trait = nightswatch
+			has_trait_xp = {
+				trait = nightswatch
+				value < 100
+			}
+			age > 15
+		}
+		trigger_event = {
+			id = agot_nightswatch_maintenance.0101
+			days = { 1 364 }
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait = nightswatch
+			has_trait_xp = {
+				trait = nightswatch
+				value >= 100
+			}
+		}
+		trigger_event = {
+			id = agot_nightswatch_maintenance.0102
+			days = { 1 364 }
+		}
+	}
+
+	# Randomly die if pruneable or unfit
+	if = {
+		limit = {
+			has_trait = nightswatch
+			is_ruler = no
+		}
+		trigger_event = {
+			id = agot_nightswatch_maintenance.0100
+			days = { 1 364 }
+		}
+	}
+}
+
+#burn them all
+agot_nightswatch_maintenance.0002 = {
+	hidden = yes
+
+	trigger = {
+		has_title = title:k_the_wall
+		has_trait = nightswatch
+	}
+
+	immediate = {
+		#Assign/upgrade traits
+		every_courtier = {
+			agot_nightswatch_maintenance_effect = yes
+		}
+
+		every_vassal_or_below = {
+			limit = {
+				NOR = {
+					agot_is_landless_nw_character = yes
+					government_has_flag = government_is_republic
+				}
+			}
+			agot_nightswatch_maintenance_effect = yes
+		}
+
+		every_vassal_or_below = {
+			limit = { has_trait = nightswatch }
+			every_courtier = {
+				agot_nightswatch_maintenance_effect = yes
+			}
+		}
+	}
+}
+
+#random deaths
+agot_nightswatch_maintenance.0100 = {
+	hidden = yes
+
+	immediate = {
+		random = {
+			chance = {
+				value = 0
+				# Very likely for pruneable characters
+				# if employer is above max number of courtiers
+				if = {
+					limit = {
+						trigger_if = {
+							limit = { employer.highest_held_title_tier >= tier_kingdom }
+							employer ?= { any_courtier = { count > 60 } }
+						}
+						trigger_else = {
+							employer ?= { any_courtier = { count > 20 } }
+						}
+						agot_nw_is_pruneable_trigger = yes
+					}
+					add = 75
+				}
+				# Somewhat likely for recruits, builders, and rangers with low prowess or physically unfit,
+				# even if employer is not above max number of courtiers
+				if = {
+					limit = {
+						OR = {
+							has_trait_xp = {
+								trait = nightswatch
+								value < 100
+							}
+							has_trait = lifestyle_nw_builder
+							has_trait = lifestyle_nw_ranger
+						}
+						OR = {
+							prowess < 10
+							agot_nw_physically_unfit = yes
+						}
+					}
+					add = 25
+				}
+				# Less likely for maesters and septons
+				if = {
+					limit = {
+						OR = {
+							has_trait = maester
+							has_trait = septon
+						}
+					}
+					multiply = 0.5
+				}
+				# Not possible for councillors, court position holders, knights, and army characters
+				if = {
+					limit = {
+						OR = {
+							is_councillor = yes
+							has_any_court_position = yes
+							is_knight = yes
+							is_in_army = yes
+							age < 16
+						}
+					}
+					multiply = 0
+				}
+			}
+			agot_random_nightswatch_death_effect = yes
+		}
+	}
+}
+
+#take vows
+agot_nightswatch_maintenance.0101 = {
+	hidden = yes
+
+	trigger = {
+		has_trait = nightswatch
+		has_trait_xp = {
+			trait = nightswatch
+			value < 100
+		}
+		age > 15
+	}
+
+	immediate = {
+		add_trait_xp = {
+			trait = nightswatch
+			value = 100
+		}
+
+		create_character_memory = {
+			type = agot_swore_nightswatch_oath
+		}
+
+		random_list = {
+			1 = {
+				modifier = {
+					trigger = { highest_skill_including_prowess = prowess }
+					factor = 20
+				}
+				modifier = {
+					trigger = { highest_skill = martial }
+					factor = 20
+				}
+				modifier = {
+					trigger = {
+						OR = {
+							martial >= decent_skill_rating
+							prowess >= decent_skill_rating
+						}
+					}
+					factor = 20
+				}
+				modifier = {
+					trigger = { agot_nw_physically_unfit = yes }
+					factor = 0
+				}
+				add_trait = lifestyle_nw_ranger
+			}
+			1 = {
+				modifier = {
+					trigger = { highest_skill = stewardship }
+					factor = 20
+				}
+				modifier = {
+					trigger = { highest_skill = learning }
+					factor = 20
+				}
+				modifier = {
+					trigger = { highest_skill = intrigue }
+					factor = 20
+				}
+				modifier = {
+					trigger = { highest_skill = diplomacy }
+					factor = 20
+				}
+				add_trait = lifestyle_nw_steward
+			}
+			1 = {
+				modifier = {
+					trigger = { highest_skill = stewardship }
+					factor = 20
+				}
+				modifier = {
+					trigger = { highest_skill = learning }
+					factor = 20
+				}
+				modifier = {
+					trigger = { highest_skill = intrigue }
+					factor = 20
+				}
+				modifier = {
+					trigger = { highest_skill = diplomacy }
+					factor = 20
+				}
+				modifier = {
+					trigger = { agot_nw_physically_unfit = yes }
+					factor = 0
+				}
+				add_trait = lifestyle_nw_builder
+			}
+		}
+	}
+}
+
+#improve nw traits
+agot_nightswatch_maintenance.0102 = {
+	hidden = yes
+
+	trigger = {
+		has_trait = nightswatch
+		has_trait_xp = {
+			trait = nightswatch
+			value >= 100
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { has_trait = lifestyle_nw_ranger }
+			random_list = {
+				20 = {
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_ranger
+								value < 50
+							}
+						}
+						factor = 0
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { prowess > 15 }
+						add = prowess
+					}
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_ranger
+								value < 50
+							}
+						}
+						factor = 0
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_ranger
+						value = 2
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { prowess > 20 }
+						add = prowess
+					}
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_ranger
+								value < 50
+							}
+						}
+						factor = 0
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_ranger
+						value = 3
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { prowess > 25 }
+						add = prowess
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_ranger
+						value = 5
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { prowess > 25 }
+						add = prowess
+					}
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_ranger
+								value > 49
+							}
+						}
+						factor = 0
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_ranger
+						value = 10
+					}
+				}
+			}
+		}
+		if = {
+			limit = { has_trait = lifestyle_nw_steward }
+			random_list = {
+				20 = {
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_steward
+								value < 50
+							}
+						}
+						factor = 0
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { stewardship > 10 }
+						add = prowess
+					}
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_steward
+								value < 50
+							}
+						}
+						factor = 0
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_steward
+						value = 2
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { stewardship > 15 }
+						add = prowess
+					}
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_steward
+								value < 50
+							}
+						}
+						factor = 0
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_steward
+						value = 3
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { stewardship > 20 }
+						add = prowess
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_steward
+						value = 5
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { stewardship > 20 }
+						add = prowess
+					}
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_steward
+								value > 49
+							}
+						}
+						factor = 0
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_steward
+						value = 10
+					}
+				}
+			}
+		}
+		if = {
+			limit = { has_trait = lifestyle_nw_builder }
+			random_list = {
+				20 = {
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_builder
+								value < 50
+							}
+						}
+						factor = 0
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { stewardship > 10 }
+						add = prowess
+					}
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_builder
+								value < 50
+							}
+						}
+						factor = 0
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_builder
+						value = 2
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { stewardship > 15 }
+						add = prowess
+					}
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_builder
+								value < 50
+							}
+						}
+						factor = 0
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_builder
+						value = 3
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { stewardship > 20 }
+						add = prowess
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_builder
+						value = 5
+					}
+				}
+				10 = {
+					modifier = {
+						trigger = { stewardship > 20 }
+						add = prowess
+					}
+					modifier = {
+						trigger = {
+							has_trait_xp = {
+								trait = lifestyle_nw_builder
+								value > 49
+							}
+						}
+						factor = 0
+					}
+					add_trait_xp = {
+						trait = lifestyle_nw_builder
+						value = 10
+					}
+				}
+			}
+		}
+	}
+}

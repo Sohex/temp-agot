@@ -1,0 +1,557 @@
+﻿namespace = agot_events_artifacts_sell
+
+######################################################################
+######################################################################
+#   Artifact Selling Events   By Frostbite                           #
+#                                                                    #
+#   0001~1000 Reserved for the usual buying and selling Artifacts    #
+#   1001~2000 Used for the purchase and sale of special Artifacts    #
+#																	 #
+#																	 #
+######################################################################
+######################################################################
+######################################################################
+
+# The merchant has replenished some artifacts from Qarth or Braavos
+agot_events_artifacts_sell.0003 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		agot_merchant_create_artifacts_effect = yes
+	}
+}
+
+# The merchant has sold some artifacts to Qarth or Braavos
+agot_events_artifacts_sell.0004 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		agot_merchant_destroy_artifacts_effect = yes
+	}
+}
+
+# When the merchant's artifact is stolen
+agot_events_artifacts_sell.0005 = {
+	type = letter_event
+	opening = agot_events_artifacts_sell.0005.opening
+	desc = agot_events_artifacts_sell.0005.desc
+
+	sender = global_var:agot_artifact_keeper
+
+	immediate = {
+		root.house = {
+			set_variable = {
+				name = agot_stolen_artifact_from_artifact_keeper
+				value = 1
+			}
+			every_house_member = {
+				limit = {
+					NOT = {
+						this = root
+					}
+				}
+				add_opinion = {
+					target = root
+					modifier = house_be_banned_exchange_artifact
+				}
+			}
+		}
+		custom_tooltip = agot_stolen_artifact_from_artifact_keeper_desc
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.0005.a
+	}
+
+	after = {
+		hidden_effect = {
+			root = {
+				save_scope_as = who_hurt_artifact_keeper
+			}
+			root.house = {
+				every_house_member = {
+					limit = {
+						NOT = {
+							this = root
+						}
+					}
+					trigger_event = agot_events_artifacts_sell.0006
+				}
+			}
+		}
+	}
+}
+
+# Notification event
+agot_events_artifacts_sell.0006 = {
+	type = letter_event
+	opening = agot_events_artifacts_sell.0006.opening
+	desc = agot_events_artifacts_sell.0006.desc
+
+	sender = global_var:agot_artifact_keeper
+
+	immediate = {
+		custom_tooltip = agot_stolen_artifact_from_artifact_keeper_desc
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.0006.a
+	}
+}
+
+# No money to buy artifacts - the merchant
+agot_events_artifacts_sell.0007 = {
+	type = letter_event
+	opening = agot_events_artifacts_sell.0007.opening
+	desc = agot_events_artifacts_sell.0007.desc
+
+	sender = global_var:agot_artifact_keeper
+
+	immediate = {
+		custom_tooltip = agot_no_money_buy_artifact_from_artifact_keeper_desc
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.0007.a
+	}
+}
+
+# No money to buy artifacts - the player or ai
+agot_events_artifacts_sell.0008 = {
+	type = letter_event
+	opening = agot_events_artifacts_sell.0008.opening
+	desc = agot_events_artifacts_sell.0008.desc
+
+	sender = global_var:agot_artifact_keeper
+
+	option = {
+		name = agot_events_artifacts_sell.0008.a
+	}
+}
+
+# Ensure the merchant has enough gold for expensive purchases
+agot_events_artifacts_sell.0009 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		agot_merchant_ensure_gold_effect = yes
+	}
+}
+
+# Count the number of dragon eggs
+agot_events_artifacts_sell.1000 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		# Count the number of dragon eggs the keeper has and store it in a variable
+		global_var:agot_artifact_keeper = {
+			set_variable = {
+				name = agot_dragon_eggs_count
+				value = agot_dragon_eggs_count_value
+			}
+		}
+
+		if = {
+			limit = {
+				global_var:agot_artifact_keeper.var:agot_dragon_eggs_count < 3
+			}
+			if = {
+				limit = {
+					root.dynasty = dynasty:dynn_Targaryen
+				}
+				trigger_event = agot_events_artifacts_sell.1004
+			}
+			else = {
+				trigger_event = agot_events_artifacts_sell.1001
+			}
+		}
+		else = {
+			trigger_event = agot_events_artifacts_sell.1002
+		}
+	}
+}
+
+# When selling dragon eggs
+agot_events_artifacts_sell.1001 = {
+	type = character_event
+	title = agot_events_artifacts_sell.1001.t
+	desc = {
+		desc = agot_events_artifacts_sell.1001.desc.1
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					global_var:agot_artifact_keeper.var:agot_dragon_eggs_count = 0
+				}
+				desc = agot_events_artifacts_sell.1001.desc.2
+			}
+			triggered_desc = {
+				trigger = {
+					global_var:agot_artifact_keeper.var:agot_dragon_eggs_count = 1
+				}
+				desc = agot_events_artifacts_sell.1001.desc.3
+			}
+			triggered_desc = {
+				trigger = {
+					global_var:agot_artifact_keeper.var:agot_dragon_eggs_count = 2
+				}
+				desc = agot_events_artifacts_sell.1001.desc.4
+			}
+			triggered_desc = {
+				trigger = {
+					global_var:agot_artifact_keeper.var:agot_dragon_eggs_count = 3
+				}
+				desc = agot_events_artifacts_sell.1001.desc.5
+			}
+		}
+	}
+	theme = dynasty
+
+	artifact = {
+		target = var:agot_selected_artifact_sell
+		position = lower_center_portrait
+	}
+
+	left_portrait = root
+	right_portrait = global_var:agot_artifact_keeper
+
+	option = {
+		name = agot_events_artifacts_sell.1001.a
+		trigger = {
+			global_var:agot_artifact_keeper.var:agot_dragon_eggs_count = 0
+		}
+		agot_sell_artifact_effect = {
+			ARTIFACT = var:agot_selected_artifact_sell
+		}
+		remove_variable = agot_selected_artifact_sell
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.1001.b
+		trigger = {
+			global_var:agot_artifact_keeper.var:agot_dragon_eggs_count = 1
+		}
+		agot_sell_artifact_effect = {
+			ARTIFACT = var:agot_selected_artifact_sell
+		}
+		remove_variable = agot_selected_artifact_sell
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.1001.c
+		trigger = {
+			global_var:agot_artifact_keeper.var:agot_dragon_eggs_count = 2
+		}
+		agot_sell_artifact_effect = {
+			ARTIFACT = var:agot_selected_artifact_sell
+		}
+		remove_variable = agot_selected_artifact_sell
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.1001.d
+		trigger = {
+			global_var:agot_artifact_keeper.var:agot_dragon_eggs_count = 3
+		}
+		agot_sell_artifact_effect = {
+			ARTIFACT = var:agot_selected_artifact_sell
+		}
+		remove_variable = agot_selected_artifact_sell
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.1001.e
+	}
+
+	after = {
+		global_var:agot_artifact_keeper = {
+			remove_variable = agot_dragon_eggs_count
+		}
+	}
+}
+
+# When the warehouse is overloaded with too many dragon eggs
+agot_events_artifacts_sell.1002 = {
+	type = character_event
+	title = agot_events_artifacts_sell.1002.t
+	desc = agot_events_artifacts_sell.1002.desc
+	theme = dynasty
+
+	left_portrait = root
+
+	option = {
+		name = agot_events_artifacts_sell.1002.a
+	}
+
+	after = {
+		global_var:agot_artifact_keeper = {
+			remove_variable = agot_dragon_eggs_count
+		}
+	}
+}
+
+# When selling Valyrian steel swords
+agot_events_artifacts_sell.1003 = {
+	type = character_event
+	title = agot_events_artifacts_sell.1003.t
+	desc = {
+		desc = agot_events_artifacts_sell.1003.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					root.capital_province = {
+						geographical_region = world_westeros_seven_kingdoms
+					}
+				}
+				desc = agot_events_artifacts_sell.1003.desc.westeros
+			}
+			triggered_desc = {
+				trigger = {
+					root.capital_province = {
+						geographical_region = world_essos
+					}
+				}
+				desc = agot_events_artifacts_sell.1003.desc.essos
+			}
+			triggered_desc = {
+				desc = agot_events_artifacts_sell.1003.desc.else
+			}
+		}
+	}
+	theme = dynasty
+
+	left_portrait = root
+	right_portrait = global_var:agot_artifact_keeper
+	artifact = {
+		target = var:agot_selected_artifact_sell
+		position = lower_center_portrait
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.1003.a
+
+		agot_sell_artifact_effect = {
+			ARTIFACT = var:agot_selected_artifact_sell
+		}
+		remove_variable = agot_selected_artifact_sell
+
+		if = {
+			limit = {
+				NOT = {
+					var:agot_selected_artifact_sell = { has_variable = valyrian_steel_generic }
+				}
+			}
+			add_prestige = {
+				add = -2000
+				if = {
+					limit = {
+						has_trait = knight
+					}
+					add = -1000
+				}
+			}
+			add_prestige_level = -2
+			root.dynasty = {
+				add_dynasty_prestige = -1000
+				add_dynasty_prestige_level = -1
+			}
+		}
+		else = {
+			add_prestige = massive_prestige_loss
+		}
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.1003.b
+	}
+}
+
+# When selling dragon eggs by Targaryen
+agot_events_artifacts_sell.1004 = {
+	type = character_event
+	title = agot_events_artifacts_sell.1004.t
+	desc = {
+		desc = agot_events_artifacts_sell.1004.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = {
+						has_character_flag = agot_targaryen_sold_dragon_egg_flag
+					}
+				}
+				desc = agot_events_artifacts_sell.1004.desc.first
+			}
+			triggered_desc = {
+				desc = agot_events_artifacts_sell.1004.desc.others
+			}
+		}
+	}
+	theme = dynasty
+
+	left_portrait = root
+	right_portrait = global_var:agot_artifact_keeper
+
+	artifact = {
+		target = var:agot_selected_artifact_sell
+		position = lower_center_portrait
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				has_character_flag = agot_targaryen_sold_dragon_egg_flag
+			}
+			add_prestige = -700
+		}
+	}
+
+	# sold dragon egg
+	option = {
+		name = agot_events_artifacts_sell.1004.a
+		agot_sell_artifact_effect = {
+			ARTIFACT = var:agot_selected_artifact_sell
+		}
+		remove_variable = agot_selected_artifact_sell
+		add_prestige = -700
+		add_prestige_level = -1
+		root.dynasty = {
+			every_dynasty_member = {
+				limit = {
+					NOT = {
+						this = root
+					}
+				}
+				add_opinion = {
+					target = root
+					modifier = targs_sold_dargon_egg
+				}
+			}
+		}
+		root = {
+			add_character_flag = agot_targaryen_sold_dragon_egg_flag
+		}
+	}
+
+	# BURN THEM ALL !!!
+	option = {
+		trigger = {
+			has_character_flag = agot_targaryen_sold_dragon_egg_flag
+			has_trait = fire_obsessed
+		}
+		name = agot_events_artifacts_sell.1004.b
+		custom_tooltip = agot_events_artifacts_sell.1004.common.tt
+		custom_tooltip = agot_events_artifacts_sell.1004.b.tt
+		root.house = {
+			set_variable = {
+				name = agot_stolen_artifact_from_artifact_keeper
+				value = 1
+			}
+			every_house_member = {
+				limit = {
+					NOT = {
+						this = root
+					}
+				}
+				add_opinion = {
+					target = root
+					modifier = targs_burn_artifact_keeper
+				}
+			}
+		}
+		global_var:agot_artifact_keeper = {
+			death = {
+				death_reason = death_fire
+				killer = root
+			}
+		}
+		remove_variable = agot_selected_artifact_sell
+		root = {
+			remove_character_flag = agot_targaryen_sold_dragon_egg_flag
+			save_scope_as = agot_artifact_killer
+			house = {
+				every_house_member = {
+					limit = {
+						NOT = {
+							this = root
+						}
+					}
+					trigger_event = {
+						id = agot_events_artifacts_sell.1005
+						days = 10
+					}
+				}
+			}
+		}
+	}
+
+	# Excute him
+	option = {
+		trigger = {
+			has_character_flag = agot_targaryen_sold_dragon_egg_flag
+		}
+		name = agot_events_artifacts_sell.1004.c
+		custom_tooltip = agot_events_artifacts_sell.1004.common.tt
+		root.house = {
+			set_variable = {
+				name = agot_stolen_artifact_from_artifact_keeper
+				value = 1
+			}
+		}
+		add_prestige = 1000 # Override the prestige penalty
+		global_var:agot_artifact_keeper = {
+			death = {
+				death_reason = death_execution
+				killer = root
+			}
+		}
+		remove_variable = agot_selected_artifact_sell
+		root = {
+			remove_character_flag = agot_targaryen_sold_dragon_egg_flag
+			save_scope_as = agot_artifact_killer
+			house = {
+				every_house_member = {
+					limit = {
+						NOT = {
+							this = root
+						}
+					}
+					trigger_event = {
+						id = agot_events_artifacts_sell.1005
+						days = 10
+					}
+				}
+			}
+		}
+	}
+
+	# Not sold
+	option = {
+		name = agot_events_artifacts_sell.1004.d
+		remove_variable = agot_selected_artifact_sell
+	}
+
+	after = {
+		global_var:agot_artifact_keeper = {
+			remove_variable = agot_dragon_eggs_count
+		}
+	}
+}
+
+agot_events_artifacts_sell.1005 = {
+	type = letter_event
+	opening = agot_events_artifacts_sell.1005.opening
+	desc = agot_events_artifacts_sell.1005.desc
+
+	sender = global_var:agot_artifact_keeper
+
+	immediate = {
+		custom_tooltip = agot_stolen_artifact_from_artifact_keeper_desc
+	}
+
+	option = {
+		name = agot_events_artifacts_sell.1005.a
+	}
+}

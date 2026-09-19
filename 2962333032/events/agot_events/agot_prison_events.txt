@@ -1,0 +1,171 @@
+﻿namespace = agot_prison
+
+
+#####################
+#  MUTE EVENTS  #
+#####################
+
+#I mute someone
+agot_prison.1001 = { #by Badger
+	type = character_event
+	title = agot_prison.1001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:recipient = { is_adult = yes } }
+				desc = {
+					desc = agot_prison.1001.start.desc
+					first_valid = {
+						triggered_desc = {
+							trigger = {
+								OR = {
+									ai_compassion < 0
+									has_relation_rival = scope:recipient
+								}
+							}
+							desc = agot_prison.1001.cruel.desc
+						}
+						desc = agot_prison.1001.compassionate.desc
+					}
+				}
+			}
+			desc = agot_prison.1001.child.desc
+		}
+	}
+	theme = prison
+	left_portrait = {
+		character = scope:actor
+		animation = schadenfreude
+	}
+	right_portrait = {
+		character = scope:recipient
+		animation = fear
+	}
+
+	trigger = { scope:recipient = { is_imprisoned_by = scope:actor } }
+
+	on_trigger_fail = {
+		scope:recipient = {
+			if = {
+				limit = { has_character_flag = is_being_tortured }
+				remove_character_flag = is_being_tortured
+			}
+		}
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_prison"
+		hidden_effect = {
+			#For the text
+			save_court_physician_as_effect = { SCOPE_NAME = physician }
+			if = {
+				limit = { NOT = { exists = scope:physician } }
+				random_dummy_gender_physician_effect = yes
+				scope:dummy_physician_gender = { save_scope_as = physician }
+			}
+		}
+	}
+
+	option = {
+		name = {
+			trigger = {
+				OR = {
+					has_trait = sadistic
+					has_relation_rival = scope:recipient
+				}
+				scope:recipient = { is_adult = yes }
+			}
+			text = agot_prison.1001.a
+		}
+		name = {
+			trigger = {
+				NAND = {
+					OR = {
+						has_trait = sadistic
+						has_relation_rival = scope:recipient
+					}
+					scope:recipient = { is_adult = yes }
+				}
+			}
+			text = agot_prison.1001.b
+		}
+		show_as_tooltip = { agot_mute_recipient_effect = yes }
+		scope:recipient = {
+			trigger_event = agot_prison.1002
+		}
+	}
+}
+
+#I am muted ouchy
+agot_prison.1002 = { #Badger
+	type = character_event
+	title = agot_prison.1002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:recipient = { is_adult = yes } }
+				desc = {
+					desc = agot_prison.1002.start.desc
+					first_valid = {
+						triggered_desc = {
+							trigger = {
+								scope:actor = {
+									OR = {
+										ai_compassion < 0
+										has_relation_rival = scope:recipient
+									}
+								}
+							}
+							desc = agot_prison.1002.cruel.desc
+						}
+						desc = agot_prison.1002.compassionate.desc
+					}
+				}
+			}
+			desc = agot_prison.1002.child.desc
+		}
+	}
+	theme = prison
+	left_portrait = {
+		character = root
+		animation = fear
+
+	}
+	right_portrait = {
+		character = scope:actor
+		animation = schadenfreude
+	}
+
+	trigger = { scope:recipient = { is_imprisoned_by = scope:actor } }
+
+	on_trigger_fail = {
+		scope:recipient = {
+			if = {
+				limit = { has_character_flag = is_being_tortured }
+				remove_character_flag = is_being_tortured
+			}
+		}
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_prison"
+	}
+
+	option = {
+		name = {
+			trigger = { is_adult = yes }
+			text = agot_prison.1002.a
+		}
+		name = {
+			trigger = { is_adult = no }
+			text = agot_prison.1002.b
+		}
+		agot_mute_recipient_effect = yes
+
+	}
+
+	after = {
+		add_character_flag = house_feud_castration_flag
+		house_feud_torture_event_effect = yes
+	}
+}

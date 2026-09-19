@@ -1,0 +1,139 @@
+﻿story_hire_faceless = {
+	on_setup = {
+		story_owner = {
+			if = {
+				limit = {
+					has_variable = faceless_victim
+				}
+				scope:story = {
+					set_variable = {
+						name = faceless_victim
+						value = prev.var:faceless_victim
+					}
+				}
+				remove_variable = faceless_victim
+				trigger_event = {
+					id = agot_faceless_interaction.0001
+					days = { 10 20 }
+				}
+			}
+			else = {
+				scope:story = { end_story = yes }
+			}
+		}
+	}
+
+	on_end = {
+
+	}
+
+	on_owner_death = {
+		end_story = yes
+	}
+
+	effect_group = {
+		days = 30
+		triggered_effect = {
+			trigger = {
+				var:faceless_victim ?= { is_alive = no }
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_faceless_interaction.0002
+				}
+			}
+		}
+	}
+}
+
+story_wear_face = {
+	on_setup = {
+		story_owner = {
+			if = {
+				limit = {
+					has_variable = new_face
+				}
+				scope:story = {
+					set_variable = {
+						name = new_face
+						value = prev.var:new_face
+					}
+				}
+				remove_variable = new_face
+			}
+			else = {
+				scope:story = { end_story = yes }
+			}
+
+			if = {
+				limit = {
+					has_variable = old_face
+				}
+				scope:story = {
+					set_variable = {
+						name = old_face
+						value = prev.var:old_face
+					}
+				}
+				remove_variable = old_face
+			}
+
+			if = {
+				limit = {
+					has_variable = faces_worn
+				}
+
+				# Update number of faces worn
+				scope:story = {
+					set_variable = {
+						name = faces_worn
+						value = prev.var:faces_worn
+					}
+				}
+				remove_variable = faces_worn
+			}
+
+			if = {
+				limit = {
+					has_variable = original_char
+				}
+				scope:story = {
+					set_variable = {
+						name = original_char
+						value = yes
+					}
+				}
+				remove_variable = original_char
+			}
+		}
+
+	}
+
+	on_end = {
+		if = {
+			limit = {
+				scope:story = { # in the case of spawning faceless men
+					has_variable = new_face
+					trigger_if = {
+						limit = {
+							has_variable = old_face
+						}
+						NOT = { var:old_face = var:new_face}
+					}
+				}
+			}
+			global_var:hall_of_faces = {
+				title_province = {
+					add_to_variable_list = {
+						name = faces
+						target = scope:story.var:new_face
+					}
+				}
+			}
+		}
+	}
+
+	on_owner_death = {
+		end_story = yes
+	}
+}

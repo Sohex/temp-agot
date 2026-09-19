@@ -1,0 +1,1045 @@
+﻿### Kingsguard
+agot_join_kingsguard_char_history_effect = {
+	add_character_flag = agot_is_kingsguard_member
+
+	create_character_memory = {
+		type = agot_kingsguard_memory
+		participants = {
+			king = $KING$
+		}
+	}
+}
+agot_lc_kingsguard_char_history_effect = {
+	remove_character_flag = agot_is_kingsguard_member
+	add_character_flag = agot_is_kingsguard_commander
+
+	create_character_memory = {
+		type = agot_kingsguard_lord_commander_memory
+		participants = {
+			king = $KING$
+		}
+	}
+	every_courtier = {
+		limit = { NOT = { has_trait = kingsguard } }
+		if = {
+			limit = {
+				house ?= prev.house
+				house.house_head != PREV
+				house.house_head = { is_ruler = yes }
+			}
+			set_employer = this.house.house_head
+		}
+		else = {
+			set_employer = title:h_the_iron_throne.holder
+		}
+	}
+}
+agot_leave_kingsguard_char_history_effect = {
+	remove_character_flag = agot_is_kingsguard_member
+	remove_character_flag = agot_is_kingsguard_commander
+	add_character_modifier = agot_former_kingsguard
+}
+### Marriage
+agot_safe_betrothal_history_effect = {
+	if = {
+		limit = {
+			$TARGET$ = {
+				is_alive = yes
+				is_married = no
+				NOT = { has_trait = refusing_marriage }
+			}
+			NOT = { has_trait = refusing_marriage }
+			ROOT = { is_married = no }
+		}
+		create_betrothal = $TARGET$
+	}
+}
+agot_safe_concubine_history_effect = {
+	if = {
+		limit = { $TARGET$ = { is_alive = yes } }
+		$TARGET$ = {
+			if = {
+				limit = { is_married = yes }
+				divorce = $TARGET$.primary_spouse
+			}
+		}
+		make_concubine = $TARGET$
+		if = {
+			limit = { is_ruler = yes }
+			$TARGET$ = {
+				agot_safe_set_location_history_effect = {
+					CASTLE = PREV.primary_title
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = THIS.court_owner }
+			$TARGET$ = {
+				agot_safe_set_location_history_effect = {
+					CASTLE = PREV.court_owner.primary_title
+				}
+			}
+		}
+	}
+}
+agot_safe_paramour_history_effect = {
+	if = {
+		limit = { $TARGET$ = { is_alive = yes } }
+		set_relation_paramour = $TARGET$
+		set_relation_lover = $TARGET$
+		$TARGET$ = { add_trait = paramour }
+	}
+}
+agot_safe_crush_history_effect = {
+	if = {
+		limit = {
+			$TARGET$ = { is_alive = yes }
+			is_adult = no
+		}
+		set_relation_crush = $TARGET$
+		add_relation_flag = {
+			relation = crush
+			target = $TARGET$
+			flag = auto_progress_to_lover
+		}
+	}
+}
+agot_safe_crush_mutual_history_effect = {
+	agot_safe_crush_history_effect = { TARGET = $TARGET$ }
+	$TARGET$ = {
+		agot_safe_crush_history_effect = { TARGET = PREV }
+	}
+}
+agot_safe_reveal_lovers_history_effect = {
+	### Disabled until we'll find a way to do this with less fanatical AI
+	every_secret = {
+		limit = { secret_type = secret_lover }
+		expose_secret = ROOT
+		every_secret_participant = {
+			remove_opinion = {
+				target = ROOT
+				modifier = exposed_my_secret_opinion
+			}
+		}
+	}
+	every_liege_or_above = {
+		consume_imprisonment_reasons = PREV
+	}
+	every_relation = {
+		type = lover
+		every_liege_or_above = {
+			consume_imprisonment_reasons = PREV
+		}
+	}
+}
+agot_safe_breakup_history_effect = {
+	if = {
+		limit = { $TARGET$ = { is_alive = yes } }
+		remove_relation_lover = $TARGET$
+	}
+	every_secret = {
+		type = secret_lover
+		limit = {
+			any_secret_participant = { THIS = $TARGET$ }
+		}
+		remove_secret = yes
+	}
+}
+### Tributaries
+agot_safe_add_timed_tributary_history_effect = {
+	if = {
+		limit = { game_start_date <= $EXPIRE$ }
+		start_tributary = { contract_group = tributary_subjugated suzerain = $SUZERAIN$.holder }
+		add_truce_both_ways = {
+			character = $SUZERAIN$.holder
+			years = 5
+			name = TRUCE_TRIBUTARY
+		}
+		tributary_contract_set_obligation_level = {
+			type = suzerain_war_participation_guarantee
+			level = 1
+		}
+	}
+}
+### Location
+agot_safe_set_location_history_effect = {
+	if = { # Move to the court if they are unlanded and elsewhere
+		limit = {
+			exists = $CASTLE$.holder
+			NOT = { is_courtier_of = $CASTLE$.holder }
+			is_ruler = no
+		}
+		set_variable = { # Remember their previous employer
+			name = office_previous_employer
+			value = ROOT.employer
+		}
+		set_variable = {
+			name = target_employer
+			value = $CASTLE$.holder
+		}
+		set_employer = $CASTLE$.holder
+		return_to_court = yes
+	}
+}
+agot_safe_move_laamp_history_effect = {
+	holder ?= {
+		domicile ?= {
+			move_domicile = $CASTLE$.title_province
+		}
+	}
+}
+agot_safe_set_hostage_history_effect = {
+	if = {
+		limit = {
+			NOT = { is_courtier_of = $WARDEN$ }
+			is_ruler = no
+		}
+		$WARDEN$ = { take_hostage = ROOT }
+	}
+}
+agot_safe_return_hostage_history_effect = {
+	if = {
+		limit = { is_hostage = yes }
+		return_hostage = yes
+	}
+}
+
+### Knighthood
+agot_knighted_char_history_effect = {
+	# ROOT - Character who is Knighted
+	# $KNIGHT$ - Character who Knighted him
+	remove_trait = squire
+	add_trait = knight
+	every_relation = {
+		type = agot_knight
+		remove_relation_agot_squire = ROOT
+	}
+	create_character_memory = {
+		type = agot_was_knighted
+		participants = {
+			knight = $KNIGHT$
+		}
+	}
+	$KNIGHT$ = {
+		create_character_memory = {
+			type = agot_knighted_someone
+			participants = {
+				squire = ROOT
+			}
+		}
+	}
+	if = {
+		limit = {
+			has_character_flag = had_ongoing_squire_story
+		}
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_squire_ongoing
+			}
+			end_story = yes
+		}
+	}
+	save_scope_as = historical_squire
+	agot_add_to_historical_knight_tree = { KNIGHT = $KNIGHT$ SQUIRE = ROOT }
+}
+agot_set_as_ward_and_squire_history_effect = {
+	if = {
+		limit = { NOT = { has_trait = knight } }
+		# Clean any older relations
+		every_relation = {
+			type = agot_knight
+			remove_relation_agot_squire = ROOT
+		}
+		every_relation = {
+			type = guardian
+			remove_relation_ward = ROOT
+		}
+		# Proceed with warding
+		add_trait = squire
+		agot_add_squire_trait_xp_effect = { MIN_VALUE = 5 MAX_VALUE = 25 }
+		if = {
+			limit = {
+				$KNIGHT$ = { is_alive = yes }
+			}
+			set_relation_agot_knight = $KNIGHT$
+			if = {
+				limit = { age < 16 }
+				set_relation_guardian = $KNIGHT$
+			}
+			if = { # Move them to knight's court
+				limit = { NOT = { has_trait = knight } }
+				save_scope_as = squire
+				if = {
+					limit = {
+						$KNIGHT$ = { is_ruler = yes }
+						scope:squire = { is_ruler = no }
+						NOT = { # If they have a guardian they will not move
+							scope:squire = {
+								any_relation = {
+									type = guardian
+									THIS != $KNIGHT$
+								}
+							}
+						}
+						$KNIGHT$ != scope:squire.host
+					}
+					visit_court_of = $KNIGHT$
+				}
+				else_if = {
+					limit = {
+						$KNIGHT$ = { is_ruler = no }
+						scope:squire = { is_ruler = yes }
+						scope:squire != $KNIGHT$.host
+					}
+					$KNIGHT$ = {
+						visit_court_of = scope:squire
+					}
+				}
+				else_if = {
+					limit = {
+						$KNIGHT$ = { is_ruler = no }
+						scope:squire = {
+							is_ruler = no
+							any_relation = {
+								type = guardian
+								THIS != $KNIGHT$
+							}
+						}
+						$KNIGHT$.host != scope:squire.host
+					}
+					$KNIGHT$ = {
+						visit_court_of = scope:squire.host
+					}
+				}
+				else_if = {
+					limit = {
+						$KNIGHT$ = { is_ruler = no }
+						scope:squire = { is_ruler = no }
+						exists = $KNIGHT$.host
+						exists = scope:squire.host
+						$KNIGHT$.host != scope:squire.host
+					}
+					visit_court_of = $KNIGHT$.host
+				}
+			}
+		}
+		create_character_memory = {
+			type = agot_became_squire
+			participants = {
+				knight = $KNIGHT$
+			}
+		}
+		$KNIGHT$ = {
+			add_character_modifier = agot_has_squire_modifier
+			create_character_memory = {
+				type = agot_got_squire
+				participants = {
+					squire = ROOT
+				}
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_character_flag = had_ongoing_squire_story
+				}
+			}
+			add_character_flag = had_ongoing_squire_story
+			create_story = story_agot_squire_ongoing
+		}
+		if = {
+			limit = {
+				has_character_flag = had_ongoing_squire_story
+			}
+			random_owned_story = {
+				limit = {
+					story_type = story_agot_squire_ongoing
+				}
+				set_variable = {
+					name = my_knight
+					value = $KNIGHT$
+				}
+			}
+		}
+	}
+}
+agot_handle_knightless_squire_history_effect = {
+	if = {
+		limit = { # Don't execute if loaded as knight
+			NOT = { has_trait = knight }
+			NOT = {
+				has_trait_xp = {
+					trait = squire
+					value > 0
+				}
+			}
+		}
+		random_close_family_member = {
+			limit = {
+				is_agot_knight_trigger = yes
+				NOT = {
+					any_relation = {
+						type = agot_squire
+						always = yes
+					}
+				}
+				is_capable_adult = yes
+				NOT = { has_character_flag = canon_status_canon }
+			}
+			save_scope_as = target_knight
+		}
+		if = {
+			limit = { NOT = { exists = scope:target_knight } }
+			random_extended_family_member = {
+				limit = {
+					is_agot_knight_trigger = yes
+					NOT = {
+						any_relation = {
+							type = agot_squire
+							always = yes
+						}
+					}
+					is_capable_adult = yes
+					NOT = { has_character_flag = canon_status_canon }
+				}
+				save_scope_as = target_knight
+			}
+		}
+		if = {
+			limit = { NOT = { exists = scope:target_knight } }
+			house.house_head ?= {
+				random_vassal = {
+					limit = {
+						is_agot_knight_trigger = yes
+						NOT = {
+							any_relation = {
+								type = agot_squire
+								always = yes
+							}
+						}
+						is_capable_adult = yes
+						NOT = { has_character_flag = canon_status_canon }
+					}
+					save_scope_as = target_knight
+				}
+			}
+		}
+		if = {
+			limit = { exists = scope:target_knight }
+			agot_set_as_ward_and_squire_history_effect = { KNIGHT = scope:target_knight }
+		}
+	}
+}
+agot_set_as_ward_history_effect = {
+	# Clean any older relations
+	every_relation = {
+		type = guardian
+		remove_relation_ward = ROOT
+	}
+	# Proceed with warding
+	if = {
+		limit = {
+			$GUARDIAN$ = { is_alive = yes }
+			age < 16
+		}
+		set_relation_guardian = $GUARDIAN$
+	}
+}
+agot_set_as_loyalist_history_effect = {
+	if = {
+		limit = {
+			$LOYALIST$ = { is_alive = yes }
+		}
+		add_hook = {
+			target = $LOYALIST$
+			type = loyalty_hook
+		}
+		reverse_add_opinion = {
+			target = $LOYALIST$
+			modifier = loyalty_opinion
+			opinion = 50
+		}
+	}
+}
+
+### Court Positions
+agot_appoint_as_court_position_for_castle_execution_history_effect = { # Separated actual appointment to avoid circular Scripted_Effect bug
+	$CASTLE$.holder = {
+		random_court_position_holder = {
+			type = $POSITION$
+			limit = { is_alive = yes }
+			save_scope_as = old_holder_position
+		}
+		if = {
+			limit = { exists = scope:old_holder_position }
+			replace_court_position = {
+				recipient = PREV
+				holder = scope:old_holder_position
+				court_position = $POSITION$
+			}
+			if = {
+				limit = { exists = scope:old_holder_position.var:office_previous_employer }
+				scope:old_holder_position ?= {
+					if = {
+						limit = {
+							NOT = { is_courtier_of = scope:old_holder_position.var:office_previous_employer }
+							is_available_quick = {
+								ruler = no
+								alive = yes
+							}
+							var:office_previous_employer = { is_alive = yes }
+						}
+						set_employer = scope:old_holder_position.var:office_previous_employer
+					}
+				}
+			}
+		}
+		else = {
+			appoint_court_position = {
+				recipient = PREV
+				court_position = $POSITION$
+			}
+		}
+	}
+}
+agot_appoint_as_court_position_for_castle_history_effect = {
+	set_variable = $POSITION$_CACHED_VALUE
+	if = { # Redirect if Septon
+		limit = {
+			has_variable = septon_court_position_CACHED_VALUE
+			$CASTLE$.holder = { NOT = { can_employ_court_position_type = septon_court_position } }
+			$CASTLE$.holder.religion = religion:the_seven_religion
+		}
+		agot_appoint_as_councillor_for_castle_history_effect = {
+			CASTLE = $CASTLE$
+			POSITION = councillor_court_chaplain
+		}
+	}
+	else_if = {
+		limit = {
+			is_capable_adult = yes
+			$CASTLE$.holder = {
+				OR = {
+					can_employ_court_position_type = $POSITION$
+					employs_court_position = $POSITION$
+				}
+			}
+		}
+		set_variable = { # Remember their previous employer
+			name = office_previous_employer
+			value = THIS.employer
+		}
+		agot_safe_set_location_history_effect = {
+			CASTLE = $CASTLE$
+		}
+		if = {
+			limit = {
+				OR = {
+					is_vassal_of = $CASTLE$.holder
+					is_courtier_of = $CASTLE$.holder
+				}
+			}
+			agot_appoint_as_court_position_for_castle_execution_history_effect = {
+				CASTLE = $CASTLE$
+				POSITION = $POSITION$
+			}
+		}
+	}
+	remove_variable = $POSITION$_CACHED_VALUE
+}
+agot_appoint_as_councillor_for_castle_history_effect = {
+	set_variable = { # Remember their previous employer
+		name = office_previous_employer
+		value = ROOT.employer
+	}
+	agot_safe_set_location_history_effect = {
+		CASTLE = $CASTLE$
+	}
+	add_character_flag = canon_councillor
+	if = {
+		limit = {
+			is_ruler = yes
+			NOT = { has_title = $CASTLE$ }
+			highest_held_title_tier >= tier_county
+			ROOT.liege != $CASTLE$.holder
+			ROOT.top_liege = $CASTLE$.holder
+		}
+		ROOT.liege = { save_scope_as = recipient }
+		ROOT = { save_scope_as = secondary_recipient }
+		if = {
+			limit = {
+				exists = scope:recipient.liege
+				scope:recipient.liege != $CASTLE$.holder
+			}
+			scope:recipient.liege = {
+				save_scope_as = tertiary_recipient
+			}
+		}
+		$CASTLE$.holder = {
+			hire_small_councillor = yes
+			scope:recipient = {
+				small_councillor_vassal_repatriation_effect = yes
+			}
+			scope:recipient = {
+				add_truce_both_ways = {
+					character = scope:secondary_recipient
+					days = 36500
+					name = TRUCE_ENFORCE_TRUCE
+				}
+			}
+			scope:tertiary_recipient ?= {
+				add_truce_both_ways = {
+					character = scope:secondary_recipient
+					days = 36500
+					name = TRUCE_ENFORCE_TRUCE
+				}
+			}
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				is_vassal_of = $CASTLE$.holder
+				is_courtier_of = $CASTLE$.holder
+			}
+			NOT = { has_title = $CASTLE$ }
+		}
+		$CASTLE$.holder ?= {
+			if = {
+				limit = { exists = cp:$POSITION$ }
+				cp:$POSITION$ = {
+					save_scope_as = old_holder_councillor
+					remove_variable = block_fire_councillor
+				}
+				if = {
+					limit = {
+						scope:old_holder_councillor = {
+							has_council_position = councillor_court_chaplain
+						}
+					}
+					set_variable = {
+						name = setting_up_high_septon
+						value = yes
+						days = 1
+					}
+				}
+				if = {
+					limit = { exists = scope:old_holder_councillor.var:office_previous_employer }
+					scope:old_holder_councillor ?= {
+						if = {
+							limit = {
+								NOT = { is_courtier_of = scope:old_holder_councillor.var:office_previous_employer }
+								is_available_quick = {
+									ruler = no
+									alive = yes
+								}
+								var:office_previous_employer = { is_alive = yes }
+							}
+							set_employer = scope:old_holder_councillor.var:office_previous_employer
+						}
+					}
+				}
+				scope:old_holder_councillor ?= {
+					remove_character_flag = canon_councillor
+					fire_small_councillor = yes
+				}
+			}
+			if = {
+				limit = {
+					exists = council_task:$POSITION$
+					cp:$POSITION$ != ROOT
+				}
+				assign_councillor_type = {
+					remove_existing_councillor = yes
+					target = ROOT
+					type = $POSITION$
+				}
+			}
+		}
+	}
+}
+agot_appoint_as_regent_for_castle_history_effect = {
+	agot_safe_set_location_history_effect = {
+		CASTLE = $CASTLE$
+	}
+	if = {
+		limit = {
+			OR = {
+				is_vassal_of = $CASTLE$.holder
+				is_courtier_of = $CASTLE$.holder
+			}
+			age >= 16
+		}
+		$CASTLE$.holder ?= {
+			designate_diarch = ROOT
+			if = {
+				limit = {
+					has_active_diarchy = yes
+					THIS.diarch != PREV
+				}
+				depose_diarch = yes
+			}
+		}
+	}
+}
+
+### Night's Watch
+agot_join_nightswatch_history_effect = {
+	if = {
+		limit = { has_trait = nightswatch_historical }
+		remove_trait = nightswatch_historical
+		add_trait = nightswatch
+	}
+	every_claim = { # Clear their claims
+		save_scope_as = processed_claim
+		PREV = { remove_claim = scope:processed_claim }
+	}
+	if = {
+		limit = { NOT = { has_trait = deserter } }
+		add_trait_xp = {
+			trait = nightswatch
+			value = 100
+		}
+		create_character_memory = {
+			type = agot_swore_nightswatch_oath
+		}
+		every_claim = {
+			prev = {
+				remove_claim = prev
+			}
+		}
+		add_trait = lifestyle_nw_$ORDER$
+		agot_safe_set_location_history_effect = {
+			CASTLE = $CASTLE$
+		}
+		# Add trait experience according to years served and potential
+		if = {
+			limit = { has_trait = lifestyle_nw_steward }
+			add_trait_xp = {
+				trait = lifestyle_nw_steward
+				value = {
+					add = ROOT.age
+					subtract = $NW_JOIN_AGE$
+					multiply = ROOT.stewardship
+					divide = 2
+				}
+			}
+		}
+		else_if = {
+			limit = { has_trait = lifestyle_nw_ranger }
+			add_trait_xp = {
+				trait = lifestyle_nw_ranger
+				value = {
+					add = ROOT.age
+					subtract = $NW_JOIN_AGE$
+					multiply = ROOT.martial
+					divide = 2
+				}
+			}
+		}
+		else_if = {
+			limit = { has_trait = lifestyle_nw_builder }
+			add_trait_xp = {
+				trait = lifestyle_nw_builder
+				value = {
+					add = ROOT.age
+					subtract = $NW_JOIN_AGE$
+					multiply = ROOT.stewardship
+					divide = 2
+				}
+			}
+		}
+	}
+}
+
+### Maester
+agot_maester_safe_forge_link_history_effect = {
+	if = {
+		limit = { NOT = { has_trait = maester } }
+		add_trait = maester
+	}
+	if = {
+		limit = { NOT = { any_owned_story = { story_type = story_maester } } }
+		create_story = story_maester
+	}
+	agot_add_chain_link_histories_effect = yes
+}
+agot_maester_forge_link_history_effect = {
+	set_variable = {
+		name = link_type
+		value = flag:$METAL$
+	}
+	agot_maester_safe_forge_link_history_effect = yes
+}
+agot_maester_starting_setup_history_effect = {
+	remove_trait = maester_historical
+	if = {
+		limit = { NOT = { has_trait = maester } }
+		add_trait = maester
+	}
+	if = {
+		limit = { NOT = { any_owned_story = { story_type = story_maester } } }
+		create_story = story_maester
+	}
+	agot_complete_chain_effect = yes
+	if = { # Assign medical prowess
+		limit = {
+			any_character_artifact = {
+				artifact_type = maester_chain
+				has_variable = silver_links
+				save_temporary_scope_value_as = {
+					name = links
+					value = var:silver_links
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:links >= 1
+				NOT = { has_trait = lifestyle_physician }
+			}
+			add_trait = lifestyle_physician
+		}
+		add_trait_xp = {
+			trait = lifestyle_physician
+			value = {
+				add = THIS.learning
+				multiply = 3
+				multiply = scope:links
+			}
+		}
+	}
+	add_character_flag = remove_maester_chain_house_claim
+}
+agot_maester_in_the_citadel_history_effect = {
+	agot_safe_set_location_history_effect = {
+		CASTLE = title:b_the_citadel
+	}
+	agot_maester_forge_link_history_effect = { METAL = $METAL$ }
+	agot_maester_forge_link_history_effect = { METAL = $METAL$ }
+}
+
+### Golden Company
+agot_join_golden_company_history_effect = {
+	if = { # Blackfyres themselves prioritize Blackfyre Host
+		limit = {
+			exists = title:e_blackfyre_rebellion.holder
+			house = title:e_blackfyre_rebellion.holder.house
+		}
+		agot_safe_set_location_history_effect = { CASTLE = title:e_blackfyre_rebellion }
+	}
+	else_if = { # Golden Company hasn't been established yet
+		limit = { game_start_date < 8212.3.1 }
+		agot_safe_set_location_history_effect = { CASTLE = title:c_tyrosh }
+	}
+	else = {
+		add_character_flag = mercenary_soldier_golden_company
+		if = {
+			limit = { exists = title:d_laamp_merc_golden_company.holder }
+			agot_safe_set_location_history_effect = { CASTLE = title:d_laamp_merc_golden_company }
+		}
+		else_if = {
+			limit = { exists = title:e_blackfyre_rebellion.holder }
+			agot_safe_set_location_history_effect = { CASTLE = title:e_blackfyre_rebellion }
+		}
+		else = {
+			agot_safe_set_location_history_effect = { CASTLE = title:c_goldfuror }
+		}
+	}
+}
+
+### Gold Cloaks
+agot_join_gold_cloaks_history_effect = {
+	if = {
+		limit = { exists = title:b_goldguard_heights.holder }
+		agot_safe_set_location_history_effect = {
+			CASTLE = title:b_goldguard_heights
+		}
+	}
+	else_if = {
+		limit = { exists = title:h_the_iron_throne.holder }
+		agot_safe_set_location_history_effect = {
+			CASTLE = title:h_the_iron_throne
+		}
+	}
+}
+
+### Dynasties
+agot_set_dynasty_level_history_effect = {
+	while = {
+		limit = { dynasty_prestige_level > $LEVEL$ }
+		add_dynasty_prestige_level = -1
+	}
+	while = {
+		limit = { dynasty_prestige_level < $LEVEL$ }
+		add_dynasty_prestige_level = 1
+	}
+}
+agot_safe_add_dynasty_perk_history_effect = {
+	if = {
+		limit = { exists = THIS.dynast }
+		add_dynasty_perk = $PERK$
+	}
+}
+
+### Dragons
+agot_assign_dragon_to_pit_history_effect = {
+	add_character_flag = owned_dragon
+	add_character_flag = in_dragonpit
+	add_character_modifier = agot_dragon_in_dragonpit
+	set_variable = {
+		name = pitted_dragon_location
+		value = $DRAGONPIT_COUNTY$
+	}
+	$DRAGONPIT_COUNTY$ = {
+		add_to_variable_list = {
+			name = dragons_in_pit
+			target = ROOT
+		}
+	}
+	agot_safe_set_location_history_effect = { CASTLE = $DRAGONPIT_COUNTY$ }
+}
+agot_free_dragon_from_pit_history_effect = {
+	remove_character_flag = in_dragonpit
+	remove_character_modifier = agot_dragon_in_dragonpit
+	remove_variable = pitted_dragon_location
+	$DRAGONPIT_COUNTY$ = {
+		remove_list_variable = {
+			name = dragons_in_pit
+			target = ROOT
+		}
+		save_scope_as = dragon_pit_location
+	}
+	if = {
+		limit = {
+			has_variable = current_rider
+			var:current_rider = { is_alive = yes }
+		}
+		var:current_rider = {
+			if = {
+				limit = { is_ruler = yes }
+				ROOT = { agot_safe_set_location_history_effect = { CASTLE = var:current_rider.primary_title } }
+			}
+			else_if = {
+				limit = { exists = THIS.court_owner }
+				ROOT = { agot_safe_set_location_history_effect = { CASTLE = var:current_rider.court_owner.primary_title } }
+			}
+		}
+	}
+}
+agot_set_lair_history_effect = {
+	set_variable = {
+		name = lair
+		value = $CASTLE$.title_province
+	}
+	agot_safe_set_location_history_effect = { CASTLE = $CASTLE$ }
+}
+
+### Sexuality
+agot_remove_sexuality_flags = {
+	remove_character_flag = sexuality_ensure_heterosexual
+	remove_character_flag = sexuality_ensure_homosexual
+	remove_character_flag = sexuality_ensure_bisexual
+	remove_character_flag = sexuality_ensure_asexual
+	remove_character_flag = sexuality_ensure_equal_chance
+	remove_character_flag = sexuality_ensure_not_heterosexual
+	remove_character_flag = sexuality_ensure_not_homosexual
+	remove_character_flag = sexuality_ensure_not_bisexual
+	remove_character_flag = sexuality_ensure_not_asexual
+	remove_character_flag = sexuality_raise_chance_heterosexual
+	remove_character_flag = sexuality_raise_chance_homosexual
+	remove_character_flag = sexuality_raise_chance_bisexual
+	remove_character_flag = sexuality_raise_chance_asexual
+}
+
+agot_advanced_sexuality_randomizer_history_effect = {
+	random_list = {
+		0 = {
+			modifier = { add = agot_heterosexuality_chance }
+			set_sexuality = heterosexual
+		}
+		0 = {
+			modifier = { add = agot_homosexuality_chance }
+			set_sexuality = homosexual
+		}
+		0 = {
+			modifier = { add = agot_bisexuality_chance }
+			set_sexuality = bisexual
+		}
+		0 = {
+			modifier = { add = agot_asexuality_chance }
+			set_sexuality = asexual
+		}
+	}
+	agot_remove_sexuality_flags = yes
+}
+
+agot_turn_westerosi_kingdom_into_lordship_history_effect = {
+	save_temporary_scope_value_as = {
+		name = years_since_event
+		value = {
+			value = current_year
+			subtract = $YEAR$
+		}
+	}
+	every_past_holder_reversed = { # Add trait to past holders that were LPs
+		limit = {
+			is_alive = no
+			primary_title = prev
+			time_since_death = {
+				years < agot_calc_years_since_event
+			}
+		}
+		make_trait_inactive = agot_was_westerosi_lord
+	}
+}
+
+agot_safe_imprison_in_castle_history_effect = {
+	if = {
+		limit = {
+			game_start_date < $RELEASE_DATE$
+			exists = $CASTLE$.holder
+		}
+		save_scope_as = imprisoned_scope
+		$CASTLE$.holder = {
+			imprison = {
+				target = scope:imprisoned_scope
+				type = $TYPE$
+			}
+		}
+	}
+}
+
+agot_set_signature_weapon_history_effect = {
+	agot_set_signature_weapon_effect = { WEAPON = $WEAPON$ }
+}
+
+agot_safe_remove_relation_lover = {
+	save_scope_as = relative_root
+	if = {
+		limit = { $TARGET$ = { is_alive = yes } }
+		remove_relation_lover = $TARGET$
+		every_secret = {
+			limit = {
+				secret_type = secret_lover
+				secret_target = $TARGET$
+			}
+			remove_secret = yes
+		}
+		$TARGET$ = {
+			every_secret = {
+				limit = {
+					secret_type = secret_lover
+					secret_target = scope:relative_root
+				}
+				remove_secret = yes
+			}
+		}
+	}
+}
+
+### Debug
+agot_turn_into_albino_dwarf_history_effect = {
+	add_trait = dwarf
+	add_trait = albino
+}

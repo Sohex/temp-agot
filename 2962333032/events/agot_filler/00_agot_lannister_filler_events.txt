@@ -1,0 +1,2349 @@
+﻿namespace = agot_lannister_events
+
+##########################
+#An Ambitious Hedge Knight
+##########################
+
+agot_lannister_events.100 = { # A Hedge Knight Looking for Work
+	trigger = {
+		has_title = title:e_the_westerlands
+		is_available_adult = yes
+		any_knight = {
+			employer = root
+			NOT = { has_trait = compassionate }
+		}
+	}
+	type = character_event
+	title = agot_lannister_events.100.t
+	desc = agot_lannister_events.100.desc
+
+	theme = stewardship
+	override_background = {
+		reference = courtyard
+	}
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:ambitious_knight
+		animation = personality_bold
+	}
+	immediate = {
+		create_character = {
+			template = agot_hedgeknight_character
+			location = root.location
+			trait = ambitious
+			save_scope_as = ambitious_knight
+		}
+		random_knight = {
+			limit = {
+				employer = root
+				NOT = { has_trait = compassionate }
+			}
+			save_scope_as = duel_candidate
+		}
+	}
+
+	option = { # Investigate the hedgeknight
+		name = agot_lannister_events.100.a
+		trigger = {
+			OR = {
+				has_trait = paranoid
+				has_trait = education_intrigue_1
+				has_trait = education_intrigue_2
+				has_trait = education_intrigue_3
+				has_trait = education_intrigue_4
+			}
+		}
+		custom_tooltip = agot_lannister_events.100.a.tt
+		add_visiting_courtier = scope:ambitious_knight
+
+		hidden_effect = {
+			random_list = {
+				50 = {
+					trigger_event = {
+						id = agot_lannister_events.101
+						days = 1
+					}
+				}
+				50 = {
+					trigger_event = {
+						id = agot_lannister_events.102
+						days = 1
+					}
+				}
+			}
+		}
+	}
+	option = { # Have him duel a knight
+		name = agot_lannister_events.100.b
+		scope:duel_candidate = {
+			duel = {
+				skill = prowess
+				target = scope:ambitious_knight
+				10 = {
+					custom_tooltip = agot_lannister_events.100.b.duel_candidate.victor.tt
+					modifier = {
+						add = scope:duel_value
+					}
+					hidden_effect = {
+						scope:ambitious_knight = {
+							death = { death_reason = death_vanished }
+						}
+					}
+				}
+				10 = {
+					custom_tooltip = agot_lannister_events.100.b.ambitious_knight.victor.tt
+					root = {
+						add_courtier = scope:ambitious_knight
+					}
+					#modifier = { #AGOT TODO
+					#	subtract = scope:duel_value
+					#}
+				}
+			}
+		}
+	}
+	option = { # Send Him Away
+		name = agot_lannister_events.100.c
+		custom_tooltip = agot_lannister_events.100.c.tt
+		hidden_effect = {
+			scope:ambitious_knight = {
+				death = { death_reason = death_vanished }
+			}
+		}
+		stress_impact = {
+			arrogant = minor_stress_loss
+			compassionate = minor_stress_gain
+		}
+	}
+	option = { # Kill Him
+		name = agot_lannister_events.100.d
+		trigger = {
+			OR = {
+				has_trait = sadistic
+				has_trait = callous
+			}
+		}
+		scope:ambitious_knight = {
+			death = {
+				death_reason = death_execution
+				killer = scope:duel_candidate
+			}
+		}
+
+		every_courtier_or_guest = {
+			limit = {
+				has_trait = compassionate
+			}
+			add_opinion = {
+				modifier = cruelty_opinion
+				target = root
+				opinion = -20
+			}
+		}
+	}
+}
+
+agot_lannister_events.101 = { # A secret is discovered about the knight
+	type = character_event
+	title = agot_lannister_events.101.t
+	desc = agot_lannister_events.101.desc
+
+	theme = intrigue
+	override_background = {
+		reference = feast
+	}
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:ambitious_knight
+		animation = personality_bold
+	}
+
+	immediate = {
+		scope:ambitious_knight = {
+			random_list = {
+				10 = {
+					add_secret = {
+						type = secret_cannibal
+					}
+				}
+				10 = {
+					add_secret = {
+						type = secret_deviant
+					}
+				}
+				10 = {
+					add_secret = {
+						type = secret_murder
+					}
+				}
+				10 = {
+					add_secret = {
+						type = secret_murder_attempt
+					}
+				}
+			}
+		}
+	}
+
+	option = { # Attempt to blackmail the Knight
+		name = agot_lannister_events.101.a
+		scope:ambitious_knight = {
+			every_secret = {
+				limit = {
+					NOT = {
+						is_known_by = root
+					}
+				}
+				reveal_to = root
+			}
+		}
+		random_list = {
+			50 = {
+				modifier = {
+					add = 50
+					scope:ambitious_knight = {
+						has_trait = craven
+					}
+				}
+				trigger_event = {
+					id = agot_lannister_events.103
+					days = 1
+				}
+				custom_tooltip = agot_lannister_events.101.a.success.tt
+			}
+			50 = {
+				modifier = {
+					add = 50
+					scope:ambitious_knight = {
+						has_trait = brave
+					}
+				}
+				modifier = {
+					add = 20
+					scope:ambitious_knight = {
+						has_trait = sadistic
+					}
+				}
+				modifier = {
+					add = 20
+					scope:ambitious_knight = {
+						has_trait = callous
+					}
+				}
+				modifier = {
+					add = 20
+					scope:ambitious_knight = {
+						has_trait = deceitful
+					}
+				}
+				trigger_event = {
+					id = agot_lannister_events.104
+					days = 1
+				}
+				custom_tooltip = agot_lannister_events.101.a.failure.tt
+			}
+		}
+	}
+
+	option = { # Imprison the Knight
+		name = agot_lannister_events.101.b
+
+		scope:ambitious_knight = {
+			every_secret = {
+				limit = {
+					NOT = {
+						is_known_by = root
+					}
+				}
+				save_scope_as = knight_secret
+				reveal_to = root
+			}
+		}
+		imprison = {
+			target = scope:ambitious_knight
+			type = dungeon
+		}
+		stress_impact = {
+			just = medium_stress_loss
+		}
+	}
+}
+
+agot_lannister_events.102 = { # No information can be found about the knight
+	type = character_event
+	title = agot_lannister_events.102.t
+	desc = agot_lannister_events.102.desc
+
+	theme = realm
+	override_background = {
+		reference = courtyard
+	}
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:ambitious_knight
+		animation = personality_bold
+	}
+
+	option = { # Test the Hedgeknight
+		name = agot_lannister_events.102.a
+		remove_short_term_gold = 30
+		custom_tooltip = agot_lannister_events.102.a.tt
+		random_list = {
+			50 = {
+				custom_tooltip = agot_lannister_events.102.a.success.tt
+				modifier = {
+					add = 20
+					scope:ambitious_knight = {
+						has_trait = honest
+					}
+				}
+				modifier = {
+					add = 50
+					scope:ambitious_knight = {
+						has_trait = compassionate
+					}
+				}
+				modifier = {
+					add = 50
+					scope:ambitious_knight = {
+						has_trait = just
+					}
+				}
+				trigger_event = {
+					id = agot_lannister_events.105
+					days = 1
+				}
+			}
+			50 = {
+				custom_tooltip = agot_lannister_events.102.a.failure.tt
+				modifier = {
+					add = 50
+					scope:ambitious_knight = {
+						has_trait = sadistic
+					}
+				}
+				modifier = {
+					add = 20
+					scope:ambitious_knight = {
+						has_trait = arrogant
+					}
+				}
+				trigger_event = {
+					id = agot_lannister_events.106
+					days = 1
+				}
+			}
+		}
+	}
+	option = { # Send him away
+		name = agot_lannister_events.102.b
+		hidden_effect = {
+			scope:ambitious_knight = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+}
+
+agot_lannister_events.103 = { # You succesfully blackmail the knight
+	type = character_event
+	title = agot_lannister_events.103.t
+	desc = agot_lannister_events.103.desc
+
+	theme = intrigue
+	override_background = {
+		reference = council_chamber
+	}
+	left_portrait = {
+		character = root
+		animation = personality_vengeful
+	}
+	right_portrait = {
+		character = scope:ambitious_knight
+		animation = personality_coward
+	}
+
+	option = {
+		name = agot_lannister_events.103.a
+		add_hook = {
+			type = loyalty_hook
+			target = scope:ambitious_knight
+			years = 10
+		}
+		stress_impact ={
+			ambitious = minor_stress_loss
+			callous = minor_stress_loss
+		}
+		scope:ambitious_knight = {
+			add_opinion = {
+				modifier = blackmailing_me_opinion
+				target = root
+			}
+		}
+	}
+}
+
+agot_lannister_events.104 = { # The Knight Refuses To Be Blackmailed
+	type = character_event
+	title = agot_lannister_events.104.t
+	desc = agot_lannister_events.104.desc
+
+	theme = intrigue
+	override_background = {
+		reference = council_chamber
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+	right_portrait = {
+		character = scope:ambitious_knight
+		animation = personality_vengeful
+	}
+	option = { # Throw Wine in his face and run
+		name = agot_lannister_events.104.a
+		Duel = {
+			skill = intrigue
+			value = 10
+			20 = {
+				custom_tooltip = agot_lannister_events.104.a.success.tt
+				#modifier = { #AGOT TODO
+				#	add = scope:duel_value
+				#}
+				trigger_event = {
+					id = agot_lannister_events.107
+				}
+			}
+			20 = {
+				custom_tooltip = agot_lannister_events.104.a.failure.tt
+				#modifier = { #AGOT TODO
+				#	subtract = scope:duel_value
+				#}
+				trigger_event = {
+					id = agot_lannister_events.108
+				}
+			}
+		}
+	}
+	option = { # Fight him
+		name = agot_lannister_events.104.b
+		custom_tooltip = agot_lannister_events.104.b.duel.tt
+		configure_start_single_combat_effect = {
+			SC_INITIATOR = scope:ambitious_knight
+			SC_ATTACKER = scope:ambitious_knight
+			SC_DEFENDER = root
+			FATALITY = always
+			FIXED = no
+			LOCALE = terrain_scope
+			OUTPUT_EVENT = agot_filler_ironislands.0021
+			INVALIDATION_EVENT = agot_filler_ironislands.0021
+		}
+	}
+	option = { # Give him money to go away
+		custom_tooltip = agot_lannister_events.104.c.tt
+		name = agot_lannister_events.104.c
+		remove_short_term_gold = 50
+		stress_impact = {
+			callous = medium_stress_gain
+			brave = major_stress_gain
+			greedy = major_stress_gain
+			authoritative = major_stress_gain
+			craven = medium_stress_loss
+			calm = minor_stress_loss
+		}
+		hidden_effect = {
+			scope:ambitious_knight = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+}
+
+agot_lannister_events.105 = { # A True Knight
+	type = character_event
+	title = agot_lannister_events.105.t
+	desc = agot_lannister_events.105.desc
+
+	theme = realm
+	override_background = {
+		reference = council_chamber
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+	right_portrait = {
+		character = scope:ambitious_knight
+		animation = personality_bold
+	}
+
+	immediate = {
+		every_held_county = {
+			add_to_list = hedge_knight_test_list
+		}
+		random_in_list = {
+			list = hedge_knight_test_list
+			save_scope_as = knight_test_province
+		}
+	}
+
+	option = {
+		name = agot_lannister_events.105.a
+
+		scope:knight_test_province = {
+			add_county_modifier = {
+				modifier = agot_knight_protector_positive_modifier
+				years = 3
+			}
+		}
+		add_courtier = scope:ambitious_knight
+	}
+}
+
+agot_lannister_events.106 = { # The Hedgeknight falls to banditry
+	type = character_event
+	title = agot_lannister_events.106.t
+	desc = agot_lannister_events.106.desc
+
+	left_portrait = {
+		character = root
+		animation = personality_vengeful
+	}
+	lower_right_portrait = {
+		character = scope:ambitious_knight
+		animation = personality_bold
+	}
+
+	theme = intrigue
+	override_background = {
+		reference = feast
+	}
+
+	immediate = {
+		every_held_county = {
+			add_to_list = hedge_knight_test_list
+		}
+		random_in_list = {
+			list = hedge_knight_test_list
+			save_scope_as = knight_test_province
+		}
+	}
+
+	option = {
+		name = agot_lannister_events.106.a
+		scope:knight_test_province = {
+			add_county_modifier = {
+				modifier = agot_knight_protector_negative_modifier
+				years = 3
+			}
+		}
+		hidden_effect = {
+			scope:ambitious_knight = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+}
+
+agot_lannister_events.107 = { # You escape from the knight
+	type = character_event
+	title = agot_lannister_events.107.t
+	desc = agot_lannister_events.107.desc
+
+	left_portrait = {
+		character = root
+		animation = personality_callous
+	}
+	right_portrait = {
+		character = scope:ambitious_knight
+		animation = aggressive_axe
+	}
+
+	theme = intrigue
+	override_background = {
+		reference = corridor_day
+	}
+
+	option = {
+		name = agot_lannister_events.107.a
+		scope:ambitious_knight = {
+			death = {
+				death_reason = death_execution
+				killer = root
+			}
+		}
+		stress_impact = {
+			callous = medium_stress_loss
+			vengeful = medium_stress_loss
+			wrathful = medium_stress_loss
+			compassionate = medium_stress_gain
+		}
+	}
+
+	option = {
+		name = agot_lannister_events.107.b
+		imprison = {
+			target = scope:ambitious_knight
+			type = dungeon
+		}
+		stress_impact = {
+			just = medium_stress_loss
+		}
+	}
+}
+
+agot_lannister_events.108 = { #The knight catches you
+	type = character_event
+	title = agot_lannister_events.108.t
+	desc = agot_lannister_events.108.desc
+
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:ambitious_knight
+		animation = anger
+	}
+
+	theme = intrigue
+	override_background = {
+		reference = council_chamber
+	}
+
+	option = {
+		name = agot_lannister_events.108.a
+		if = {
+			limit = {
+				NOR = {
+					has_trait = wounded_1
+					has_trait = wounded_2
+					has_trait = wounded_3
+				}
+			}
+			random_list = {
+				65 = {
+					add_trait = wounded_1
+				}
+				25 = {
+					add_trait = wounded_2
+				}
+				8 = {
+					add_trait = wounded_3
+				}
+				2 = {
+					root = {
+						death = {
+							death_reason = death_murder
+							killer = scope:ambitious_knight
+						}
+						trigger_event = agot_lannister_events.109
+					}
+				}
+			}
+			trigger_event = agot_lannister_events.107
+		}
+		else_if = {
+			limit = {
+				has_trait_rank = {
+					trait = wounded
+					rank < 3
+				}
+			}
+			increase_wounds_effect = { REASON = fight }
+			trigger_event = agot_lannister_events.107
+		}
+		else = {
+			trigger_event = agot_lannister_events.109
+		}
+	}
+}
+
+agot_lannister_events.109 = { # The Knight Kills You
+	type = character_event
+	title = agot_lannister_events.109.t
+	desc = agot_lannister_events.109.desc
+
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:ambitious_knight
+		animation = aggressive_sword
+	}
+	theme = intrigue
+	override_background = {
+		reference = council_chamber
+	}
+	option = {
+		name = agot_lannister_events.109.a
+		root = {
+			death = {
+				death_reason = death_beaten
+				killer = scope:ambitious_knight
+			}
+		}
+		hidden_effect = {
+			scope:ambitious_knight = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+}
+
+###################################
+# A New Gold Mine #
+###################################
+agot_lannister_events.200 = { #A Hidden Cave
+	type = character_event
+	title = agot_lannister_events.200.t
+	desc = agot_lannister_events.200.desc
+
+	trigger = {
+		is_commanding_army = yes
+		has_title = title:e_the_westerlands
+		exists = root.location
+		exists = root.location.county
+		exists = root.location.county.holder
+
+		#scope:new_mine_barony = {
+		AND = {
+			OR = {
+				root.location.county.holder = root
+				root.location.county.holder.top_liege = { this = root }
+			}
+			OR = {
+				root.location = { agot_is_hills_terrain = yes }
+				root.location = { agot_is_mountains_terrain = yes }
+				root.location = { agot_is_highlands_terrain = yes }
+			}
+		}
+		#scope:new_mine_province = {
+		root.location.county = {
+			NOT = {
+				has_county_modifier = agot_fresh_gold_veins_modifier
+			}
+		}
+		root = {
+			NOT = {
+				has_character_modifier = agot_new_mine_shares_modifier
+			}
+		}
+	}
+
+	immediate = {
+		random_knight = {
+			limit = {
+				is_at_same_location = root
+			}
+			save_scope_as = knight_explorer
+		}
+		root.location = {
+			save_scope_as = new_mine_barony
+			county = {
+				save_scope_as = new_mine_province
+			}
+			county.holder = {
+				save_scope_as = new_mine_holder
+			}
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	lower_right_portrait = {
+		character = scope:knight_explorer
+		animation = personality_bold
+	}
+
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+	option = { #Open the door and explore
+		name = agot_lannister_events.200.a
+		trigger_event = agot_lannister_events.201
+		stress_impact = {
+			craven = medium_stress_gain
+		}
+	}
+	option = { #Send a knight to explore for you
+		name = agot_lannister_events.200.b
+		random_list = {
+			60 = {
+				trigger_event = {
+					id = agot_lannister_events.207
+				}
+				modifier = {
+					add = 20
+					scope:knight_explorer = {
+						has_trait = honest
+					}
+				}
+			}
+			40 = {
+				trigger_event = {
+					id = agot_lannister_events.208
+				}
+				modifier = {
+					add = 60
+					scope:knight_explorer = {
+						has_trait = deceitful
+					}
+				}
+			}
+		}
+		stress_impact = {
+			brave = medium_stress_gain
+			craven = minor_stress_loss
+		}
+	}
+	option = { #Leave
+		name = agot_lannister_events.200.c
+	}
+}
+
+agot_lannister_events.201 = { # A Dark Descent
+	type = character_event
+	title = agot_lannister_events.201.t
+	desc = agot_lannister_events.201.desc
+
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:knight_explorer
+		animation = personality_bold
+	}
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+	option = { #Give the knight a torch and yeet him
+		name = agot_lannister_events.201.a
+		trigger = {
+			OR = {
+				has_trait = callous
+				has_trait = sadistic
+			}
+		}
+		random_list = {
+			65 = {
+				scope:knight_explorer = { add_trait = wounded_1 }
+				trigger_event = {
+					id = agot_lannister_events.202
+				}
+			}
+			15 = {
+				scope:knight_explorer = { add_trait = wounded_2 }
+				trigger_event = {
+					id = agot_lannister_events.202
+				}
+			}
+			10 = {
+				scope:knight_explorer = { add_trait = wounded_3 }
+				trigger_event = {
+					id = agot_lannister_events.202
+				}
+			}
+			10 = {
+				scope:knight_explorer = {
+					death = {
+						death_reason = death_murder
+						killer = root
+					}
+				}
+				trigger_event = {
+					id = agot_lannister_events.203
+				}
+			}
+		}
+		stress_impact = {
+			sadistic = major_stress_loss
+		}
+	}
+	option = { # Try to climb down into the cave
+		name = agot_lannister_events.201.b
+		duel = {
+			skill = prowess
+			value = 12
+			20 = {
+				custom_tooltip = agot_lannister_events.201.a.success.tt
+				#modifier = { #AGOT TODO
+				#	add = scope:duel_value
+				#}
+				trigger_event = {
+					id = agot_lannister_events.204
+				}
+			}
+			20 = {
+				custom_tooltip = agot_lannister_events.201.a.failure.tt
+				#modifier = { #AGOT TODO
+				#	subtract = scope:duel_value
+				#}
+				trigger_event = {
+					id = agot_lannister_events.205
+				}
+			}
+		}
+	}
+	option = { # Try to create some climbing equipment
+		name = agot_lannister_events.201.c
+		duel = {
+			skill = learning
+			value = 15
+			20 = {
+				custom_tooltip = agot_lannister_events.201.a.success.tt
+				#modifier = { #AGOT TODO
+				#	add = scope:duel_value
+				#}
+				trigger_event = {
+					id = agot_lannister_events.204
+				}
+			}
+			20 = {
+				custom_tooltip = agot_lannister_events.201.a.failure.tt
+				#modifier = { #AGOT TODO
+				#	subtract = scope:duel_value
+				#}
+				trigger_event = {
+					id = agot_lannister_events.205
+				}
+			}
+		}
+	}
+	option = { #Easily Descend
+		name = agot_lannister_events.201.d
+		trigger = {
+			OR ={
+				has_trait = strong
+				has_trait = athletic
+			}
+		}
+		trigger_event = {
+			id = agot_lannister_events.204
+		}
+	}
+}
+agot_lannister_events.202 = { # The knight is wounded but alive
+	type = character_event
+	title = agot_lannister_events.202.t
+	desc = agot_lannister_events.202.desc
+
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:knight_explorer
+		animation = personality_bold
+	}
+	immediate = {
+		send_interface_message = {
+			type = event_generic_bad
+			title = agot_lannister_events.202.notification
+			left_icon = root
+			right_icon = scope:knight_explorer
+			scope:knight_explorer = {
+				add_opinion = {
+					target = root
+					modifier = cruelty_opinion
+					opinion = -30
+				}
+			}
+		}
+	}
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	option = { # Follow the knight down using the light
+		name = agot_lannister_events.202.a
+		trigger_event = {
+			id = agot_lannister_events.204
+		}
+	}
+	option = { # Order the Knight to search the caves for you
+		name = agot_lannister_events.202.b
+		random_list = {
+			40 = {
+				trigger_event = {
+					id = agot_lannister_events.207
+				}
+				modifier = {
+					add = 20
+					scope:knight_explorer = {
+						has_trait = honest
+					}
+				}
+			}
+			60 = {
+				trigger_event = {
+					id = agot_lannister_events.208
+				}
+				modifier = {
+					add = 60
+					scope:knight_explorer = {
+						has_trait = deceitful
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_lannister_events.203 = { # The knight died
+	type = character_event
+	title = agot_lannister_events.203.t
+	desc = agot_lannister_events.203.desc
+
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:knight_explorer
+		animation = personality_bold
+	}
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	option = { #Use the torchlight to descend
+		name = agot_lannister_events.203.a
+		add_character_modifier = {
+			modifier = agot_suspected_murderer_modifier
+			years = 3
+		}
+		trigger_event = {
+			id = agot_lannister_events.204
+		}
+	}
+	option = { #Try to convince the others he fell
+		name = agot_lannister_events.203.b
+		duel = {
+			skill = diplomacy
+			value = 12
+			20 = {
+				custom_tooltip = agot_lannister_events.203.b.success.tt
+				#modifier = { #AGOT TODO
+				#	add = scope:duel_value
+				#}
+				modifier = {
+					add = 10
+					has_trait = authoritative
+				}
+				modifier = {
+					add = 10
+					has_trait = gregarious
+				}
+				modifier = {
+					add = 10
+					has_trait = deceitful
+				}
+				trigger_event = {
+					id = agot_lannister_events.204
+				}
+				send_interface_toast = {
+					title = agot_lannister_events.203.b.success.toast
+					left_icon = root
+				}
+			}
+			20 = {
+				custom_tooltip = agot_lannister_events.203.b.failure.tt
+				#modifier = { #AGOT TODO
+				#	subtract = scope:duel_value
+				#}
+				modifier = {
+					add = -10
+					has_trait = honest
+				}
+				send_interface_toast = {
+					title = agot_lannister_events.203.b.failure.toast
+					left_icon = root
+				}
+				add_character_modifier = {
+					modifier = agot_suspected_murderer_modifier
+					years = 3
+				}
+				trigger_event = {
+					id = agot_lannister_events.204
+				}
+			}
+		}
+	}
+}
+
+agot_lannister_events.204 = { # You find gold veins
+	type = character_event
+	title = agot_lannister_events.204.t
+	desc = agot_lannister_events.204.desc
+
+	left_portrait = {
+		character = root
+		animation = personality_greedy
+	}
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+	option = { #This option is for if the mine is in another characters county
+		name = agot_lannister_events.204.a
+		trigger = {
+			NOT = {
+				 scope:new_mine_holder = root
+			}
+		}
+		trigger_event = {
+			id = agot_lannister_events.206
+		}
+	}
+	option = {
+		name = agot_lannister_events.204.b
+		trigger = { scope:new_mine_holder = root }
+		root = {
+			remove_long_term_gold = 150
+		}
+		scope:new_mine_province = {
+			add_county_modifier = {
+				modifier = agot_fresh_gold_veins_modifier
+				years = 5
+			}
+		}
+	}
+	option = { # This is my realm (you will use the mine yourself)
+		name = agot_lannister_events.204.c
+		custom_tooltip = agot_lannister_events_selfish_mine.tt
+		trigger = {
+			NOT = { scope:new_mine_holder = root }
+			OR = {
+				has_trait = arbitrary
+				has_trait = greedy
+			}
+		}
+		remove_long_term_gold = major_gold_value
+
+		add_character_modifier = {
+			modifier = agot_selfish_new_mine_modifier
+			years = 5
+		}
+		scope:new_mine_holder = {
+			add_opinion = {
+				target = root
+				modifier = angry_opinion
+				opinion = -30
+			}
+		}
+	}
+}
+
+agot_lannister_events.205 = {
+	type = character_event
+	title = agot_lannister_events.205.t
+	desc = agot_lannister_events.205.desc
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	immediate = {
+		random_list = {
+			80 = {
+				add_trait = wounded_1
+			}
+			20 = {
+				add_trait = wounded_2
+			}
+		}
+	}
+
+	option = { #This option is for if the mine is in another characters county
+		name = agot_lannister_events.205.a
+		trigger = {
+			NOT = {
+				 scope:new_mine_holder = root
+			}
+		}
+		trigger_event = {
+			id = agot_lannister_events.206
+		}
+	}
+	option = {
+		name = agot_lannister_events.205.b
+		trigger = { scope:new_mine_holder = root }
+		remove_long_term_gold = major_gold_value
+	}
+	option = { # This is my realm (you will use the mine yourself)
+		name = agot_lannister_events.205.c
+		custom_tooltip = agot_lannister_events_selfish_mine.tt
+		trigger = {
+			NOT = { scope:new_mine_holder = root }
+			OR = {
+				has_trait = arbitrary
+				has_trait = greedy
+			}
+		}
+		remove_long_term_gold = major_gold_value
+
+		add_character_modifier = {
+			modifier = agot_selfish_new_mine_modifier
+			years = 5
+		}
+		scope:new_mine_holder = {
+			add_opinion = {
+				target = root
+				modifier = angry_opinion
+				opinion = -30
+			}
+		}
+	}
+}
+
+agot_lannister_events.206 = { # Negotiations
+	type = character_event
+	title = agot_lannister_events.206.t
+	desc = agot_lannister_events.206.desc
+
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:new_mine_holder
+		animation = personality_content
+	}
+	option = {
+		name = agot_lannister_events.206.a
+		duel = {
+			skill = stewardship
+			target = scope:new_mine_holder
+			25 = { # A Poor Deal
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 1
+				}
+				modifier = {
+					add = 50
+					scope:new_mine_holder = {
+						has_trait = greedy
+					}
+				}
+				modifier = {
+					add = 30
+					scope:new_mine_holder = {
+						has_trait = arrogant
+					}
+				}
+				pay_short_term_gold = {
+					target = scope:new_mine_holder
+					gold = major_gold_value
+				}
+				scope:new_mine_holder = {
+					remove_short_term_gold = minor_gold_value
+				}
+				add_character_modifier = {
+					modifier = agot_new_mine_shares_modifier
+					years = 5
+				}
+				stress_impact = {
+					greedy = medium_stress_gain
+				}
+				send_interface_toast = {
+					title = agot_lannister_events.206.a.minor_failure.toast
+					left_icon = root
+				}
+			}
+			10 = { # An okay deal
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2
+				}
+				pay_short_term_gold = {
+					target = scope:new_mine_holder
+					gold = medium_gold_value
+				}
+				scope:new_mine_holder = {
+					remove_short_term_gold = medium_gold_value
+				}
+				add_character_modifier = {
+					modifier = agot_new_mine_shares_modifier
+					years = 5
+				}
+				stress_impact = {
+					greedy = minor_stress_gain
+				}
+				send_interface_toast = {
+					title = agot_lannister_events.206.a.minor_success.toast
+					left_icon = root
+				}
+			}
+			30 = { # A great deal
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3
+				}
+				pay_short_term_gold = {
+					target = scope:new_mine_holder
+					gold = minor_gold_value
+				}
+				scope:new_mine_holder = {
+					remove_short_term_gold = major_gold_value
+				}
+				add_character_modifier = {
+					modifier = agot_new_mine_shares_modifier
+					years = 5
+				}
+				stress_impact = {
+					greedy = minor_stress_loss
+				}
+				send_interface_toast = {
+					title = agot_lannister_events.206.a.major_success.toast
+					left_icon = root
+				}
+			}
+			35 = {
+				custom_tooltip = agot_lannister_events.206.a.failure.tt
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 0.5
+				}
+				modifier = {
+					add = -50
+					scope:new_mine_holder = {
+						has_trait = greedy
+					}
+				}
+				scope:new_mine_holder = {
+					remove_short_term_gold = major_gold_value
+				}
+				stress_impact = {
+					greedy = major_stress_gain
+				}
+				send_interface_toast = {
+					title = agot_lannister_events.206.a.major_failure.toast
+					left_icon = root
+				}
+			}
+		}
+		scope:new_mine_province = {
+			add_county_modifier = {
+				modifier = agot_fresh_gold_veins_modifier
+				years = 5
+			}
+		}
+	}
+	option = {
+		name = agot_lannister_events.206.b
+		custom_tooltip = agot_lannister_events.206.b.tt
+		trigger = {
+			has_trait = authoritative
+		}
+		scope:new_mine_holder = {
+			add_opinion = {
+				modifier = angry_opinion
+				target = root
+				opinion = -25
+			}
+		}
+		scope:new_mine_province = {
+			add_county_modifier = {
+				modifier = agot_fresh_gold_veins_modifier
+				years = 5
+			}
+		}
+		add_character_modifier = {
+			modifier = agot_new_mine_shares_modifier
+			years = 5
+		}
+		scope:new_mine_holder = {
+			remove_short_term_gold = major_gold_value
+		}
+	}
+	option = {
+		name = agot_lannister_events.206.c
+		scope:new_mine_province = {
+			add_county_modifier = {
+				modifier = agot_fresh_gold_veins_modifier
+				years = 5
+			}
+		}
+		scope:new_mine_holder = {
+			pay_short_term_gold = {
+				target = root
+				gold = medium_gold_value
+			}
+		}
+	}
+}
+
+agot_lannister_events.207 = {
+	title = agot_lannister_events.207.t
+	desc = agot_lannister_events.207.desc
+
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:knight_explorer
+		animation = personality_honorable
+	}
+	option = {
+		name = agot_lannister_events.207.a
+		trigger_event = {
+			id = agot_lannister_events.204
+		}
+	}
+	option = {
+		name = agot_lannister_events.207.b
+		trigger = {
+			has_trait = cynical
+		}
+	}
+}
+
+agot_lannister_events.208 = {
+	type = character_event
+	title = agot_lannister_events.208.t
+	desc = agot_lannister_events.208.desc
+
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:knight_explorer
+		animation = personality_greedy
+	}
+	option = {
+		name = agot_lannister_events.208.a
+		duel = {
+			skill = intrigue
+			target = scope:knight_explorer
+
+			50 = {
+				custom_tooltip = agot_lannister_events.208.a.success
+				#modifier = { #AGOT TODO
+				#	add = scope:duel_value
+				#}
+				modifier = {
+					add = 50
+					scope:knight_explorer = {
+						has_trait = just
+					}
+				}
+				modifier = {
+					add = 50
+					scope:knight_explorer = {
+						has_trait = honest
+					}
+				}
+				trigger_event = {
+					id = agot_lannister_events.209
+				}
+			}
+			50 = {
+				custom_tooltip = agot_lannister_events.208.a.failure
+				#modifier = { #AGOT TODO
+				#	subtract = scope:duel_value
+				#}
+				modifier = {
+					add = 50
+					scope:knight_explorer = {
+						has_trait = greedy
+					}
+				}
+				modifier = {
+					add = 50
+					scope:knight_explorer = {
+						has_trait = arbitrary
+					}
+				}
+				modifier = {
+					add = -30
+					scope:knight_explorer = {
+						has_trait = compassionate
+					}
+				}
+				trigger_event = {
+					id = agot_lannister_events.210
+				}
+			}
+		}
+	}
+}
+
+agot_lannister_events.209 = {
+	type = character_event
+	title = agot_lannister_events.209.t
+	desc = agot_lannister_events.209.desc
+
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:knight_explorer
+		animation = personality_coward
+	}
+
+	option = {
+		name = agot_lannister_events.209.a
+		imprison = {
+			target = scope:knight_explorer
+			type = dungeon
+		}
+		trigger_event = {
+			id = agot_lannister_events.204
+		}
+	}
+	option = {
+		name = agot_lannister_events.209.b
+		trigger = {
+			OR = {
+				has_trait = callous
+				has_trait = sadistic
+			}
+		}
+		scope:knight_explorer = {
+			death = {
+				death_reason = death_execution
+				killer = root
+			}
+		}
+		trigger_event = {
+			id = agot_lannister_events.204
+		}
+	}
+	option = {
+		name = agot_lannister_events.209.c
+		scope:knight_explorer = {
+			add_opinion = {
+				target = root
+				modifier = kindness_opinion
+				opinion = 20
+			}
+		}
+		add_hook = {
+			type = favor_hook
+			target = scope:knight_explorer
+		}
+		trigger_event = {
+			id = agot_lannister_events.204
+		}
+	}
+}
+
+agot_lannister_events.210 = {
+	type = character_event
+	title = agot_lannister_events.210.t
+	desc = agot_lannister_events.210.desc
+
+	theme = hunt_activity
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:knight_explorer
+		animation = personality_bold
+	}
+	option = {
+		name = agot_lannister_events.210.a
+		hidden_effect = {
+			scope:knight_explorer = {
+				add_gold = 100
+			}
+		}
+	}
+}
+
+##################
+#Ironborn Raid
+##################
+agot_lannister_events.300 = {
+	type = character_event
+	title = agot_lannister_events.300.t
+	desc = agot_lannister_events.300.desc
+	trigger = {
+		has_title = title:e_the_westerlands
+		is_available_adult = yes
+	}
+
+	theme = realm
+	override_background = {
+		reference = throne_room
+	}
+	immediate = {
+		cp:councillor_marshal = { save_scope_as = marshal }
+		random_realm_province = {
+			limit = {
+				NOT = { county = root.capital_county }
+				is_coastal = yes
+				has_holding_type = castle_holding
+			}
+			save_scope_as = ironborn_raid_target
+		}
+		if = {
+			limit = {
+				NOT = {
+					scope:ironborn_raid_target = {
+						county.holder = root
+					}
+				}
+			}
+			scope:ironborn_raid_target = {
+				county.holder = {
+					save_scope_as = ironborn_raid_target_holder
+				}
+			}
+		}
+		create_character = {
+			template = agot_ironborn_raider_character
+			location = scope:ironborn_raid_target
+			save_scope_as = ironborn_raider
+		}
+	}
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	lower_right_portrait = {
+		character = scope:marshal
+		animation = personality_honorable
+	}
+	lower_left_portrait = {
+		character = scope:ironborn_raid_target_holder
+		animation = personality_honorable
+	}
+	option = { #Lead a small force yourself
+		name = agot_lannister_events.300.a
+		stress_impact = {
+			brave = minor_stress_loss
+			craven = medium_stress_gain
+		}
+		trigger_event = {
+			id = agot_lannister_events.301
+			days = 10
+		}
+	}
+	option = { #Leave them to fend for themselves
+		name = agot_lannister_events.300.b
+		trigger = {
+			scope:ironborn_raid_target = {
+				county.holder = root
+			}
+		}
+		scope:ironborn_raid_target = {
+			add_province_modifier = {
+				modifier = recently_looted_modifier
+				years = 5
+			}
+		}
+		hidden_effect = {
+			scope:ironborn_raider = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+		stress_impact = {
+			brave = medium_stress_gain
+			compassionate = major_stress_gain
+			craven = medium_stress_loss
+			callous = minor_stress_loss
+		}
+	}
+	option = { # Send your marshal
+		name = agot_lannister_events.300.c
+		trigger = {
+			exists = scope:marshal
+		}
+		scope:marshal = {
+			duel = {
+				skill = martial
+				target = scope:ironborn_raider
+				20 = { # The Marshal defeats the Ironborn
+					#modifier = { #AGOT TODO
+					#	add = scope:duel_value
+					#}
+					root = {
+						trigger_event = agot_lannister_events.306
+					}
+				}
+				20 = { # The Ironborn sack the province
+					#modifier = { #AGOT TODO
+					#	subtract = scope:duel_value
+					#}
+					root = {
+						trigger_event = agot_lannister_events.307
+					}
+				}
+			}
+		}
+	}
+	option = { #Leave it to the lord
+		name = agot_lannister_events.300.d
+		trigger = {
+			exists = scope:ironborn_raid_target_holder
+		}
+		scope:ironborn_raid_target_holder = {
+			add_opinion = {
+				target = root
+				modifier = angry_opinion
+				opinion = -30
+			}
+		}
+		scope:ironborn_raid_target_holder = {
+			duel = {
+				skill = martial
+				target = scope:ironborn_raider
+				20 = { # You defeat the Ironborn
+					#modifier = { #AGOT TODO
+					#	add = scope:duel_value
+					#}
+					root = {
+						trigger_event = agot_lannister_events.304
+					}
+				}
+				20 = { # The Ironborn sack the province
+					#modifier = { #AGOT TODO
+					#	subtract = scope:duel_value
+					#}
+					root = {
+						trigger_event = agot_lannister_events.305
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_lannister_events.301 = { #Leading the troops yourself
+	type = character_event
+	title = agot_lannister_events.301.t
+	desc = agot_lannister_events.301.desc
+
+	theme = war
+	override_background = {
+		reference = market_west
+	}
+	left_portrait = {
+		character = root
+		animation = personality_vengeful
+	}
+	right_portrait = {
+		character = scope:ironborn_raider
+		animation = personality_bold
+	}
+	option = { #Lead your force in an assault
+		name = agot_lannister_events.301.a
+		duel = {
+			skill = martial
+			target = scope:ironborn_raider
+			20 = { # You defeat the Ironborn
+				custom_tooltip = agot_lannister_events.301.success.tt
+				#modifier = { #AGOT TODO
+				#	add = scope:duel_value
+				#}
+				trigger_event = agot_lannister_events.302
+			}
+			20 = { # The Ironborn defeat you
+				custom_tooltip = agot_lannister_events.301.failure.tt
+				#modifier = { #AGOT TODO
+				#	subtract = scope:duel_value
+				#}
+				trigger_event = agot_lannister_events.303
+			}
+		}
+		stress_impact = {
+			brave = medium_stress_loss
+			craven = minor_stress_gain
+		}
+	}
+	option = {
+		name = agot_lannister_events.301.b
+		duel = {
+			skill = intrigue
+			target = scope:ironborn_raider
+			20 = { # You defeat the Ironborn
+				custom_tooltip = agot_lannister_events.301.success.tt
+				#modifier = { #AGOT TODO
+				#	add = scope:duel_value
+				#}
+				trigger_event = {
+					id = agot_lannister_events.308
+				}
+			}
+			20 = { # The Ironborn defeat you
+				custom_tooltip = agot_lannister_events.301.failure.tt
+				#modifier = { #AGOT TODO
+				#	subtract = scope:duel_value
+				#}
+				trigger_event = {
+					id = agot_lannister_events.309
+				}
+			}
+		}
+		stress_impact = {
+			just = medium_stress_gain
+			craven = medium_stress_loss
+		}
+	}
+}
+agot_lannister_events.302 = { # You defeat the Ironborn
+	type = character_event
+	title = agot_lannister_events.302.t
+	desc = agot_lannister_events.302.desc
+	theme = war
+	override_background = {
+		reference = market_west
+	}
+	left_portrait = {
+		character = root
+		animation = personality_vengeful
+	}
+	right_portrait = {
+		character = scope:ironborn_raider
+		animation = personality_bold
+	}
+	immediate = {
+		scope:ironborn_raider = {
+			random_list = {
+				65 = { add_trait = wounded_1 }
+				25 = { add_trait = wounded_2 }
+				10 = { add_trait = wounded_3 }
+			}
+		}
+		#add_character_modifier = { #AGOT TODO
+		#	modifier = agot_saved_vassal_from_raid_modifier
+		#	years = 3
+		#}
+	}
+	option = { # Imprison the raider
+		name = agot_lannister_events.302.a
+		imprison = {
+			target = scope:ironborn_raider
+			type = dungeon
+		}
+	}
+	option = { # Kill the raider
+		name = agot_lannister_events.302.b
+		scope:ironborn_raider = {
+			death = {
+				death_reason = death_execution
+				killer = root
+			}
+		}
+		stress_impact = {
+			sadistic = medium_stress_loss
+		}
+	}
+	option = { # Give the raider to the owner of the county
+		name = agot_lannister_events.302.c
+		trigger = {
+			exists = scope:ironborn_raid_target_holder
+		}
+		scope:ironborn_raid_target_holder = {
+			imprison = {
+				target = scope:ironborn_raider
+				type = dungeon
+			}
+		}
+	}
+}
+agot_lannister_events.303 = { #The Ironborn defeat you
+	type = character_event
+	title = agot_lannister_events.303.t
+	desc = agot_lannister_events.303.desc
+
+	theme = war
+	override_background = {
+		reference = market_west
+	}
+	left_portrait = {
+		character = root
+		animation = personality_vengeful
+	}
+	right_portrait = {
+		character = scope:ironborn_raider
+		animation = personality_bold
+	}
+	immediate = {
+		send_interface_toast = {
+			title = agot_lannister_events.303_wounded.toast.t
+			left_icon = root
+			right_icon = scope:ironborn_raider
+		}
+		if = {
+			limit = {
+				NOR = {
+					has_trait = wounded_1
+					has_trait = wounded_2
+					has_trait = wounded_3
+				}
+			}
+			random_list = {
+				65 = { add_trait = wounded_1 }
+				25 = { add_trait = wounded_2 }
+				10 = { add_trait = wounded_3 }
+			}
+		}
+		else_if = {
+			limit = {
+				has_trait_rank = {
+					trait = wounded
+					rank < 3
+				}
+			}
+			increase_wounds_effect = { REASON = fight }
+		}
+	}
+	option = { #Damn Ironborn
+		name = agot_lannister_events.303.a
+		scope:ironborn_raid_target = {
+			add_province_modifier = {
+				modifier = recently_looted_modifier
+				years = 5
+			}
+		}
+		hidden_effect = {
+			scope:ironborn_raider = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+		stress_impact = {
+			arrogant = medium_stress_gain
+		}
+	}
+	option = { # Pay to aid the recovery of the town
+		name = agot_lannister_events.303.b
+		remove_short_term_gold = 100
+		scope:ironborn_raid_target = {
+			add_province_modifier = {
+				modifier = recently_looted_modifier
+				years = 2
+			}
+		}
+		hidden_effect = {
+			scope:ironborn_raider = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+		stress_impact = {
+			greedy = major_stress_gain
+			generous = medium_stress_loss
+			compassionate = minor_stress_loss
+		}
+	}
+}
+
+agot_lannister_events.304 = { #The Vassal repels the invasion
+	type = letter_event
+	title = agot_lannister_events.304.t
+	opening = {
+		desc = agot_lannister_events.304.opening
+	}
+	desc = agot_lannister_events.304.desc
+
+	sender = scope:ironborn_raid_target_holder
+
+	option = {
+		name = agot_lannister_events.304.a
+		add_prestige = medium_prestige_loss
+		#add_character_modifier = { #AGOT TODO
+		#	modifier = agot_abandoned_vassal_to_raid_modifier
+		#	years = 5
+		#}
+		scope:ironborn_raid_target_holder = {
+			imprison = {
+				target = scope:ironborn_raider
+				type = dungeon
+			}
+		}
+	}
+}
+
+agot_lannister_events.305 = { #The vassal fails to repel the invasion
+	type = letter_event
+	title = agot_lannister_events.305.t
+	opening = {
+		desc = agot_lannister_events.305.opening
+	}
+	desc = agot_lannister_events.305.desc
+	immediate = {
+		scope:ironborn_raid_target_holder = {
+			random_list = {
+				65 = { add_trait = wounded_1 }
+				25 = { add_trait = wounded_2 }
+				10 = { add_trait = wounded_3 }
+			}
+		}
+		hidden_effect = {
+			scope:ironborn_raider = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+	sender = scope:ironborn_raid_target_holder
+
+	option = {
+		name = agot_lannister_events.305.a
+		add_prestige = medium_prestige_loss
+		#add_character_modifier = { #AGOT TODO
+		#	modifier = agot_abandoned_vassal_to_raid_modifier
+		#	years = 5
+		#}
+		scope:ironborn_raid_target = {
+			add_province_modifier = {
+				modifier = recently_looted_modifier
+				years = 5
+			}
+		}
+	}
+}
+
+agot_lannister_events.306 = { # Your martial defeats the Ironborn
+	type = character_event
+	title = agot_lannister_events.306.t
+	desc = agot_lannister_events.306.desc
+	theme = realm
+	override_background = {
+		reference = throne_room
+	}
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:marshal
+		animation = personality_honorable
+	}
+	immediate = {
+		scope:ironborn_raider = {
+			death = {
+				death_reason = death_battle
+				killer = scope:marshal
+			}
+		}
+	}
+	option = { # Reward the Martial
+		name = agot_lannister_events.306.a
+		scope:marshal = {
+			add_opinion = {
+				target = root
+				modifier = grateful_opinion
+				opinion = 15
+			}
+		}
+		pay_short_term_gold = {
+			target = scope:marshal
+			gold = medium_gold_value
+		}
+	}
+	option = { #It is his Duty
+		name = agot_lannister_events.306.b
+		scope:marshal = {
+			add_opinion = {
+				target = root
+				modifier = annoyed_opinion
+				opinion = -20
+			}
+			#add_character_modifier = { #AGOT TODO
+			#	modifier = agot_marshal_defeated_raid_modifier
+			#	years = 2
+			#}
+		}
+	}
+	option = {
+		name = agot_lannister_events.306.c
+		trigger = {
+			can_employ_court_position_type = master_of_hunt_court_position
+		}
+		appoint_court_position = {
+			recipient = scope:marshal
+			court_position = master_of_hunt_court_position
+		}
+		scope:marshal = {
+			add_opinion = {
+				target = root
+				modifier = grateful_opinion
+				opinion = 20
+			}
+		}
+	}
+}
+agot_lannister_events.307 = { # The Ironborn defeat your marshal
+	type = character_event
+	title = agot_lannister_events.307.t
+	immediate = {
+		scope:marshal = {
+			random_list = {
+				65 = { add_trait = wounded_1 }
+				20 = { add_trait = wounded_2 }
+				10 = { add_trait = wounded_3 }
+				500 = {
+					scope:marshal = {
+						add_trait = wounded_3
+						death = {
+							death_reason = death_battle
+							killer = scope:ironborn_raider
+						}
+					}
+				}
+			}
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:marshal = {
+						is_alive = no
+					}
+				}
+				desc = agot_lannister_events.307.marshal_died_desc
+			}
+			desc = agot_lannister_events.307.desc
+		}
+	}
+	theme = realm
+	override_background = {
+		reference = throne_room
+	}
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:marshal
+		animation = personality_honorable
+	}
+	option = { # A pity
+		name = agot_lannister_events.307.a
+		scope:ironborn_raid_target = {
+			add_province_modifier = {
+				modifier = recently_looted_modifier
+				years = 5
+			}
+		}
+	}
+	option = { # Failure will not be tolerated
+		name = agot_lannister_events.307.b
+		trigger = {
+			scope:marshal = {
+				is_alive = yes
+			}
+			OR = {
+				has_trait = callous
+				has_trait = sadistic
+			}
+		}
+		imprison = {
+			target = scope:marshal
+			type = dungeon
+		}
+		stress_impact = {
+			sadistic = medium_stress_loss
+			arbitrary = minor_stress_loss
+		}
+	}
+}
+agot_lannister_events.308 = { # Sneaky Saviour
+	type = character_event
+	title = agot_lannister_events.308.t
+	desc = agot_lannister_events.308.desc
+	theme = war
+	override_background = {
+		reference = market_west
+	}
+	left_portrait = {
+		character = root
+		animation = personality_vengeful
+	}
+	right_portrait = {
+		character = scope:ironborn_raider
+		animation = personality_bold
+	}
+	immediate = {
+		scope:ironborn_raider = {
+			random_list = {
+				65 = { add_trait = wounded_1 }
+				25 = { add_trait = wounded_2 }
+				10 = { add_trait = wounded_3 }
+			}
+		}
+		#add_character_modifier = { #AGOT TODO
+		#	modifier = agot_saved_vassal_from_raid_modifier
+		#	years = 3
+		#}
+	}
+	option = { # Imprison the raider
+		name = agot_lannister_events.308.a
+		imprison = {
+			target = scope:ironborn_raider
+			type = dungeon
+		}
+	}
+	option = { # Kill the raider
+		name = agot_lannister_events.308.b
+		scope:ironborn_raider = {
+			death = {
+				death_reason = death_execution
+				killer = root
+			}
+		}
+		stress_impact = {
+			sadistic = medium_stress_loss
+		}
+	}
+	option = { # Give the raider to the owner of the county
+		name = agot_lannister_events.308.c
+		trigger = {
+			exists = scope:ironborn_raid_target_holder
+		}
+		scope:ironborn_raid_target_holder = {
+			imprison = {
+				target = scope:ironborn_raider
+				type = dungeon
+			}
+		}
+	}
+}
+agot_lannister_events.309 = { #Bad ambush
+	type = character_event
+	title = agot_lannister_events.309.t
+	desc = agot_lannister_events.309.desc
+	theme = war
+	override_background = {
+		reference = market_west
+	}
+	left_portrait = {
+		character = root
+		animation = personality_vengeful
+	}
+	right_portrait = {
+		character = scope:ironborn_raider
+		animation = personality_bold
+	}
+	immediate = {
+		send_interface_toast = {
+			title = agot_lannister_events.303_wounded.toast.t
+			left_icon = root
+			right_icon = scope:ironborn_raider
+		}
+		if = {
+			limit = {
+				NOR = {
+					has_trait = wounded_1
+					has_trait = wounded_2
+					has_trait = wounded_3
+				}
+			}
+			random_list = {
+				65 = { add_trait = wounded_1 }
+				25 = { add_trait = wounded_2 }
+				10 = { add_trait = wounded_3 }
+			}
+		}
+		else_if = {
+			limit = {
+				has_trait_rank = {
+					trait = wounded
+					rank < 3
+				}
+			}
+			increase_wounds_effect = { REASON = fight }
+		}
+	}
+	option = { # You are forced to retreat
+		name = agot_lannister_events.309.a
+		scope:ironborn_raid_target = {
+			add_province_modifier = {
+				modifier = recently_looted_modifier
+				years = 5
+			}
+		}
+		hidden_effect = {
+			scope:ironborn_raider = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+		stress_impact = {
+			arrogant = medium_stress_gain
+		}
+	}
+	option = { # Pay to aid the recovery of the town
+		name = agot_lannister_events.309.b
+		remove_short_term_gold = 100
+		scope:ironborn_raid_target = {
+			add_province_modifier = {
+				modifier = recently_looted_modifier
+				years = 2
+			}
+		}
+		stress_impact = {
+			greedy = major_stress_gain
+			generous = medium_stress_loss
+			compassionate = minor_stress_loss
+		}
+	}
+}

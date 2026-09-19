@@ -1,0 +1,70 @@
+﻿#Generic travel events
+
+namespace = agot_travel_events_cities
+
+############################
+## Travel Events for Big Cities
+## 1000-3999
+## by Henrik Lohmander
+############################
+# travel_events_cities.1010 - Baghdad - Mostly Learning Focus
+# travel_events_cities.1020 - Rome - Mostly Diplomacy
+
+
+#####################################################################################
+
+#Loc can be reused in parts of these events therefore we will be consistent with scope naming:
+#scope:city_province This is the city we are visiting
+#scope:city_sight This is where the specific site inside the city is saved, as a flag.
+#sightseeing_companion This is a companion relevant for the event, often the criteria depends on the chosen site. Companions are not required but influence options.
+
+#Events save the memory memory_big_city_visited which is also used to block the events from firing again in the same location
+
+############################
+## Arrival in Lys
+############################
+
+agot_travel_events_cities.1010 = {
+	hidden = yes
+
+	trigger = {
+		location = province:7388 #Lys
+		current_travel_plan.travel_plan_owner = root
+		is_landed = yes
+		is_location_valid_for_travel_event_on_land = yes #Should not be needed...
+		NOT = { location.county.holder = root } #If I own it then it does not make sense to visit it.
+		NOT = {
+			any_memory = { #Did I come here before?
+				has_memory_type = memory_big_city_visited
+				has_variable = city_location
+				var:city_location = root.location
+			}
+		}
+
+	}
+
+	immediate = {
+		agot_debug_log_effect = { MSG = agot_debug_msg_travel_events_cities_1010 }
+		location = {
+			save_scope_as = city_province
+		}
+		add_character_flag = at_super_market
+		random_list = {
+			50 = { trigger_event = agot_filler_lys.0032 }
+			50 = { trigger_event = agot_filler_lys.0040 }
+		}
+
+		create_character_memory = {
+			type = memory_big_city_visited
+		}
+		scope:new_memory = {
+			save_scope_as = city_memory
+		}
+		scope:city_memory = {
+			set_variable = {
+				name = city_location
+				value = scope:city_province
+			}
+		}
+	}
+}

@@ -1,0 +1,649 @@
+﻿namespace = agot_gold_company_formation
+
+scripted_trigger blackfyre_loyalist_houses = {
+	OR = {
+		house ?= dynasty:dynn_Bracken.dynasty_founder.house
+		house ?= dynasty:dynn_Costayne.dynasty_founder.house
+		house ?= dynasty:dynn_Osgrey.dynasty_founder.house
+		house ?= dynasty:dynn_Peake.dynasty_founder.house
+		house ?= dynasty:dynn_Shawney.dynasty_founder.house
+		house ?= dynasty:dynn_Strickland.dynasty_founder.house
+		house ?= dynasty:dynn_Yronwood.dynasty_founder.house
+		house ?= dynasty:dynn_Lothston.dynasty_founder.house
+	}
+}
+
+scripted_trigger candidate_for_golden_company_formation_trigger = {
+	is_human = yes
+	has_bad_opinion_of_root_trigger = yes
+	OR = {
+		house ?= house:house_Bittersteel
+		blackfyre_loyalist_houses = yes
+	}
+}
+
+scripted_effect golden_company_formation_family_effect = {
+	if = {
+		limit = {
+			OR = {
+				house ?= house:house_Blackfyre
+				has_character_flag = is_Targaryen_95
+			}
+		}
+		every_close_family_member = {
+			limit = {
+				OR = {
+					dynasty ?= dynasty:dynn_Targaryen
+					any_parent = {
+						even_if_dead = yes
+						dynasty ?= dynasty:dynn_Targaryen
+					}
+				}
+				NOT = {
+					house ?= house:house_Blackfyre
+					has_character_flag = is_Targaryen_95
+				}
+			}
+			add_character_flag = {
+				flag = return_to_sender
+				days = 1
+			}
+			set_variable = {
+				name = old_location
+				value = location
+				days = 2
+			}
+			if = {
+				limit = {
+					has_character_flag = is_Targaryen_96
+					has_council_position = councillor_spymaster
+				}
+				add_character_flag = return_to_spymaster
+			}
+			else_if = {
+				limit = {
+					has_character_flag = is_Targaryen_96
+					has_council_position = councillor_castellan
+				}
+				add_character_flag = return_to_hand
+			}
+		}
+	}
+}
+
+scripted_effect notify_players_about_golden_company = {
+	every_player = {
+		limit = {
+			this != root
+			this != scope:disgruntled_merc
+		}
+		trigger_event = {
+			id = agot_gold_company_formation.0002
+			days = 1
+		}
+	}
+}
+
+scripted_effect spawn_golden_company = {
+	primary_title = {
+		set_coa = laamp_golden_company
+		save_title_name_change_data = { TRANSFER_VAR = yes }
+		reset_title_prefix = yes
+		set_title_prefix = AGOT_PREFIX_THE
+		set_title_name = golden_company
+	}
+	add_realm_law = camp_purpose_mercenaries
+	set_global_variable = {
+		name = dynamic_gc_formed
+		value = primary_title
+	}
+	if = {
+		limit = {
+			exists = character:Blackfyre_5.var:agot_ats_daemon_status
+			NAND = {
+				character:Blackfyre_5 ?= {
+					has_title = title:d_laamp_blackfyre
+					var:agot_ats_daemon_status = flag:giving_up_on_blackfyre
+				}
+			}
+		}
+		create_alliance = {
+			target = title:d_laamp_blackfyre.holder
+			allied_through_owner = scope:disgruntled_merc
+			allied_through_target = title:d_laamp_blackfyre.holder
+		}
+	}
+	title:d_laamp_blackfyre.holder = {
+		add_opinion = {
+			modifier = perk_negotiated_alliance_opinion
+			target = scope:disgruntled_merc
+		}
+	}
+}
+
+agot_gold_company_formation.0001 = {
+	type = character_event
+	title = agot_gold_company_formation.0001.t
+	desc = {
+		desc = agot_gold_company_formation.0001.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:disgruntled_merc = { house ?= house:house_Blackfyre }
+				}
+				desc = agot_gold_company_formation.0001.desc_self_claim
+			}
+			triggered_desc = {
+				trigger = {
+					scope:disgruntled_merc = {
+						any_close_family_member = {
+							house ?= house:house_Blackfyre
+						}
+						any_spouse = {
+							house ?= house:house_Blackfyre
+						}
+					}
+				}
+				desc = agot_gold_company_formation.0001.desc_family_claim
+			}
+			triggered_desc = {
+				# Blackfyre Loyalists
+				trigger = {
+					scope:disgruntled_merc = {
+						blackfyre_loyalist_houses = yes
+					}
+				}
+				desc = agot_gold_company_formation.0001.desc_blackfyre_loyalist
+			}
+		}
+	}
+	theme = laamp
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = {
+				OR = {
+					has_trait = compassionate
+					has_trait = craven
+				}
+			}
+			animation = worry
+		}
+		triggered_animation = {
+			trigger = {
+				OR = {
+					has_trait = arrogant
+					has_trait = wrathful
+					has_trait = vengeful
+					has_trait = callous
+				}
+			}
+			animation = anger
+		}
+		animation = stress
+	}
+	right_portrait = {
+		character = scope:disgruntled_merc
+		animation = chess_cocky
+	}
+	override_background = { reference = bp1_bonfire }
+
+	trigger = {
+		has_realm_law = camp_purpose_mercenaries
+		OR = {
+			has_character_flag = agot_lost_or_reneged_merc_contract
+			has_character_flag = fp2_contract_assistance_failure
+			has_domicile_temperament_low = yes
+		}
+		NOR = {
+			exists = title:d_laamp_merc_golden_company
+			exists = global_var:dynamic_gc_formed
+		}
+		exists = global_var:number_of_blackfyre_rebellions
+		any_courtier = {
+			candidate_for_golden_company_formation_trigger = yes
+		}
+	}
+
+	immediate = {
+		random_courtier = {
+			limit = {
+				candidate_for_golden_company_formation_trigger = yes
+			}
+			weight = {
+				base = 1
+				modifier = {
+					add = 10
+					has_really_bad_opinion_of_root_trigger = yes
+				}
+				modifier = {
+					add = 50
+					blackfyre_loyalist_houses = yes
+				}
+				modifier = {
+					add = 1000
+					house ?= house:house_Bittersteel
+				}
+			}
+			save_scope_as = disgruntled_merc
+		}
+		every_courtier = {
+			limit = {
+				is_available_healthy_ai_adult = yes
+				OR = {
+					blackfyre_loyalist_houses = yes
+					has_really_bad_opinion_of_root_trigger = yes
+				}
+			}
+			add_to_list = new_company_members
+		}
+		golden_company_formation_family_effect = yes
+		scope:disgruntled_merc = {
+			create_landless_adventurer_title_effect = {
+				REASON = flag:voluntary
+				FLAVOR_CHAR = root
+			}
+			spawn_golden_company = yes
+			hidden_effect = {
+				create_maa_regiment = {
+					type = trebuchet
+					check_can_recruit = no
+					size = 5
+				}
+				create_maa_regiment = {
+					type = crossbowmen
+					check_can_recruit = no
+					size = 5
+				}
+				create_maa_regiment = {
+					type = armored_horsemen
+					check_can_recruit = no
+					size = 5
+				}
+				domicile ?= {
+					add_domicile_building = camp_main_02
+					add_domicile_building = proving_grounds_01
+					add_domicile_building = mess_tent_01
+				}
+				add_gold = 300
+				add_prestige = 100
+				add_prestige_level = 1
+			}
+		}
+		every_in_list = {
+			list = new_company_members
+			limit = {
+				this != scope:disgruntled_merc
+			}
+			save_temporary_scope_as = followers_to_leave
+			scope:disgruntled_merc = { add_courtier = scope:followers_to_leave }
+		}
+	}
+
+	option = {
+		name = agot_gold_company_formation.0001.a
+		stress_impact = {
+			paranoid = medium_stress_impact_gain
+			wrathful = medium_stress_impact_gain
+			vengeful = medium_stress_impact_gain
+		}
+	}
+	after = {
+		notify_players_about_golden_company = yes
+	}
+}
+
+agot_gold_company_formation.0002 = {
+	type = character_event
+	window = fullscreen_event
+	title = agot_gold_company_formation.0002.t
+	desc = agot_gold_company_formation.0002.desc
+	theme = war
+	override_background = { reference = fp3_fullscreen_temper }
+
+	immediate = {
+		play_music_cue = mood_the_golden_company
+	}
+
+	option = {
+		name = agot_gold_company_formation.0002.a
+	}
+	option = {
+		name = agot_gold_company_formation.0002.b
+		trigger = {
+			is_ai = no
+			any_player = {
+				count <= 1
+			}
+		}
+		set_player_character = scope:disgruntled_merc
+	}
+}
+
+agot_gold_company_formation.0003 = {
+	hidden = yes
+	immediate = {
+		golden_company_formation_family_effect = yes
+		create_landless_adventurer_title_effect = {
+			REASON = flag:voluntary
+			FLAVOR_CHAR = root
+		}
+		save_scope_as = disgruntled_merc
+		spawn_golden_company = yes
+		hidden_effect = {
+			create_maa_regiment = {
+				type = trebuchet
+				check_can_recruit = no
+				size = 5
+			}
+			create_maa_regiment = {
+				type = crossbowmen
+				check_can_recruit = no
+				size = 5
+			}
+			create_maa_regiment = {
+				type = armored_horsemen
+				check_can_recruit = no
+				size = 5
+			}
+			domicile ?= {
+				add_domicile_building = camp_main_02
+				add_domicile_building = proving_grounds_01
+				add_domicile_building = mess_tent_01
+			}
+			add_gold = 300
+			add_prestige = 100
+			add_prestige_level = 1
+
+			# Add historical members of the Golden Company in 212 to it
+			if = {
+				limit = {
+					exists = character:Strickland_15
+					character:Strickland_15 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Strickland_15
+				}
+				character:Strickland_15 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Strickland_16
+					character:Strickland_16 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Strickland_16
+				}
+				character:Strickland_16 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Strickland_17
+					character:Strickland_17 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Strickland_17
+				}
+				character:Strickland_17 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Ball_31
+					character:Ball_31 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Ball_31
+				}
+				character:Ball_31 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Ball_32
+					character:Ball_32 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Ball_32
+				}
+				character:Ball_32 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Ball_33
+					character:Ball_33 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Ball_33
+				}
+				character:Ball_33 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Strong_42
+					character:Strong_42 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Strong_42
+				}
+				character:Strong_42 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Strong_62
+					character:Strong_62 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Strong_62
+				}
+				character:Strong_62 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Strong_43
+					character:Strong_43 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Strong_43
+				}
+				character:Strong_43 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Strong_60
+					character:Strong_60 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Strong_60
+				}
+				character:Strong_60 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Lothston_19
+					character:Lothston_19 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Lothston_19
+				}
+				character:Lothston_19 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Toyne_26
+					character:Toyne_26 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Toyne_26
+				}
+				character:Toyne_26 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Cole_18
+					character:Cole_18 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Cole_18
+				}
+				character:Cole_18 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Cole_19
+					character:Cole_19 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Cole_19
+				}
+				character:Cole_19 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Toyne_1
+					character:Toyne_1 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Toyne_1
+				}
+				character:Toyne_1 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Toyne_2
+					character:Toyne_2 = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Toyne_2
+				}
+				character:Toyne_2 = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Horpe_63
+					character:Horpe_63  = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Horpe_63
+				}
+				character:Horpe_63  = {
+					return_to_court = yes
+				}
+			}
+
+			if = {
+				limit = {
+					exists = character:Blackbar_93
+					character:Blackbar_93  = {
+						is_alive = yes
+						is_ruler = no
+					}
+				}
+				root = {
+					add_courtier = character:Blackbar_93
+				}
+				character:Blackbar_93  = {
+					return_to_court = yes
+				}
+			}
+		}
+		notify_players_about_golden_company = yes
+	}
+}

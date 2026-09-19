@@ -1,0 +1,3388 @@
+﻿soulmate_lover_breakup_effect = {
+	save_temporary_scope_as = new_soulmate
+	every_relation = {
+		type = lover
+		limit = {
+			is_ai = yes
+			NOT = { $EXCLUDE$ = this }
+		}
+		random = {
+			chance = 80
+			opinion_modifier = { #Less likely if they really like the lover
+				opinion_target = scope:new_soulmate
+				multiplier = -0.5
+				min = -20
+				max = 20
+			}
+			ai_value_modifier = {
+				ai_vengefulness = -0.4
+				min = -20
+				max = 20
+			}
+			modifier = { #More likely if they have more lovers
+				add = 10
+				any_relation = {
+					type = lover
+					count >= 2
+				}
+			}
+			lover_breakup_effect = {
+				BREAKER = this
+				LOVER = scope:new_soulmate
+			}
+		}
+	}
+}
+
+court_scheme_add_soulmate_effect = {
+	if = {
+		limit = {
+			$TARGET$ = { can_set_relation_soulmate_trigger = { CHARACTER = $PROPOSER$ } }
+		}
+		$TARGET$ = { set_relation_soulmate = { reason = $REASON$ target = $PROPOSER$ } }
+	}
+	else_if = {
+		limit = {
+			$TARGET$ = { can_set_relation_potential_lover_trigger = { CHARACTER = $PROPOSER$ } }
+		}
+		$TARGET$ = {
+			set_relation_potential_lover = $PROPOSER$
+			add_opinion = {
+				target = $PROPOSER$
+				modifier = love_opinion
+				opinion = 30
+			}
+			hidden_effect = {
+				if = {
+					limit = { is_ai = yes }
+					reverse_add_opinion = {
+						target = $PROPOSER$
+						modifier = love_opinion
+						opinion = 30
+					}
+				}
+			}
+		}
+	}
+	else = {
+		$TARGET$ = {
+			add_opinion = {
+				target = $PROPOSER$
+				modifier = love_opinion
+				opinion = 30
+			}
+			hidden_effect = {
+				if = {
+					limit = { is_ai = yes }
+					reverse_add_opinion = {
+						target = $PROPOSER$
+						modifier = love_opinion
+						opinion = 30
+					}
+				}
+			}
+		}
+	}
+	hidden_effect = {
+		reverse_add_opinion = {
+			target = $TARGET$
+			modifier = romance_scheme_courtship_opinion #Blocks courtship
+		}
+		#Maybe break off existing lover relationships
+		$TARGET$ = { soulmate_lover_breakup_effect = { EXCLUDE = $PROPOSER$ } }
+		$PROPOSER$ = { soulmate_lover_breakup_effect = { EXCLUDE = $TARGET$ } }
+	}
+}
+
+court_scheme_marriage_effect = {
+	# No longer concubine
+	if = {
+		limit = {
+			scope:owner = { is_concubine = yes }
+		}
+		scope:owner = {
+			random_consort = {
+				limit = {
+					any_concubine = { this = scope:owner }
+				}
+				remove_concubine = scope:owner
+			}
+		}
+	}
+	if = {
+		limit = {
+			scope:target = { is_concubine = yes }
+		}
+		scope:target = {
+			random_consort = {
+				limit = {
+					any_concubine = { this = scope:target }
+				}
+				remove_concubine = scope:target
+			}
+		}
+	}
+
+	# Break betrothal
+	scope:owner = {
+		if = {
+			limit = { is_betrothed = yes }
+			if = {
+				limit = {
+					NOT = { betrothed = scope:target }
+				}
+				reverse_add_opinion = {
+					modifier = broke_betrothal_opinion
+					target = betrothed
+				}
+				break_betrothal = betrothed
+			}
+			if = {
+				limit = {
+					has_been_promised_grand_wedding = yes
+				}
+				break_grand_wedding_betrothal_effect = yes
+			}
+		}
+	}
+	scope:target = {
+		if = {
+			limit = { is_betrothed = yes }
+			if = {
+				limit = {
+					NOT = { betrothed = scope:owner }
+				}
+				reverse_add_opinion = {
+					modifier = broke_betrothal_opinion
+					target = betrothed
+				}
+				break_betrothal = betrothed
+			}
+			if = {
+				limit = {
+					has_been_promised_grand_wedding = yes
+				}
+				break_grand_wedding_betrothal_effect = yes
+			}
+		}
+	}
+
+	# Apply any relevant opinion penalties for relatives of spouse.
+	if = { # Polygamy
+		limit = {
+			any_consort = {
+				count >= 1
+			}
+		}
+		every_consort = {
+			# If the spouse themselves does not believe in polygamy...
+			limit = {
+				NOR = {
+					culture = { has_cultural_tradition = tradition_polygamous }
+					faith = { has_doctrine = doctrine_polygamy }
+					faith = { has_doctrine = doctrine_concubines }
+				}
+			}
+
+			#... then family members who also do not believe in polygamy aren't happy about having a relative forced into polygamous union with you.
+			every_close_family_member = {
+				if = {
+					limit = {
+						NOR = {
+							culture = { has_cultural_tradition = tradition_polygamous }
+							faith = { has_doctrine = doctrine_polygamy }
+							faith = { has_doctrine = doctrine_concubines }
+						}
+					}
+					add_opinion = {
+						target = scope:owner
+						modifier = relative_in_blasphemous_union_opinion
+					}
+				}
+			}
+
+			# NOTE: Spouse's own opinions handled in the 'on_marriage' code on_action inside of marriage_concubinage.txt, and are not included here.
+		}
+	}
+	scope:target = {
+		if = { #Same-sex relations
+			limit = {
+				allowed_to_marry_same_sex_trigger = no
+				sex_same_as = scope:owner
+			}
+			every_close_family_member = {
+				if = {
+					limit = {
+						allowed_to_marry_same_sex_trigger = no
+					}
+					add_opinion = {
+						target = scope:owner
+						modifier = relative_in_blasphemous_union_opinion
+					}
+				}
+			}
+		}
+	}
+
+	#If your spouse councillor had boosted the chance of marriage, remove modifier
+	if = {
+		limit = {
+			scope:owner = {
+				has_character_modifier = heir_easier_to_marry_off_modifier
+			}
+		}
+		scope:owner = {
+			remove_character_modifier = heir_easier_to_marry_off_modifier
+		}
+	}
+	if = {
+		limit = {
+			scope:target = {
+				has_character_modifier = heir_easier_to_marry_off_modifier
+			}
+		}
+		scope:target = {
+			remove_character_modifier = heir_easier_to_marry_off_modifier
+		}
+	}
+}
+
+# used for the seduction scheme failure notification
+notify_liege_seduction_failure_effect = {
+	random_list = {
+		10 = { # both able and willing to climb a window to reach target
+			trigger = {
+				scope:owner = {
+					is_male = yes
+					NOR = {
+						has_trait = lazy
+						has_any_debilitating_illness = yes
+						has_trait = wounded
+						has_trait = one_legged
+						has_trait = infirm
+						has_trait = blind
+						has_trait = physique_bad
+						has_trait = weak
+						has_trait = clubfooted
+						has_trait = hunchbacked
+					}
+				}
+				scope:target = {
+					NOT = { is_spouse_of = scope:target_liege }
+				}
+			}
+			modifier = {
+				add = 20
+				scope:owner = { ai_boldness >= very_high_positive_ai_value }
+			}
+			modifier = {
+				add = -5
+				scope:owner = { ai_boldness < 0 }
+			}
+			modifier = {
+				add = -5
+				scope:owner = { ai_boldness <= medium_negative_ai_value }
+			}
+			trigger_event = seduce_outcome.4900
+		}
+		10 = { # only for the bold and deviant
+			trigger = {
+				scope:owner = {
+					OR = {
+						ai_boldness >= medium_positive_ai_value
+						ai_rationality <= -100
+						is_deviant_trigger = yes
+					}
+				}
+				scope:target = {
+					NOT = { is_spouse_of = scope:target_liege }
+				}
+			}
+			modifier = {
+				add = 5
+				scope:owner = { ai_boldness >= high_positive_ai_value }
+			}
+			modifier = {
+				add = 10
+				scope:owner = { is_deviant_trigger = yes }
+			}
+			modifier = {
+				add = 20
+				scope:owner = { has_trait = lunatic }
+			}
+			modifier = {
+				add = -5
+				scope:owner = { ai_boldness < 0 }
+			}
+			trigger_event = agot_seduce_outcome.4901
+		}
+		10 = {
+			trigger = {
+				scope:target = {
+					NOT = { is_spouse_of = scope:target_liege }
+				}
+			}
+			trigger_event = agot_seduce_outcome.4902
+		}
+		10 = { # forbidden seductions only
+			trigger = {
+				scope:owner = {
+					OR = {
+						relation_with_character_is_sodomy_in_my_or_lieges_faith_trigger = { CHARACTER = scope:target }
+						relation_with_character_is_incestuous_in_my_or_lieges_faith_trigger = { CHARACTER = scope:target }
+						AND = {
+							trait_is_criminal_in_faith_trigger = { TRAIT = trait:adulterer FAITH = scope:target_liege.faith GENDER_CHARACTER = scope:owner }
+							scope:owner = { is_married = yes }
+						}
+						AND = {
+							trait_is_criminal_in_faith_trigger = { TRAIT = trait:adulterer FAITH = scope:target_liege.faith GENDER_CHARACTER = scope:target }
+							scope:target = { is_married = yes }
+						}
+						AND = {
+							trait_is_criminal_in_faith_trigger = { TRAIT = trait:fornicator FAITH = scope:target_liege.faith GENDER_CHARACTER = scope:owner }
+							scope:owner = { is_married = no }
+						}
+						AND = {
+							trait_is_criminal_in_faith_trigger = { TRAIT = trait:fornicator FAITH = scope:target_liege.faith GENDER_CHARACTER = scope:target }
+							scope:target = { is_married = no }
+						}
+					}
+				}
+				scope:target = {
+					NOT = { is_spouse_of = scope:target_liege }
+				}
+			}
+			modifier = {
+				add = 30
+				scope:owner = {
+					OR = {
+						relation_with_character_is_sodomy_in_my_or_lieges_faith_trigger = { CHARACTER = scope:target }
+						relation_with_character_is_incestuous_in_my_or_lieges_faith_trigger = { CHARACTER = scope:target }
+					}
+				}
+			}
+			modifier = {
+				add = -5
+				scope:owner = { is_female = yes }
+			}
+			trigger_event = agot_seduce_outcome.4903
+		}
+		30 = { # non-forbidden seductions only
+			trigger = {
+				scope:owner = {
+					NOR = {
+						relation_with_character_is_sodomy_in_my_or_lieges_faith_trigger = { CHARACTER = scope:target }
+						relation_with_character_is_incestuous_in_my_or_lieges_faith_trigger = { CHARACTER = scope:target }
+						AND = {
+							trait_is_criminal_in_faith_trigger = { TRAIT = trait:adulterer FAITH = scope:target_liege.faith GENDER_CHARACTER = scope:owner }
+							scope:owner = { is_married = yes }
+						}
+						AND = {
+							trait_is_criminal_in_faith_trigger = { TRAIT = trait:adulterer FAITH = scope:target_liege.faith GENDER_CHARACTER = scope:target }
+							scope:target = { is_married = yes }
+						}
+						AND = {
+							trait_is_criminal_in_faith_trigger = { TRAIT = trait:fornicator FAITH = scope:target_liege.faith GENDER_CHARACTER = scope:owner }
+							scope:owner = { is_married = no }
+						}
+						AND = {
+							trait_is_criminal_in_faith_trigger = { TRAIT = trait:fornicator FAITH = scope:target_liege.faith GENDER_CHARACTER = scope:target }
+							scope:target = { is_married = no }
+						}
+					}
+				}
+				scope:target = {
+					NOT = { is_spouse_of = scope:target_liege }
+				}
+			}
+			trigger_event = agot_seduce_outcome.4904
+		}
+		10 = {
+			trigger = {
+				scope:target = { is_spouse_of = scope:target_liege }
+				exists = scope:was_hard_reject
+			}
+			trigger_event = agot_seduce_outcome.4905
+		}
+		10 = {
+			trigger = {
+				scope:target = { is_spouse_of = scope:target_liege }
+				NOT = { exists = scope:was_hard_reject }
+			}
+			modifier = {
+				add = -5
+				scope:owner = { is_female = yes }
+			}
+			trigger_event = agot_seduce_outcome.4906
+		}
+		10 = {
+			trigger = {
+				scope:target = {
+					NOR = {
+						is_spouse_of = scope:target_liege
+						has_relation_rival = scope:target_liege
+					}
+				}
+			}
+			modifier = {
+				add = 20
+				scope:owner = { is_female = yes }
+			}
+			trigger_event = agot_seduce_outcome.4907
+		}
+		10 = {
+			trigger = {
+				scope:owner = {
+					is_female = yes
+				}
+				scope:target = {
+					has_any_court_relationship_with = { CHARACTER = scope:target_liege }
+					NOR = {
+						any_spouse = { this = scope:target.liege }
+						has_relation_rival = scope:target_liege
+						has_relation_lover = scope:target_liege
+					}
+				}
+			}
+			modifier = {
+				add = 20
+				has_relation_friend = scope:target_liege
+			}
+			modifier = {
+				add = 10
+				NOT = { has_relation_friend = scope:target_liege }
+				is_close_or_extended_family_of = scope:target_liege
+			}
+			trigger_event = agot_seduce_outcome.4908
+		}
+		10 = {
+			trigger = {
+				scope:owner = {
+					is_female = yes
+				}
+				scope:target = {
+					NOT = { is_spouse_of = scope:target_liege }
+				}
+			}
+			modifier = {
+				add = 20
+				scope:owner = {
+					has_any_court_relationship_with = { CHARACTER = scope:target_liege }
+				}
+			}
+			modifier = {
+				add = -5
+				scope:owner = {
+					NOT = {
+						has_any_court_relationship_with = { CHARACTER = scope:target_liege }
+					}
+				}
+			}
+			modifier = {
+				add = -5
+				scope:target = {
+					has_any_court_relationship_with = { CHARACTER = scope:target_liege }
+				}
+			}
+			trigger_event = agot_seduce_outcome.4909
+		}
+	}
+}
+
+lose_guardians_and_wards_effect = {
+	$LIEGE$ = {
+		if = {
+			limit = {
+				any_courtier = {
+					has_relation_guardian = $COURTIER$
+				}
+			}
+			every_courtier = {
+				limit = {
+					has_relation_guardian = $COURTIER$
+				}
+				save_scope_as = ward
+				remove_guardian_effect = {
+					GUARDIAN = $COURTIER$
+					WARD = scope:ward
+					RETURN_WARD = yes
+					HIDE_OPINION = no
+				}
+			}
+		}
+		if = {
+			limit = {
+				any_courtier = {
+					has_relation_ward = $COURTIER$
+				}
+			}
+			random_courtier = {
+				limit = {
+					has_relation_ward = $COURTIER$
+				}
+				save_scope_as = guardian
+
+				send_interface_message = {
+					type = event_generic_neutral
+					title = remove_guardian_interaction_notification
+					left_icon = $COURTIER$
+					right_icon = scope:guardian
+					remove_guardian_effect = {
+						GUARDIAN = scope:guardian
+						WARD = $COURTIER$
+						RETURN_WARD = yes
+						HIDE_OPINION = no
+					}
+				}
+			}
+		}
+	}
+}
+
+# used for when elopement results in broken vows
+remove_religious_traits_effect = {
+	if = {
+		limit = { has_trait = septon }
+		remove_trait = septon
+		add_trait = broke_vows
+	}
+	if = {
+		limit = { has_trait = drowned_man }
+		remove_trait = drowned_man
+	}
+	if = {
+		limit = { has_trait = red_priest }
+		remove_trait = red_priest
+	}
+	if = {
+		limit = { has_trait = bearded_priest }
+		remove_trait = bearded_priest
+	}
+	if = {
+		limit = { has_trait = devoted }
+		remove_trait = devoted
+		add_trait = broke_vows
+	}
+	if = {
+		limit = { has_trait = order_member }
+		remove_trait = order_member
+		add_trait = broke_vows
+	}
+	if = {
+		limit = { has_trait = silent_sister }
+		remove_trait = silent_sister
+		add_trait = broke_vows
+		if = {
+			limit = {
+				has_title = title:d_the_silent_sisterhood
+			}
+			trigger_event = {
+				on_action = on_silent_sister_sm_death
+			}
+			if = {
+				limit = {
+					NOT = { is_in_pool_at = title:c_oldtown.title_province }
+				}
+				move_to_pool_at = title:c_oldtown.title_province
+			}
+		}
+	}
+}
+
+replace_bad_maiden_traits_effect = {
+	# keep track that this was a maiden (for future possible pruning)
+	# just in case we ended up at 4 personality traits
+	if = {
+		limit = { number_of_personality_traits > 3 }
+		random_character_trait = {
+			limit = { has_trait_category = personality }
+			scope:new_maiden = { remove_trait = prev }
+		}
+	}
+	# first remove most bad congenital traits randomly added
+	every_character_trait = {
+		limit = { bad_maiden_trait_trigger = yes }
+		scope:new_maiden = { remove_trait = prev }
+	}
+	# replace martial education except in certain circumstances
+	if = {
+		limit = {
+			# are women equal combatants in this culture, then ignore everything following
+			NOT = { can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:new_maiden } }
+		}
+		# first, check if this could be a shieldmaiden
+		if = {
+			limit = {
+				has_education_martial_trigger = yes
+				prowess >= medium_skill_rating
+				NOT = { has_trait = shieldmaiden }
+				NOT = { has_trait = craven }
+				culture = { has_cultural_parameter = has_access_to_shieldmaidens }
+				trigger_if = {
+					limit = { has_dlc_feature = diverge_culture  }
+					culture = { has_cultural_parameter = martial_custom_male_only_combatant }
+				}
+				trigger_else = {
+					faith = { has_doctrine_parameter = combatant_must_be_male_if_no_roco }
+				}
+			}
+			# this is just so it happens a *bit* more often
+			if = {
+				limit = { prowess < decent_skill_rating }
+				add_prowess_skill = 2
+			}
+			add_trait = shieldmaiden
+			# lose any incompatible shieldmaiden traits
+			every_character_trait = {
+				limit = {
+					OR = {
+						this = trait:physique_bad_1
+						this = trait:physique_bad_2
+						this = trait:weak
+						this = trait:bleeder
+					}
+				}
+				scope:new_maiden = { remove_trait = prev }
+			}
+			# maybe they're fit or strong?
+			random_list = {
+				20 = { add_trait = physique_good_1 }
+				20 = { add_trait = strong }
+				60 = {}
+			}
+		}
+		# then get rid of martial education
+		else_if = {
+			limit = { has_education_martial_trigger = yes }
+			# otherwise, replace their education with a non-martial one
+			every_character_trait = {
+				limit = {
+					OR = {
+						has_trait_category = commander
+						this = trait:education_martial_1
+						this = trait:education_martial_2
+						this = trait:education_martial_3
+						this = trait:education_martial_4
+						this = trait:education_martial_5
+					}
+				}
+				scope:new_maiden = { remove_trait = prev }
+			}
+			random_list = {
+				2 = { add_trait = education_intrigue_1 }
+				2 = { add_trait = education_intrigue_2 }
+				2 = { add_trait = education_intrigue_3 }
+				1 = { add_trait = education_intrigue_4 }
+				2 = { add_trait = education_learning_1 }
+				2 = { add_trait = education_learning_2 }
+				2 = { add_trait = education_learning_3 }
+				1 = { add_trait = education_learning_4 }
+				3 = { add_trait = education_diplomacy_1 }
+				3 = { add_trait = education_diplomacy_2 }
+				3 = { add_trait = education_diplomacy_3 }
+				2 = { add_trait = education_diplomacy_4 }
+				2 = { add_trait = education_stewardship_1 }
+				2 = { add_trait = education_stewardship_2 }
+				1 = { add_trait = education_stewardship_3 }
+				1 = { add_trait = education_stewardship_4 }
+			}
+		}
+		# failing that, get rid of any commander traits
+		else = {
+			every_character_trait = {
+				limit = { has_trait_category = commander }
+				scope:new_maiden = { remove_trait = prev }
+			}
+		}
+	}
+	# maidens need to be able to court/seduce for husbands
+	if = {
+		limit = { has_sexuality = homosexual }
+		set_sexuality = bisexual
+	}
+	else_if = {
+		limit = { has_sexuality = none }
+		random_list = {
+			89 = { set_sexuality = heterosexual }
+			10 = { set_sexuality = bisexual }
+			1 = { set_sexuality = asexual }
+		}
+	}
+}
+
+# used for the annual dinner event
+assign_pos_dinner_activity = {
+	hidden_effect = {
+		random_list = {
+			10 = {
+				trigger = {
+					has_trait = temperate
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:temperate
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:temperate }
+			}
+			5 = {
+				trigger = {
+					has_trait = chaste
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:chaste
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:chaste }
+			}
+			5 = {
+				trigger = {
+					has_trait = generous
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:generous
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:generous }
+			}
+			5 = {
+				trigger = {
+					has_trait = diligent
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:diligent
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:diligent }
+			}
+			10 = {
+				trigger = {
+					has_trait = calm
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:calm
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:calm }
+			}
+			10 = {
+				trigger = {
+					has_trait = patient
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:patient
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:patient }
+			}
+			10 = {
+				trigger = {
+					has_trait = humble
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:humble
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:humble }
+			}
+			5 = {
+				trigger = {
+					has_trait = honest
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:honest
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:honest }
+			}
+			5 = {
+				trigger = {
+					has_trait = brave
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:brave
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:brave }
+			}
+			20 = {
+				trigger = {
+					has_trait = gregarious
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:gregarious
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:gregarious }
+			}
+			5 = {
+				trigger = {
+					has_trait = just
+					is_adult = yes
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:gregarious
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:just }
+			}
+			20 = {
+				trigger = {
+					has_trait = zealous
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:zealous
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:zealous }
+			}
+			5 = {
+				trigger = {
+					has_trait = trusting
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:trusting
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:trusting }
+			}
+			10 = {
+				trigger = {
+					has_trait = compassionate
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:compassionate
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:compassionate }
+			}
+			5 = {
+				trigger = {
+					has_trait = stubborn
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:stubborn
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:stubborn }
+			}
+			5 = {
+				trigger = {
+					has_trait = forgiving
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:forgiving
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:forgiving }
+			}
+			20 = {
+				trigger = {
+					has_trait = charming
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:charming
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:charming }
+			}
+			20 = {
+				trigger = {
+					has_trait = curious
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:curious
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:curious }
+			}
+			50 = {
+				trigger = {
+					has_trait = pregnant
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:pregnant
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:pregnant }
+			}
+			10 = {
+				trigger = {
+					has_trait = beauty_good
+					is_adult = yes
+					age < 45
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:beauty_good
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:beauty_good }
+			}
+			20 = {
+				trigger = {
+					has_trait = intellect_good
+					is_adult = yes
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:intellect_good
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:intellect_good }
+			}
+			20 = {
+				trigger = {
+					has_trait = lifestyle_poet
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:poet
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:poet }
+			}
+			20 = {
+				trigger = {
+					has_trait = shrewd
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:shrewd
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:shrewd }
+			}
+			20 = {
+				trigger = {
+					has_trait = lifestyle_reveler
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:lifestyle_reveler
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:lifestyle_reveler }
+			}
+			20 = {
+				trigger = {
+					has_trait = lifestyle_blademaster
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:lifestyle_blademaster
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:lifestyle_blademaster }
+			}
+			20 = {
+				trigger = {
+					has_trait = lifestyle_hunter
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:lifestyle_hunter
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:lifestyle_hunter }
+			}
+			20 = {
+				trigger = {
+					has_trait = lifestyle_herbalist
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:lifestyle_herbalist
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:lifestyle_herbalist }
+			}
+			20 = {
+				trigger = {
+					has_trait = lifestyle_gardener
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:lifestyle_gardener
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:lifestyle_gardener }
+			}
+			1 = {
+				trigger = {
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:fallback_1
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:fallback_1 }
+			}
+			1 = {
+				trigger = {
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:fallback_2
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:fallback_2 }
+			}
+			1 = {
+				trigger = {
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = pos_dinner
+							var:pos_dinner = flag:fallback_3
+						}
+					}
+				}
+				set_variable = { name = pos_dinner value = flag:fallback_3 }
+			}
+		}
+	}
+}
+
+assign_neg_dinner_activity = {
+	hidden_effect = {
+		random_list = {
+			10 = {
+				trigger = {
+					has_trait = lustful
+					is_adult = yes
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:lustful
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:lustful }
+			}
+			30 = {
+				trigger = {
+					has_trait = gluttonous
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:gluttonous
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:gluttonous }
+			}
+			5 = {
+				trigger = {
+					has_trait = greedy
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:greedy
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:greedy }
+			}
+			10 = {
+				trigger = {
+					has_trait = lazy
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:lazy
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:lazy }
+			}
+			10 = {
+				trigger = {
+					has_trait = wrathful
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:wrathful
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:wrathful }
+			}
+			10 = {
+				trigger = {
+					has_trait = impatient
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:impatient
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:impatient }
+			}
+			5 = {
+				trigger = {
+					has_trait = arrogant
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:arrogant
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:arrogant }
+			}
+			5 = {
+				trigger = {
+					has_trait = deceitful
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:deceitful
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:deceitful }
+			}
+			10 = {
+				trigger = {
+					has_trait = craven
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:craven
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:craven }
+			}
+			20 = {
+				trigger = {
+					has_trait = shy
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:shy
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:shy }
+			}
+			5 = {
+				trigger = {
+					has_trait = ambitious
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:ambitious
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:ambitious }
+			}
+			5 = {
+				trigger = {
+					has_trait = arbitrary
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:arbitrary
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:arbitrary }
+			}
+			10 = {
+				trigger = {
+					has_trait = cynical
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:cynical
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:cynical }
+			}
+			10 = {
+				trigger = {
+					has_trait = paranoid
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:paranoid
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:paranoid }
+			}
+			5 = {
+				trigger = {
+					has_trait = callous
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:callous
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:callous }
+			}
+			10 = {
+				trigger = {
+					has_trait = sadistic
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:sadistic
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:sadistic }
+			}
+			5 = {
+				trigger = {
+					has_trait = fickle
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:fickle
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:fickle }
+			}
+			20 = {
+				trigger = {
+					has_trait = eccentric
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:eccentric
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:eccentric }
+			}
+			20 = {
+				trigger = {
+					has_trait = rowdy
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:rowdy
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:rowdy }
+			}
+			20 = {
+				trigger = {
+					has_trait = pensive
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:pensive
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:pensive }
+			}
+			20 = {
+				trigger = {
+					has_trait = bossy
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:bossy
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:bossy }
+			}
+			30 = {
+				trigger = {
+					has_trait = drunkard
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:drunkard
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:drunkard }
+			}
+			30 = {
+				trigger = {
+					has_trait = reclusive
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:reclusive
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:reclusive }
+			}
+			30 = {
+				trigger = {
+					has_trait = irritable
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:irritable
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:irritable }
+			}
+			30 = {
+				trigger = {
+					has_trait = comfort_eater
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:comfort_eater
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:comfort_eater }
+			}
+			30 = {
+				trigger = {
+					has_trait = inappetetic
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:inappetetic
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:inappetetic }
+			}
+			40 = {
+				trigger = {
+					has_trait = depressed
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:depressed
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:depressed }
+			}
+			40 = {
+				trigger = {
+					has_trait = lunatic
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:lunatic
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:lunatic }
+			}
+			40 = {
+				trigger = {
+					has_trait = possessed
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:possessed
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:possessed }
+			}
+			20 = {
+				trigger = {
+					has_trait = infirm
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:infirm
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:infirm }
+			}
+			20 = {
+				trigger = {
+					has_trait = intellect_bad
+					is_adult = yes
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:intellect_bad
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:intellect_bad }
+			}
+			10 = {
+				trigger = {
+					has_trait = dwarf
+					is_adult = yes
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:dwarf
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:dwarf }
+			}
+			10 = {
+				trigger = {
+					has_trait = giant
+					is_adult = yes
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:giant
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:giant }
+			}
+			20 = {
+				trigger = {
+					has_trait = dull
+					is_adult = yes
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:dull
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:dull }
+			}
+			10 = {
+				trigger = {
+					has_trait = wheezing
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:wheezing
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:wheezing }
+			}
+			1 = {
+				trigger = {
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:fallback_1
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:fallback_1 }
+			}
+			1 = {
+				trigger = {
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:fallback_2
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:fallback_2 }
+			}
+			1 = {
+				trigger = {
+					NOT = {
+						any_in_list = {
+							list = family_dinner_guests
+							has_variable = neg_dinner
+							var:neg_dinner = flag:fallback_3
+						}
+					}
+				}
+				set_variable = { name = neg_dinner value = flag:fallback_3 }
+			}
+		}
+	}
+}
+
+# used in Relationships of Weddings mod
+add_marry_for_love_flag_effect = {
+	$PARTNER1$ = {
+		add_character_flag = {
+			flag = marry_for_love
+			days = 20
+		}
+	}
+	$PARTNER2$ = {
+		add_character_flag = {
+			flag = marry_for_love
+			days = 20
+		}
+	}
+}
+
+# used for courtier marriages
+move_characters_to_proper_court_effect = {
+	if = {
+		limit = {
+			$CHARACTER_1$ = { is_playable_character = yes }
+			$CHARACTER_2$ = {
+				is_playable_character = no
+				NOT = { is_courtier_of = $CHARACTER_1$ }
+			}
+		}
+		$CHARACTER_1$ = { add_courtier = $CHARACTER_2$ }
+	}
+	else_if = {
+		limit = {
+			$CHARACTER_2$ = { is_playable_character = yes }
+			$CHARACTER_1$ = {
+				is_playable_character = no
+				NOT = { is_courtier_of = $CHARACTER_2$ }
+			}
+		}
+		$CHARACTER_2$ = { add_courtier = $CHARACTER_1$ }
+	}
+	else_if = {
+		limit = {
+			$CHARACTER_1$ = {
+				dominant_marriage_partner_trigger = { SPOUSE = $CHARACTER_2$ }
+				is_playable_character = no
+				exists = liege
+			}
+			$CHARACTER_2$ = {
+				is_playable_character = no
+				NOT = { is_courtier_of = $CHARACTER_1$.liege }
+			}
+		}
+		$CHARACTER_1$.liege = { add_courtier = $CHARACTER_2$ }
+	}
+	else_if = {
+		limit = {
+			$CHARACTER_2$ = {
+				dominant_marriage_partner_trigger = { SPOUSE = $CHARACTER_1$ }
+				is_playable_character = no
+				exists = liege
+			}
+			$CHARACTER_1$ = {
+				is_playable_character = no
+				NOT = { is_courtier_of = $CHARACTER_2$.liege }
+			}
+		}
+		$CHARACTER_2$.liege = { add_courtier = $CHARACTER_1$ }
+	}
+	else_if = {
+		limit = {
+			$CHARACTER_1$ = {
+				is_playable_character = no
+				exists = liege
+			}
+			$CHARACTER_2$ = {
+				is_playable_character = no
+				NOT = { exists = liege }
+			}
+		}
+		$CHARACTER_1$.liege = { add_courtier = $CHARACTER_2$ }
+	}
+	else_if = {
+		limit = {
+			$CHARACTER_2$ = {
+				is_playable_character = no
+				exists = liege
+			}
+			$CHARACTER_1$ = {
+				is_playable_character = no
+				NOT = { exists = liege }
+			}
+		}
+		$CHARACTER_2$.liege = { add_courtier = $CHARACTER_1$ }
+	}
+}
+
+marriage_permission_given_effect = {
+	if = {
+		limit = {
+			can_add_hook = {
+				target = scope:proposer
+				type = favor_hook
+			}
+		}
+		add_hook = {
+			type = favor_hook
+			target = scope:proposer
+		}
+	}
+	if = {
+		limit = {
+			can_add_hook = {
+				target = scope:proposer_target
+				type = favor_hook
+			}
+		}
+		add_hook = {
+			type = favor_hook
+			target = scope:proposer_target
+		}
+	}
+	hidden_effect = {
+		reverse_add_opinion = { modifier = granted_marriage_permission_opinion target = scope:proposer }
+		reverse_add_opinion = { modifier = granted_marriage_permission_opinion target = scope:proposer_target }
+	}
+}
+
+marriage_refused_fornicator_effect = {
+	if = {
+		limit = {
+			exists = scope:is_pregnancy_proposal
+			scope:proposer = { is_pregnant = yes }
+		}
+		scope:proposer = { add_fornicator_trait_or_nothing_effect = yes }
+		show_as_tooltip = {
+			scope:proposer_target = { add_fornicator_trait_or_nothing_effect = yes }
+		}
+	}
+	else_if = {
+		limit = {
+			exists = scope:is_pregnancy_proposal
+			scope:proposer_target = { is_pregnant = yes }
+		}
+		scope:proposer_target = { add_fornicator_trait_or_nothing_effect = yes }
+		show_as_tooltip = {
+			scope:proposer = { add_fornicator_trait_or_nothing_effect = yes }
+		}
+	}
+}
+
+marriage_permission_refused_effect = {
+	if = {
+		limit = {
+			scope:proposer = {
+				any_secret = {
+					secret_type = secret_lover
+					secret_target = scope:proposer_target
+					NOT = { is_known_by = root }
+				}
+			}
+		}
+		scope:proposer = {
+			random_secret = {
+				limit = {
+					secret_type = secret_lover
+					secret_target = scope:proposer_target
+					NOT = { is_known_by = root }
+				}
+				reveal_to = root
+			}
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:proposer_liege
+			exists = scope:proposer_target_liege
+			NOT = { scope:proposer_liege = scope:proposer_target_liege }
+			root = scope:proposer_target_liege
+			scope:proposer_liege = { is_ai = no }
+		}
+		scope:proposer_liege = {
+			send_interface_message = {
+				type = event_generic_neutral_with_text
+				title =  lmf_scheme.1031.marriage.refused.title.tt
+				desc = lmf_scheme.1031.marriage.refused.tt
+				left_icon = scope:proposer
+				right_icon = scope:proposer_target
+			}
+		}
+	}
+	marriage_refused_fornicator_effect = yes
+	root = { save_scope_as = permission_refuser }
+	reverse_add_opinion = { modifier = refused_marriage_permission_opinion target = scope:proposer }
+	reverse_add_opinion = { modifier = refused_marriage_permission_opinion target = scope:proposer_target }
+}
+
+courtiers_marry_effect = {
+	scope:proposer = {
+		if = {
+			limit = { has_trait = refusing_marriage }
+			remove_trait = refusing_marriage
+			hidden_effect = {
+				random_owned_story = {
+					limit = { story_type = lmf_will_not_wed_story_cycle }
+					end_story = yes
+				}
+			}
+		}
+	}
+	scope:proposer_target = {
+		if = {
+			limit = { has_trait = refusing_marriage }
+			remove_trait = refusing_marriage
+			hidden_effect = {
+				random_owned_story = {
+					limit = { story_type = lmf_will_not_wed_story_cycle }
+					end_story = yes
+				}
+			}
+		}
+	}
+	if = {
+		limit = {
+			should_marry_matrilineally_trigger = { PROPOSER = scope:proposer TARGET = scope:proposer_target }
+		}
+		scope:proposer = {
+			court_scheme_marriage_effect = yes
+			marry_matrilineal = scope:proposer_target
+		}
+	}
+	else = {
+		scope:proposer = {
+			court_scheme_marriage_effect = yes
+			marry = scope:proposer_target
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:proposer_liege
+			exists = scope:proposer_target_liege
+			NOT = { scope:proposer_liege = scope:proposer_target_liege }
+		}
+		check_alliance_set_up_effect = { PROPOSER_LIEGE = scope:proposer_liege TARGET_LIEGE = scope:proposer_target_liege PROPOSER = scope:proposer TARGET = scope:proposer_target }
+	}
+	move_characters_to_proper_court_effect = { CHARACTER_1 = scope:proposer CHARACTER_2 = scope:proposer_target }
+	# they might break up with any current lovers
+	hidden_effect = {
+		scope:proposer = { soulmate_lover_breakup_effect = { EXCLUDE = scope:proposer_target } }
+		scope:proposer_target = { soulmate_lover_breakup_effect = { EXCLUDE = scope:proposer } }
+	}
+}
+
+find_proposer_and_lieges_effect = {
+	# Who is the proposer?
+	if = {
+		limit = {
+			OR = {
+				# They both need permission but it's a matrilineal marriage to a female target
+				AND = {
+					scope:target = {
+						needs_permission_to_marry_character_trigger = { CHARACTER = scope:owner }
+					}
+					scope:owner = {
+						needs_permission_to_marry_character_trigger = { CHARACTER = scope:target }
+					}
+					should_marry_matrilineally_trigger = { PROPOSER = scope:owner TARGET = scope:target }
+					scope:target = { is_female = yes }
+				}
+				# They both need permission but it's a patrilineal marriage to a male target
+				AND = {
+					scope:target = {
+						needs_permission_to_marry_character_trigger = { CHARACTER = scope:owner }
+					}
+					scope:owner = {
+						needs_permission_to_marry_character_trigger = { CHARACTER = scope:target }
+					}
+					NOT = { should_marry_matrilineally_trigger = { PROPOSER = scope:owner TARGET = scope:target } }
+					scope:target = { is_female = no }
+				}
+				# The target is a ruler who does not need permission but the owner does
+				AND = {
+					scope:target = {
+						NOT = { needs_permission_to_marry_character_trigger = { CHARACTER = scope:owner } }
+						is_ruler = yes
+					}
+					scope:owner = {
+						needs_permission_to_marry_character_trigger = { CHARACTER = scope:target }
+					}
+				}
+				# The target doesn't need permission but the owner does, and it's a marriage in their favor
+				AND = {
+					scope:target = {
+						NOT = { needs_permission_to_marry_character_trigger = { CHARACTER = scope:owner } }
+						OR = {
+							AND = {
+								is_female = yes
+								should_marry_matrilineally_trigger = { PROPOSER = scope:owner TARGET = scope:target }
+							}
+							AND = {
+								is_female = no
+								NOT = { should_marry_matrilineally_trigger = { PROPOSER = scope:owner TARGET = scope:target } }
+							}
+						}
+					}
+				}
+			}
+		}
+		# The target is the one doing the asking
+		scope:target = { save_scope_as = proposer }
+		scope:owner = { save_scope_as = proposer_target }
+	}
+	else = {
+		# The owner is the one doing the asking
+		scope:owner = { save_scope_as = proposer }
+		scope:target = { save_scope_as = proposer_target }
+	}
+	# Identify lieges who must be asked for permission
+	if = {
+		limit = {
+			scope:proposer = {
+				needs_permission_to_marry_character_trigger = { CHARACTER = scope:proposer_target }
+				exists = liege
+			}
+		}
+		scope:proposer.liege = { save_scope_as = proposer_liege }
+	}
+	if = {
+		limit = {
+			scope:proposer_target = {
+				needs_permission_to_marry_character_trigger = { CHARACTER = scope:proposer }
+				exists = liege
+			}
+		}
+		scope:proposer_target.liege = { save_scope_as = proposer_target_liege }
+	}
+}
+
+set_marriage_introduction_variables = {
+	set_variable = {
+		name = is_in_marriage_introduction
+		value = yes
+		months = 12
+	}
+	set_variable = {
+		name = intro_actor
+		value = scope:actor
+		months = 12
+	}
+	set_variable = {
+		name = intro_secondary_actor
+		value = scope:secondary_actor
+		months = 12
+	}
+	set_variable = {
+		name = intro_recipient
+		value = scope:recipient
+		months = 12
+	}
+	set_variable = {
+		name = intro_secondary_recipient
+		value = scope:secondary_recipient
+		months = 12
+	}
+	set_variable = {
+		name = intro_location
+		value = scope:actor.capital_province
+		months = 12
+	}
+	if = {
+		limit = { scope:grand_wedding_promise = yes }
+		set_variable = {
+			name = intro_grand_wedding_promise
+			value = yes
+			months = 12
+		}
+	}
+	if = {
+		limit = { scope:matrilineal = yes }
+		set_variable = {
+			name = intro_matrilineal
+			value = yes
+			months = 12
+		}
+	}
+}
+
+remove_marriage_introduction_variables = {
+	if = {
+		limit = { is_alive = yes }
+		remove_variable ?= is_in_marriage_introduction
+		remove_variable ?= intro_actor
+		remove_variable ?= intro_secondary_actor
+		remove_variable ?= intro_recipient
+		remove_variable ?= intro_secondary_recipient
+		remove_variable ?= intro_location
+		remove_variable ?= intro_grand_wedding_promise
+		remove_variable ?= intro_matrilineal
+		remove_variable ?= intro_visit_score
+	}
+}
+
+check_alliance_set_up_effect = {
+	if = {
+		limit = {
+			$PROPOSER_LIEGE$ = {
+				NOT = { is_allied_to = $PROPOSER$ }
+				yields_alliance = {
+					candidate = $PROPOSER$
+					target = $TARGET_LIEGE$
+					target_candidate = $TARGET$
+				}
+			}
+		}
+		$PROPOSER_LIEGE$ = {
+			create_alliance = {
+				target = $TARGET_LIEGE$
+				allied_through_owner = $PROPOSER$
+				allied_through_target = $TARGET$
+			}
+		}
+	}
+}
+
+set_random_focus_effect = {
+	if = {
+		limit = { has_trait = rowdy }
+		random_list = {
+			1 = {
+				trigger = {
+					can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+				}
+				modifier = {
+					factor = 0
+					intrigue > martial
+				}
+				set_focus = education_martial
+			}
+			1 = {
+				modifier = {
+					factor = 0
+					martial > intrigue
+					can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+				}
+				set_focus = education_intrigue
+			}
+		}
+	}
+	else_if = {
+		limit = { has_trait = charming }
+		random_list = {
+			1 = {
+				modifier = {
+					factor = 0
+					diplomacy > intrigue
+				}
+				set_focus = education_intrigue
+			}
+			1 = {
+				modifier = {
+					factor = 0
+					intrigue > diplomacy
+				}
+				set_focus = education_diplomacy
+			}
+		}
+	}
+	else_if = {
+		limit = { has_trait = curious }
+		random_list = {
+			1 = {
+				modifier = {
+					factor = 0
+					diplomacy > learning
+				}
+				set_focus = education_learning
+			}
+			1 = {
+				modifier = {
+					factor = 0
+					learning > diplomacy
+				}
+				set_focus = education_diplomacy
+			}
+		}
+	}
+	else_if = {
+		limit = { has_trait = pensive }
+		random_list = {
+			1 = {
+				modifier = {
+					factor = 0
+					stewardship > learning
+				}
+				set_focus = education_learning
+			}
+			1 = {
+				modifier = {
+					factor = 0
+					learning > stewardship
+				}
+				set_focus = education_stewardship
+			}
+		}
+	}
+	else = {
+		random_list = {
+			1 = {
+				trigger = {
+					can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+				}
+				modifier = {
+					factor = 0
+					stewardship > martial
+				}
+				set_focus = education_martial
+			}
+			1 = {
+				modifier = {
+					factor = 0
+					martial > stewardship
+					can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+				}
+				set_focus = education_stewardship
+			}
+		}
+	}
+}
+
+find_new_guardian_effect = {
+	$RULER$ = {
+		every_courtier = {
+			limit = {
+				$CHILD$ = {
+					OR = {
+						is_child_of = $RULER$
+						is_grandchild_of = $RULER$
+					}
+					NOT = { has_focus = education_martial }
+				}
+				has_trait = maester
+				is_physically_able_adult = yes
+				num_of_relation_ward < 2
+				has_short_disease_trigger = no
+			}
+			alternative_limit = {
+				is_close_family_of = $CHILD$
+				has_education_$EDUCATION$_trigger = yes
+				is_physically_able_adult = yes
+				num_of_relation_ward < 2
+				has_short_disease_trigger = no
+				NOR = {
+					has_trait = education_martial_1
+					has_trait = education_diplomacy_1
+					has_trait = education_intrigue_1
+					has_trait = education_stewardship_1
+					has_trait = education_learning_1
+					has_relation_rival = $RULER$
+				}
+			}
+			alternative_limit = {
+				has_education_$EDUCATION$_trigger = yes
+				is_physically_able_adult = yes
+				num_of_relation_ward < 2
+				has_short_disease_trigger = no
+				NOR = {
+					has_trait = education_martial_1
+					has_trait = education_diplomacy_1
+					has_trait = education_intrigue_1
+					has_trait = education_stewardship_1
+					has_trait = education_learning_1
+					has_relation_rival = $RULER$
+				}
+				trigger_if = {
+					limit = {
+						$CHILD$ = { is_lowborn = yes }
+					}
+					NOR = {
+						any_close_family_member = { is_ruler = yes }
+						is_councillor = yes
+					}
+				}
+			}
+			add_to_temporary_list = potential_educator
+		}
+	}
+	ordered_in_list = {
+		list = potential_educator
+		order_by = $EDUCATION$_educator_value
+		save_scope_as = new_guardian
+	}
+}
+
+# used for heir introductions
+get_heir_match_lineality_effect = {
+	if = {
+		limit = {
+			heir_match_is_matrilineal = { HEIR = $HEIR$ MATCH = $MATCH$ }
+		}
+		save_scope_value_as = { name = matrilineal value = yes }
+	}
+	else = {
+		save_scope_value_as = { name = matrilineal value = no }
+	}
+}
+
+find_suitable_introduction_candidates = {
+	host = { save_scope_as = actor }
+	save_scope_as = secondary_actor
+	if = {
+		limit = {
+			is_female = yes
+			any_heir_title = {}
+			NOR = {
+				has_trait = content
+				has_trait = humble
+			}
+			trigger_if = {
+				limit = { has_game_rule = matrilineal_marriages_never }
+				OR = {
+					host = { has_realm_law = female_only_law }
+					host = { has_realm_law = female_preference_law }
+					faith = { has_doctrine_parameter = female_dominated_law }
+				}
+			}
+			trigger_if = {
+				limit = { has_game_rule = matrilineal_marriages_female_and_equal }
+				OR = {
+					host = { has_realm_law = female_only_law }
+					host = { has_realm_law = female_preference_law }
+					host = { has_realm_law = equal_law }
+					faith = { has_doctrine_parameter = female_dominated_law }
+				}
+			}
+		}
+		save_scope_value_as = { name = matrilineal value = yes }
+	}
+	else = {
+		save_scope_value_as = { name = matrilineal value = no }
+	}
+	save_scope_value_as = { name = hook value = no }
+	save_scope_value_as = { name = grand_wedding_promise value = no }
+	save_scope_value_as = { name = influence_send_option value = no }
+	save_scope_value_as = { name = herd_send_option value = no }
+
+	# first sort out the total candidates
+	every_opposite_sex_spouse_candidate = {
+		limit = {
+			NAND = {
+				is_landless_ruler = yes
+				faith.religious_head = this
+				NOT = { scope:secondary_actor.faith = faith }
+			}
+			is_married = no
+			has_dynasty = yes
+			age >= 12
+			trigger_if = {
+				limit = {
+					scope:secondary_actor = {
+						is_female = yes
+						age < 25
+					}
+				}
+				age <= scope:secondary_actor.age_plus_25
+				age >= scope:secondary_actor.age_minus_10
+			}
+			trigger_else_if = {
+				limit = {
+					scope:secondary_actor = { is_female = yes }
+				}
+				age <= scope:secondary_actor.age_plus_10
+				age >= scope:secondary_actor.age_minus_10
+			}
+			trigger_else = {
+				age <= scope:secondary_actor.age_plus_5
+				age >= scope:secondary_actor.age_minus_25
+			}
+			trigger_if = {
+				limit = { is_female = yes }
+				age <= marriage_female_fertility_cutoff_age_value
+			}
+			is_available = yes
+			is_healthy = yes
+			has_short_disease_trigger = no
+			bp2_valid_for_standard_interactions_trigger = yes
+			is_concubine = no
+			exists = location
+			NOR = {
+				has_variable = is_in_marriage_introduction
+				has_character_flag = had_recent_introduction
+				this = scope:actor
+				is_close_or_extended_family_of = scope:secondary_actor
+			}
+			save_temporary_scope_as = secondary_recipient
+			trigger_if = {
+				limit = {
+					exists = matchmaker
+					NOT = { matchmaker = scope:secondary_recipient }
+				}
+				matchmaker = {
+					is_imprisoned = no
+					NOT = { has_variable = is_in_marriage_introduction }
+					save_temporary_scope_as = recipient
+				}
+			}
+			trigger_else = {
+				save_temporary_scope_as = recipient
+			}
+			introduction_interaction_valid_target_trigger = yes
+
+		}
+		add_to_list = potential_suitors
+	}
+
+	# now whittle them down to only those who your family member would invite and who would also accept a proposal
+	every_in_list = {
+		list = potential_suitors
+		limit = {
+			is_within_introduction_range = { PROPOSER = scope:actor }
+		}
+
+		save_temporary_scope_as = candidate
+		scope:secondary_actor = {
+			save_temporary_opinion_value_as = { name = match_opinion target = prev }
+			save_temporary_scope_as = match
+		}
+
+		if = {
+			limit = { introduction_candidate_interest_value > 0 }
+			set_variable = {
+				name = interest_value
+				value = introduction_candidate_interest_value
+				days = 1
+			}
+
+			save_temporary_scope_as = secondary_recipient
+			if = {
+				limit = { exists = matchmaker }
+				matchmaker = { save_temporary_scope_as = recipient }
+			}
+			else = { save_temporary_scope_as = recipient }
+
+			get_heir_match_lineality_effect = { HEIR = scope:secondary_actor MATCH = scope:secondary_recipient }
+
+			if = {
+				limit = { is_courtier_of = scope:actor }
+				add_to_list = suitors
+			}
+			else = {
+				random = {
+					chance = 0
+					marriage_ai_accept_modifier = yes
+					evaluate_action_increasing_house_unity = { VALUE = 100 }
+					modifier = { factor = 100 }
+
+					add_to_list = suitors
+				}
+			}
+		}
+	}
+
+	# now pick out the top three
+	if = {
+		limit = {
+			list_size = { name = suitors value > 0 }
+		}
+		ordered_in_list = {
+			list = suitors
+			order_by = var:interest_value
+			max = 3
+			check_range_bounds = no
+			if = {
+				limit = {
+					NOT = { exists = scope:suitor_1 }
+				}
+				save_scope_as = suitor_1
+			}
+			else_if = {
+				limit = {
+					NOT = { exists = scope:suitor_2 }
+				}
+				save_scope_as = suitor_2
+			}
+			else = {
+				save_scope_as = suitor_3
+			}
+		}
+	}
+}
+
+#Needed for Event Pregnancies to work
+event_pregnancy_effect = {
+	trigger_event = {
+		id = lmf_generic.9999
+		days = 1
+	}
+}
+
+# used for the courtier management so it's not just secrets they're gaining
+lmf_courtier_advancement_effect = {
+	random_list = {
+		# INCREASE A LOW SKILL
+		# TODO base chance on court positions
+		50 = {
+			trigger = { diplomacy < medium_skill_rating }
+			add_diplomacy_skill = 1
+		}
+		50 = {
+			trigger = {
+				martial < medium_skill_rating
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+			}
+			modifier = {
+				is_knight = yes
+				factor = 2
+			}
+			add_martial_skill = 1
+		}
+		50 = {
+			trigger = { stewardship < medium_skill_rating }
+			add_stewardship_skill = 1
+		}
+		50 = {
+			trigger = { intrigue < medium_skill_rating }
+			add_intrigue_skill = 1
+		}
+		50 = {
+			trigger = { learning < medium_skill_rating }
+			add_learning_skill = 1
+		}
+		50 = {
+			trigger = {
+				prowess < medium_skill_rating
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+			}
+			modifier = {
+				is_knight = yes
+				factor = 2
+			}
+			add_prowess_skill = 1
+		}
+		50 = {
+			trigger = {
+				prowess > decent_skill_rating
+				NOT = { has_trait = berserker }
+				faith = { has_doctrine = tenet_warmonger }
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+				OR = {
+					culture = { agot_is_wildling_culture = yes }
+					religion = religion:the_pact_religion
+				}
+			}
+			modifier = {
+				prowess < very_high_skill_rating
+				factor = 0.50
+			}
+			add_trait = berserker
+		}
+		50 = {
+			trigger = {
+				diplomacy >= decent_skill_rating
+				NOT = { has_trait = lifestyle_poet }
+				culture = { has_cultural_parameter = poet_trait_more_common }
+			}
+			modifier = {
+				diplomacy < very_high_skill_rating
+				add = -50
+			}
+			add_trait = lifestyle_poet
+		}
+
+		# GET A LIFESTYLE TRAIT
+		50 = {
+			trigger = {
+				number_of_lifestyle_traits <= 2
+				is_adult = yes
+				# can they get ANY of these traits?
+				OR = {
+					stewardship >= decent_skill_rating
+					learning >= decent_skill_rating
+					AND = {
+						ai_boldness >= medium_positive_ai_value
+						ai_energy >= low_positive_ai_value
+						ai_compassion < high_positive_ai_value
+					}
+					AND = {
+						can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+						prowess >= decent_skill_rating
+					}
+					NOR = {
+						has_trait = shy
+						has_trait = celibate
+						has_trait = temperate
+						has_trait = chaste
+						ai_greed < 0
+					}
+				}
+			}
+			modifier = {
+				number_of_lifestyle_traits = 0
+				factor = 2
+			}
+
+			random_list = {
+				100 = { #REVELER
+					trigger = {
+						NAND = {
+							has_trait = lifestyle_reveler
+							has_trait_xp = {
+								trait = lifestyle_reveler
+								value >= 100
+							}
+						}
+						NOR = {
+							has_trait = shy
+							has_trait = celibate
+							has_trait = temperate
+							has_trait = chaste
+							ai_greed < 0
+						}
+					}
+					modifier = {
+						has_trait = lifestyle_reveler
+						factor = 5
+					}
+					modifier = {
+						culture = { has_cultural_parameter = reveler_traits_more_common }
+						factor = 5
+					}
+					if = {
+						limit = {
+							NOT = { has_trait = lifestyle_reveler }
+						}
+						add_trait = lifestyle_reveler
+					}
+					else = {
+						add_trait_xp = {
+							trait = lifestyle_reveler
+							value = 10
+						}
+					}
+				}
+				100 = { #BLADEMASTER
+					trigger = {
+						NAND = {
+							has_trait = lifestyle_blademaster
+							has_trait_xp = {
+								trait = lifestyle_blademaster
+								value >= 100
+							}
+						}
+						can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+						prowess >= decent_skill_rating
+					}
+					modifier = {
+						has_trait = lifestyle_blademaster
+						factor = 5
+					}
+					modifier = {
+						factor = 3
+						culture = { has_cultural_parameter = blademaster_traits_more_common }
+					}
+					modifier = {
+						factor = 2
+						is_knight = yes
+					}
+					if = {
+						limit = { has_trait = lifestyle_blademaster }
+						add_trait_xp = {
+							trait = lifestyle_blademaster
+							value = 10
+						}
+					}
+					else = { add_trait = lifestyle_blademaster }
+				}
+				100 = { #HUNTER
+					trigger = {
+						NOT = {
+							hunt_lifestyle_track_greater_equal_trigger = { TRACK = hunter GREATER_EQUAL = 100 }
+						}
+						ai_boldness >= medium_positive_ai_value
+						ai_energy >= low_positive_ai_value
+						ai_compassion < high_positive_ai_value
+					}
+					modifier = {
+						has_trait = lifestyle_hunter
+						factor = 5
+					}
+					modifier = {
+						culture = {
+							OR = {
+								has_cultural_parameter = hunting_traits_more_common
+								has_cultural_parameter = falconer_traits_more_common
+							}
+						}
+						factor = 5
+					}
+					if = {
+						limit = { has_trait = lifestyle_hunter }
+						random_list = {
+							10 = {
+								trigger = {
+									can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+								}
+								modifier = {
+									culture = { has_cultural_parameter = hunting_traits_more_common }
+									add = 20
+								}
+								add_trait_xp = {
+									trait = lifestyle_hunter
+									track = hunter
+									value = 10
+								}
+							}
+							10 = {
+								modifier = {
+									culture = { has_cultural_parameter = falconer_traits_more_common }
+									add = 20
+								}
+								add_trait_xp = {
+									trait = lifestyle_hunter
+									track = falconer
+									value = 10
+								}
+							}
+						}
+					}
+					else = { add_trait = lifestyle_hunter }
+				}
+				100 = { #PHYSICIAN
+					trigger = {
+						NAND = {
+							has_trait = lifestyle_physician
+							has_trait_xp = {
+								trait = lifestyle_physician
+								value >= 100
+							}
+						}
+						learning >= high_skill_rating
+					}
+					modifier = {
+						has_trait = lifestyle_physician
+						factor = 5
+					}
+					modifier = {
+						culture = { has_cultural_tradition = tradition_medicinal_plants }
+						factor = 2
+					}
+					if = {
+						limit = { has_trait = lifestyle_physician }
+						add_trait_xp = {
+							trait = lifestyle_physician
+							value = 10
+						}
+					}
+					else = { add_trait = lifestyle_physician }
+				}
+				100 = { #MYSTIC
+					trigger = {
+						NAND = {
+							has_trait = lifestyle_mystic
+							has_trait_xp = {
+								trait = lifestyle_mystic
+								value >= 100
+							}
+						}
+						learning >= decent_skill_rating
+						ai_zeal < 0
+					}
+					modifier = {
+						has_trait = lifestyle_mystic
+						factor = 5
+					}
+					modifier = {
+						is_witch_trigger = yes
+						factor = 3
+					}
+					modifier = {
+						culture = { has_cultural_parameter = mystic_trait_more_common }
+						factor = 5
+					}
+					if = {
+						limit = { has_trait = lifestyle_mystic }
+						add_trait_xp = {
+							trait = lifestyle_mystic
+							value = 10
+						}
+					}
+					else = { add_trait = lifestyle_mystic }
+				}
+				100 = { #HERBALIST
+					trigger = {
+						NOT = { has_trait = lifestyle_herbalist }
+						learning >= decent_skill_rating
+					}
+					modifier = {
+						ai_zeal > 0
+						factor = 0.5
+					}
+					modifier = {
+						is_witch_trigger = yes
+						factor = 3
+					}
+					modifier = {
+						culture = { has_cultural_parameter = herbalist_traits_more_common }
+						factor = 5
+					}
+					add_trait = lifestyle_herbalist
+				}
+				50 = { #GARDENER
+					trigger = {
+						NOT = { has_trait = lifestyle_gardener }
+						stewardship >= decent_skill_rating
+					}
+					modifier = {
+						culture = { has_cultural_parameter = can_appoint_court_gardener }
+						factor = 5
+					}
+					add_trait = lifestyle_gardener
+				}
+				1 = {}
+			}
+		}
+
+		#GET A COMMANDER TRAIT
+		100 = {
+			trigger = {
+				has_trait = education_martial
+				number_of_commander_traits < commander_trait_limit
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+				age >= 25
+			}
+			modifier = {
+				is_knight = no
+				factor = 0.5
+			}
+
+			random_list = {
+				1 = {
+					trigger = { NOT = { has_trait = logistician } }
+					add_trait = logistician
+				}
+				1 = {
+					trigger = { NOT = { has_trait = military_engineer } }
+					add_trait = military_engineer
+				}
+				1 = {
+					trigger = { NOT = { has_trait = aggressive_attacker } }
+					add_trait = aggressive_attacker
+				}
+				1 = {
+					trigger = { NOT = { has_trait = unyielding_defender } }
+					add_trait = unyielding_defender
+				}
+				1 = {
+					trigger = { NOT = { has_trait = forder } }
+					add_trait = forder
+				}
+				1 = {
+					trigger = { NOT = { has_trait = holy_warrior } }
+					add_trait = holy_warrior
+				}
+				1 = {
+					trigger = { NOT = { has_trait = reckless } }
+					add_trait = reckless
+				}
+				1 = {
+					trigger = { NOT = { has_trait = cautious_leader } }
+					add_trait = cautious_leader
+				}
+				1 = {
+					trigger = { NOT = { has_trait = rough_terrain_expert } }
+					add_trait = rough_terrain_expert
+				}
+				1 = {
+					trigger = { NOT = { has_trait = open_terrain_expert } }
+					add_trait = open_terrain_expert
+				}
+			}
+		}
+
+		# GET AN INTERESTING TRAIT
+		20 = {
+			trigger = { is_adult = yes }
+			random_list = {
+				1 = {
+					modifier = {
+						add = 2
+						age >= 45
+						is_visibly_fertile = no
+						NOT = {
+							any_heir_title = { exists = holder }
+						}
+					}
+					trigger = {
+						faith = { has_doctrine_parameter = take_vows_active }
+						ai_greed <= 0
+						ai_zeal > 0
+						num_sinful_traits = 0
+						OR = {
+							has_trait = reclusive
+							ai_zeal >= high_positive_ai_value
+							ai_compassion >= high_positive_ai_value
+						}
+						NOR = {
+							is_married = yes
+							num_of_relation_lover > 0
+							is_involved_in_any_romantic_scheme = yes
+							exists = betrothed
+							is_concubine = yes
+							is_pregnant = yes
+							agot_has_religious_order_trait = yes
+							is_councillor = yes
+							has_any_court_position = yes
+							liege ?= { is_close_or_extended_family_of = $CHARACTER$ }
+							has_trait = ambitious
+							any_heir_title = { exists = holder }
+							any_pretender_title = {
+								exists = holder
+								place_in_line_of_succession = {
+									target = prev
+									value < 3
+								}
+							}
+						}
+					}
+					simplified_clergy_effect = { RECIPIENT = $CHARACTER$ }
+				}
+				1 = {
+					trigger = { has_trait = depressed_1 }
+					remove_trait = depressed_1
+				}
+				1 = {
+					trigger = {
+						NOT = { has_trait = depressed }
+					}
+					add_trait = depressed_1
+				}
+				1 = {
+					modifier = {
+						has_trait = depressed
+						add = 2
+					}
+					trigger = {
+						NOR = {
+							has_trait = lunatic
+							has_trait = possessed
+						}
+					}
+					add_trait = lunatic_1
+				}
+				1 = {
+					modifier = {
+						has_trait = depressed
+						add = 2
+					}
+					modifier = {
+						culture = {
+							has_cultural_parameter = possessed_trait_more_common
+						}
+						factor = 5
+					}
+					trigger = {
+						NOR = {
+							has_trait = lunatic
+							has_trait = possessed
+						}
+					}
+					add_trait = possessed_1
+				}
+				1 = {
+					trigger = {
+						NOT = { has_trait = scarred }
+						can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+					}
+					modifier = {
+						is_knight = yes
+						add = 1
+					}
+					add_trait = scarred
+					add_trait_xp = {
+						trait = scarred
+						value = {
+							integer_range = {
+								min = 5
+								max = 25
+							}
+						}
+					}
+				}
+				1 = {
+					trigger = {
+						NOT = { has_trait = lifestyle_poet }
+						diplomacy >= decent_skill_rating
+					}
+					add_trait = lifestyle_poet
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_drunkard = yes
+					}
+					add_trait = drunkard
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_rakish = yes
+					}
+					add_trait = rakish
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_reclusive = yes
+					}
+					add_trait = reclusive
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_irritable = yes
+					}
+					add_trait = irritable
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_profligate = yes
+					}
+					add_trait = profligate
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_improvident = yes
+					}
+					add_trait = improvident
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_inappetetic = yes
+					}
+					add_trait = inappetetic
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_comfort_eater = yes
+					}
+					add_trait = comfort_eater
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_flagellant = yes
+					}
+					add_trait = flagellant
+				}
+				1 = {
+					trigger = {
+						has_a_bad_stress_coping_trait_trigger = no
+						can_be_contrite = yes
+					}
+					add_trait = contrite
+				}
+				1 = {
+					trigger = {
+						can_be_journaller = yes
+						NOR = {
+							has_trait = journaller
+							has_trait = confider
+							has_trait = athletic
+						}
+					}
+					add_trait = journaller
+				}
+				1 = {
+					trigger = {
+						can_be_confider = yes
+						NOR = {
+							has_trait = journaller
+							has_trait = confider
+							has_trait = athletic
+						}
+					}
+					add_trait = confider
+				}
+				1 = {
+					trigger = {
+						can_be_athletic = yes
+						NOR = {
+							has_trait = journaller
+							has_trait = confider
+							has_trait = athletic
+						}
+					}
+					add_trait = athletic
+				}
+				1 = {
+					trigger = {
+						NOT = { has_trait = blind }
+					}
+					add_trait = blind
+				}
+				1 = {
+					trigger = {
+						age <= 25
+						can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+						NOR = {
+							has_trait = weak
+							has_trait = physique_bad
+							has_trait = strong
+						}
+					}
+					add_trait = strong
+				}
+				1 = {
+					trigger = {
+						NOR = {
+							has_trait = loyal
+							has_trait = disloyal
+						}
+						OR = {
+							has_personality_submissive_trigger = yes
+							has_personality_benevolent_trigger = yes
+						}
+					}
+					add_trait = loyal
+				}
+				1 = {
+					trigger = {
+						NOR = {
+							has_trait = loyal
+							has_trait = disloyal
+						}
+						OR = {
+							has_personality_malicious_trigger = yes
+							has_personality_dominant_trigger = yes
+						}
+					}
+					add_trait = disloyal
+				}
+				1 = {}
+			}
+		}
+
+		# GET LOYAL/DISLOYAL (culture dependent)
+		10 = {
+			trigger = {
+				culture = { has_cultural_parameter = loyal_trait_more_common }
+				NOT = { has_trait = loyal }
+			}
+			add_trait = loyal
+		}
+		10 = {
+			trigger = {
+				culture = { has_cultural_parameter = disloyal_trait_more_common }
+				NOT = { has_trait = disloyal }
+			}
+			add_trait = disloyal
+		}
+
+		# GET A SECRET
+		100 = {
+			trigger = {
+				has_any_secrets = no
+				is_adult = yes
+			}
+			courtier_guest_pool_character_secret_giving_effect = yes
+		}
+
+		# Learn a language
+		50 = {
+			trigger = {
+				exists = location.county.culture
+				learning >= 8
+				num_of_known_languages < language_soft_cap
+				NOT = { knows_language_of_culture = location.county.culture }
+			}
+			modifier = {
+				learning >=12
+				factor = 2
+			}
+			modifier = {
+				learning >=15
+				factor = 2
+			}
+			learn_language_of_culture = location.county.culture
+		}
+	}
+
+	# Cultural Traditions
+	random = {
+		chance = 20
+		if = { # blademaster_traits_more_common
+			limit = {
+				is_adult = yes
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+				culture = { has_cultural_parameter = blademaster_traits_more_common }
+			}
+			blademaster_lifestyle_rank_up_effect = yes
+		}
+	}
+	random = {
+		chance = 10
+		if = {
+			limit = {
+				is_adult = yes
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+				has_education_martial_trigger = yes
+				culture = { has_cultural_parameter = winter_soldier_trait_more_common }
+				NOT = { has_trait = winter_soldier }
+			}
+			add_trait = winter_soldier
+		}
+	}
+	random = {
+		chance = 10
+		if = {
+			limit = {
+				is_adult = yes
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+				has_education_martial_trigger = yes
+				culture = { has_cultural_parameter = forest_fighter_trait_more_common }
+				NOT = { has_trait = forest_fighter }
+			}
+			add_trait = forest_fighter
+		}
+	}
+	random = {
+		chance = 10
+		if = {
+			limit = {
+				is_adult = yes
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+				has_education_martial_trigger = yes
+				culture = { has_cultural_parameter = rough_terrain_expert_trait_more_common }
+				NOT = { has_trait = rough_terrain_expert }
+			}
+			add_trait = rough_terrain_expert
+		}
+	}
+	random = {
+		chance = 10
+		if = {
+			limit = {
+				is_adult = yes
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+				has_education_martial_trigger = yes
+				culture = { has_cultural_parameter = desert_warrior_trait_more_common }
+				NOT = { has_trait = desert_warrior }
+			}
+			add_trait = desert_warrior
+		}
+	}
+	random = {
+		chance = 10
+		if = {
+			limit = {
+				is_adult = yes
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $CHARACTER$ }
+				has_education_martial_trigger = yes
+				culture = { has_cultural_parameter = jungle_stalker_trait_more_common }
+				NOT = { has_trait = jungle_stalker }
+			}
+			add_trait = jungle_stalker
+		}
+	}
+}
+
+# used to setup the "stray seed" story effect
+lmf_random_sex_and_possible_stray_effect = {
+	save_scope_as = had_sex_root_character
+	$CHARACTER$ = { save_scope_as = had_sex_with_effect_partner }
+
+	if = {
+		limit = { this = root }
+		custom_tooltip = had_sex_with_effect.first_person.tt
+	}
+	else_if = {
+		limit = { root = scope:had_sex_with_effect_partner }
+		custom_tooltip = had_sex_with_effect.other_person.tt
+	}
+	else = {
+		custom_tooltip = had_sex_with_effect.third_person.tt
+	}
+
+	create_character_memory = {
+		type = had_sex
+		participants = { sex_partner = scope:had_sex_with_effect_partner }
+	}
+
+	hidden_effect = {
+		if = {
+			limit = {
+				is_female = yes
+				$CHARACTER$ = { is_male = yes }
+				possible_pregnancy_after_sex_with_character_trigger = { CHARACTER = scope:had_sex_with_effect_partner }
+			}
+			add_to_variable_list = {
+				name = potential_father_variable_list
+				target = $CHARACTER$
+			}
+			random = {
+				chance = pregnancy_chance_include_fertility
+				make_pregnant = { father = $CHARACTER$ }
+			}
+			# added to make sure the pregnancy can actually take effect, if it occurs
+			event_pregnancy_effect = yes
+			if = {
+				limit = {
+					is_playable_character = yes
+					$CHARACTER$ = {
+						is_lowborn = yes
+						is_ruler = no
+						is_courtier = no
+					}
+					NOR = {
+						has_character_flag = had_story_cycle_peasant_affair
+						any_scheme = { scheme_target_character = $CHARACTER$ }
+					}
+				}
+				set_variable = {
+					name = story_peasant_affair_target
+					value = $CHARACTER$
+				}
+				create_story = story_peasant_affair
+			}
+		}
+		else_if = {
+			limit = {
+				is_male = yes
+				$CHARACTER$ = { is_female = yes }
+				possible_pregnancy_after_sex_with_character_trigger = { CHARACTER = scope:had_sex_with_effect_partner }
+			}
+			if = {
+				limit = {
+					NOR = {
+						has_character_flag = had_story_cycle_peasant_affair
+						has_character_flag = had_stray_seed_story_cycle
+					}
+					OR = {
+						is_playable_character = yes
+						any_close_or_extended_family_member = {
+							is_playable_character = yes
+							scope:had_sex_root_character = { is_courtier_of = prev }
+						}
+					}
+					exists = scope:had_sex_root_character.location
+					$CHARACTER$ = {
+						is_lowborn = yes
+						is_ruler = no
+						is_courtier = no
+					}
+				}
+				$CHARACTER$ = {
+					set_variable = {
+						name = story_stray_seed_father
+						value = scope:had_sex_root_character
+					}
+					if = {
+						limit = {
+							is_pregnant = no
+							fertility >= 0.1
+							is_visibly_fertile = yes
+						}
+						random = {
+							chance = pregnancy_chance_include_fertility
+							create_story = lmf_stray_seed_story_cycle
+						}
+					}
+				}
+			}
+			else = {
+				$CHARACTER$ = {
+					random = {
+						chance = pregnancy_chance_include_fertility
+						make_pregnant = { father = scope:had_sex_root_character }
+					}
+					# added to make sure the pregnancy can actually take effect, if it occurs
+					event_pregnancy_effect = yes
+				}
+			}
+		}
+
+		#STD transmission
+		$CHARACTER$ = {
+			risk_of_std_from_effect = { PARTNER = scope:had_sex_root_character }
+		}
+		random_list = {
+			95 = {
+			}
+			4 = {
+				trigger = {
+					NOR = {
+						has_trait = lovers_pox
+						has_trait = early_great_pox
+						has_trait = great_pox
+						has_character_flag = immune_to_disease
+					}
+				}
+				contract_disease_notify_effect = { DISEASE = lovers_pox }
+				$CHARACTER$ = { contract_disease_notify_effect = { DISEASE = lovers_pox } }
+			}
+			1 = {
+				trigger = {
+					NOR = {
+						has_trait = lovers_pox
+						has_trait = early_great_pox
+						has_trait = great_pox
+						has_character_flag = immune_to_disease
+					}
+				}
+				contract_disease_notify_effect = { DISEASE = great_pox }
+				$CHARACTER$ = { contract_disease_notify_effect = { DISEASE = great_pox } }
+			}
+		}
+
+		#Homosexuality
+		give_homosexual_secret_or_nothing_with_target_effect = { CHARACTER = $CHARACTER$ }
+		$CHARACTER$ = { give_homosexual_secret_or_nothing_with_target_effect = { CHARACTER = scope:had_sex_root_character } }
+	}
+
+	#Violet Poet trait
+	if = {
+		limit = {
+			scope:had_sex_root_character = { has_trait = violet_poet }
+		}
+		scope:had_sex_root_character = {
+			add_trait_xp = {
+				trait = violet_poet
+				value = {
+					integer_range = {
+						min = 5
+						max = 10
+					}
+				}
+			}
+		}
+	}
+
+	# Achievements
+	fp2_had_friend_with_benefits = yes # FP2 History's Best Friend
+}
+
+# used to check if a pregnant nun should lose devoted status
+lmf_check_pregnant_devoted_status = {
+	if = {
+		limit = {
+			OR = {
+				agot_has_religious_order_trait = yes
+				AND = {
+					agot_has_clergy_trait = yes
+					faith = { has_doctrine = doctrine_clerical_marriage_disallowed }
+				}
+			}
+			save_temporary_scope_as = potential_oath_breaker
+			trait_is_shunned_or_criminal_in_faith_trigger = { TRAIT = trait:adulterer FAITH = scope:potential_oath_breaker.faith GENDER_CHARACTER = scope:potential_oath_breaker }
+		}
+		remove_religious_traits_effect = yes
+	}
+}

@@ -1,0 +1,616 @@
+﻿on_game_start = {
+	on_actions = {
+		on_nw_start
+		on_castle_keeper_start
+		on_wall_maintenance
+		delay = { years = 15 }
+		on_wall_breach_chance
+	}
+}
+
+on_nw_start = {
+	effect = {
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_deep_lake
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_long_barrow
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_greenguard
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_greyguard
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_hoarfrost_hill
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_icemark
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_oakenshield
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_rimegate
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_sentinel_stand
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_stonedoor
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_the_nightfort
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_westwatch_by_the_bridge
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_the_torches
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_woodswatch_by_the_pool
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_queensgate
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_sable_hall
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_castle_black
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_eastwatch_by_the_sea
+		}
+		add_to_global_variable_list = {
+			name = nw_wall_provinces
+			target = title:b_the_shadow_tower
+		}
+		title:b_castle_black.title_province = {
+			set_variable = agot_wall_is_normal
+		}
+	}
+}
+
+on_castle_keeper_start = {
+	effect = {
+		title:k_the_wall.holder = {
+			if = {
+				limit = {
+					NOT = { has_title = title:c_eastwatch }
+				}
+				appoint_court_position = { recipient = title:c_eastwatch.holder court_position = b_eastwatch_by_the_sea_keeper }
+			}
+			if = {
+				limit = {
+					NOT = { has_title = title:c_the_shadow_tower }
+				}
+				appoint_court_position = { recipient = title:c_the_shadow_tower.holder court_position = b_the_shadow_tower_keeper }
+			}
+		}
+		title:d_the_wall = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_barony
+					title_province = { has_holding_type = castle_holding }
+				}
+				title_province = { add_province_modifier = nw_castle }
+			}
+		}
+	}
+}
+
+on_title_gain = {
+	on_actions = {
+		on_castle_keeper_title_gain
+		on_wall_succession
+	}
+}
+
+on_castle_keeper_title_gain = {
+	effect = {
+		#court position assignment
+		if = {
+			limit = {
+				agot_is_independent_ruler = no
+				any_liege_or_above = {
+					THIS = title:k_the_wall.holder
+				}
+				title:k_the_wall.holder = {
+					government_has_flag = government_is_nw
+				}
+				NOT = { government_has_flag = government_is_republic }
+			}
+			if = {
+				limit = {
+					OR = {
+						scope:transfer_type = flag:inheritance
+						scope:transfer_type = flag:abdication
+						scope:transfer_type = flag:conquest_populist
+						scope:transfer_type = flag:faction_demand
+					}
+				}
+
+				scope:title = {
+					create_title_and_vassal_change = {
+						type = revoked
+						save_scope_as = change
+						add_claim_on_loss = no
+					}
+					change_title_holder_include_vassals = {
+						holder = root.liege
+						change = scope:change
+					}
+					resolve_title_and_vassal_change = scope:change
+				}
+			}
+			else = {
+				if = {
+					limit = {
+						scope:title = title:c_the_shadow_tower
+						NOT = { title:k_the_wall.holder = { has_title = scope:title } }
+					}
+					title:k_the_wall.holder = {
+						appoint_court_position = { recipient = title:c_the_shadow_tower.holder court_position = b_the_shadow_tower_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:c_eastwatch
+						NOT = { title:k_the_wall.holder = { has_title = scope:title } }
+					}
+					title:k_the_wall.holder = {
+						appoint_court_position = { recipient = title:c_eastwatch.holder court_position = b_eastwatch_by_the_sea_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_the_nightfort
+						NOT = { title:c_castle_black.holder = { has_title = scope:title } }
+					}
+					title:c_castle_black.holder = {
+						appoint_court_position = { recipient = title:b_the_nightfort.holder court_position = b_the_nightfort_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_icemark
+						NOT = { title:c_castle_black.holder = { has_title = scope:title } }
+					}
+					title:c_castle_black.holder = {
+						appoint_court_position = { recipient = title:b_icemark.holder court_position = b_icemark_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_deep_lake
+						NOT = { title:c_castle_black.holder = { has_title = scope:title } }
+					}
+					title:c_castle_black.holder = {
+						appoint_court_position = { recipient = title:b_deep_lake.holder court_position = b_deep_lake_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_queensgate
+						NOT = { title:c_castle_black.holder = { has_title = scope:title } }
+					}
+					title:c_castle_black.holder = {
+						appoint_court_position = { recipient = title:b_queensgate.holder court_position = b_queensgate_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_oakenshield
+						NOT = { title:c_castle_black.holder = { has_title = scope:title } }
+					}
+					title:c_castle_black.holder = {
+						appoint_court_position = { recipient = title:b_oakenshield.holder court_position = b_oakenshield_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_woodswatch_by_the_pool
+						NOT = { title:c_castle_black.holder = { has_title = scope:title } }
+					}
+					title:c_castle_black.holder = {
+						appoint_court_position = { recipient = title:b_woodswatch_by_the_pool.holder court_position = b_woodswatch_by_the_pool_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_westwatch_by_the_bridge
+						NOT = { title:c_the_shadow_tower.holder = { has_title = scope:title } }
+					}
+					title:c_the_shadow_tower.holder = {
+						appoint_court_position = { recipient = title:b_westwatch_by_the_bridge.holder court_position = b_westwatch_by_the_bridge_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_sentinel_stand
+						NOT = { title:c_the_shadow_tower.holder = { has_title = scope:title } }
+					}
+					title:c_the_shadow_tower.holder = {
+						appoint_court_position = { recipient = title:b_sentinel_stand.holder court_position = b_sentinel_stand_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_greyguard
+						NOT = { title:c_the_shadow_tower.holder = { has_title = scope:title } }
+					}
+					title:c_the_shadow_tower.holder = {
+						appoint_court_position = { recipient = title:b_greyguard.holder court_position = b_greyguard_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_stonedoor
+						NOT = { title:c_the_shadow_tower.holder = { has_title = scope:title } }
+					}
+					title:c_the_shadow_tower.holder = {
+						appoint_court_position = { recipient = title:b_stonedoor.holder court_position = b_stonedoor_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_hoarfrost_hill
+						NOT = { title:c_the_shadow_tower.holder = { has_title = scope:title } }
+					}
+					title:c_the_shadow_tower.holder = {
+						appoint_court_position = { recipient = title:b_hoarfrost_hill.holder court_position = b_hoarfrost_hill_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_sable_hall
+						NOT = { title:c_eastwatch.holder = { has_title = scope:title } }
+					}
+					title:c_eastwatch.holder = {
+						appoint_court_position = { recipient = title:b_sable_hall.holder court_position = b_sable_hall_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_rimegate
+						NOT = { title:c_eastwatch.holder = { has_title = scope:title } }
+					}
+					title:c_eastwatch.holder = {
+						appoint_court_position = { recipient = title:b_rimegate.holder court_position = b_rimegate_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_the_torches
+						NOT = { title:c_eastwatch.holder = { has_title = scope:title } }
+					}
+					title:c_eastwatch.holder = {
+						appoint_court_position = { recipient = title:b_the_torches.holder court_position = b_the_torches_keeper }
+					}
+				}
+				else_if = {
+					limit = {
+						scope:title = title:b_greenguard
+						NOT = { title:c_eastwatch.holder = { has_title = scope:title } }
+					}
+					title:c_eastwatch.holder = {
+						appoint_court_position = { recipient = title:b_greenguard.holder court_position = b_greenguard_keeper }
+					}
+				}
+			}
+		}
+		#county modifier assignment
+		if = {
+			limit = {
+				AND = {
+					scope:title = {
+						tier = tier_barony
+					}
+					scope:title.county = {
+						OR = {
+							this = title:c_castle_black
+							this = title:c_the_nightfort
+							this = title:c_the_shadow_tower
+							this = title:c_eastwatch
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					scope:title = {
+						title_province = { has_province_modifier = nw_castle }
+					}
+					NOT = { government_has_flag = government_is_nw }
+				}
+				scope:title = {
+					title_province = {
+						remove_province_modifier = nw_castle
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:title = {
+						title_province = {
+							NOT = { has_province_modifier = nw_castle }
+							has_holding_type = castle_holding
+						}
+					}
+					government_has_flag = government_is_nw
+				}
+				scope:title = {
+					title_province = { add_province_modifier = nw_castle }
+				}
+			}
+		}
+	}
+}
+
+on_wall_maintenance = {
+	effect = {
+		every_in_global_list = {
+			variable = nw_wall_provinces
+			limit = {
+				title_province = {
+					has_holding_type = castle_holding
+				}
+			}
+			decide_maintenance_level = yes
+		}
+	}
+	on_actions = {
+		delay = { years = 1 }
+		on_wall_maintenance
+	}
+}
+
+on_wall_breach_chance = {
+	effect = {
+		if = {
+			limit = {
+				title:k_the_wall = {
+					is_title_created = yes
+				}
+			}
+			title:k_the_wall.holder = {
+				random_list = {
+					10 = {
+						modifier = {
+							add = wall_breach_chance
+						}
+						random_realm_province = {
+							limit = {
+								OR = {
+									has_province_modifier = high_maintenance_level #full maintained won't ever be breached
+									has_province_modifier = low_maintenance_level
+									has_province_modifier = no_maintenance_level
+								}
+							}
+							save_scope_as = province_breached
+							create_character = {
+								gender = male
+								location = scope:province_breached
+								age = { 20 35 }
+								faith = faith:old_gods_wnw
+								culture = culture:forestman
+								trait = education_martial_3
+								trait = organizer
+								trait = aggressive_attacker
+								save_scope_as = wildling_breacher
+							}
+							scope:wildling_breacher = {
+								create_title_and_vassal_change = {
+									type = usurped
+									save_scope_as = title_change
+									add_claim_on_loss = no
+								}
+								title:d_wildling_army = {
+									change_title_holder = {
+										holder = scope:wildling_breacher
+										change = scope:title_change
+									}
+								}
+								resolve_title_and_vassal_change = scope:title_change
+								trigger_event = {
+									id = agot_nights_watch.0005
+									days = 1
+								}
+								start_war = {
+									cb = wildling_raid_cb
+									target = title:k_the_wall.holder
+								}
+								# spawn_army = { AGOT TODO: Wildling Breach wall
+								# 	name = WILDLINGS
+								# 	levies = 1000
+								# 	men_at_arms = {
+								# 		type = regiment_giants
+								# 		stacks = 2
+								# 	}
+								# 	men_at_arms = {
+								# 		type = regiment_wildling_raiders
+								# 		stacks = 7
+								# 	}
+								# 	men_at_arms = {
+								# 		type = regiment_wildling_archers
+								# 		stacks = 5
+								# 	}
+								# 	location = scope:province_breached
+								# }
+							}
+
+						}
+					}
+					40 = {
+					}
+				}
+			}
+		}
+	}
+	on_actions = {
+		delay = { years = 15 }
+		on_wall_breach_chance
+
+	}
+}
+
+on_wall_breach_chance_debug = {
+	effect = {
+		title:k_the_wall.holder = {
+			random_realm_province = {
+				limit = {
+					OR = {
+						has_province_modifier = high_maintenance_level #full maintained won't ever be breached
+						has_province_modifier = low_maintenance_level
+						has_province_modifier = no_maintenance_level
+					}
+				}
+				save_scope_as = province_breached
+				create_character = {
+					gender = male
+					location = scope:province_breached
+					age = { 20 35 }
+					faith = faith:old_gods_wnw
+					culture = culture:forestman
+					trait = education_martial_3
+					trait = organizer
+					trait = aggressive_attacker
+					save_scope_as = wildling_breacher
+				}
+				scope:wildling_breacher = {
+					create_title_and_vassal_change = {
+						type = created
+						save_scope_as = title_change
+						add_claim_on_loss = no
+					}
+					title:d_wildling_army = {
+						change_title_holder = {
+							holder = scope:wildling_breacher
+							change = scope:title_change
+						}
+					}
+					resolve_title_and_vassal_change = scope:title_change
+					trigger_event = {
+						id = agot_nights_watch.0005
+						days = 1
+					}
+					start_war = {
+						cb = wildling_raid_cb
+						target = title:k_the_wall.holder
+					}
+					# spawn_army = { AGOT TODO: Wildling Breach wall
+					# 	name = WILDLINGS
+					# 	levies = 1000
+					# 	men_at_arms = {
+					# 		type = regiment_giants
+					# 		stacks = 2
+					# 	}
+					# 	men_at_arms = {
+					# 		type = regiment_wildling_raiders
+					# 		stacks = 7
+					# 	}
+					# 	men_at_arms = {
+					# 		type = regiment_wildling_archers
+					# 		stacks = 5
+					# 	}
+					# 	location = scope:province_breached
+					# }
+				}
+
+			}
+		}
+	}
+}
+
+#AGOT TODO
+#Made to prevent an error
+on_wall_succession = {
+	effect = {}
+	events = {}
+}
+
+#AGOT TODO
+#Made to prevent an error
+on_wall_election = {
+	effect = {}
+	events = {}
+}
+
+# character just about to die in root scope
+# if a killer is know, it's set as scope:killer
+#Triggered by code
+
+on_death = {
+	first_valid_on_action = {
+		on_nw_lord_commander_death
+		on_nw_holder_death
+	}
+}
+
+on_nw_holder_death = {
+	trigger = {
+		is_landed = yes
+		exists = title:k_the_wall.holder
+		is_vassal_or_below_of = title:k_the_wall.holder
+		title:k_the_wall.holder = { government_has_flag = government_is_nw }
+		NOT = { government_has_flag = government_is_republic }
+	}
+
+	effect = {
+		liege = { save_scope_as = new_holder }
+		every_courtier = {
+			title:k_the_wall.holder = {
+				add_courtier ?= prev
+			}
+		}
+		every_sub_realm_title = {
+			limit = { tier > tier_barony }
+
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+
+			change_title_holder_include_vassals = {
+				holder = scope:new_holder
+				change = scope:change
+				take_baronies = yes
+			}
+
+			resolve_title_and_vassal_change = scope:change
+		}
+	}
+}
+
+on_nw_lord_commander_death = {
+	trigger = {
+		government_has_flag = government_is_nw
+		agot_is_independent_ruler = yes
+	}
+
+	effect = {
+		agot_nw_elect_lc = yes
+	}
+}

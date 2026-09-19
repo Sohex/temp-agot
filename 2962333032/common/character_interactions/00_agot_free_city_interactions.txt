@@ -1,0 +1,2200 @@
+﻿# Request War for Three Daughters
+request_war_three_daughters_interaction = {
+	icon = icon_coax_to_war
+	category = interaction_category_diplomacy
+	common_interaction = yes
+	interface_priority = 71
+
+	desc = request_war_three_daughters_desc
+
+	is_shown = {
+		NOT = { scope:recipient = scope:actor }
+		scope:recipient = { is_landed = yes }
+		scope:actor = {
+			agot_part_of_three_daughters_confederation_trigger = yes
+			has_realm_law = free_city_election_succession_law
+			government_has_flag = government_is_free_city
+			NOT = {
+				is_at_war_with = scope:recipient
+			}
+		}
+		NOT = { scope:actor.primary_title = { any_in_list = { variable = approved_war_targets this = scope:recipient } } }
+		trigger_if = {
+			limit = {
+				exists = global_var:three_daughters_confederation
+			}
+			NOT = {
+				scope:recipient = {
+					is_member_of_confederation = global_var:three_daughters_confederation
+				}
+			}
+		}
+		scope:actor = { is_human = yes }
+		scope:recipient = { is_human = yes }
+		NOT = {
+			AND = {
+				scope:actor = {
+					government_has_flag = government_is_feudal
+				}
+				scope:recipient = {
+					government_has_flag = government_is_nw
+				}
+			}
+		}
+		NOT = {
+			AND = {
+				scope:actor = {
+					government_has_flag = government_is_nw
+				}
+				scope:recipient = {
+					government_has_flag = government_is_feudal
+				}
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			NOT = { has_trait = incapable }
+			can_attack_in_hierarchy = scope:recipient
+			NOT = {
+				has_raised_armies = yes
+			}
+			NOT = {
+				is_allied_in_war = scope:recipient
+			}
+			custom_description = {
+				text = "is_not_bankrupt"
+				gold > 0
+			}
+			NOT = {
+				custom_description = {
+					text = "is_in_an_activity"
+					exists = involved_activity
+				}
+			}
+			trigger_if = {
+				limit = {
+					culture = { has_cultural_parameter = cannot_attack_allies }
+				}
+				NOT = {
+					is_allied_to = scope:recipient
+				}
+			}
+			trigger_if = {
+				limit = {
+					culture = { has_cultural_parameter = cannot_attack_truces }
+				}
+				NOT = {
+					has_truce = scope:recipient
+				}
+			}
+			is_imprisoned = no
+			trigger_if = {
+				limit = {
+					has_variable_list = subjugation_offer_under_consideration
+				}
+				custom_description = {
+					text = is_not_considering_offer_of_subjugation
+					NOT = {
+						is_target_in_variable_list = {
+							name = subjugation_offer_under_consideration
+							target = scope:recipient
+						}
+					}
+				}
+			}
+		}
+		scope:recipient = { NOT = { has_strong_hook = scope:actor } }
+		scope:recipient = {
+			trigger_if = {
+				limit = { is_imprisoned = yes }
+				NOT = {
+					imprisoner = scope:actor
+				}
+			}
+		}
+
+		# Triarchy needs council permission
+		scope:actor = {
+			agot_part_of_three_daughters_confederation_trigger = yes
+			has_realm_law = free_city_election_succession_law
+		}
+		scope:actor = { government_has_flag = government_is_free_city }
+		NOT = { scope:actor.primary_title = { any_in_list = { variable = approved_war_targets this = scope:recipient } } }
+	}
+
+	cooldown = { years = 1 }
+	cooldown_against_recipient = { years = 5 }
+
+	on_accept = {
+		scope:actor = {
+			custom_tooltip = request_war_three_daughters_effect_tt
+			hidden_effect = {
+				random = {
+					chance = {
+						value = 0
+						if = {
+							limit = {
+								title:k_lys.holder ?= {
+									OR = {
+										this = scope:actor
+										war_vote_declaration > 0
+									}
+								}
+							}
+							add = 34
+						}
+						if = {
+							limit = {
+								title:k_myr.holder ?= {
+									OR = {
+										this = scope:actor
+										war_vote_declaration > 0
+									}
+								}
+							}
+							add = 20
+						}
+						if = {
+							limit = {
+								title:k_tyrosh.holder ?= {
+									OR = {
+										this = scope:actor
+										war_vote_declaration > 0
+									}
+								}
+							}
+							add = 20
+						}
+					}
+					save_scope_as = war_approved
+				}
+			}
+
+			trigger_event = {
+				id = free_city_events.0005
+				days = 1
+			}
+		}
+	}
+
+	auto_accept = yes
+}
+
+# Request War from Norvos
+request_war_authorization_norvos_interaction = {
+	icon = icon_coax_to_war
+	category = interaction_category_diplomacy
+	common_interaction = yes
+	interface_priority = 71
+	cooldown = { years = 1 }
+	cost = {
+		piety = 300
+		influence = 150
+	}
+
+	desc = request_war_authorization_norvos_interaction_desc
+
+	is_shown = {
+		scope:actor = {
+			NOT = {
+				has_variable = war_support_diarch
+			}
+			has_diarchy_active_parameter = diarch_must_approve_war_declaration
+		}
+		scope:recipient = {
+			is_diarch_of_target = scope:actor
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			custom_tooltip = request_war_authorization_norvos_interaction_permission_granted_tt
+			set_variable = {
+				name = war_support_diarch
+				years = 5
+			}
+		}
+	}
+	on_decline = {
+		scope:actor = {
+			change_influence = -200
+			add_prestige = medium_prestige_loss
+		}
+	}
+
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 24
+		empire = 24
+		hegemony = 24
+	}
+	ai_potential = {
+		has_diarchy_active_parameter = diarch_must_approve_war_declaration
+	}
+
+	ai_targets = {
+		ai_recipients = diarch
+		max = 1
+	}
+	ai_accept = {
+		base = -20
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 1.25
+			desc = AI_SIMPLE_OPINION_REASON
+		}
+		ai_value_modifier = {
+			who = scope:recipient
+			ai_boldness = 0.5
+			ai_greed = 0.5
+		}
+		modifier = {
+			scope:recipient = { ai_has_warlike_personality = yes }
+			factor = 10
+		}
+	}
+	ai_will_do = {
+		base = 25
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 0.5
+		}
+		ai_value_modifier = {
+			who = scope:actor
+			ai_boldness = 0.5
+			ai_greed = 0.5
+		}
+		modifier = {
+			scope:actor = { ai_has_warlike_personality = yes }
+			factor = 10
+		}
+	}
+}
+
+# Bless Candidancy
+request_appointment_support_from_norvos_shadow_govt = {
+	category = interaction_category_succession
+	icon = support_candidacy
+	common_interaction = no
+	interface_priority = 175
+	filter_tags = { ceremonial_liege }
+	custom_character_sort = { governor_efficiency candidate_score }
+
+	desc = request_appointment_support_from_norvos_shadow_govt_desc
+
+	target_type = title
+	target_filter = actor_top_liege_de_jure_titles
+
+	populate_recipient_list = {
+		scope:actor = {
+			every_succession_appointment_invested_candidate = {
+				limit = {
+					this != scope:recipient
+					is_alive = yes
+					government_allows = administrative
+					# Check that they are still valid to be appointed
+					any_valid_title_to_grant_trigger = {
+						CANDIDATE = this
+						TOP_LIEGE = scope:actor.top_liege
+					}
+				}
+				add_to_list = characters
+			}
+			# We limit how many recipients to check for the AI for performance, player gets the unabridged list
+			if = {
+				limit = {
+					is_ai = no
+				}
+				house = {
+					every_house_member = {
+						limit = {
+							this != scope:recipient
+							government_allows = administrative
+							any_valid_title_to_grant_trigger = {
+								CANDIDATE = this
+								TOP_LIEGE = scope:actor.top_liege
+							}
+						}
+						add_to_list = characters
+					}
+				}
+			}
+		}
+	}
+
+	can_be_picked_title = {
+		trigger_if = {
+			limit = { exists = scope:secondary_recipient }
+			is_appointment_valid_trigger = {
+				TITLE = scope:target
+				CANDIDATE = scope:secondary_recipient
+				TOP_LIEGE = scope:actor.top_liege
+			}
+			trigger_if = {
+				limit = {
+					scope:actor = { is_ai = yes }
+					scope:secondary_recipient = { has_succession_appointment_investors = scope:target }
+				}
+				scope:target = {
+					any_succession_appointment_investors = {
+						candidate = scope:secondary_recipient
+						this = scope:actor
+					}
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		scope:target ?= {
+			tier >= scope:actor.main_administrative_tier
+			is_landless_type_title = no
+			is_noble_family_title = no
+			holder ?= {
+				top_liege = scope:actor.top_liege
+				has_realm_law_flag = appointment_type_succession
+			}
+		}
+		scope:actor = {
+			trigger_if = {
+				limit = { is_ai = yes }
+				any_succession_appointment_invested_title = {
+					this = scope:target
+				}
+			}
+		}
+	}
+
+	is_shown = {
+		norvos_ceremonial_monarch_trigger_check = yes
+		scope:actor = {
+			is_human = yes
+		}
+		scope:recipient = {
+			is_human = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_in_civil_war = no
+			NOT = {
+				has_character_modifier = disfavored_by_bearded_priests_modifier
+			}
+		}
+		scope:recipient = {
+			is_in_civil_war = no
+		}
+	}
+
+	can_send = {
+		trigger_if = {
+			limit = { scope:hook = no }
+			scope:actor = {
+				gold >= major_gold_value
+			}
+			scope:actor = {
+				piety >= major_piety_value
+			}
+		}
+		custom_tooltip = {
+			text = appointment_cannot_support_themself
+			scope:recipient != scope:secondary_recipient
+		}
+		trigger_if = {
+			limit = {
+				exists = scope:secondary_recipient
+				exists = scope:target
+			}
+			# If a currency level is needed, does the candidate have a high enough level?
+			trigger_if = {
+				limit = {
+					scope:target.min_appointment_level > 0
+				}
+				scope:secondary_recipient = {
+					has_appointment_level_for_title = scope:target
+				}
+			}
+		}
+	}
+
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = GENERIC_SPEND_A_HOOK
+	}
+	should_use_extra_icon = {
+		scope:actor = { has_usable_hook = scope:recipient }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	send_options_exclusive = no
+
+	on_accept = {
+		scope:actor = {
+			if = {
+				limit = {
+					scope:hook = yes
+					has_hook = scope:recipient
+				}
+				use_hook = scope:recipient
+			}
+		}
+		if = {
+			limit = {
+				scope:hook = no
+			}
+			scope:actor = {
+				pay_short_term_gold = {
+					target = scope:recipient
+					gold = 250
+				}
+			}
+			scope:actor = {
+				add_piety = major_piety_loss
+			}
+		}
+		scope:recipient = { custom_tooltip = request_appointment_support_tt }
+		hidden_effect = {
+			random_list = {
+				35 = {
+					scope:actor = {
+						save_scope_value_as = {
+							name = request_support_score
+							value = appointment_score_minor_value
+						}
+						send_interface_message = {
+							type = msg_candidacy_improved
+							title = supported_candidacy_toast
+							left_icon = scope:secondary_recipient
+							right_icon = scope:target
+							custom_tooltip = request_appointment_support_toast_tt
+							scope:target = {
+								change_appointment_investment = {
+									target = scope:secondary_recipient
+									value = scope:request_support_score
+								}
+							}
+						}
+					}
+				}
+				45 = {
+					scope:actor = {
+						save_scope_value_as = {
+							name = request_support_score
+							value = {
+								value = appointment_score_medium_value
+							}
+						}
+						send_interface_message = {
+							type = msg_candidacy_improved
+							title = supported_candidacy_toast
+							left_icon = scope:secondary_recipient
+							right_icon = scope:target
+							custom_tooltip = request_appointment_support_toast_tt
+							scope:target = {
+								change_appointment_investment = {
+									target = scope:secondary_recipient
+									value = scope:request_support_score
+								}
+							}
+						}
+					}
+					opinion_modifier = {
+						who = scope:recipient
+						opinion_target = scope:actor
+						multiplier = 0.2
+						min = 0
+					}
+					modifier = {
+						factor = 1.5
+						scope:recipient = { has_any_good_relationship_with_character_trigger = { CHARACTER = scope:actor } }
+					}
+					modifier = {
+						factor = 2
+						scope:recipient = { has_any_best_good_relationship_with_character_trigger = { CHARACTER = scope:actor } }
+					}
+				}
+				20 = {
+					scope:actor = {
+						save_scope_value_as = {
+							name = request_support_score
+							value = {
+								value = appointment_score_major_value
+							}
+						}
+						send_interface_message = {
+							type = msg_candidacy_improved
+							title = supported_candidacy_toast
+							left_icon = scope:secondary_recipient
+							right_icon = scope:target
+							custom_tooltip = request_appointment_support_toast_tt
+							scope:target = {
+								change_appointment_investment = {
+									target = scope:secondary_recipient
+									value = scope:request_support_score
+								}
+							}
+						}
+					}
+					opinion_modifier = {
+						who = scope:recipient
+						opinion_target = scope:actor
+						multiplier = 0.3
+						min = 0
+					}
+					modifier = {
+						factor = 1.5
+						scope:recipient = { has_any_good_relationship_with_character_trigger = { CHARACTER = scope:actor } }
+					}
+					modifier = {
+						factor = 2
+						scope:recipient = { has_any_best_good_relationship_with_character_trigger = { CHARACTER = scope:actor } }
+					}
+				}
+			}
+		}
+		scope:actor = { trigger_event = ep3_interactions_events.0201 }
+	}
+
+	on_decline = {
+		scope:actor = {
+			add_opinion = {
+				target = scope:recipient
+				modifier = disappointed_opinion
+				opinion = -10
+			}
+			trigger_event = ep3_interactions_events.0202
+		}
+	}
+
+	auto_accept = {
+		custom_description = {
+			text = "spending_hook"
+			subject = scope:actor
+			object = scope:recipient
+			scope:hook = yes
+			scope:recipient = { is_ai = yes }
+		}
+	}
+
+	ai_accept = {
+		base = -40
+
+		# Opinion Factor
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 1.25
+			desc = AI_SIMPLE_OPINION_REASON
+		}
+
+		modifier = { # Don't support actor if there is a close family member within the top 3 candidates
+			scope:target ?= {
+				any_title_heir = {
+					scope:target ?= {
+						place_in_line_of_succession = {
+							target = prev
+							value <= 3
+						}
+					}
+					is_close_family_of = scope:recipient
+				}
+			}
+			exists = scope:secondary_recipient
+			NOT = { # Unless secondary_recipient is, in fact, one of these
+				scope:secondary_recipient = {
+					scope:target ?= {
+						place_in_line_of_succession = {
+							target = prev
+							value <= 3
+						}
+					}
+					is_close_family_of = scope:recipient
+				}
+			}
+			add = -100
+			desc = close_family_in_line_of_succession
+		}
+		modifier = { # If you are from a powerful family they are more likely to accept
+			scope:actor.house ?= {
+				is_powerful_family = yes
+			}
+			add = 5
+			desc = your_house_is_powerful_reason
+		}
+		modifier = { # If you are from a dominant family they are more likely to accept
+			scope:actor.house ?= {
+				is_dominant_family = yes
+			}
+			add = 10
+			desc = your_house_is_dominant_reason
+		}
+
+		# Relations to actor
+		modifier = {
+			scope:actor = {
+				has_relation_rival = scope:recipient
+			}
+			add = -200
+			desc = AI_YOUR_RIVAL
+		}
+		modifier = {
+			scope:actor = {
+				has_relation_nemesis = scope:recipient
+			}
+			add = -500
+			desc = offer_vassalization_interaction_aibehavior_nemesis_tt # Reused loc
+		}
+		modifier = {
+			scope:recipient = {
+				is_close_family_of = scope:actor
+			}
+			add = 50
+			desc = CLOSE_FAMILY_REASON
+		}
+		modifier = {
+			scope:recipient = {
+				is_extended_family_of = scope:actor
+			}
+			add = 25
+			desc = EXTENDED_FAMILY_REASON
+		}
+		modifier = {
+			exists = scope:actor.house
+			scope:recipient = {
+				NOR = {
+					is_close_family_of = scope:actor
+					is_extended_family_of = scope:actor
+				}
+				house ?= scope:actor.house
+			}
+			add = 5
+			desc = YOU_ARE_MY_HOUSE_MEMBER
+		}
+		modifier = {
+			scope:actor = {
+				has_relation_friend = scope:recipient
+				NOT = { has_relation_best_friend = scope:recipient }
+			}
+			add = 15
+			desc = WE_ARE_FRIENDS
+		}
+		modifier = {
+			scope:actor = {
+				has_relation_best_friend = scope:recipient
+			}
+			add = 25
+			desc = WE_ARE_BEST_FRIENDS
+		}
+
+		# Relations to secondary_recipient (the character you want them to support)
+		modifier = {
+			scope:recipient = {
+				has_relation_rival = scope:secondary_recipient
+				NOT = { has_relation_nemesis = scope:secondary_recipient }
+			}
+			add = -50
+			desc = RIVAL_TO_ME_REASON
+		}
+		modifier = {
+			scope:recipient = {
+				has_relation_nemesis = scope:secondary_recipient
+			}
+			add = -100
+			desc = NEMESIS_TO_ME_REASON
+		}
+		## Piety of the actor
+		modifier = {
+			scope:actor = {
+				piety_level = 0
+			}
+			add = -300
+			desc = piety_level_too_low_reason
+		}
+		modifier = {
+			scope:actor != scope:secondary_recipient
+			scope:actor = {
+				piety_level >= 2
+			}
+			add = {
+				value = 10
+				multiply = {
+					value = scope:actor.piety_level
+					subtract = 1 # Base value should start at 2
+				}
+			}
+			desc = piety_level_reason
+		}
+		## Piety of the secondary_recipient
+		modifier = {
+			scope:actor != scope:secondary_recipient
+			scope:secondary_recipient = {
+				piety_level = 0
+			}
+			add = -200
+			desc = piety_level_too_low_reason_secondary_recipient
+		}
+		modifier = {
+			scope:secondary_recipient = {
+				piety_level >= 2
+			}
+			add = {
+				value = 20
+				multiply = {
+					value = scope:secondary_recipient.piety_level
+					subtract = 1 # Base value should start at 2
+				}
+			}
+			desc = piety_level_reason_secondary_recipient
+		}
+		modifier = {
+			has_two_or_more_pious_traits_in_norvos_trigger = { CHARACTER = scope:actor }
+			add = 25
+			desc = piety_two_or_more_virtuous_traits_actor
+		}
+		modifier = {
+			scope:actor != scope:secondary_recipient
+			has_two_or_more_pious_traits_in_norvos_trigger = { CHARACTER = scope:secondary_recipient }
+			add = 25
+			desc = piety_two_or_more_virtuous_traits_secondary_recipient
+		}
+		modifier = {
+			has_two_or_more_sinner_traits_in_norvos_trigger = { CHARACTER = scope:actor }
+			add = -75
+			desc = piety_two_or_more_sinful_traits_actor
+		}
+		modifier = {
+			scope:actor != scope:secondary_recipient
+			has_two_or_more_sinner_traits_in_norvos_trigger = { CHARACTER = scope:secondary_recipient }
+			add = -75
+			desc = piety_two_or_more_sinful_traits_secondary_recipient
+		}
+		modifier = {
+			scope:actor = {
+				faith != scope:recipient.faith
+			}
+			add = -500
+			desc = mismatched_faiths_reason_actor
+		}
+		modifier = {
+			scope:actor != scope:secondary_recipient
+			scope:secondary_recipient = {
+				faith != scope:recipient.faith
+			}
+			add = -1000
+			desc = mismatched_faiths_reason_secondary_recipient
+		}
+		# Relations to current title holder
+		modifier = {
+			exists = scope:target
+			scope:recipient = {
+				has_relation_rival = scope:target.holder
+				NOT = { has_relation_nemesis = scope:target.holder }
+				liege = scope:target.holder
+				liege != scope:actor # Don't worry about liege relation when the liege is the one requesting support
+			}
+			add = 25
+			desc = AI_THEIR_RIVAL
+		}
+		modifier = {
+			exists = scope:target
+			scope:recipient = {
+				has_relation_nemesis = scope:target.holder
+				liege = scope:target.holder
+				liege != scope:actor # Don't worry about liege relation when the liege is the one requesting support
+			}
+			add = 50
+			desc = AI_THEIR_RIVAL
+		}
+		modifier = {
+			exists = scope:target
+			scope:recipient = {
+				has_relation_friend = scope:target.holder
+				NOT = { has_relation_best_friend = scope:target.holder }
+				liege = scope:target.holder
+				liege != scope:actor # Don't worry about liege relation when the liege is the one requesting support
+			}
+			add = -50
+			desc = AI_THEIR_FRIEND
+		}
+		modifier = {
+			exists = scope:target
+			scope:recipient = {
+				has_relation_best_friend = scope:target.holder
+				liege = scope:target.holder
+				liege != scope:actor # Don't worry about liege relation when the liege is the one requesting support
+			}
+			add = -100
+			desc = AI_THEIR_FRIEND
+		}
+		modifier = {
+			exists = scope:target
+			scope:recipient = {
+				has_relation_lover = scope:target.holder
+				liege = scope:target.holder
+				liege != scope:actor # Don't worry about liege relation when the liege is the one requesting support
+			}
+			add = -30
+			desc = AI_THEIR_LOVER
+		}
+		modifier = {
+			exists = scope:target
+			scope:recipient = {
+				OR = {
+					is_close_family_of = scope:target.holder
+					is_extended_family_of = scope:target.holder
+				}
+				opinion = { target = scope:target.holder value > -25 }
+				liege = scope:target.holder
+				liege != scope:actor # Don't worry about liege relation when the liege is the one requesting support
+			}
+			add = -20
+			desc = AI_THEIR_RELATIVE
+		}
+
+		modifier = {
+			scope:recipient = {
+				has_trait = callous
+			}
+			add = -20
+			desc = INTERACTION_CALLOUS
+		}
+		modifier = {
+			scope:recipient = {
+				has_trait = fickle
+			}
+			add = -30
+			desc = INTERACTION_FICKLE
+		}
+		modifier = {
+			scope:recipient = {
+				has_trait = paranoid
+			}
+			add = -25
+			desc = INTERACTION_PARANOID
+		}
+		modifier = {
+			scope:recipient = {
+				has_trait = trusting
+			}
+			add = 10
+			desc = INTERACTION_TRUSTING
+		}
+		modifier = {
+			scope:recipient = {
+				has_trait = arbitrary
+			}
+			add = -15
+			desc = INTERACTION_ARBITRARY
+		}
+		modifier = { # Cravens dare not help you
+			scope:recipient = {
+				has_trait = craven
+			}
+			scope:actor.house ?= {
+				is_dominant_family = no
+			}
+			add = -20
+			desc = INTERACTION_CRAVEN
+		}
+		modifier = { # Cravens dare not refuse a dominant family
+			scope:recipient = {
+				has_trait = craven
+			}
+			scope:actor.house ?= {
+				is_dominant_family = yes
+			}
+			add = 10
+			desc = INTERACTION_CRAVEN
+		}
+	}
+	ai_will_do = {
+		base = 10
+
+		# No one promoting... ripe for the taking
+		modifier = {
+			scope:target = {
+				holder = {
+					has_realm_law_flag = appointment_type_succession
+				}
+				current_heir ?= {
+					NOR = {
+						"appointment_candidate_accumulated_score(scope:target)" > 0
+						AND = {
+							exists = house
+							exists = scope:actor.house
+							house = scope:actor.house
+						}
+					}
+				}
+			}
+			add = 150
+		}
+
+		# Spending more influence in one go is better
+		modifier = {
+			scope:major_influence_option = yes
+			factor = 1.1
+		}
+
+		# Promote characters we like
+		modifier = {
+			scope:secondary_recipient ?= house.house_confederation.leading_house.house_head
+			factor = 5
+		}
+		modifier = {
+			scope:secondary_recipient = {
+				is_close_family_of = scope:actor
+			}
+			factor = 3
+		}
+		modifier = {
+			scope:secondary_recipient = {
+				is_extended_family_of = scope:actor
+			}
+			factor = 1.5
+		}
+		modifier = {
+			scope:actor = {
+				has_relation_friend = scope:secondary_recipient
+			}
+			factor = 2
+		}
+		modifier = {
+			scope:actor = {
+				has_relation_best_friend = scope:secondary_recipient
+			}
+			factor = 10
+		}
+
+		# For the imperial title, we want to promote ourselves
+		modifier = {
+			scope:target.tier >= tier_kingdom
+			scope:actor = scope:secondary_recipient
+			factor = 5
+		}
+
+		# Prefer unlanded relatives
+		modifier = {
+			scope:target.tier < tier_kingdom
+			scope:secondary_recipient = {
+				is_ruler = no
+			}
+			factor = 2
+		}
+
+		# Prefer titles that are somewhat close to the capital
+		modifier = {
+			exists = scope:recipient.capital_province # Make sure the top liege has a capital
+			scope:target = {
+				title_capital_county ?= {
+					squared_distance = {
+						target = scope:recipient.capital_province
+						value <= 130000
+					}
+				}
+			}
+			factor = 1.1
+		}
+
+		# Try to avoid promoting the same candidate for multiple titles if they are winning a title already
+		modifier = {
+			scope:secondary_recipient = {
+				any_heir_title = {
+					is_noble_family_title = no
+					holder = {
+						government_allows = administrative
+					}
+				}
+			}
+			factor = 0
+		}
+
+		# Promote only one house member for each title
+		modifier = {
+			scope:target = {
+				holder = {
+					has_realm_law_flag = appointment_type_succession
+				}
+				any_title_heir = {
+					exists = house
+					exists = scope:actor.house
+					house = scope:actor.house
+					"appointment_candidate_accumulated_score(scope:target)" > 0
+				}
+			}
+			scope:secondary_recipient = {
+				exists = house
+				exists = scope:actor.house
+				house = scope:actor.house
+				"appointment_candidate_accumulated_score(scope:target)" <= 0
+			}
+			factor = 0
+		}
+
+		# Don't promote rivals
+		modifier = {
+			scope:actor = {
+				has_relation_rival = scope:secondary_recipient
+			}
+			factor = 0
+		}
+
+		# Don't promote a candidate if your house is first in line
+		modifier = {
+			scope:target = {
+				any_title_heir = {
+					exists = house
+					exists = scope:actor.house
+					house = scope:actor.house
+					scope:target = {
+						place_in_line_of_succession = {
+							target = prev
+							value = 1
+						}
+					}
+				}
+			}
+			factor = 0
+		}
+
+		# Don't promote your candidate if they are first in line
+		modifier = {
+			scope:target = {
+				any_title_heir = {
+					this = scope:secondary_recipient
+					scope:target = {
+						place_in_line_of_succession = {
+							target = prev
+							value = 1
+						}
+					}
+				}
+			}
+			factor = 0
+		}
+
+		# Don't promote lowborn or characters of a different house
+		modifier = {
+			NOT = { exists = scope:secondary_recipient.house }
+			factor = 0
+		}
+
+		# Don't outcompete someone you like
+		modifier = {
+			scope:target = {
+				any_title_heir = {
+					scope:target  = {
+						place_in_line_of_succession = {
+							target = prev
+							value <= 3
+						}
+					}
+					scope:actor = { has_any_good_relationship_with_character_trigger = { CHARACTER = prev } }
+				}
+			}
+			factor = 0
+		}
+
+		# Don't support someone who has renounced their aspirations for the throne
+		modifier = {
+			scope:secondary_recipient = {
+				OR = {
+					has_character_modifier = ep3_admin_renounce_throne_personal
+					house ?= { has_house_modifier = ep3_admin_renounce_throne_house }
+				}
+			}
+			scope:target.tier = scope:recipient.highest_held_title_tier
+			factor = 0
+		}
+	}
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 48
+		duchy = 48
+		kingdom = 48
+		empire = 48
+		hegemony = 48
+	}
+	ai_potential = {
+		government_has_flag = government_is_norvos
+		house ?= {
+			OR = {
+				is_powerful_family = yes
+				is_dominant_family = yes
+			}
+		}
+	}
+
+	ai_targets = {
+		ai_recipients = head_of_faith
+		max = 1
+	}
+}
+
+norvos_coup_liege_interaction = {
+	category = interaction_category_diarch
+	diarch_interaction = yes
+	icon = icon_scheme_claim_throne
+	interface_priority = 50
+	pre_answer_no_breakdown_key = diarch_coup_liege_interaction_pre_answer_no_breakdown_key
+	pre_answer_yes_breakdown_key = diarch_coup_liege_interaction_pre_answer_yes_breakdown_key
+
+	desc = norvos_coup_liege_interaction_desc
+
+	# First, grab every other powerful vassal and powerful family house head & plonk them in a list.
+	populate_recipient_list = {
+		scope:actor = {
+			every_powerful_vassal = {
+				limit = {
+					this != scope:actor
+					this != title:d_norvos_high_priesthood.holder
+				}
+				add_to_list = characters
+			}
+			every_powerful_family = {
+				limit = {
+					NOR = {
+						house_head = scope:actor
+						house_head = scope:recipient
+					}
+				}
+				house_head = { add_to_list = characters }
+			}
+		}
+	}
+
+	redirect = {
+		# Turn the old scope:recipient into the target.
+		if = {
+			limit = {
+				NOT = {
+					scope:recipient = scope:actor
+				}
+			}
+			scope:recipient = { save_scope_as = secondary_recipient }
+		}
+		# Always make sure we're targeting the high priest as the recipient for UX consistency.
+		title:d_norvos_high_priesthood.holder = {
+			save_scope_as = recipient
+		}
+	}
+
+	is_shown = {
+		norvos_are_the_bearded_priests_the_real_power_trigger = yes
+		scope:actor = {
+			has_diarchy_type = norvos_high_priestship
+			is_ai = no
+			government_has_flag = government_is_norvos
+			title:d_norvos_high_priesthood.holder ?= {
+				is_diarch_of_target = scope:actor
+			}
+			is_independent_ruler = yes
+		}
+		scope:secondary_recipient = {
+			top_liege = scope:actor
+			this != scope:recipient
+			OR = {
+				AND = {
+					any_held_title = {
+						is_noble_family_title = yes
+					}
+					is_landed = no
+				}
+				is_landed = yes
+			}
+		}
+		scope:actor = {
+			is_human = yes
+		}
+		scope:recipient = {
+			is_human = yes
+		}
+		scope:secondary_recipient ?= {
+			is_human = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		# Loyalty hooks, per the name, will tend to block this.
+		custom_tooltip = {
+			text = diarch_coup_liege_interaction.tt.action_blocked_by_loyalty_hook
+			NOT = {
+				diarch_loyalty_due_to_hook_trigger = {
+					LIEGE = scope:recipient
+					DIARCH = scope:actor
+				}
+			}
+		}
+		# They can't already be in the list.
+		custom_tooltip = {
+			text = diarch_coup_liege_interaction.tt.secondary_recipient_is_already_in_list
+			NOT = {
+				scope:actor = {
+					any_in_list = {
+						variable = coup_pv_supporters_list
+						this = scope:secondary_recipient
+					}
+				}
+			}
+		}
+
+		trigger_if = {
+			limit = { exists = scope:secondary_recipient }
+			# Must be available.
+			## So no kids.
+			scope:secondary_recipient = { is_adult = yes }
+			## & no one in prison.
+			scope:secondary_recipient = { is_imprisoned = no }
+			# Plus, currently, humans can't be part of these plots.
+			scope:secondary_recipient = { is_ai = yes }
+		}
+
+		trigger_if = {
+			# AI won't exploit and need this exception, as they don't actually open the windows, so they'll be blocked from taking the interaction otherwise.
+			limit = {
+				scope:actor = { is_ai = no }
+			}
+			custom_tooltip = {
+				text = interactions_general.tt.must_select_one_option
+				OR = {
+					scope:promise_nothing = yes
+					scope:promise_hook_strong = yes
+					scope:promise_gold_large = yes
+				}
+			}
+		}
+		# Cannot be at war with your liege.
+		NOT = {
+			title:d_norvos_high_priesthood.holder = {
+				is_at_war_with = scope:actor
+			}
+		}
+
+		custom_tooltip = {
+			text = diarchy_swing_min_threshold
+			scope:actor.diarchy_swing <= norvos_diarchy_swing_value_required_for_coup
+		}
+
+		NOT = {
+			is_decision_on_cooldown = agot_overthrow_bearded_priests
+		}
+	}
+
+	can_send = {
+		custom_tooltip = {
+			text = norvos_coup_liege_interaction_conspirator_must_be_pf_or_pv
+			OR = {
+				scope:secondary_recipient.house ?= { is_powerful_family = yes }
+				scope:secondary_recipient = { is_powerful_vassal = yes }
+			}
+		}
+	}
+
+	# Promise bugger all.
+	send_option = {
+		flag = promise_nothing
+		localization = PROMISE_NOTHING
+	}
+	# Promise strong hook.
+	send_option = {
+		is_valid = {
+			# Can't offer a strong hook if they've already got a strong hook on you.
+			NOT = {
+				scope:secondary_recipient ?= { has_strong_hook = scope:actor }
+			}
+		}
+		flag = promise_hook_strong
+		localization = PROMISE_HOOK_STRONG
+	}
+	# Promise piles of gold.
+	send_option = {
+		flag = promise_gold_large
+		localization = PROMISE_GOLD_LARGE
+	}
+
+	on_accept = {
+		if = {
+			limit = { exists = scope:secondary_recipient }
+			scope:actor = {
+				# Scope:secondary_recipient joins your conspiracy.
+				custom_tooltip = diarch_coup_liege_interaction.tt.secondary_recipient.joins_conspiracy
+				## Send a notification just for a bit of extra feedback.
+				send_interface_toast = {
+					type = event_toast_effect_good
+					title = diarch_coup_liege_interaction.tt.secondary_recipient.joins_conspiracy
+					left_icon = scope:secondary_recipient
+				}
+				# HerHis reward is collected if you succeed.
+				if = {
+					limit = { scope:promise_nothing = no }
+					custom_tooltip = diarch_coup_liege_interaction.tt.secondary_recipient.reward
+				}
+				# Certain scope:secondary_recipients may betray their liege in the throne room itself.
+				## Chancellors in diplo coups.
+				if = {
+					limit = { scope:secondary_recipient ?= scope:recipient.cp:councillor_chancellor }
+					custom_tooltip = diarch_coup_liege_interaction.tt.secondary_recipient.chancellor_sabotage
+				}
+				## Spymasters in intrigue coups.
+				if = {
+					limit = { scope:secondary_recipient ?= scope:recipient.cp:councillor_spymaster }
+					custom_tooltip = diarch_coup_liege_interaction.tt.secondary_recipient.spymaster_sabotage
+				}
+				## Personal Champions in prowess coups.
+				if = {
+					limit = {
+						scope:secondary_recipient = { has_court_position = champion_court_position }
+					}
+					custom_tooltip = diarch_coup_liege_interaction.tt.secondary_recipient.champion_sabotage
+					# Yes, there are other candidates, but we're not tooltipping every conceivable case. Rulers are gonna have supporters.
+					custom_tooltip = diarch_coup_liege_interaction.tt.secondary_recipient.champion_sabotage.others
+				}
+				# Right, actually record them.
+				## Including in the variable.
+				add_to_variable_list = {
+					name = coup_pv_supporters_list
+					target = scope:secondary_recipient
+				}
+				## And their promised payment, if anything.
+				### Strong hooks.
+				if = {
+					limit = { scope:promise_hook_strong = yes }
+					add_to_variable_list = {
+						name = coup_promise_list_strong_hook
+						target = scope:secondary_recipient
+					}
+				}
+				### Big Cash.
+				else_if = {
+					limit = { scope:promise_gold_large = yes }
+					add_to_variable_list = {
+						name = coup_promise_list_big_gold
+						target = scope:secondary_recipient
+					}
+				}
+			}
+		}
+	}
+
+	# Disguise the interaction from players.
+	ai_min_reply_days = 0
+	ai_max_reply_days = 0
+
+	ai_accept = {
+		# Base reluctance to commit to a risky, treasonous plan.
+		base = -100
+
+		# Opinion.
+		## Of scope:actor.
+		opinion_modifier = {
+			who = scope:secondary_recipient
+			opinion_target = scope:actor
+			multiplier = 1
+		}
+		## Of scope:recipient.
+		opinion_modifier = {
+			who = scope:secondary_recipient
+			opinion_target = scope:recipient
+			multiplier = -0.5
+		}
+		# Personality.
+		## Values.
+		ai_value_modifier = {
+			who = scope:secondary_recipient
+			ai_honor = -1
+			ai_boldness = 0.25
+		}
+		ai_value_modifier = {
+			who = scope:secondary_recipient
+			ai_zeal = -1
+		}
+		## Traits.
+		### +++ Disloyal.
+		modifier = {
+			add = diarch_ai_desire_plus_3_value
+			desc = diarch_coup_liege_interaction.tt.liege_has_loyalty_hook.tt.has_trait.disloyal
+			scope:secondary_recipient = { has_trait = disloyal }
+		}
+		### +++ Ambitious.
+		modifier = {
+			add = diarch_ai_desire_plus_3_value
+			desc = diarch_coup_liege_interaction.tt.liege_has_loyalty_hook.tt.has_trait.ambitious
+			scope:secondary_recipient = { has_trait = ambitious }
+		}
+		### ++ Arbitrary.
+		modifier = {
+			add = diarch_ai_desire_plus_2_value
+			desc = diarch_coup_liege_interaction.tt.liege_has_loyalty_hook.tt.has_trait.arbitrary
+			scope:secondary_recipient = { has_trait = arbitrary }
+		}
+		### + Fickle.
+		modifier = {
+			add = diarch_ai_desire_plus_1_value
+			desc = diarch_coup_liege_interaction.tt.liege_has_loyalty_hook.tt.has_trait.fickle
+			scope:secondary_recipient = { has_trait = fickle }
+		}
+		### - Stubborn.
+		modifier = {
+			add = diarch_ai_desire_minus_1_value
+			desc = diarch_coup_liege_interaction.tt.liege_has_loyalty_hook.tt.has_trait.stubborn
+			scope:secondary_recipient = { has_trait = stubborn }
+		}
+		### -- Just.
+		modifier = {
+			add = diarch_ai_desire_minus_2_value
+			desc = diarch_coup_liege_interaction.tt.liege_has_loyalty_hook.tt.has_trait.just
+			scope:secondary_recipient = { has_trait = just }
+		}
+		### --- Content.
+		modifier = {
+			add = diarch_ai_desire_minus_3_value
+			desc = diarch_coup_liege_interaction.tt.liege_has_loyalty_hook.tt.has_trait.content
+			scope:secondary_recipient = { has_trait = content }
+		}
+		### --- Loyal.
+		modifier = {
+			add = diarch_ai_desire_minus_3_value
+			desc = diarch_coup_liege_interaction.tt.liege_has_loyalty_hook.tt.has_trait.loyal
+			scope:secondary_recipient = { has_trait = loyal }
+		}
+		# Hooks.
+		## Weak hooks are happy to have you in power.
+		modifier = {
+			add = 25
+			scope:secondary_recipient = { has_weak_hook = scope:actor }
+		}
+		## Strong hooks are *very* happy to have you in power.
+		modifier = {
+			add = 75
+			scope:secondary_recipient = { has_strong_hook = scope:actor }
+		}
+		## And conversely, don't want you to coup scope:recipient if they've already got a strong hook on them.
+		modifier = {
+			add = -100
+			scope:secondary_recipient = { has_strong_hook = scope:recipient }
+		}
+		## Loyalty hooks stop the AI signing up.
+		modifier = {
+			add = -1000
+			desc = diarch_coup_liege_interaction.tt.liege_has_loyalty_hook
+			diarch_loyalty_due_to_hook_trigger = {
+				LIEGE = scope:recipient
+				DIARCH = scope:secondary_recipient
+			}
+		}
+		# Various.
+		## Scope:secondary_recipient generally doesn't want to betray an ally.
+		modifier = {
+			add = {
+				value = -100
+				# Reduce the malus a little if also allied to scope:actor.
+				if = {
+					limit = {
+						scope:secondary_recipient = { is_allied_to = scope:actor }
+					}
+					add = 50
+				}
+			}
+			scope:secondary_recipient = { is_allied_to = scope:recipient }
+		}
+		# Promises.
+		## Strong hook.
+		modifier = {
+			add = {
+				value = 50
+				# Multiply this...
+				## ... down for folks who wouldn't care...
+				if = {
+					limit = { has_trait = honest }
+					multiply = 0.5
+				}
+				## ... & and up for those who would.
+				if = {
+					limit = { has_trait = deceitful }
+					multiply = 2
+				}
+			}
+			desc = diarch_coup_liege_interaction.tt.wants_strong_hook
+			scope:promise_hook_strong = yes
+		}
+		## Lotsa gold.
+		modifier = {
+			add = {
+				value = 50
+				# Multiply this...
+				## ... down for folks who wouldn't care...
+				if = {
+					limit = { has_trait = generous }
+					multiply = 0.5
+				}
+				## ... & and up for those who would.
+				if = {
+					limit = { has_trait = greedy }
+					multiply = 2
+				}
+			}
+			desc = diarch_coup_liege_interaction.tt.wants_strong_gold
+			scope:promise_gold_large = yes
+		}
+		#AGOT Specific
+		modifier = {
+			scope:secondary_recipient = {
+				ai_rationality >= 25
+			}
+			desc = norvos_diarch_coup_liege_interaction.tt.has_eroded_bp_power
+			add = 33
+		}
+		modifier = {
+			scope:promise_nothing = yes
+			desc = norvos_diarch_coup_liege_interaction.tt.promising_nothing
+			add = -75
+		}
+	}
+
+	# AI
+	## The AI doesn't use this interaction automatically - they try it manually upon hitting the required threshold.
+}
+
+sell_extra_son_into_norvos_priesthood_interaction = {
+	interface_priority = 100
+	common_interaction = yes
+	category = interaction_category_hostile
+	icon = icon_gold
+
+	desc = sell_extra_son_into_norvos_priesthood_interaction_desc
+
+	is_shown = {
+		exists = title:d_norvos_high_priesthood.holder
+		scope:recipient = {
+			is_male = yes
+			faith = faith:fc_pan_bearded
+			is_close_or_extended_family_of = scope:actor
+			is_courtier_of = scope:actor
+			age >= 12
+			age < 16
+			NOT = {
+				any_heir_title = { # They only want extra sons
+					exists = this
+					place_in_line_of_succession = {
+						target = scope:recipient
+						value <= 3
+					}
+				}
+			}
+		}
+		scope:actor = {
+			faith = faith:fc_pan_bearded
+			OR = {
+				has_realm_law = slavery_allowed_law
+				is_landless_adventurer = yes
+				government_has_flag = government_is_pirate
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:recipient = { NOT = { has_strong_hook = scope:actor } }
+	}
+
+	cost = {
+		prestige = 700
+		renown = {
+			value = {
+				if = {
+					limit = {
+						exists = scope:actor.dynasty
+						scope:recipient.dynasty ?= scope:actor.dynasty
+						scope:actor = {
+							is_dynast = yes
+						}
+					}
+					add = medium_dynasty_prestige_value
+				}
+			}
+		}
+	}
+	cooldown = {
+		years = 1
+	}
+
+	on_accept = {
+		title:d_norvos_high_priesthood.holder = {
+			save_scope_as = grandmaster
+		}
+		scope:recipient = {
+			send_child_to_holy_order_effect = {
+				GRANDMASTER = grandmaster
+			}
+			add_opinion = {
+				target = scope:actor
+				modifier = sold_me_to_the_bearded_priests_opinion
+			}
+			every_close_family_member = {
+				limit = {
+					NOR = {
+						this = scope:actor
+						has_relation_rival = scope:recipient
+						has_relation_nemesis = scope:recipient
+						has_relation_grudge = scope:recipient
+						has_trait = sadistic
+					}
+				}
+				add_opinion = {
+					target = scope:actor
+					modifier = sold_close_family
+				}
+			}
+		}
+		scope:actor = {
+			add_gold = {
+				value = scope:recipient.individual_recruit_guest_interaction_cost
+				multiply = 3
+				divide = 1.25
+			}
+			add_piety = major_piety_value
+			change_influence = {
+				value = minor_influence_gain
+				multiply = scope:actor.primary_title.tier
+			}
+			if = {
+				limit = {
+					OR = {
+						is_landless_adventurer = yes
+						government_has_flag = government_is_pirate
+					}
+				}
+				add_trait = slave_master
+			}
+		}
+	}
+	auto_accept = yes
+
+	ai_targets = {
+		ai_recipients = children
+		ai_recipients = family
+		ai_recipients = courtiers
+		max = 10
+	}
+
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 24
+		duchy = 24
+		kingdom = 24
+		empire = 24
+		hegemony = 24
+	}
+
+	ai_potential = {
+		is_at_war = no
+	}
+
+	ai_will_do = {
+		base = 0
+
+		opinion_modifier = {
+			trigger = {
+				NOT = { scope:actor = scope:recipient }
+			}
+			opinion_target = scope:recipient
+			multiplier = -1
+		}
+
+		ai_value_modifier = {
+			ai_compassion = -1
+		}
+		ai_value_modifier = {
+			ai_greed = 1
+		}
+		ai_value_modifier = {
+			ai_zeal = 1
+		}
+		modifier = {
+			add = -20
+			ai_compassion >= low_positive_ai_value
+		}
+		modifier = {
+			add = 50
+			has_execute_reason = scope:recipient
+			OR = {
+				has_trait = sadistic
+				has_trait = lunatic
+			}
+		}
+		modifier = {
+			add = 20
+			scope:actor = {
+				has_execute_reason = scope:recipient
+				ai_vengefulness >= medium_positive_ai_value
+				OR = {
+					has_relation_rival = scope:recipient # Execute rivals
+					has_relation_nemesis = scope:recipient # Execute rivals
+				}
+			}
+		}
+		modifier = {
+			add = 35
+			scope:actor = {
+				ai_vengefulness >= very_high_positive_ai_value
+				OR = {
+					has_relation_rival = scope:recipient # Execute rivals
+					has_relation_nemesis = scope:recipient # Execute rivals
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			NOT = {
+				has_trait = slave_master
+			}
+			ai_compassion >= low_positive_ai_value
+		}
+	}
+}
+
+donate_support_to_bearded_priests_interaction = {
+	icon = religious
+	category = interaction_category_religion
+
+	desc = donate_support_to_bearded_priests_interaction_desc
+	filter_tags = { ceremonial_liege } # Not DLC locked, but added to the filter for convenience
+
+	is_shown = {
+		norvos_are_the_bearded_priests_the_real_power_trigger = yes
+		scope:recipient != scope:actor
+		scope:actor.faith = {
+			this = faith:fc_pan_bearded
+			religious_head = scope:recipient
+		}
+		scope:actor = { is_human = yes }
+		scope:recipient = { is_human = yes }
+	}
+
+	cooldown = { years = 3 }
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			gold >= seek_indulgences_buy_piety_value
+			NOT = {
+				is_at_war_with = scope:recipient
+			}
+		}
+	}
+
+	ai_accept = {
+		base = 25
+
+		opinion_modifier = {
+			opinion_target = scope:actor
+			who = scope:recipient
+			multiplier = 1
+		}
+	}
+
+	ai_min_reply_days = 1
+	ai_max_reply_days = 5
+
+	on_accept = {
+		scope:actor = {
+			send_interface_toast = {
+				title = donate_support_to_bearded_priests_interaction_accept_notification
+				left_icon = scope:actor
+				right_icon = scope:recipient
+				pay_short_term_gold = {
+					gold = seek_indulgences_buy_piety_value
+					target = scope:recipient
+				}
+				add_piety = major_piety_gain
+			}
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			send_interface_toast = {
+				title = donate_support_to_bearded_priests_interaction_decline_notification
+				left_icon = scope:actor
+				right_icon = scope:recipient
+				scope:recipient = {
+					add_opinion = {
+						target = scope:actor
+						modifier = annoyed_opinion
+						opinion = -15
+					}
+				}
+				add_prestige = minor_prestige_loss
+			}
+		}
+	}
+
+	ai_potential = {
+		short_term_gold >= head_of_faith_gold_value
+		NOT = {
+			has_trait = cynical
+		}
+	}
+
+	ai_targets = {
+		ai_recipients = head_of_faith
+	}
+
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 24
+		duchy = 24
+		kingdom = 24
+		empire = 36
+		hegemony = 36
+	}
+
+	ai_will_do = {
+		base = -25
+
+		ai_value_modifier = { # +50 to -50
+			who = scope:actor
+			ai_zeal = 0.5
+		}
+
+		modifier = {
+			add = 50
+			scope:actor = {
+				piety < 0
+			}
+		}
+
+		modifier = {
+			add = 75
+			scope:actor = {
+				piety_level < 0
+			}
+		}
+
+		modifier = {
+			add = 50
+			scope:actor = {
+				piety < major_piety_value
+				short_term_gold >= head_of_faith_gold_value
+				short_term_gold >= monumental_gold_value
+			}
+		}
+
+		modifier = {
+			add = -25
+			scope:actor = {
+				piety > major_piety_value
+			}
+		}
+	}
+}
+
+# Bless Political Scheming
+request_political_scheming_support_from_bearded_priests = {
+	category = interaction_category_succession
+	icon = religious
+	common_interaction = no
+	interface_priority = 175
+	filter_tags = { ceremonial_liege }
+
+	desc = request_political_scheming_support_from_bearded_priests_desc
+
+	is_shown = {
+		norvos_ceremonial_monarch_trigger_check = yes
+		scope:actor = {
+			is_human = yes
+		}
+		scope:recipient = {
+			is_human = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_adult = yes
+			is_imprisoned = no
+			is_landed_or_landless_administrative = yes
+			NOT = {
+				has_character_modifier = political_schemes_blessed_by_bearded_priests
+			}
+			NOT = {
+				has_character_modifier = disfavored_by_bearded_priests_modifier
+			}
+		}
+	}
+
+	can_send = {
+		trigger_if = {
+			limit = { scope:hook = no }
+			scope:actor = {
+				influence >= minor_influence_value
+				piety >= minor_piety_value
+			}
+		}
+	}
+
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = GENERIC_SPEND_A_HOOK
+	}
+
+	should_use_extra_icon = {
+		scope:actor = { has_usable_hook = scope:recipient }
+	}
+
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	send_options_exclusive = no
+
+	on_accept = {
+		scope:actor = {
+			add_character_modifier = {
+				modifier = political_schemes_blessed_by_bearded_priests
+				years = 10
+			}
+			add_piety = minor_piety_loss
+			change_influence = minor_influence_loss
+		}
+	}
+
+	auto_accept = {
+		custom_description = {
+			text = "spending_hook"
+			subject = scope:actor
+			object = scope:recipient
+			scope:hook = yes
+			scope:recipient = { is_ai = yes }
+		}
+	}
+
+	ai_accept = {
+		base = 10
+		opinion_modifier = {
+			opinion_target = scope:actor
+			who = scope:recipient
+			multiplier = 1
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+		ai_value_modifier = {
+			ai_boldness = 0.75
+			ai_zeal = 0.75
+		}
+	}
+
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 48
+		duchy = 48
+		kingdom = 48
+		empire = 48
+		hegemony = 48
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_norvos
+	}
+
+	ai_targets = {
+		ai_recipients = head_of_faith
+		max = 1
+	}
+}
+
+ask_bearded_priests_for_boost_efficiency_interaction = {
+	category = interaction_category_succession
+	desc = ask_bearded_priests_for_boost_efficiency_interaction_desc
+	filter_tags = { ceremonial_liege }
+	icon = icon_boost_efficiency
+	interface_priority = 19
+	common_interaction = no
+
+	ai_targets = {
+		ai_recipients = head_of_faith
+		max = 1
+	}
+
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 72
+		duchy = 36
+		kingdom = 36
+		empire = 36
+		hegemony = 36
+	}
+	is_shown = {
+		norvos_ceremonial_monarch_trigger_check = yes
+		scope:actor = {
+			is_human = yes
+		}
+		scope:recipient = {
+			is_human = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_adult = yes
+			NOT = { is_at_war_with = scope:recipient }
+			NOT = {
+				has_character_modifier = disfavored_by_bearded_priests_modifier
+			}
+		}
+		custom_tooltip = {
+			text = boost_efficiency_interaction_too_high_tt
+			scope:recipient.governor_efficiency_presented <= boost_efficiency_maximum_value
+		}
+		custom_tooltip = {
+			text = ask_bearded_priests_efficiency_interaction_cooldown_tt
+			scope:actor = {
+				NOT = {
+					is_target_in_variable_list = {
+						name = efficiency_boosters
+						target = scope:recipient
+					}
+				}
+			}
+		}
+	}
+
+	can_send = {
+		custom_tooltip = {
+			text = boost_efficiency_interaction_too_high_tt
+			scope:recipient.governor_efficiency_presented <= boost_efficiency_maximum_value
+		}
+		custom_tooltip = {
+			text = efficiency_interaction_cooldown_tt
+			scope:actor = {
+				NOT = {
+					is_target_in_variable_list = {
+						name = efficiency_boosters
+						target = scope:recipient
+					}
+				}
+			}
+		}
+	}
+
+	cost = {
+		influence = {
+			value = {
+				value = medium_influence_value
+				add = 25
+				desc = BASE
+			}
+		}
+		piety = {
+			value = medium_piety_value
+			add = 25
+			desc = BASE
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = boost_efficiency_success_desc
+				left_icon = scope:recipient
+				if = {
+					limit = { has_character_modifier = ep3_damage_efficiency_modifier }
+					remove_character_modifier = ep3_damage_efficiency_modifier
+					if = {
+						limit = { var:ep3_governor_efficiency_stack = 1 }
+						remove_variable = ep3_governor_efficiency_stack
+					}
+					else = {
+						change_variable = {
+							name = ep3_governor_efficiency_stack
+							add = -1
+						}
+					}
+				}
+				else = {
+					add_character_modifier = {
+						modifier = ep3_boost_efficiency_modifier
+						years = 10
+					}
+					if = {
+						limit = { has_variable = ep3_governor_efficiency_stack }
+						set_variable = {
+							name = ep3_governor_efficiency_stack
+							value = {
+								value = scope:recipient.var:ep3_governor_efficiency_stack
+								add = 1
+								max = 5
+							}
+							years = 10
+						}
+					}
+					else = {
+						set_variable = {
+							name = ep3_governor_efficiency_stack
+							value = 1
+							years = 10
+						}
+					}
+				}
+			}
+			add_to_variable_list = {
+				name = efficiency_boosters
+				target = scope:recipient
+				years = 5
+			}
+		}
+	}
+
+	ai_potential = {
+		government_has_flag = government_is_norvos
+	}
+
+	ai_will_do = {
+		base = 10
+		ai_value_modifier = {
+			ai_boldness = 0.75
+			ai_zeal = 0.75
+		}
+	}
+
+	ai_accept = {
+		base = -10
+		modifier = { # Boost house members
+			scope:recipient.house ?= scope:actor.house
+			add = 10
+		}
+		modifier = { # Boost family
+			scope:recipient = { is_close_family_of = scope:actor }
+			add = 10
+		}
+		modifier = { # Boost friends
+			scope:actor = { has_relation_friend = scope:recipient }
+			add = 10
+		}
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 0.25
+		}
+		ai_value_modifier = {
+			who = scope:actor
+			ai_zeal = 0.75
+		}
+	}
+}

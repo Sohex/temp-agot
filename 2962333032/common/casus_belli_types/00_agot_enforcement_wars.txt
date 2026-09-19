@@ -1,0 +1,342 @@
+﻿agot_bastard_enforcement_war = {
+	group = civil_war
+	ai_only_against_liege = no
+	target_titles = all
+
+	allowed_against_character = {
+		# This is a scripted war - not needed
+	}
+
+	valid_to_start = {
+		always = no
+	}
+
+	should_invalidate = {
+		OR = {
+			NAND = {
+				exists = claimant
+				claimant = { is_alive = yes }
+			}
+			NOT = { exists = title:h_the_iron_throne.holder }
+		}
+	}
+
+	on_invalidated_desc = agot_bastard_enforcement_war_invalid
+
+	on_invalidated = {
+		if = {
+			limit = { exists = claimant }
+			claimant = {
+				remove_variable = enforcement_demand
+				remove_character_flag = awaiting_bastardry_result
+			}
+		}
+	}
+
+	on_victory_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = claimant
+					claimant = { var:enforcement_demand = flag:execute_both }
+				}
+				desc = agot_bastard_enforcement_war_victory_execute_both
+			}
+			triggered_desc = {
+				trigger = {
+					exists = claimant
+					claimant = { var:enforcement_demand = flag:execute_bastard }
+				}
+				desc = agot_bastard_enforcement_war_victory_execute_bastard
+			}
+			triggered_desc = {
+				trigger = {
+					exists = claimant
+					claimant = { var:enforcement_demand = flag:send_to_order }
+				}
+				desc = agot_bastard_enforcement_war_victory_send_to_order
+			}
+			triggered_desc = {
+				trigger = {
+					exists = claimant
+					claimant = { var:enforcement_demand = flag:bring_to_court }
+				}
+				desc = agot_bastard_enforcement_war_victory_bring_to_court
+			}
+			triggered_desc = {
+				trigger = {
+					exists = claimant
+					claimant = { var:enforcement_demand = flag:give_up_claims }
+				}
+				desc = agot_bastard_enforcement_war_victory_give_up_claims
+			}
+			desc = agot_bastard_enforcement_war_victory
+		}
+	}
+
+	on_victory = { # Crown wins - enforce the demand
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		hidden_effect = {
+			scope:attacker = {
+				add_prestige = 500
+				add_dread = medium_dread_gain
+				add_truce_both_ways = {
+					character = scope:defender
+					days = 1825
+					war = root.war
+					result = victory
+				}
+			}
+		}
+
+		# Imprison defender, claimant, and allies
+		if = {
+			limit = { exists = claimant }
+			claimant = {
+				save_scope_as = claimant
+			}
+		}
+		# Imprison defender (visible unless execute_both)
+		if = {
+			limit = {
+				exists = claimant
+				claimant = { var:enforcement_demand = flag:execute_both }
+			}
+			hidden_effect = {
+				scope:defender = {
+					if = {
+						limit = { is_imprisoned = no }
+						hard_imprison_character_effect = {
+							TARGET = this
+							IMPRISONER = scope:attacker
+						}
+					}
+				}
+			}
+		}
+		else = {
+			scope:defender = {
+				if = {
+					limit = { is_imprisoned = no }
+					hard_imprison_character_effect = {
+						TARGET = this
+						IMPRISONER = scope:attacker
+					}
+				}
+			}
+		}
+		# Imprison claimant (hidden for execute demands since they'll be dead)
+		if = {
+			limit = {
+				exists = claimant
+				OR = {
+					claimant = { var:enforcement_demand = flag:execute_both }
+					claimant = { var:enforcement_demand = flag:execute_bastard }
+				}
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						exists = scope:claimant
+						scope:claimant = {
+							is_imprisoned = no
+							NOT = { this = scope:defender }
+						}
+					}
+					scope:claimant = {
+						hard_imprison_character_effect = {
+							TARGET = this
+							IMPRISONER = scope:attacker
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:claimant
+				scope:claimant = {
+					is_imprisoned = no
+					NOT = { this = scope:defender }
+				}
+			}
+			scope:claimant = {
+				hard_imprison_character_effect = {
+					TARGET = this
+					IMPRISONER = scope:attacker
+				}
+			}
+		}
+		# Imprison allied defenders (excluding primary defender, already handled)
+		every_in_list = {
+			list = defenders
+			limit = {
+				is_imprisoned = no
+				NOT = { this = scope:defender }
+			}
+			hard_imprison_character_effect = {
+				TARGET = this
+				IMPRISONER = scope:attacker
+			}
+		}
+
+		# Trigger enforcement resolution event
+		scope:defender = { save_scope_as = defender }
+		scope:attacker = {
+			trigger_event = {
+				id = agot_events_bastard.0998
+				days = 1
+			}
+		}
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		desc = agot_bastard_enforcement_war_white_peace
+	}
+
+	on_white_peace = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		scope:attacker = {
+			add_prestige = -100
+			stress_impact = {
+				ambitious = medium_stress_impact_gain
+				arrogant = medium_stress_impact_gain
+			}
+		}
+
+		scope:defender = {
+			add_prestige = 150
+		}
+
+		if = {
+			limit = { exists = claimant }
+			claimant = {
+				save_scope_as = claimant
+				remove_variable = enforcement_demand
+				remove_character_flag = awaiting_bastardry_result
+			}
+		}
+
+		hidden_effect = {
+			scope:attacker = {
+				add_truce_both_ways = {
+					character = scope:defender
+					days = 1825
+					war = root.war
+					result = white_peace
+				}
+			}
+		}
+	}
+
+	on_defeat_desc = {
+		desc = agot_bastard_enforcement_war_defeat
+	}
+
+	on_defeat = { # Crown loses - bastard goes free
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		# Gold reparations from crown to defender
+		scope:attacker = {
+			pay_short_term_gold_reparations_effect = {
+				GOLD_VALUE = 3
+			}
+			add_prestige = {
+				value = major_prestige_value
+				multiply = -1.0
+			}
+		}
+
+		scope:defender = {
+			add_prestige = 500
+		}
+
+		if = {
+			limit = { exists = claimant }
+			claimant = {
+				save_scope_as = claimant
+			}
+		}
+
+		# Ward grateful to defender for protecting them
+		if = {
+			limit = {
+				exists = scope:claimant
+				NOT = { scope:claimant = scope:defender }
+			}
+			scope:claimant = {
+				add_opinion = {
+					target = scope:defender
+					modifier = grateful_opinion
+					opinion = 30
+				}
+			}
+			if = {
+				limit = {
+					scope:defender = {
+						can_add_hook = {
+							type = favor_hook
+							target = scope:claimant
+						}
+					}
+				}
+				scope:defender = {
+					add_hook = {
+						type = favor_hook
+						target = scope:claimant
+					}
+				}
+			}
+		}
+
+		# Trigger defender victory event
+		scope:defender = {
+			trigger_event = {
+				id = agot_events_bastard.0999
+				days = 1
+			}
+		}
+
+		hidden_effect = {
+			scope:attacker = {
+				add_truce_both_ways = {
+					character = scope:defender
+					days = 1825
+					war = root.war
+					result = defeat
+				}
+			}
+		}
+	}
+
+	check_attacker_inheritance_validity = no
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	transfer_behavior = transfer
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = "agot_bastard_enforcement_war_name"
+
+	interface_priority = 80
+
+	attacker_capital_gives_war_score = no
+	defender_capital_gives_war_score = yes # Defender gains ticking warscore from holding their own capital
+	ticking_war_score_targets_entire_realm = no
+
+	attacker_ticking_warscore = 0
+	defender_ticking_warscore = 0.1
+	defender_ticking_warscore_delay = { months = 6 }
+
+	max_attacker_score_from_battles = 50
+	max_defender_score_from_battles = 100
+
+	max_ai_diplo_distance_to_title = 500
+}

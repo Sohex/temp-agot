@@ -1,0 +1,151 @@
+﻿namespace = agot_dragon_death
+
+# My dragon died - delayed event
+agot_dragon_death.0001 = {
+	type = character_event
+	title = agot_dragon.0018.t
+	desc = agot_dragon.0018.desc
+	theme = dragon
+	right_portrait = {
+		character = root
+		animation = grief
+	}
+	lower_center_portrait = {
+		character = scope:dead_dragon
+		camera = camera_dragon_head
+	}
+
+	immediate = {
+		random_list = {
+			20 = { }
+			0 = {
+				modifier = {
+					has_trait_xp = {
+						trait = dragonrider
+						track = dragon_bond
+						value >= 30
+					}
+					add = 10
+				}
+				modifier = {
+					has_trait_xp = {
+						trait = dragonrider
+						track = dragon_bond
+						value >= 65
+					}
+					add = 10
+				}
+				modifier = {
+					has_trait_xp = {
+						trait = dragonrider
+						track = dragon_bond
+						value >= 100
+					}
+					add = 20
+				}
+				modifier = {
+					ai_compassion >= medium_positive_ai_value
+					factor = 2
+				}
+				modifier = {
+					has_trait = ambitious
+					factor = 0.5
+				}
+				modifier = {
+					has_trait = callous
+					factor = 0
+				}
+				save_scope_as = dragonwidowed
+			}
+		}
+		scope:dead_dragon = {
+			if = {
+				limit = {
+					exists = killer
+				}
+				killer = { save_scope_as = dragon_killer }
+			}
+		}
+		# I understand how barbaric this looks, it makes the loc prettier
+		if = {
+			limit = {
+				exists = scope:dragon_killer
+			}
+			agot_create_artifact_dragon_skull_effect = {
+				OWNER = root
+				DRAGON = scope:dead_dragon
+				KILLER = scope:dragon_killer
+			}
+		}
+		else = {
+			agot_create_artifact_dragon_skull_effect = {
+				OWNER = root
+				DRAGON = scope:dead_dragon
+				KILLER = scope:dragon
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon.0018.a
+		trigger = {
+			NOT = { exists = scope:dragonwidowed }
+		}
+
+		if = {
+			limit = {
+				NOT = { has_character_flag = dragon_by_horn }
+			}
+			if = {
+				limit = { has_trait = dragonrider }
+				remove_trait = dragonrider
+				add_trait = dragonless_dragonrider
+			}
+		}
+		else = {
+			remove_character_flag = dragon_by_horn
+		}
+	}
+
+	option = {
+		name = agot_dragon.0018.b
+		trigger = {
+			exists = scope:dragonwidowed
+		}
+
+		if = {
+			limit = {
+				NOT = { has_character_flag = dragon_by_horn }
+			}
+			if = {
+				limit = { has_trait = dragonrider }
+				remove_trait = dragonrider
+				add_trait = dragonwidowed
+			}
+		}
+		else = {
+			remove_character_flag = dragon_by_horn
+		}
+	}
+}
+
+# My rider died
+agot_dragon_death.0002 = {
+	hidden = yes
+	trigger = {
+		exists = var:current_dragon
+		has_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value >= 75
+		}
+	}
+	immediate = {
+		random_list = {
+			9 = {}
+			1 = {
+				var:current_dragon = { add_trait = dragon_depressed }
+			}
+		}
+	}
+}

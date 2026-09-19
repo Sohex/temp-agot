@@ -1,0 +1,2497 @@
+﻿#############################
+# DRAGON DUELS
+#############################
+
+configure_start_dragon_combat_effect = {
+	# DOCUMENTATION
+	## scope:dsc_initiator
+		### Who started the combat? This is who the output/invalidation events will fire for.
+	## scope:dsc_attacker
+		### The attacking party.
+	## scope:dsc_defender
+		### The defending party.
+
+	#Sort parties.
+	$DSC_INITIATOR$ = { save_scope_as = dsc_initiator }
+	$DSC_ATTACKER$ = { save_scope_as = dsc_attacker }
+	$DSC_DEFENDER$ = { save_scope_as = dsc_defender }
+	scope:dsc_attacker.var:current_dragon = { save_scope_as = dsc_attacker_dragon }
+	scope:dsc_defender.var:current_dragon = { save_scope_as = dsc_defender_dragon }
+	#Make sure they're clean for setup.
+	hidden_effect = { remove_dragon_combat_info_effect = yes }
+	#Set them both to busy for the single combat.
+	scope:dsc_attacker = {
+		set_variable = { # No simultanious vanilla combat
+			name = engaged_in_single_combat
+			value = yes
+		}
+		set_variable = { # Or simultanious dragon combat
+			name = engaged_in_dragon_combat
+			value = yes
+		}
+	}
+	scope:dsc_defender = {
+		set_variable = { # No simultanious vanilla combat
+			name = engaged_in_single_combat
+			value = yes
+		}
+		set_variable = { # Or simultanious dragon combat
+			name = engaged_in_dragon_combat
+			value = yes
+		}
+	}
+	#Configure starting bonus/threshold variables.
+	scope:dsc_attacker = {
+		set_variable = {
+			name = dsc_chance_of_winning
+			value = 50
+		}
+	}
+	scope:dsc_defender = {
+		set_variable = {
+			name = dsc_chance_of_winning
+			value = 50
+		}
+	}
+	#Configure starting round variables.
+	scope:dsc_defender = {
+		# Set up the combat rounds.
+		set_variable = {
+			name = dragon_combat_current_round
+			value = 1
+		}
+	}
+	#Finally, send the first event.
+	scope:dsc_defender = { trigger_event = agot_dragon_combat.1001 }
+}
+
+####
+# Move selections
+####
+# Select a single tier 1 combat move from the list.
+select_dragon_tier_1_move_effect = {
+	random_list = {
+		#Ordinary moves.
+		70 = {
+			random_list = {
+				# Wait and Hope
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_wait_and_hope_flag }
+						#Fallback, always available.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_wait_and_hope_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_wait_and_hope
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_wait_and_hope
+							}
+						}
+					}
+				}
+				# Unsure Attack
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_unsure_attack_flag }
+						#Fallback, always available.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_unsure_attack_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_unsure_attack
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_unsure_attack
+							}
+						}
+					}
+				}
+				# Enthusiastic Onslaught
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_enthusiastic_onslaught_flag }
+						#Fallback, always available.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_enthusiastic_onslaught_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_enthusiastic_onslaught
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_enthusiastic_onslaught
+							}
+						}
+					}
+				}
+				# Underbelly
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_underbelly_flag }
+						#No special requirements.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_underbelly_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_underbelly
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_underbelly
+							}
+						}
+					}
+				}
+				# Tail smash
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_tail_smash_flag }
+						#No special requirements.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_tail_smash_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_tail_smash
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_tail_smash
+							}
+						}
+					}
+				}
+			}
+		}
+		#Special moves.
+		30 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_special_slot_used_flag }
+			}
+			select_special_dragon_tier_move_effect = yes
+		}
+	}
+}
+
+# Select a single tier 2 combat move from the list.
+select_dragon_tier_2_move_effect = {
+	random_list = {
+		#Ordinary moves.
+		70 = {
+			random_list = {
+				# Guard
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_guard_flag }
+						#Fallback, always available.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_guard_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_guard
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_guard
+							}
+						}
+					}
+				}
+				# Probing Attack
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_probing_attack_flag }
+						#Fallback, always available.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_probing_attack_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_probing_attack
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_probing_attack
+							}
+						}
+					}
+				}
+				# Onslaught
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_onslaught_flag }
+						#Fallback, always available.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_onslaught_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_onslaught
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_onslaught
+							}
+						}
+					}
+				}
+				# Surprise Attack
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_surprise_attack_flag }
+						OR = {
+							AND = {
+								this = scope:dsc_attacker
+								scope:dsc_defender = {
+									NOT = { has_trait = paranoid }
+								}
+							}
+							AND = {
+								this = scope:dsc_defender
+								scope:dsc_attacker = {
+									NOT = { has_trait = paranoid }
+								}
+							}
+						}
+					}
+					set_local_variable = {
+						name = dragon_combat_move_surprise_attack_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_surprise_attack
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_surprise_attack
+							}
+						}
+					}
+				}
+				# Taunt
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_taunt_flag }
+						OR = {
+							AND = {
+								this = scope:dsc_attacker
+								scope:dsc_defender = {
+									is_ai = yes
+									NOT = { has_trait = calm }
+								}
+							}
+							AND = {
+								this = scope:dsc_defender
+								scope:dsc_attacker = {
+									is_ai = yes
+									NOT = { has_trait = calm }
+								}
+							}
+						}
+					}
+					set_local_variable = {
+						name = dragon_combat_move_taunt_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_taunt
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_taunt
+							}
+						}
+					}
+				}
+				# Go for the gonads
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_go_for_the_gonads_flag }
+						#No special requirements.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_go_for_the_gonads_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_go_for_the_gonads
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_go_for_the_gonads
+							}
+						}
+					}
+				}
+			}
+		}
+		#Special moves.
+		30 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_special_slot_used_flag }
+			}
+			select_special_dragon_tier_move_effect = yes
+		}
+	}
+}
+
+# Select a single tier 3 combat move from the list.
+select_dragon_tier_3_move_effect = {
+	random_list = {
+		#Ordinary moves.
+		70 = {
+			random_list = {
+				# Strict Guard
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_strict_guard_flag }
+						#Fallback, always available.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_strict_guard_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_strict_guard
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_strict_guard
+							}
+						}
+					}
+				}
+				# Confident Attack
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_confident_attack_flag }
+						#Fallback, always available.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_confident_attack_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_confident_attack
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_confident_attack
+							}
+						}
+					}
+				}
+				# Expert Onslaught
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_expert_onslaught_flag }
+						#Fallback, always available.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_expert_onslaught_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_expert_onslaught
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_expert_onslaught
+							}
+						}
+					}
+				}
+				# Lightning Assault
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_lightning_assault_flag }
+						scope:dsc_defender.var:dragon_combat_current_round = 1
+					}
+					set_local_variable = {
+						name = dragon_combat_move_lightning_assault_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_lightning_assault
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_lightning_assault
+							}
+						}
+					}
+				}
+				# Tire Opponent
+				1000 = {
+					trigger = {
+						NOT = { exists = local_var:dragon_combat_move_tire_opponent_flag }
+						#No special requirements.
+					}
+					set_local_variable = {
+						name = dragon_combat_move_tire_opponent_flag
+						value = yes
+					}
+					# Weight down repeat moves
+					modifier = {
+						add = sce_regular_combat_repeat_down_weight
+						OR = {
+							AND = {
+								exists = scope:dsc_defender_last_move
+								this = scope:dsc_defender
+								scope:dsc_defender_last_move = flag:dragon_tire_opponent
+							}
+							AND = {
+								exists = scope:dsc_attacker_last_move
+								this = scope:dsc_attacker
+								scope:dsc_attacker_last_move = flag:dragon_tire_opponent
+							}
+						}
+					}
+				}
+			}
+		}
+		#Special moves.
+		30 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_special_slot_used_flag }
+			}
+			select_special_dragon_tier_move_effect = yes
+		}
+	}
+}
+
+select_special_dragon_tier_move_effect = {
+	#First, we flag that the character now has a special move option.
+	set_local_variable = {
+		name = dragon_combat_move_special_slot_used_flag
+		value = yes
+	}
+	#Then, we pick which move they get.
+	random_list = {
+		# CHOMP - insta kill
+		9999 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_chomp_flag }
+				OR = {
+					AND = {
+						this = scope:dsc_attacker
+						can_dragon_chomp = {
+							CHOMPING_DRAGON = scope:dsc_attacker_dragon
+							CHOMPED_DRAGON = scope:dsc_defender_dragon
+						}
+					}
+					AND = {
+						this = scope:dsc_defender
+						can_dragon_chomp = {
+							CHOMPING_DRAGON = scope:dsc_defender_dragon
+							CHOMPED_DRAGON = scope:dsc_attacker_dragon
+						}
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_chomp_flag
+				value = yes
+			}
+		}
+		# High Secondary Skill moves
+		## Motivate dragon
+		1000 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_motivate_flag }
+				diplomacy >= very_high_skill_rating
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_motivate
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_motivate
+					}
+				}
+				# Dragon must be wounded
+				OR = {
+					AND = {
+						this = scope:dsc_attacker
+						scope:dsc_attacker_dragon = {
+							OR = {
+								has_trait = dragon_wounded_1
+								has_trait = dragon_wounded_2
+								has_trait = dragon_wounded_3
+								has_trait = dragon_wounded_4
+								has_trait = dragon_wounded_5
+							}
+						}
+					}
+					AND = {
+						this = scope:dsc_defender
+						scope:dsc_defender_dragon = {
+							OR = {
+								has_trait = dragon_wounded_1
+								has_trait = dragon_wounded_2
+								has_trait = dragon_wounded_3
+								has_trait = dragon_wounded_4
+								has_trait = dragon_wounded_5
+							}
+						}
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_motivate_flag
+				value = yes
+			}
+		}
+		## Technique from Legend
+		1000 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_technique_from_legend_flag }
+				learning >= very_high_skill_rating
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_technique_from_legend
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_technique_from_legend
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_technique_from_legend_flag
+				value = yes
+			}
+		}
+		## Like a Viper
+		1000 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_like_a_viper_flag }
+				intrigue >= very_high_skill_rating
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_like_a_viper
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_like_a_viper
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_like_a_viper_flag
+				value = yes
+			}
+		}
+		## Martial Voice
+		1000 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_martial_voice_flag }
+				martial >= very_high_skill_rating
+				# For now, the loc relies on your opponent being noble, so you ironically can't use your peasant-commanding voice on actual peasants.
+				OR = {
+					AND = {
+						this = scope:dsc_defender
+						scope:dsc_attacker = {
+							exists = house
+							NOR = {
+								has_trait = peasant_leader
+								government_has_flag = government_is_republic
+							}
+						}
+					}
+					AND = {
+						this = scope:dsc_attacker
+						scope:dsc_defender = {
+							exists = house
+							NOR = {
+								has_trait = peasant_leader
+								government_has_flag = government_is_republic
+							}
+						}
+					}
+				}
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_martial_voice
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_martial_voice
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_martial_voice_flag
+				value = yes
+			}
+		}
+		## Mocking Boast
+		1000 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_mocking_boast_flag }
+				OR = {
+					AND = {
+						this = scope:dsc_attacker
+						scope:dsc_attacker.prestige_level > scope:dsc_defender.prestige_level
+						# A humble opponent doesn't give two shits.
+						scope:dsc_defender = {
+							NOT = { has_trait = humble }
+						}
+					}
+					AND = {
+						this = scope:dsc_defender
+						scope:dsc_defender.prestige_level > scope:dsc_attacker.prestige_level
+						# A humble opponent doesn't give two shits.
+						scope:dsc_attacker = {
+							NOT = { has_trait = humble }
+						}
+					}
+				}
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_mocking_boast
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_mocking_boast
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_mocking_boast_flag
+				value = yes
+			}
+		}
+		# Location-Specific moves
+		## Desert Warrior
+		1500 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_desert_warrior_flag }
+				has_trait = desert_warrior
+				#Both characters being experts cancel each other out.
+				NAND = {
+					scope:dsc_attacker = { has_trait = desert_warrior }
+					scope:dsc_defender = { has_trait = desert_warrior }
+				}
+				scope:dsc_defender.location = {
+					OR = {
+						agot_is_desert_terrain = yes
+						agot_is_drylands_terrain = yes
+						agot_is_oasis_terrain = yes
+					}
+				}
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_desert_warrior
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_desert_warrior
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_desert_warrior_flag
+				value = yes
+			}
+		}
+		## Jungle Stalker
+		1500 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_jungle_stalker_flag }
+				has_trait = jungle_stalker
+				#Both characters being experts cancel each other out.
+				NAND = {
+					scope:dsc_attacker = { has_trait = jungle_stalker }
+					scope:dsc_defender = { has_trait = jungle_stalker }
+				}
+				scope:dsc_defender.location = {
+					agot_is_jungle_terrain = yes
+				}
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_jungle_stalker
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_jungle_stalker
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_jungle_stalker_flag
+				value = yes
+			}
+		}
+		## Open Terrain Expert
+		1500 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_open_terrain_expert_flag }
+				has_trait = open_terrain_expert
+				#Both characters being experts cancel each other out.
+				NAND = {
+					scope:dsc_attacker = { has_trait = open_terrain_expert }
+					scope:dsc_defender = { has_trait = open_terrain_expert }
+				}
+				scope:dsc_defender.location = {
+					OR = {
+						agot_is_farmlands_terrain = yes
+						agot_is_plains_terrain = yes
+						agot_is_steppe_terrain = yes
+					}
+				}
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_open_terrain_expert
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_open_terrain_expert
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_open_terrain_expert_flag
+				value = yes
+			}
+		}
+		## Rough Terrain Expert
+		1500 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_rough_terrain_expert_flag }
+				has_trait = rough_terrain_expert
+				#Both characters being experts cancel each other out.
+				NAND = {
+					scope:dsc_attacker = { has_trait = rough_terrain_expert }
+					scope:dsc_defender = { has_trait = rough_terrain_expert }
+				}
+				scope:dsc_defender.location = {
+					OR = {
+						agot_is_hills_terrain = yes
+						agot_is_mountains_terrain = yes
+						agot_is_desert_mountains_terrain = yes	#Technically a desert, but not for single combat purposes.
+						agot_is_wetlands_terrain = yes
+					}
+				}
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_rough_terrain_expert
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_rough_terrain_expert
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_rough_terrain_expert_flag
+				value = yes
+			}
+		}
+		## Forest Fighter
+		1500 = {
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_forest_fighter_flag }
+				has_trait = forest_fighter
+				#Both characters being experts cancel each other out.
+				NAND = {
+					scope:dsc_attacker = { has_trait = forest_fighter }
+					scope:dsc_defender = { has_trait = forest_fighter }
+				}
+				scope:dsc_defender.location = {
+					OR = {
+						agot_is_forest_terrain = yes
+						agot_is_taiga_terrain = yes
+					}
+				}
+				# Block special moves twice in a row.
+				NOR = {
+					AND = {
+						exists = scope:dsc_defender_last_move
+						this = scope:dsc_defender
+						scope:dsc_defender_last_move = flag:dragon_forest_fighter
+					}
+					AND = {
+						exists = scope:dsc_attacker_last_move
+						this = scope:dsc_attacker
+						scope:dsc_attacker_last_move = flag:dragon_forest_fighter
+					}
+				}
+			}
+			set_local_variable = {
+				name = dragon_combat_move_forest_fighter_flag
+				value = yes
+			}
+		}
+		# Trait-Specific moves
+		# TODO
+		# Misc moves
+		1 = {	#Fallback move; we don't really ever want to see this.
+			trigger = {
+				NOT = { exists = local_var:dragon_combat_move_special_fallback_flag }
+				#Fallback, always available.
+			}
+			set_local_variable = {
+				name = dragon_combat_move_special_fallback_flag
+				value = yes
+			}
+		}
+	}
+}
+
+# Selects the options for a combat
+select_dragon_combat_options_from_pool_effect = {
+	if = {
+		limit = { var:current_dragon.dragon_combat_effectiveness <= level_two_dragon_combat }
+		#low_drcp *always* draws x3 tier 1 moves.
+		set_variable = {
+			name = dsc_tier_1_counter
+			value = 3
+		}
+		set_variable = {
+			name = dsc_tier_2_counter
+			value = 0
+		}
+		set_variable = {
+			name = dsc_tier_3_counter
+			value = 0
+		}
+	}
+	## mediocre_drcp or below
+	else_if = {
+		limit = { var:current_dragon.dragon_combat_effectiveness <= level_three_dragon_combat }
+		random_list = {
+			#Bad roll, -1 to tier set.
+			50 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 3
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 0
+				}
+			}
+			#Average roll, default tier set.
+			50 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 2
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 0
+				}
+			}
+		}
+	}
+	## medium_drcp or below
+	else_if = {
+		limit = { var:current_dragon.dragon_combat_effectiveness <= level_four_dragon_combat }
+		random_list = {
+			#Bad roll, -1 to tier set.
+			33 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 3
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 0
+				}
+			}
+			#Average roll, default tier set.
+			34 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 2
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 0
+				}
+			}
+			#Good roll, +1 to tier set.
+			33 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 1
+				}
+			}
+		}
+	}
+	## decent_drcp or below
+	else_if = {
+		limit = { var:current_dragon.dragon_combat_effectiveness <= level_five_dragon_combat }
+		random_list = {
+			#Bad roll, -1 to tier set.
+			33 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 2
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 0
+				}
+			}
+			#Average roll, default tier set.
+			34 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 1
+				}
+			}
+			#Good roll, +1 to tier set.
+			33 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 2
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 1
+				}
+			}
+		}
+	}
+	## high_drcp or below
+	else_if = {
+		limit = { var:current_dragon.dragon_combat_effectiveness <= level_six_dragon_combat }
+		random_list = {
+			#Bad roll, -1 to tier set.
+			33 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 1
+				}
+			}
+			#Average roll, default tier set.
+			34 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 2
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 1
+				}
+			}
+			#Good roll, +1 to tier set.
+			33 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 2
+				}
+			}
+		}
+	}
+	## very_high_drcp or below
+	else_if = {
+		limit = { var:current_dragon.dragon_combat_effectiveness <= level_seven_dragon_combat }
+		random_list = {
+			#Bad roll, -1 to tier set.
+			33 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 2
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 1
+				}
+			}
+			#Average roll, default tier set.
+			34 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 2
+				}
+			}
+			#Good roll, +1 to tier set.
+			33 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 3
+				}
+			}
+		}
+	}
+	## extremely_high_drcp or below
+	else_if = {
+		limit = { var:current_dragon.dragon_combat_effectiveness <= level_eight_dragon_combat }
+		random_list = {
+			#Bad roll, -1 to tier set.
+			50 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 1
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 2
+				}
+			}
+			#Average roll, default tier set.
+			50 = {
+				set_variable = {
+					name = dsc_tier_1_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_2_counter
+					value = 0
+				}
+				set_variable = {
+					name = dsc_tier_3_counter
+					value = 3
+				}
+			}
+		}
+	}
+	## more than extremely_high_drcp
+	else = {
+		#Better than extremely_high_drcp always draws x3 tier 3 moves.
+		set_variable = {
+			name = dsc_tier_1_counter
+			value = 0
+		}
+		set_variable = {
+			name = dsc_tier_2_counter
+			value = 0
+		}
+		set_variable = {
+			name = dsc_tier_3_counter
+			value = 3
+		}
+	}
+
+	remove_dragon_combat_character_local_variables_effect = yes
+
+	if = {
+		limit = {
+			# Check that the variable exists; strictly unnecessary, but stops a false positive clogging the error log.
+			has_variable = dsc_tier_1_counter
+			var:dsc_tier_1_counter > 0
+		}
+		change_variable = {
+			name = dsc_tier_1_counter
+			add = -1
+		}
+		select_dragon_tier_1_move_effect = yes
+	}
+	if = {
+		limit = {
+			# Check that the variable exists; strictly unnecessary, but stops a false positive clogging the error log.
+			has_variable = dsc_tier_1_counter
+			var:dsc_tier_1_counter > 0
+		}
+		change_variable = {
+			name = dsc_tier_1_counter
+			add = -1
+		}
+		select_dragon_tier_1_move_effect = yes
+	}
+	if = {
+		limit = {
+			# Check that the variable exists; strictly unnecessary, but stops a false positive clogging the error log.
+			has_variable = dsc_tier_1_counter
+			var:dsc_tier_1_counter > 0
+		}
+		change_variable = {
+			name = dsc_tier_1_counter
+			add = -1
+		}
+		select_dragon_tier_1_move_effect = yes
+	}
+	## Tier 2
+	if = {
+		limit = {
+			# Check that the variable exists; strictly unnecessary, but stops a false positive clogging the error log.
+			has_variable = dsc_tier_2_counter
+			var:dsc_tier_2_counter > 0
+		}
+		change_variable = {
+			name = dsc_tier_2_counter
+			add = -1
+		}
+		select_dragon_tier_2_move_effect = yes
+	}
+	if = {
+		limit = {
+			# Check that the variable exists; strictly unnecessary, but stops a false positive clogging the error log.
+			has_variable = dsc_tier_2_counter
+			var:dsc_tier_2_counter > 0
+		}
+		change_variable = {
+			name = dsc_tier_2_counter
+			add = -1
+		}
+		select_dragon_tier_2_move_effect = yes
+	}
+	if = {
+		limit = {
+			# Check that the variable exists; strictly unnecessary, but stops a false positive clogging the error log.
+			has_variable = dsc_tier_2_counter
+			var:dsc_tier_2_counter > 0
+		}
+		change_variable = {
+			name = dsc_tier_2_counter
+			add = -1
+		}
+		select_dragon_tier_2_move_effect = yes
+	}
+	## Tier 3
+	if = {
+		limit = {
+			# Check that the variable exists; strictly unnecessary, but stops a false positive clogging the error log.
+			has_variable = dsc_tier_3_counter
+			var:dsc_tier_3_counter > 0
+		}
+		change_variable = {
+			name = dsc_tier_3_counter
+			add = -1
+		}
+		select_dragon_tier_3_move_effect = yes
+	}
+	if = {
+		limit = {
+			# Check that the variable exists; strictly unnecessary, but stops a false positive clogging the error log.
+			has_variable = dsc_tier_3_counter
+			var:dsc_tier_3_counter > 0
+		}
+		change_variable = {
+			name = dsc_tier_3_counter
+			add = -1
+		}
+		select_dragon_tier_3_move_effect = yes
+	}
+	if = {
+		limit = {
+			# Check that the variable exists; strictly unnecessary, but stops a false positive clogging the error log.
+			has_variable = dsc_tier_3_counter
+			var:dsc_tier_3_counter > 0
+		}
+		change_variable = {
+			name = dsc_tier_3_counter
+			add = -1
+		}
+		select_dragon_tier_3_move_effect = yes
+	}
+}
+
+finalise_dragon_combat_results_effect = {
+	# Determine what death rattle is appropriate
+	scope:dsc_loser = {
+		if = {
+			limit = { this = scope:dsc_attacker }
+			scope:dsc_defender_last_move = {
+				save_scope_as = dsc_victors_last_move
+			}
+		}
+		else = {
+			scope:dsc_attacker_last_move = {
+				save_scope_as = dsc_victors_last_move
+			}
+		}
+		scope:dsc_victors_last_move = {
+			if = {
+				limit = {
+					OR = {
+						this = flag:dragon_wait_and_hope
+						this = flag:dragon_guard
+						this = flag:dragon_strict_guard
+						this = flag:dragon_probing_attack
+						this = flag:dragon_surprise_attack
+						this = flag:dragon_mocking_boast
+						this = flag:dragon_special_fallback
+						this = flag:dragon_taunt
+						this = flag:dragon_tire_opponent
+					}
+				}
+				save_scope_value_as = {
+					name = dragon_death_rattle
+					value = flag:sudden_strike
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						this = flag:dragon_unsure_attack
+						this = flag:dragon_confident_attack
+						this = flag:dragon_motivate
+						this = flag:dragon_technique_from_legend
+					}
+				}
+				save_scope_value_as = {
+					name = dragon_death_rattle
+					value = flag:dragonfire
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						this = flag:dragon_tail_smash
+						this = flag:dragon_desert_warrior
+						this = flag:dragon_jungle_stalker
+						this = flag:dragon_open_terrain_expert
+						this = flag:dragon_rough_terrain_expert
+						this = flag:dragon_forest_fighter
+					}
+				}
+				save_scope_value_as = {
+					name = dragon_death_rattle
+					value = flag:driven_to_ground
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						this = flag:dragon_underbelly
+						this = flag:dragon_go_for_the_gonads
+						this = flag:dragon_like_a_viper
+					}
+				}
+				save_scope_value_as = {
+					name = dragon_death_rattle
+					value = flag:disemboweled
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						this = flag:dragon_enthusiastic_onslaught
+						this = flag:dragon_onslaught
+						this = flag:dragon_expert_onslaught
+						this = flag:dragon_lightning_assault
+						this = flag:dragon_martial_voice
+					}
+				}
+				save_scope_value_as = {
+					name = dragon_death_rattle
+					value = flag:eviscerated
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						this = flag:dragon_chomp
+					}
+				}
+				save_scope_value_as = {
+					name = dragon_death_rattle
+					value = flag:chomp
+				}
+			}
+		}
+	}
+	# Send out results events.
+	## We do this before death calculation so that the loser isn't too dead to be told that they've died (if they died).
+	scope:dsc_loser = { trigger_event = agot_dragon_combat.1003 }
+	scope:dsc_victor = { trigger_event = agot_dragon_combat.1004 }
+	# Sort glory allocation.
+	scope:dsc_victor = {
+		if = {
+			limit = {
+				is_acclaimed = yes
+			}
+			# Glory is relative to the prowess difference between two characters. Beating someone equally matched or better is worth more.
+			## Massively outclassed.
+			if = {
+				limit = {
+					prowess_diff = {
+						target = scope:dsc_loser
+						value <= -20
+					}
+				}
+				accolade = { add_glory = monumental_glory_gain }
+			}
+			## Majorly outclassed.
+			else_if = {
+				limit = {
+					prowess_diff = {
+						target = scope:dsc_loser
+						value <= -15
+					}
+				}
+				accolade = { add_glory = massive_glory_gain }
+			}
+			## Somewhat outclassed.
+			else_if = {
+				limit = {
+					prowess_diff = {
+						target = scope:dsc_loser
+						value <= -8
+					}
+				}
+				accolade = { add_glory = major_glory_gain }
+			}
+			## Slightly outclassed.
+			else_if = {
+				limit = {
+					prowess_diff = {
+						target = scope:dsc_loser
+						value <= -4
+					}
+				}
+				accolade = { add_glory = medium_glory_gain }
+			}
+			## Evenly matched.
+			else_if = {
+				limit = {
+					prowess_diff = {
+						target = scope:dsc_loser
+						value <= 0
+					}
+				}
+				accolade = { add_glory = minor_glory_gain }
+			}
+			## Slightly in your favour.
+			else_if = {
+				limit = {
+					prowess_diff = {
+						target = scope:dsc_loser
+						value <= 4
+					}
+				}
+				accolade = { add_glory = minimal_glory_gain }
+			}
+			## Below this, things are too much in your favour and you're not earning glory, you're defending what you already have.
+
+			#Beating your rival means additional glory gain
+			if = {
+				limit = {
+					OR = {
+						has_relation_rival = scope:dsc_loser
+						has_relation_nemesis = scope:dsc_loser
+					}
+				}
+				accolade = { add_glory = minor_glory_gain }
+			}
+		}
+	}
+	# Send the final output event & clean up.
+	dragon_combat_result_grab = yes
+	remove_dragon_combat_info_effect = yes
+	scope:dsc_defender = {
+		if = {
+			limit = { is_alive = yes }
+			remove_variable = engaged_in_single_combat
+			remove_variable = engaged_in_dragon_combat
+		}
+	}
+	scope:dsc_attacker = {
+		if = {
+			limit = { is_alive = yes }
+			remove_variable = engaged_in_single_combat
+			remove_variable = engaged_in_dragon_combat
+		}
+	}
+}
+
+
+######
+# Maintainance effects for dragon combat.
+#####
+# Clean all consequences of a dragon combat.
+remove_dragon_combat_info_effect = {
+	scope:dsc_attacker = {
+		# Only remove variables if they're alive, as otherwise we get errors.
+		if = {
+			limit = { is_alive = yes }
+			remove_dragon_combat_character_local_variables_effect = yes
+			remove_dragon_combat_variables_effect = yes
+		}
+	}
+	scope:dsc_defender = {
+		# Only remove variables if they're alive, as otherwise we get errors.
+		if = {
+			limit = { is_alive = yes }
+			remove_dragon_combat_character_local_variables_effect = yes
+			remove_dragon_combat_variables_effect = yes
+		}
+	}
+	scope:dsc_attacker_dragon = {
+		# Only remove variables if they're alive, as otherwise we get errors.
+		if = {
+			limit = { is_alive = yes }
+			remove_dragon_combat_character_local_variables_effect = yes
+			remove_dragon_combat_variables_effect = yes
+		}
+	}
+	scope:dsc_defender_dragon = {
+		# Only remove variables if they're alive, as otherwise we get errors.
+		if = {
+			limit = { is_alive = yes }
+			remove_dragon_combat_character_local_variables_effect = yes
+			remove_dragon_combat_variables_effect = yes
+		}
+	}
+}
+
+# Clean up all combat move variables resulting from dragon combat.
+remove_dragon_combat_character_local_variables_effect = {
+	# Reset the special move flag.
+	remove_local_variable = dragon_combat_move_special_slot_used_flag
+	# Remove previous combat move flags.
+	remove_local_variable = dragon_combat_move_wait_and_hope_flag
+	remove_local_variable = dragon_combat_move_unsure_attack_flag
+	remove_local_variable = dragon_combat_move_enthusiastic_onslaught_flag
+	remove_local_variable = dragon_combat_move_underbelly_flag
+	remove_local_variable = dragon_combat_move_tail_smash_flag
+	## Tier 2 moves
+	remove_local_variable = dragon_combat_move_guard_flag
+	remove_local_variable = dragon_combat_move_probing_attack_flag
+	remove_local_variable = dragon_combat_move_onslaught_flag
+	remove_local_variable = dragon_combat_move_surprise_attack_flag
+	remove_local_variable = dragon_combat_move_taunt_flag
+	remove_local_variable = dragon_combat_move_go_for_the_gonads_flag
+	## Tier 3 moves
+	remove_local_variable = dragon_combat_move_strict_guard_flag
+	remove_local_variable = dragon_combat_move_confident_attack_flag
+	remove_local_variable = dragon_combat_move_expert_onslaught_flag
+	remove_local_variable = dragon_combat_move_lightning_assault_flag
+	remove_local_variable = dragon_combat_move_tire_opponent_flag
+	## High Secondary Skill special moves
+	remove_local_variable = dragon_combat_move_chomp_flag
+	remove_local_variable = dragon_combat_move_motivate_flag
+	remove_local_variable = dragon_combat_move_technique_from_legend_flag
+	remove_local_variable = dragon_combat_move_like_a_viper_flag
+	remove_local_variable = dragon_combat_move_martial_voice_flag
+	remove_local_variable = dragon_combat_move_mocking_boast_flag
+	## Location Specific special moves
+	remove_local_variable = dragon_combat_move_desert_warrior_flag
+	remove_local_variable = dragon_combat_move_jungle_stalker_flag
+	remove_local_variable = dragon_combat_move_open_terrain_expert_flag
+	remove_local_variable = dragon_combat_move_rough_terrain_expert_flag
+	remove_local_variable = dragon_combat_move_forest_fighter_flag
+	## Trait-Specific special moves
+
+	## Misc special moves
+	remove_local_variable = dragon_combat_move_special_fallback_flag
+}
+
+# Clean up all variables resulting from single combat.
+remove_dragon_combat_variables_effect = {
+	remove_variable = dsc_tier_1_counter
+	remove_variable = dsc_tier_2_counter
+	remove_variable = dsc_tier_3_counter
+	remove_variable = dsc_chance_of_winning
+	remove_variable = dragon_combat_current_round
+	# Note, we don't remove var:engaged_in_single_combat or engaged_in_dragon_combat here, as we run this effect at the start of combat for clean-up also.
+}
+
+adjust_dragon_risk_reward_effect = {
+	if = {
+		limit = { $DUEL_SUCCESS$ = dragon_duel_success_none }
+		# If this is a past tense tooltip, refer to scope:my_foe grammatically.
+		if = {
+			limit = { this = scope:my_foe }
+			custom_tooltip = agot_dragon_combat.duel_success.none.has_happened
+		}
+		# Otherwise, we do it from first person.
+		else = { custom_tooltip = agot_dragon_combat.duel_success.none }
+		change_variable = {
+			name = dsc_chance_of_winning
+			add = 0
+		}
+		scope:my_foe = {
+			change_variable = {
+				name = dsc_chance_of_winning
+				add = 0
+			}
+		}
+	}
+	else_if = {
+		limit = { $DUEL_SUCCESS$ = dragon_duel_success_low }
+		# If this is a past tense tooltip, refer to scope:my_foe grammatically.
+		if = {
+			limit = { this = scope:my_foe }
+			custom_tooltip = agot_dragon_combat.duel_success.low.has_happened
+		}
+		# Otherwise, we do it from first person.
+		else = { custom_tooltip = agot_dragon_combat.duel_success.low }
+		change_variable = {
+			name = dsc_chance_of_winning
+			add = 15
+		}
+		scope:my_foe = {
+			change_variable = {
+				name = dsc_chance_of_winning
+				add = -15
+			}
+		}
+	}
+	else_if = {
+		limit = { $DUEL_SUCCESS$ = dragon_duel_success_medium }
+		# If this is a past tense tooltip, refer to scope:my_foe grammatically.
+		if = {
+			limit = { this = scope:my_foe }
+			custom_tooltip = agot_dragon_combat.duel_success.medium.has_happened
+		}
+		# Otherwise, we do it from first person.
+		else = { custom_tooltip = agot_dragon_combat.duel_success.medium }
+		change_variable = {
+			name = dsc_chance_of_winning
+			add = 30
+		}
+		scope:my_foe = {
+			change_variable = {
+				name = dsc_chance_of_winning
+				add = -30
+			}
+		}
+	}
+	else_if = {
+		limit = { $DUEL_SUCCESS$ = dragon_duel_success_high }
+		# If this is a past tense tooltip, refer to scope:my_foe grammatically.
+		if = {
+			limit = { this = scope:my_foe }
+			custom_tooltip = agot_dragon_combat.duel_success.high.has_happened
+		}
+		# Otherwise, we do it from first person.
+		else = { custom_tooltip = agot_dragon_combat.duel_success.high }
+		change_variable = {
+			name = dsc_chance_of_winning
+			add = 45
+		}
+		scope:my_foe = {
+			change_variable = {
+				name = dsc_chance_of_winning
+				add = -45
+			}
+		}
+	}
+	else_if = {
+		limit = { $DUEL_SUCCESS$ = dragon_duel_success_very_high }
+		# If this is a past tense tooltip, refer to scope:my_foe grammatically.
+		if = {
+			limit = { this = scope:my_foe }
+			custom_tooltip = agot_dragon_combat.duel_success.very_high.has_happened
+		}
+		# Otherwise, we do it from first person.
+		else = { custom_tooltip = agot_dragon_combat.duel_success.very_high }
+		change_variable = {
+			name = dsc_chance_of_winning
+			add = 60
+		}
+		scope:my_foe = {
+			change_variable = {
+				name = dsc_chance_of_winning
+				add = -60
+			}
+		}
+	}
+	else_if = {
+		limit = { $DUEL_SUCCESS$ = dragon_duel_success_guaranteed }
+		# If this is a past tense tooltip, refer to scope:my_foe grammatically.
+		if = {
+			limit = { this = scope:my_foe }
+			custom_tooltip = agot_dragon_combat.duel_success.guaranteed.has_happened
+		}
+		# Otherwise, we do it from first person.
+		else = { custom_tooltip = agot_dragon_combat.duel_success.guaranteed }
+		change_variable = {
+			name = dsc_chance_of_winning
+			add = 300
+		}
+		scope:my_foe = {
+			change_variable = {
+				name = dsc_chance_of_winning
+				add = -300
+			}
+		}
+	}
+}
+
+wound_dragon_visual_increment_effect = {
+	if = {
+		limit = {agot_has_dragon_storage_system_global_list = yes }
+		every_in_global_list = {
+			variable = gl_dragon_variable_storage
+			limit = {
+				var:dragon_id ?= $WOUNDED_DRAGON$
+			}
+			save_scope_as = story
+		}
+		scope:story = {
+			change_variable = {
+				name = gene_dragon_wounded
+				add = $VALUE$
+			}
+		}
+	}
+}
+
+wound_dragon = {
+	save_scope_as = wounded_dragon
+	if = {
+		limit = { has_trait = dragon_wounded_5 }
+		custom_tooltip = agot_dragon_combat.wound_dragon.limit
+	}
+	else_if = {
+		limit = { has_trait = dragon_wounded_4 }
+		custom_tooltip = {
+			text = agot_dragon_combat.wound_dragon.5
+			remove_trait = dragon_wounded_4
+			add_trait = dragon_wounded_5
+		}
+		wound_dragon_visual_increment_effect = {
+			WOUNDED_DRAGON = scope:wounded_dragon
+			VALUE = 0.1
+		}
+	}
+	else_if = {
+		limit = { has_trait = dragon_wounded_3 }
+		custom_tooltip = {
+			text = agot_dragon_combat.wound_dragon.4
+			remove_trait = dragon_wounded_3
+			add_trait = dragon_wounded_4
+		}
+		wound_dragon_visual_increment_effect = {
+			WOUNDED_DRAGON = scope:wounded_dragon
+			VALUE = 0.1
+		}
+	}
+	else_if = {
+		limit = { has_trait = dragon_wounded_2 }
+		custom_tooltip = {
+			text = agot_dragon_combat.wound_dragon.3
+			remove_trait = dragon_wounded_2
+			add_trait = dragon_wounded_3
+		}
+		wound_dragon_visual_increment_effect = {
+			WOUNDED_DRAGON = scope:wounded_dragon
+			VALUE = 0.1
+		}
+	}
+	else_if = {
+		limit = { has_trait = dragon_wounded_1 }
+		custom_tooltip = {
+			text = agot_dragon_combat.wound_dragon.2
+			remove_trait = dragon_wounded_1
+			add_trait = dragon_wounded_2
+		}
+		wound_dragon_visual_increment_effect = {
+			WOUNDED_DRAGON = scope:wounded_dragon
+			VALUE = 0.1
+		}
+	}
+	else = {
+		custom_tooltip = {
+			text = agot_dragon_combat.wound_dragon.1
+			add_trait = dragon_wounded_1
+		}
+	}
+}
+
+dragon_combat_result_grab = {
+	scope:dsc_loser = {
+		if = {
+			limit = {
+				scope:dragon_death_rattle = flag:sudden_strike
+			}
+			random_list = {
+				5 = {
+					scope:dsc_loser_dragon = {
+						wound_dragon = yes
+						agot_remove_from_combat = yes
+					}
+				}
+				95 = {
+					scope:dsc_loser_dragon = {
+						death = {
+							killer = scope:dsc_victor
+							death_reason = death_dragon_duel
+						}
+					}
+				}
+			}
+			death = {
+				killer = scope:dsc_victor
+				death_reason = death_dragon_duel_ate
+			}
+		}
+		else_if = {
+			limit = {
+				scope:dragon_death_rattle = flag:dragonfire
+			}
+			random_list = {
+				5 = {
+					scope:dsc_loser_dragon = {
+						agot_remove_from_combat = yes
+						add_trait = dragon_burned
+					}
+				}
+				95 = {
+					scope:dsc_loser_dragon = {
+						add_trait = dragon_burned
+						death = {
+							killer = scope:dsc_victor
+							death_reason = death_dragon_duel_fire
+						}
+					}
+				}
+			}
+			random_list = {
+				5 = {
+					add_trait = burned
+					add_trait_xp = {
+						trait = burned
+						value = { 50 200 }
+					}
+					agot_remove_from_combat = yes
+				}
+				95 = {
+					add_trait = burned
+					add_trait_xp = {
+						trait = burned
+						value = { 50 200 }
+					}
+					death = {
+						killer = scope:dsc_victor
+						death_reason = death_dragon_duel_fire
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:dragon_death_rattle = flag:driven_to_ground
+			}
+			random_list = {
+				1 = {
+					agot_remove_from_combat = yes
+				}
+				1 = {
+					add_trait = wounded_1
+					agot_remove_from_combat = yes
+				}
+				2 = {
+					add_trait = wounded_2
+					agot_remove_from_combat = yes
+				}
+				3 = {
+					add_trait = wounded_3
+					agot_remove_from_combat = yes
+				}
+				90 = {
+					modifier = {
+						add = {
+							value = prowess
+							multiply = -1
+						}
+						always = yes
+					}
+					death = {
+						killer = scope:dsc_victor
+						death_reason = death_dragon_duel
+					}
+				}
+			}
+			scope:dsc_loser_dragon = {
+				death = {
+					killer = scope:dsc_victor
+					death_reason = death_dragon_duel
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:dragon_death_rattle = flag:disemboweled
+			}
+			scope:dsc_loser_dragon = {
+				death = {
+					killer = scope:dsc_victor
+					death_reason = death_dragon_duel
+				}
+			}
+			random_list = {
+				94 = {
+					death = {
+						killer = scope:dsc_victor
+						death_reason = death_dragon_duel
+					}
+				}
+				3 = {
+					add_trait = wounded_3
+					add_trait = maimed
+					agot_remove_from_combat = yes
+				}
+				2 = {
+					add_trait = wounded_3
+					agot_remove_from_combat = yes
+				}
+				1 = {
+					add_trait = wounded_3
+					add_trait = incapable
+					agot_remove_from_combat = yes
+				}
+			}
+
+		}
+		else_if = {
+			limit = {
+				scope:dragon_death_rattle = flag:eviscerated
+			}
+			scope:dsc_loser_dragon = {
+				death = {
+					killer = scope:dsc_victor
+					death_reason = death_dragon_duel
+				}
+			}
+			death = {
+				killer = scope:dsc_victor
+				death_reason = death_dragon_duel
+			}
+		}
+		else_if = {
+			limit = {
+				scope:dragon_death_rattle = flag:chomp
+			}
+			scope:dsc_loser_dragon = {
+				death = {
+					killer = scope:dsc_victor
+					death_reason = death_dragon_duel_ate
+				}
+			}
+			death = {
+				killer = scope:dsc_victor
+				death_reason = death_dragon_duel_ate
+			}
+		}
+	}
+	scope:dsc_victor = {
+		add_kinslayer_trait_or_nothing_effect = { VICTIM = scope:dsc_loser }
+	}
+}
+
+agot_dragon_siege_hidden_minor_effect = {
+	hidden_effect = {
+		random_list = {
+			95 = { # Success
+				modifier = {
+					add = {
+						value = scope:sieging_dragon.dragon_combat_effectiveness
+						multiply = 0.15
+					}
+				}
+				agot_dragon_siege_fort_damage_minor_effect = yes
+			}
+			5 = { # Success, but with consequences
+				modifier = {
+					add = {
+						value = scope:sieging_location.fort_level
+						multiply = 0.5
+					}
+				}
+				agot_dragon_siege_fort_damage_minor_effect = yes
+				random_list = {
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0103 }
+					}
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0104 }
+					}
+				}
+			}
+			0 = { # Failure
+				dragon_scorpion_siege_event_modifiers = yes
+				modifier = { # Reduced risk as it's the safest
+					factor = 0.5
+				}
+				random_list = {
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0108 }
+					}
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0109 }
+					}
+				}
+			}
+		}
+	}
+	agot_dragon_scorpions_warning_effect = yes
+}
+
+agot_dragon_siege_hidden_medium_effect = {
+	hidden_effect = {
+		random_list = {
+			90 = { # Success
+				modifier = {
+					add = {
+						value = scope:sieging_dragon.dragon_combat_effectiveness
+						multiply = 0.15
+					}
+				}
+				agot_dragon_siege_fort_damage_medium_effect = yes
+			}
+			10 = { # Success, but with consequences
+				modifier = {
+					add = {
+						value = scope:sieging_location.fort_level
+						multiply = 0.5
+					}
+				}
+				agot_dragon_siege_fort_damage_medium_effect = yes
+				random_list = {
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0103 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0104 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0105 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0106 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0107 }
+					}
+				}
+			}
+			0 = { # Failure
+				dragon_scorpion_siege_event_modifiers = yes
+				random_list = {
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0108 }
+					}
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0109 }
+					}
+				}
+			}
+		}
+	}
+	agot_dragon_scorpions_warning_effect = yes
+}
+
+agot_dragon_siege_hidden_major_effect = {
+	scope:sieging_location.barony.holder = {
+		if = {
+			limit = {
+				any_courtier_or_guest = {
+					location = scope:sieging_location
+					is_close_or_extended_family_of = root
+				}
+			}
+
+			every_courtier_or_guest = {
+				limit = {
+					location = scope:sieging_location
+					is_close_or_extended_family_of = root
+				}
+
+				save_temporary_scope_as = family_scope
+				custom_tooltip = agot_dragon_siege.0100.c.tt.family
+			}
+		}
+	}
+	hidden_effect = {
+		random_list = {
+			85 = { # Success
+				modifier = {
+					add = {
+						value = scope:sieging_dragon.dragon_combat_effectiveness
+						multiply = 0.15
+					}
+				}
+				agot_dragon_siege_fort_damage_major_effect = yes
+			}
+			15 = { # Success, but with consequences
+				modifier = {
+					add = {
+						value = scope:sieging_location.fort_level
+						multiply = 0.5
+					}
+				}
+				agot_dragon_siege_fort_damage_major_effect = yes
+				random_list = {
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0103 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0104 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0105 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0106 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0107 }
+					}
+				}
+			}
+			0 = { # Failure
+				dragon_scorpion_siege_event_modifiers = yes
+				random_list = {
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0108 }
+					}
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0109 }
+					}
+				}
+			}
+		}
+	}
+	agot_dragon_scorpions_warning_effect = yes
+}
+
+agot_dragon_siege_hidden_massive_effect = {
+	scope:sieging_location.barony.holder = {
+		if = {
+			limit = {
+				any_courtier_or_guest = {
+					location = scope:sieging_location
+					is_close_or_extended_family_of = root
+				}
+			}
+
+			every_courtier_or_guest = {
+				limit = {
+					location = scope:sieging_location
+					is_close_or_extended_family_of = root
+				}
+
+				save_temporary_scope_as = family_scope
+				custom_tooltip = agot_dragon_siege.0100.d.tt.family
+			}
+		}
+	}
+	hidden_effect = {
+		random_list = {
+			80 = { # Success
+				modifier = {
+					add = {
+						value = scope:sieging_dragon.dragon_combat_effectiveness
+						multiply = 0.15
+					}
+				}
+				agot_dragon_siege_fort_damage_massive_effect = yes
+			}
+			20 = { # Success, but with consequences
+				modifier = {
+					add = scope:sieging_location.fort_level
+				}
+				agot_dragon_siege_fort_damage_massive_effect = yes
+				random_list = {
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0103 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0104 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0105 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0106 }
+					}
+					1 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0107 }
+					}
+				}
+			}
+			0 = {
+				dragon_scorpion_siege_event_modifiers = yes
+				random_list = {
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0108 }
+					}
+					50 = {
+						scope:sieging_rider ?= { trigger_event = agot_dragon_siege.0109 }
+					}
+				}
+			}
+		}
+	}
+	agot_dragon_scorpions_warning_effect = yes
+}
+
+agot_dragon_siege_hidden_defender_effect = {
+	hidden_effect = {
+		scope:defending_dragonrider = {
+			trigger_event = agot_dragon_siege.0110
+		}
+	}
+}
+
+agot_dragon_siege_piss_off_effect = {
+	scope:sieging_location.barony = {
+		remove_variable = used_dragon_sieged_today
+	}
+	remove_character_flag = agot_dragon_siege_defenders_present
+}
+
+agot_dragon_scorpions_warning_effect = {
+	if = {
+		limit = { agot_dragon_has_scorpions_minor_trigger = yes }
+		custom_tooltip = agot_dragon_siege.scorpion_2_warning
+	}
+	else_if = {
+		limit = { agot_dragon_has_scorpions_major_trigger = yes }
+		custom_tooltip = agot_dragon_siege.scorpion_1_warning
+	}
+}
+
+agot_dragon_siege_full_minor_effect = {
+	show_as_tooltip = { agot_dragon_siege_fort_damage_minor_effect = yes }
+	agot_dragon_siege_hidden_minor_effect = yes
+}
+
+agot_dragon_siege_full_medium_effect = {
+	show_as_tooltip = { agot_dragon_siege_fort_damage_medium_effect = yes }
+	agot_dragon_siege_hidden_medium_effect = yes
+}
+
+agot_dragon_siege_full_major_effect = {
+	show_as_tooltip = { agot_dragon_siege_fort_damage_major_effect = yes }
+	agot_dragon_siege_hidden_major_effect = yes
+}
+
+agot_dragon_siege_full_massive_effect = {
+	show_as_tooltip = { agot_dragon_siege_fort_damage_massive_effect = yes }
+	agot_dragon_siege_hidden_massive_effect = yes
+}
+
+agot_dragon_siege_disobey_order_effect = {
+	if = {
+		limit = { NOT = { scope:demand_dragon_use ?= flag:bound } }
+		custom_tooltip = agot_dragon_siege.0003.b.tt
+	}
+
+	agot_dragon_siege_piss_off_effect = yes
+
+	hidden_effect = {
+		scope:commander ?= {
+			send_interface_toast = {
+				title = agot_dragon_siege.0003.b.toast.t
+				left_icon = scope:sieging_rider
+				right_icon = scope:sieging_location.county
+
+				play_music_cue = mx_cue_negative
+
+				root = { add_prestige = major_prestige_loss }
+				if = {
+					limit = { scope:demand_dragon_use ?= flag:bound }
+
+					custom_tooltip = agot_dragon_siege.0003.b.toast.tt.order
+				}
+				else = {
+					custom_tooltip = agot_dragon_siege.0003.b.toast.tt.advice
+				}
+			}
+		}
+	}
+
+	if = { # Deal with prestige loss
+		limit = { scope:demand_dragon_use ?= flag:bound }
+
+		show_as_tooltip = { add_prestige = major_prestige_loss }
+	}
+	scope:commander = { add_opinion = { modifier = ignored_opinion target = root opinion = agot_dragon_siege_negative_opinion_value } } # Deal with opinion loss
+}
+
+agot_dragon_order_obey_tooltip = {
+	save_scope_value_as = { name = order_damage value = flag:$OPTION$ }
+	random_list = {
+		1 = {
+			show_chance = no
+			trigger = {
+				scope:demand_dragon_use ?= flag:bound
+				exists = scope:order_damage
+			}
+			desc = agot_dragon_siege.0002.chance_success.order
+			agot_dragon_use_in_siege_tooltip = yes
+		}
+		1 = {
+			show_chance = no
+			trigger = {
+				scope:demand_dragon_use ?= flag:free
+				exists = scope:order_damage
+			}
+			desc = agot_dragon_siege.0002.chance_success.advice
+			agot_dragon_use_in_siege_tooltip = yes
+		}
+		1 = {
+			show_chance = no
+			trigger = { scope:demand_dragon_use ?= flag:bound }
+			desc = agot_dragon_siege.0002.chance_failure.order
+			#custom_tooltip = agot_dragon_siege.0002.tt.2
+		}
+		1 = {
+			show_chance = no
+			trigger = { scope:demand_dragon_use ?= flag:free }
+			desc = agot_dragon_siege.0002.chance_failure.advice
+			#custom_tooltip = agot_dragon_siege.0002.tt.2
+		}
+	}
+}
+
+agot_dragon_use_in_siege_tooltip = {
+	switch = {
+		trigger = scope:order_damage
+		flag:opt_a = {
+			show_as_tooltip = { agot_dragon_siege_full_minor_effect = yes }
+		}
+		flag:opt_b = {
+			show_as_tooltip = { agot_dragon_siege_full_medium_effect = yes }
+		}
+		flag:opt_c = {
+			show_as_tooltip = { agot_dragon_siege_full_major_effect = yes }
+		}
+		flag:opt_d = {
+			show_as_tooltip = { agot_dragon_siege_full_massive_effect = yes }
+		}
+		flag:opt_e = {
+			show_as_tooltip = { agot_dragon_siege_hidden_defender_effect = yes }
+		}
+	}
+}

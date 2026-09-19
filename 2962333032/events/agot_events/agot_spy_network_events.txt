@@ -1,0 +1,1269 @@
+﻿# agot spy network by Ronko
+
+namespace = agot_spy_network
+
+# Add spy to network
+#agot_spy_network.0050 = {
+#	type = character_event
+#
+#	immediate = {
+#		try_create_suggestion = {
+#			suggestion_type = suggestion_fabricate_claim
+#		}
+#	}
+#}
+
+# Event fires on spy network owner, firing events on all of their spies to gather secrets
+agot_spy_network.0100 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		if = {
+			limit = {
+				has_variable_list = spy_network_members
+				#variable_list_size = {
+				#	name = spy_network_members
+				#	value >= 1
+				#}
+				any_in_list = {
+					variable = spy_network_members
+					#is_alive = yes
+					count >= 1
+				}
+			}
+
+			# Every quarter, each spy has a intrigue % chance of discovering a random secret/scheme and revealing it to you
+			# There is a random 0-15 day delay, so secret/scheme reveals are approximately equally distributed over the year
+			every_in_list = {
+				variable = spy_network_members
+				if = {
+					limit = {
+						is_alive = yes
+						is_courtier = yes
+						is_landed = no
+						is_pool_guest = no
+						is_imprisoned = no
+						court_owner = { is_ruler = yes }
+						NOT = { has_trait = incapable }
+					}
+					random = {
+						chance = 0
+						modifier = {
+							add = {
+								value = 0
+								# your spymasters intrigue limits the chance for every spy to find secrets/schemes (before perks are applied)
+								if = {
+									limit = {
+										exists = root.cp:councillor_spymaster
+										intrigue > root.cp:councillor_spymaster.intrigue
+									}
+									add = root.cp:councillor_spymaster.intrigue
+								}
+								else = {
+									add = {
+										value = intrigue
+									}
+								}
+							}
+						}
+						modifier = {
+							root = { has_perk = instructed_spies_perk }
+							add = 2
+						}
+						modifier = {
+							root = { has_perk = innocent_children_perk }
+							age < 16
+							add = 3
+						}
+						trigger_event = {
+							id = agot_spy_network.0200
+							days = { 1 15 }
+						}
+					}
+				}
+				else = {
+					root = {
+						remove_list_variable = {
+							name = spy_network_members
+							target = prev
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# Reveals one random secret/scheme from someone in the same court as the spy
+# This can be the court's owner, a courtier, or a guest, but will never reveal the spy's own secrets
+agot_spy_network.0200 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		any_ruler = {
+			is_alive = yes
+			is_target_in_variable_list = {
+				name = spy_network_members
+				target = root
+			}
+		}
+	}
+
+	immediate = {
+		save_scope_as = secret_finder
+		# Save scope of spy's employer
+		every_ruler = {
+			limit = {
+				is_alive = yes
+				is_target_in_variable_list = {
+					name = spy_network_members
+					target = root
+				}
+			}
+
+			save_scope_as = employer
+		}
+
+		#if = {
+		#	limit = { exists = employer.cp:councillor_spymaster }
+		#	NOT = { this = root.cp:councillor_spymaster }
+		#}
+		if = {
+			limit = {
+				exists = court_owner
+			}
+
+			# Find all the court owner's secrets
+			court_owner = {
+				save_scope_as = courtowner
+				if = {
+					# Spies won't reveal their own secrets / Jame and Cersei secret protection
+					limit = {
+						NOR = {
+							this = root
+							this = scope:employer
+							this = character:Lannister_7
+							this = character:Lannister_6
+						}
+					}
+
+					# List the court owner's secrets that could be revealed
+					every_secret = {
+						limit = {
+							# Only check secrets that the employer doesn't know yet
+							NOT = {
+								any_secret_knower = {
+									this = scope:employer
+								}
+							}
+							scope:employer = {
+								NOT = {
+									is_target_in_variable_list = {
+										name = refused_secrets
+										target = prev
+									}
+								}
+							}
+							NOT = {
+								AND = {
+									secret_type = secret_lover
+									secret_target = scope:secret_finder
+								}
+							}
+						}
+						add_to_temporary_list = suitable_secrets
+					}
+				}
+			}
+
+			# Find all the secrets of courtiers and guests in the same court
+			court_owner = {
+				every_courtier_or_guest = {
+					# Spies won't reveal their own secrets / Jame and Cersei secret protection
+					limit = {
+						NOR = {
+							this = root
+							this = scope:employer
+							this = character:Lannister_7
+							this = character:Lannister_6
+						}
+					}
+
+					every_secret = {
+						limit = {
+							# Only check secrets that the employer doesn't know yet
+							NOT = {
+								any_secret_knower = {
+									this = scope:employer
+								}
+							}
+							scope:employer = {
+								NOT = {
+									is_target_in_variable_list = {
+										name = refused_secrets
+										target = prev
+									}
+								}
+							}
+						}
+						add_to_temporary_list = suitable_secrets
+					}
+				}
+			}
+		}
+
+
+		if = {
+			limit = {
+				list_size = {
+					name = suitable_secrets
+					value >= 1
+				}
+				NOT = {
+					scope:employer = {
+						has_character_flag = spy_found_secret_cooldown
+					}
+				}
+			}
+
+			# Pick a Secret to discover
+			random_in_list = {
+				list = suitable_secrets
+				weight = {
+					base = 1
+				}
+				save_scope_as = secret_to_reveal
+				secret_owner = {
+					save_scope_as = secret_holder
+				}
+			}
+
+			scope:employer = {
+				add_character_flag = { flag = spy_found_secret_cooldown days = 100 }
+				trigger_event = {
+					id = agot_spy_network.0210
+				}
+			}
+		}
+
+		else_if = { #if no secret is available, check if the court owner or one of his courtiers is scheming against the spies employer and/or his courtiers. If so, reveal the scheme.
+			limit = {
+				exists = court_owner
+			}
+			court_owner = {
+				every_scheme = {
+					if = {
+						limit = {
+							is_scheme_exposed = no
+							hostile_scheme_trigger = yes
+							scheme_target_character = {
+								OR = {
+									this = scope:employer
+									court_owner = scope:employer
+								}
+							}
+							scheme_owner = {
+								NOT = {
+									this = scope:secret_finder
+								}
+							}
+						}
+						add_to_temporary_list = suitable_schemes
+					}
+				}
+
+				every_courtier_or_guest = {
+					every_scheme = {
+						if = {
+							limit = {
+								is_scheme_exposed = no
+								hostile_scheme_trigger = yes
+								scheme_target_character = {
+									OR = {
+										this = scope:employer
+										court_owner = scope:employer
+									}
+								}
+								scheme_owner = {
+									NOT = {
+										this = scope:secret_finder
+									}
+								}
+							}
+							add_to_temporary_list = suitable_schemes
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					list_size = {
+						name = suitable_schemes
+						value >= 1
+					}
+				}
+
+				# Pick a scheme to discover
+				random_in_list = {
+					list = suitable_schemes
+					weight = {
+						base = 1
+					}
+
+					#set necessary scopes for vanilla event
+					save_scope_as = scheme
+					scope:secret_finder = {
+						save_scope_as = spymaster
+					}
+					scheme_target_character = {
+						save_scope_as = target
+					}
+					scheme_owner = {
+						save_scope_as = owner
+					}
+
+					scope:target.host = {
+						trigger_event = hostile_scheme_discovery.2001
+					}
+				}
+			}
+		}
+	}
+}
+
+
+agot_spy_network.0210 = { #ask for money in exchange for secret
+	type = letter_event
+	opening = agot_spy_network.0210.t
+	desc = agot_spy_network.0210.desc
+	sender = scope:secret_finder
+
+	option = { #yes
+		name = agot_spy_network.0210.a
+
+		trigger = {
+			gold >= 25
+		}
+
+		remove_short_term_gold = 25
+		scope:secret_finder = { add_gold = 25 }
+
+		# Reveal the secret to the employer
+		scope:employer = {
+			send_interface_message = {
+				type = msg_spymaster_task_good 	# todo: change this
+				title = agot_spy_network.0200.interface.employer.t
+				desc = agot_spy_network.0200.interface.employer.desc
+
+				left_icon = scope:secret_holder
+				right_icon = scope:secret_finder
+
+				scope:secret_to_reveal = {
+					reveal_to = scope:employer
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { #not interested
+		name = agot_spy_network.0210.b
+
+		trigger = {
+			gold >= 25
+		}
+
+		scope:secret_to_reveal = {
+			scope:employer = {
+				add_to_variable_list = {
+					name = refused_secrets
+					target = prev
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+
+	option = { #not enough money
+		name = agot_spy_network.0210.c
+
+		trigger = {
+			gold < 25
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+
+# AI selects the next spy to employ
+agot_spy_network.0300 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+
+		every_relation = {
+			type = rival
+			limit = {
+				is_landed = yes
+				in_diplomatic_range = root
+				agot_court_eligible_for_spy_network = yes
+			}
+			every_courtier = {
+				limit = {
+					is_ai = yes
+					OR = {
+						is_adult = yes
+						AND = {
+							age >= 8
+							root = { has_perk = little_birds_perk }
+						}
+					}
+					is_imprisoned = no
+					is_courtier = yes
+					is_pool_guest = no
+					is_landed = no
+					court_owner = { is_ruler = yes }
+					NOT = { has_trait = incapable }
+					root = {
+						is_character_interaction_potentially_accepted = {
+							recipient = PREV
+							interaction = agot_invite_to_spy_network_interaction
+						}
+					}
+					agot_court_eligible_for_spy_network = yes
+				}
+				root = {
+					add_to_variable_list = {
+						name = potential_spies
+						target = PREV
+					}
+				}
+			}
+		}
+
+		every_vassal = {
+			limit = {
+				highest_held_title_tier >= tier_county
+				in_diplomatic_range = root
+				root = {
+					opinion = {
+						target = PREV
+						value < 0
+					}
+				}
+				agot_court_eligible_for_spy_network = yes
+			}
+			every_courtier = {
+				limit = {
+					is_ai = yes
+					OR = {
+						is_adult = yes
+						AND = {
+							age >= 8
+							root = { has_perk = little_birds_perk }
+						}
+					}
+					is_imprisoned = no
+					is_courtier = yes
+					is_pool_guest = no
+					is_landed = no
+					court_owner = { is_ruler = yes }
+					NOT = { has_trait = incapable }
+					root = {
+						is_character_interaction_potentially_accepted = {
+							recipient = PREV
+							interaction = agot_invite_to_spy_network_interaction
+						}
+					}
+					agot_court_eligible_for_spy_network = yes
+				}
+				root = {
+					add_to_variable_list = {
+						name = potential_spies
+						target = PREV
+					}
+				}
+			}
+		}
+
+		#every_courtier = {
+		#	limit = {
+		#		is_ai = yes
+		#		is_adult = yes
+		#		is_imprisoned = no
+		#		NOT = { has_trait = incapable }
+		#		root = {
+		#			is_character_interaction_potentially_accepted = {
+		#				recipient = PREV
+		#				interaction = agot_invite_to_spy_network_interaction
+		#			}
+		#		}
+		#	}
+		#	root = {
+		#		add_to_variable_list = {
+		#			name = potential_spies
+		#			target = PREV
+		#		}
+		#	}
+		#}
+
+		liege = {
+			every_courtier = {
+				limit = {
+					is_ai = yes
+					OR = {
+						is_adult = yes
+						AND = {
+							age >= 8
+							root = { has_perk = little_birds_perk }
+						}
+					}
+					is_imprisoned = no
+					is_courtier = yes
+					is_pool_guest = no
+					is_landed = no
+					court_owner = { is_ruler = yes }
+					NOT = { has_trait = incapable }
+					root = {
+						is_character_interaction_potentially_accepted = {
+							recipient = PREV
+							interaction = agot_invite_to_spy_network_interaction
+						}
+					}
+					agot_court_eligible_for_spy_network = yes
+				}
+				root = {
+					add_to_variable_list = {
+						name = potential_spies
+						target = PREV
+					}
+				}
+			}
+
+			every_vassal = {
+				limit = {
+					highest_held_title_tier >= tier_county
+					in_diplomatic_range = root
+					NOT = { this = root }
+					root = {
+						opinion = {
+							target = PREV
+							value < 0
+						}
+					}
+					agot_court_eligible_for_spy_network = yes
+				}
+				every_courtier = {
+					limit = {
+						is_ai = yes
+						OR = {
+							is_adult = yes
+							AND = {
+								age >= 8
+								root = { has_perk = little_birds_perk }
+							}
+						}
+						is_imprisoned = no
+						is_courtier = yes
+						is_pool_guest = no
+						is_landed = no
+						court_owner = { is_ruler = yes }
+						NOT = { has_trait = incapable }
+						root = {
+							is_character_interaction_potentially_accepted = {
+								recipient = PREV
+								interaction = agot_invite_to_spy_network_interaction
+							}
+						}
+						agot_court_eligible_for_spy_network = yes
+					}
+					root = {
+						add_to_variable_list = {
+							name = potential_spies
+							target = PREV
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_variable_list = potential_spies
+				any_in_list = {
+					variable = potential_spies
+					is_alive = yes
+					count >= 1
+				}
+			}
+			random_in_list = {
+				variable = potential_spies
+				limit = {
+					is_alive = yes
+					is_ai = yes
+					OR = {
+						is_adult = yes
+						AND = {
+							age >= 8
+							root = { has_perk = little_birds_perk }
+						}
+					}
+					is_imprisoned = no
+					is_courtier = yes
+					is_pool_guest = no
+					is_landed = no
+					court_owner = { is_ruler = yes }
+				}
+				weight = {
+					base = 1
+					modifier = {
+						add = {
+							value = 0
+							add = intrigue
+						}
+					}
+					modifier = {
+						add = 50
+						NOT = { court_owner = root }
+						root = {
+							opinion = {
+								target = court_owner
+								value < 0
+							}
+						}
+					}
+					modifier = {
+						add = 100
+						root = { has_relation_rival = court_owner }
+					}
+				}
+				save_scope_as = new_spy
+			}
+			root = {
+				add_to_variable_list = {
+					name = spy_network_members
+					target = scope:new_spy
+				}
+				clear_variable_list = potential_spies
+			}
+		}
+
+		# TODO: Make this work for AI rulers
+		# Since AI rulers don't interact with GUI windows, will need to find osme other way
+		# Tobbzn says "Make a scripted effect for the interaction and use it in both the event and the interaction"
+		#open_interaction_window = {
+		#	# TODO: Recruit interaction window needs to show the interaction's target
+		#	interaction = agot_invite_to_spy_network_interaction
+		#	#interaction = gift_interaction
+		#	actor = root
+		#	recipient = scope:recruit_target
+		#}
+	}
+}
+
+agot_spy_network.0400 = { # Spymaster task "find secrets" recruits a spy in targets court
+	type = character_event
+	title = agot_spy_network.0400.t
+	desc = agot_spy_network.0400.desc
+
+	theme = intrigue
+
+	left_portrait = {
+		character = scope:councillor
+		animation = scheme
+	}
+
+	right_portrait = {
+		character = scope:new_spy
+		animation = scheme
+	}
+
+	trigger = {
+		exists = cp:councillor_spymaster
+		scope:councillor = cp:councillor_spymaster
+		agot_court_eligible_for_spy_network = yes
+
+		OR = {
+			NOT = { has_variable_list = spy_network_members }
+			any_in_list = {
+				variable = spy_network_members
+				is_alive = yes
+				count < spy_network_limit
+			}
+		}
+
+		scope:target_character = {
+			is_landed = yes
+			in_diplomatic_range = root
+			agot_court_eligible_for_spy_network = yes
+			any_courtier = {
+				is_ai = yes
+				OR = {
+					is_adult = yes
+					AND = {
+						age >= 8
+						root = { has_perk = little_birds_perk }
+					}
+				}
+				is_imprisoned = no
+				is_courtier = yes
+				is_pool_guest = no
+				is_landed = no
+				NOT = { this = root.cp:councillor_spymaster }
+				court_owner = { is_ruler = yes }
+				NOT = { has_trait = incapable }
+				root = {
+					is_character_interaction_potentially_accepted = {
+						recipient = PREV
+						interaction = agot_invite_to_spy_network_interaction
+					}
+				}
+				agot_court_eligible_for_spy_network = yes
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		#modifier = {
+		#	add = {
+		#		value = scope:target_character.cp:councillor_spymaster.intrigue
+		#		multiply = -0.05
+		#	}
+		#	exists = scope:target_character.cp:councillor_spymaster
+		#	scope:target_character.cp:councillor_spymaster = {
+		#		is_performing_council_task = task_disrupt_schemes
+		#	}
+		#}
+		modifier = {
+			add = {
+				value = scope:councillor.intrigue
+				multiply = 0.05
+			}
+		}
+	}
+
+	immediate = {
+		scope:target_character = {
+			every_courtier = {
+				limit = {
+					is_ai = yes
+					OR = {
+						is_adult = yes
+						AND = {
+							age >= 8
+							root = { has_perk = little_birds_perk }
+						}
+					}
+					is_imprisoned = no
+					is_courtier = yes
+					is_pool_guest = no
+					is_landed = no
+					NOT = { this = root.cp:councillor_spymaster }
+					court_owner = { is_ruler = yes }
+					NOT = { has_trait = incapable }
+					root = {
+						is_character_interaction_potentially_accepted = {
+							recipient = PREV
+							interaction = agot_invite_to_spy_network_interaction
+						}
+					}
+				}
+				root = {
+					add_to_variable_list = {
+						name = potential_spies
+						target = PREV
+					}
+				}
+			}
+		}
+
+		random_in_list = {
+			variable = potential_spies
+			limit = {
+				is_alive = yes
+			}
+			weight = {
+				base = 1
+				modifier = {
+					add = {
+						value = 0
+						add = intrigue
+					}
+				}
+			}
+			save_scope_as = new_spy
+		}
+
+		root = {
+			add_to_variable_list = {
+				name = spy_network_members
+				target = scope:new_spy
+			}
+			clear_variable_list = potential_spies
+		}
+	}
+
+	option = {
+		name = agot_spy_network.0400.a
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+agot_spy_network.0500 = { # A spy was discovered by your spymaster
+	type = character_event
+	title = agot_spy_network.0500.t
+	desc = agot_spy_network.0500.desc
+
+	theme = intrigue
+
+	left_portrait = {
+		character = scope:councillor
+		animation = scheme
+	}
+
+	right_portrait = {
+		character = scope:discovered_spy
+		animation = shame
+	}
+
+	trigger = {
+		any_courtier = { # there is a spy in court (spymaster and his spies excluded)
+			NOT = { root.cp:councillor_spymaster ?= this }
+			any_ruler = {
+				is_target_in_variable_list = {
+					name = spy_network_members
+					target = prev
+				}
+				NOT = { this = root }
+				NOT = { root.cp:councillor_spymaster ?= this }
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+
+		modifier = {
+			add = {
+				value = scope:councillor.intrigue
+				multiply = 0.05
+			}
+		}
+	}
+
+	immediate = {
+		every_courtier = {
+			limit = {
+				is_alive = yes
+				NOT = { this = root.cp:councillor_spymaster }
+				any_ruler = {
+					is_target_in_variable_list = {
+						name = spy_network_members
+						target = prev
+					}
+					NOT = { this = root }
+					NOT = { this = root.cp:councillor_spymaster }
+				}
+			}
+			root = {
+				add_to_variable_list = {
+					name = discoverable_spies
+					target = PREV
+				}
+			}
+		}
+
+		random_in_list = {
+			variable = discoverable_spies
+			limit = {
+				is_alive = yes
+			}
+			weight = {
+				base = 50
+				#modifier = {
+				#	subtract = {
+				#		value = 0
+				#		add = intrigue
+				#	}
+				#}
+			}
+			save_scope_as = discovered_spy
+		}
+
+		clear_variable_list = discoverable_spies
+
+		if = {
+			limit = {
+				exists = scope:discovered_spy
+				any_ruler = {
+					is_target_in_variable_list = {
+						name = spy_network_members
+						target = scope:discovered_spy
+					}
+					NOT = { this = root }
+					NOT = { this = root.cp:councillor_spymaster }
+				}
+			}
+			every_ruler = {
+				limit = {
+					is_target_in_variable_list = {
+						name = spy_network_members
+						target = scope:discovered_spy
+					}
+					NOT = { this = root }
+					NOT = { this = root.cp:councillor_spymaster }
+				}
+				save_scope_as = discovered_spy_employer
+			}
+
+			scope:discovered_spy = {
+				trigger_event = { # inform spy of discovery and check if he flips
+					id = agot_spy_network.0510
+				}
+			}
+
+			scope:discovered_spy_employer = {
+				trigger_event = { # inform employer about discovered spy: Remove from spy list
+					id = agot_spy_network.0600
+					days = 1
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_spy_network.0500.a
+
+		trigger_event = { # decide on the spies faith
+			id = agot_spy_network.0520
+			days = 2
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+agot_spy_network.0510 = {
+	type = character_event
+	title = agot_spy_network.0510.t
+	desc = agot_spy_network.0510.desc
+
+
+	theme = intrigue
+
+	left_portrait = {
+		character = scope:discovered_spy
+		animation = worry
+	}
+
+	option = {
+		name = agot_spy_network.0510.a
+
+		add_character_flag = flipped
+
+		court_owner = {
+			add_opinion = {
+				target = scope:discovered_spy_employer
+				modifier = spied_on_me_instigator_opinion
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = {
+					value = 0
+					add = court_owner.dread
+				}
+			}
+			modifier = {
+				add = 50
+				has_trait = craven
+			}
+			modifier = {
+				factor = 0.1
+				scope:discovered_spy_employer = { has_perk = omerta_perk }
+			}
+		}
+	}
+
+	option = {
+		name = agot_spy_network.0510.b
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 50
+				has_trait = brave
+			}
+		}
+	}
+}
+
+agot_spy_network.0520 = { # A spy was discovered by your spymaster
+	type = character_event
+	title = agot_spy_network.0520.t
+
+	desc = {
+		triggered_desc = {
+			trigger = {
+				scope:discovered_spy = {
+					has_character_flag = flipped
+				}
+			}
+			desc = agot_spy_network.0520.flipped.desc
+		}
+		triggered_desc = {
+			trigger = {
+				scope:discovered_spy = {
+					NOT = { has_character_flag = flipped }
+				}
+			}
+			desc = agot_spy_network.0520.loyal.desc
+		}
+		desc = agot_spy_network.0520.desc
+	}
+
+	theme = intrigue
+
+	left_portrait = {
+		character = scope:councillor
+		animation = scheme
+	}
+
+	right_portrait = {
+		character = scope:discovered_spy
+		animation = shame
+	}
+
+	trigger = {
+		exists = scope:discovered_spy
+		scope:discovered_spy = {
+			AND = {
+				is_alive = yes
+				exists = liege
+				liege = root
+			}
+		}
+	}
+
+	option = {
+		name = agot_spy_network.0520.a   # banish   TODO: How to set a reason
+
+		trigger = {
+			scope:discovered_spy = {
+				NOR = {
+					has_inactive_trait = grandmaester
+					has_trait = kingsguard
+				}
+			}
+		}
+
+		scope:discovered_spy = {
+			agot_banish_effect = { BANISHER = root }
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = 0.5
+				ai_vengefulness = -0.5
+			}
+			modifier = {
+				factor = 1.5
+				scope:discovered_spy = { has_character_flag = flipped }
+			}
+		}
+	}
+	option = {
+		name = agot_spy_network.0520.b   # imprison
+
+		#imprison = {
+		#	target = scope:discovered_spy
+		#	type = dungeon
+		#}
+
+		rightfully_imprison_character_effect = {
+			TARGET = scope:discovered_spy
+			IMPRISONER = root
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 0.8
+				scope:discovered_spy = { has_character_flag = flipped }
+			}
+		}
+	}
+	option = {
+		name = agot_spy_network.0520.c   # kill
+
+		execute_prisoner_effect = {
+			VICTIM = scope:discovered_spy
+			EXECUTIONER = root
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -1
+				ai_vengefulness = 1
+			}
+			modifier = {
+				factor = 0
+				scope:discovered_spy = { is_close_or_extended_family_of = root }
+			}
+			modifier = {
+				factor = 0.1
+				scope:discovered_spy = { has_character_flag = flipped }
+			}
+		}
+	}
+	option = {
+		name = agot_spy_network.0520.d   # mercy
+
+		scope:discovered_spy = {
+			add_opinion = {
+				target = root
+				modifier = merciful_opinion
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = 1
+				ai_vengefulness = -1
+			}
+			modifier = {
+				factor = 1.2
+				scope:discovered_spy = { has_character_flag = flipped }
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = {
+				scope:discovered_spy = {
+					is_alive = yes
+				}
+			}
+			scope:discovered_spy = {
+				remove_character_flag = flipped
+			}
+		}
+	}
+}
+
+agot_spy_network.0600 = {
+	type = character_event
+	title = agot_spy_network.0600.t
+
+	desc = {
+		desc = agot_spy_network.0600.desc
+		triggered_desc = {
+			trigger = {
+				scope:discovered_spy = {
+					has_character_flag = flipped
+				}
+			}
+			desc = agot_spy_network.0600.flipped.desc
+		}
+	}
+
+	theme = intrigue
+
+	left_portrait = {
+		character = scope:discovered_spy
+		animation = worry
+	}
+
+	immediate = {
+		remove_list_variable = {
+			name = spy_network_members
+			target = scope:discovered_spy
+		}
+	}
+
+	option = {
+		name = agot_spy_network.0600.a
+		if = {
+			limit = {
+				scope:discovered_spy = {
+					has_character_flag = flipped
+				}
+			}
+			add_opinion = {
+				target = scope:discovered_spy
+				modifier = distrustful
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+agot_spy_network.0700 = { # inform about spy accepted
+	type = character_event
+	title = agot_spy_network.0700.t
+	desc = agot_spy_network.0700.desc
+	orphan = yes
+	theme = intrigue
+
+	left_portrait = {
+		character = scope:recipient
+		animation = scheme
+	}
+
+	option = {
+		name = agot_spy_network.0700.a
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+agot_spy_network.0800 = { # inform about potential new spy
+	type = character_event
+	title = agot_spy_network.0800.t
+	desc = agot_spy_network.0800.desc
+	theme = intrigue
+
+	left_portrait = {
+		character = root.cp:councillor_spymaster
+		animation = scheme
+	}
+
+	right_portrait = {
+		character = scope:potential_new_spy
+		animation = scheme
+	}
+
+	option = {
+		name = agot_spy_network.0800.a
+		ai_chance = {
+			base = 100
+		}
+	}
+}

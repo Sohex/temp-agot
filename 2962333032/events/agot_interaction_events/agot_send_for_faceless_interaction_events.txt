@@ -1,0 +1,1585 @@
+﻿namespace = agot_faceless_interaction
+
+scripted_effect agot_faceless_assess_weight = {
+	# See agot_faceless_get_kill_price
+	# Assumes scopes scope:payer and scope:target
+	scope:payer = {
+		# Add numbers to a variable and use to gauge significance of killing
+
+		# The value is out of 100
+		set_variable = {
+			name = price_significance
+			value = 0
+		}
+
+		# If you're a drunkard, lets up the cost
+		if = {
+			limit = {
+				has_trait = drunkard
+			}
+			change_variable = {
+				name = price_significance
+				add = 5
+			}
+		}
+
+		# Wars
+		if = {
+			limit = {
+				any_character_war = {
+					any_war_participant = {
+						this = scope:target
+						prev = { save_temporary_scope_as = war }
+					}
+				}
+			}
+			# We are at war with them, now assess by what degree they are significant in it
+
+			scope:war = {
+				if = {
+					limit = {
+						OR = {
+							AND = {
+								primary_attacker = scope:payer
+								primary_defender = scope:target
+							}
+							AND = {
+								primary_attacker = scope:target
+								primary_defender = scope:payer
+							}
+						}
+					}
+					prev = {
+						change_variable = {
+							name = price_significance
+							add = 25
+						}
+					}
+				}
+				else = {
+					prev = {
+						change_variable = {
+							name = price_significance
+							add = 10
+						}
+					}
+				}
+			}
+		}
+
+		# Feuds and rivalrys
+		if = {
+			limit = {
+				house_has_feud_relation_with_trigger = { TARGET = scope:target }
+			}
+
+			# unlikely to get involved
+			change_variable = {
+				name = price_significance
+				add = 40
+			}
+		}
+		else_if = {
+			limit = {
+				any_relation = {
+					type = rival
+					this = scope:target
+				}
+			}
+
+			change_variable = {
+				name = price_significance
+				add = 10
+			}
+		}
+		else_if = {
+			limit = {
+				any_relation = {
+					type = nemesis
+					this = scope:target
+				}
+			}
+
+			change_variable = {
+				name = price_significance
+				add = 20
+			}
+		}
+
+		# Will you inherit?
+		if = {
+			limit = {
+				scope:target = {
+					any_held_title = {
+						any_title_heir = {
+							this = scope:payer
+							scope:target = {
+								place_in_line_of_succession = {
+									target = prev
+									value >= 3
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					scope:target = {
+						any_held_title = {
+							any_title_heir = {
+								this = scope:payer
+								scope:target = {
+									place_in_line_of_succession = {
+										target = prev
+										value = 1
+									}
+								}
+							}
+						}
+					}
+				}
+
+				change_variable = {
+					name = price_significance
+					add = 30
+				}
+			}
+			else_if = {
+				limit = {
+					scope:target = {
+						any_held_title = {
+							any_title_heir = {
+								this = scope:payer
+								scope:target = {
+									place_in_line_of_succession = {
+										target = prev
+										value = 2
+									}
+								}
+							}
+						}
+					}
+				}
+
+				change_variable = {
+					name = price_significance
+					add = 20
+				}
+			}
+			else = {
+				change_variable = {
+					name = price_significance
+					add = 10
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				scope:target = { is_ruler = yes }
+			}
+
+			# Evaluate tier of target
+			switch = {
+				trigger = scope:target.highest_held_title_tier
+				tier_hegemony = {
+					scope:payer = {
+						change_variable = {
+							name = price_significance
+							add = 100
+						}
+					}
+				}
+				tier_empire = {
+					scope:payer = {
+						change_variable = {
+							name = price_significance
+							add = 75
+						}
+					}
+				}
+				tier_kingdom = {
+					scope:payer = {
+						change_variable = {
+							name = price_significance
+							add = 50
+						}
+					}
+				}
+				tier_duchy = {
+					scope:payer = {
+						change_variable = {
+							name = price_significance
+							add = 25
+						}
+					}
+				}
+				tier_county = {
+					scope:payer = {
+						change_variable = {
+							name = price_significance
+							add = 10
+						}
+					}
+				}
+				fallback = { }
+			}
+		}
+		else = {
+			# They may not be a ruler so lets instead gauge family
+			if = {
+				limit = {
+					scope:target = {
+						is_married = yes
+						any_spouse = {
+							is_ruler = yes
+							save_temporary_scope_as = spouse_temp
+						}
+					}
+				}
+				switch = {
+					trigger = scope:spouse_temp.highest_held_title_tier
+					tier_hegemony = {
+						change_variable = {
+							name = price_significance
+							add = 80
+						}
+					}
+					tier_empire = {
+						change_variable = {
+							name = price_significance
+							add = 60
+						}
+					}
+					tier_kingdom = {
+						change_variable = {
+							name = price_significance
+							add = 40
+						}
+					}
+					tier_duchy = {
+						change_variable = {
+							name = price_significance
+							add = 20
+						}
+					}
+					tier_county = {
+						change_variable = {
+							name = price_significance
+							add = 5
+						}
+					}
+					fallback = { }
+				}
+			}
+
+			if = {
+				limit = {
+					scope:target = {
+						any_close_family_member = {
+							is_ruler = yes
+							highest_held_title_tier = tier_hegemony
+						}
+					}
+				}
+
+				change_variable = {
+					name = price_significance
+					add = 100
+				}
+			}
+			if = {
+				limit = {
+					scope:target = {
+						any_close_family_member = {
+							is_ruler = yes
+							highest_held_title_tier = tier_empire
+						}
+					}
+				}
+
+				change_variable = {
+					name = price_significance
+					add = 50
+				}
+			}
+			else_if = {
+				limit = {
+					scope:target = {
+						any_close_family_member = {
+							is_ruler = yes
+							highest_held_title_tier = tier_kingdom
+						}
+					}
+				}
+				change_variable = {
+					name = price_significance
+					add = 30
+				}
+			}
+			else_if = {
+				limit = {
+					scope:target = {
+						any_close_family_member = {
+							is_ruler = yes
+							highest_held_title_tier = tier_duchy
+						}
+					}
+				}
+				change_variable = {
+					name = price_significance
+					add = 10
+				}
+			}
+			else_if = {
+				limit = {
+					scope:target = {
+						any_close_family_member = {
+							is_ruler = yes
+							highest_held_title_tier = tier_county
+						}
+					}
+				}
+				change_variable = {
+					name = price_significance
+					add = 5
+				}
+			}
+		}
+
+		# Are they your liege?
+		if = {
+			limit = {
+				liege_or_court_owner ?= scope:target
+			}
+			change_variable = {
+				name = price_significance
+				add = 20
+			}
+		}
+
+		# Are they a dragon rider?
+		if = {
+			limit = {
+				scope:target = {
+					any_relation = {
+						type = agot_dragon
+						count > 0
+					}
+				}
+			}
+			change_variable = {
+				name = price_significance
+				add = 25
+			}
+		}
+
+		# Will the target be a tricky kill
+		if = {
+			limit = {
+				OR = {
+					scope:target = {
+						intrigue >= 20
+					}
+					scope:target = {
+						prowess >= 30
+					}
+				}
+			}
+			change_variable = {
+				name = price_significance
+				add = 20
+			}
+		}
+
+		# If incapable, more likely to:
+		if = {
+			limit = {
+				scope:target = {
+					has_trait = incapable
+				}
+			}
+
+			change_variable = {
+				name = price_significance
+				subtract = 10
+			}
+		}
+	}
+}
+
+scripted_effect agot_faceless_determine_price = {
+	# See agot_faceless_get_kill_price
+	# Assumes scopes scope:payer and scope:target
+
+	# Payment
+	# Money tiers
+	# Artifacts:
+	# - dragon egg
+	# - Valyrian steel sword
+
+	# Child:
+	# heir?
+	# Are they good, are they moldable?
+
+	scope:payer = {
+		# Gold Price
+		# Checks the variable var:price_significance
+
+		if = {
+			limit = {
+				exists = var:price_significance
+				var:price_significance >= 100
+			}
+			set_variable = {
+				name = faceless_gold_price
+				value = flag:no
+			}
+		}
+		else_if = {
+			limit = {
+				exists = var:price_significance
+				var:price_significance >= 75
+			}
+			set_variable = {
+				name = faceless_gold_price
+				value = flag:extreme
+			}
+		}
+		else_if = {
+			limit = {
+				exists = var:price_significance
+				var:price_significance >= 50
+			}
+			set_variable = {
+				name = faceless_gold_price
+				value = flag:high
+			}
+		}
+		else_if = {
+			limit = {
+				exists = var:price_significance
+				var:price_significance >= 25
+			}
+			set_variable = {
+				name = faceless_gold_price
+				value = flag:low
+			}
+		}
+		else = {
+			set_variable = {
+				name = faceless_gold_price
+				value = flag:minimal
+			}
+		}
+		# Blood price
+		if = {
+			limit = {
+				agot_can_afford_faceless_blood_price = yes
+				OR = {
+					AND = {
+						has_character_flag = faceless_payed_gold_price
+						has_character_flag = faceless_payed_child_price
+						has_character_flag = faceless_payed_artifact_price
+					}
+					var:faceless_gold_price ?= flag:extreme
+				}
+			}
+			add_character_flag = faceless_blood_price
+		}
+		# Child price
+		else_if = {
+			limit = {
+				NOR = {
+					var:faceless_gold_price ?= flag:extreme
+					var:faceless_gold_price ?= flag:no
+				}
+				agot_can_afford_faceless_child_price = yes
+			}
+
+			random_child = {
+				limit = {
+					age <= 10
+					num_of_bad_genetic_traits = 0
+					OR = {
+						intrigue >= 5
+						martial >= 5
+					}
+				}
+				save_scope_as = child_price
+			}
+		}
+		# Artifact Price
+		else_if = {
+			limit = {
+				NOR = {
+					# A fair exchange
+					var:faceless_gold_price ?= flag:minimal
+					var:faceless_gold_price ?= flag:low
+					var:faceless_gold_price ?= flag:no
+				}
+				NOT = { has_character_flag = faceless_payed_artifact_price }
+
+				agot_can_afford_faceless_artifact_price = yes
+			}
+
+			if = {
+				limit = {
+					any_character_artifact = {
+						has_variable = dragon_egg
+						save_temporary_scope_as = dragon_egg_temp
+					}
+				}
+				scope:dragon_egg_temp = { save_scope_as = artifact_price }
+			}
+			else_if = {
+				limit = {
+					any_character_artifact = {
+						artifact_type = dragon_horn
+						save_temporary_scope_as = dragon_horn_temp
+					}
+				}
+				scope:dragon_horn_temp = { save_scope_as = artifact_price }
+			}
+			else_if = {
+				limit = {
+					any_character_artifact = {
+						has_variable = valyrian_steel
+						save_temporary_scope_as = valyrian_steel_temp
+					}
+				}
+				scope:valyrian_steel_temp = { save_scope_as = artifact_price }
+			}
+		}
+	}
+}
+
+scripted_effect agot_faceless_get_kill_price = {
+	$PAYER$ = { save_scope_as = payer }
+	$TARGET$ = { save_scope_as = target }
+
+	# Determines risks of murder
+	agot_faceless_assess_weight = yes
+	# Determines cost of murder
+	agot_faceless_determine_price = yes
+}
+
+agot_faceless_interaction.0001 = {
+	type = character_event
+	theme = death
+
+	title = agot_faceless_interaction.0001.t
+	desc = {
+		desc = agot_faceless_interaction.0001.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					var:faceless_gold_price = flag:no
+				}
+				desc = agot_faceless_interaction.0001.desc_no
+			}
+			triggered_desc = {
+				trigger = {
+					var:faceless_gold_price = flag:extreme
+				}
+				desc = agot_faceless_interaction.0001.desc_extreme
+			}
+			triggered_desc = {
+				trigger = {
+					var:faceless_gold_price = flag:high
+				}
+				desc = agot_faceless_interaction.0001.desc_high
+			}
+			triggered_desc = {
+				trigger = {
+					var:faceless_gold_price = flag:low
+				}
+				desc = agot_faceless_interaction.0001.desc_low
+			}
+			triggered_desc = {
+				trigger = {
+					var:faceless_gold_price = flag:minimal
+				}
+				desc = agot_faceless_interaction.0001.desc_minimal
+			}
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					has_character_flag = faceless_blood_price
+				}
+				desc = agot_faceless_interaction.0001.desc_blood
+			}
+			triggered_desc = {
+				trigger = {
+					exists = scope:child_price
+				}
+				desc = agot_faceless_interaction.0001.desc_child
+			}
+			triggered_desc = {
+				trigger = {
+					exists = scope:artifact_price
+				}
+				desc = agot_faceless_interaction.0001.desc_artifact
+			}
+		}
+	}
+
+	trigger = {
+		any_owned_story = {
+			story_type = story_hire_faceless
+			var:faceless_victim ?= {
+				is_alive = yes
+				save_temporary_scope_as = victim_temp
+			}
+		}
+
+		any_scheme = {
+			scheme_type = murder
+			scheme_target_character = scope:victim_temp
+		}
+	}
+
+	left_portrait = {
+		character = root
+	}
+
+	lower_center_portrait = {
+		character = scope:victim
+	}
+
+	right_portrait = {
+		character = scope:faceless_man
+	}
+
+	immediate = {
+
+		random_owned_story = {
+			limit = {
+				story_type = story_hire_faceless
+			}
+			save_scope_as = faceless_story
+
+			var:faceless_victim = {
+				save_scope_as = victim
+			}
+		}
+
+		save_scope_as = killer # Sometimes root doesn't work properly
+		# Pricing time
+		agot_faceless_get_kill_price = { PAYER = scope:killer TARGET = scope:victim }
+
+		agot_faceless_use_face_random = yes
+	}
+
+	option = {
+		trigger = {
+			NOR = {
+				var:faceless_gold_price = flag:no
+				has_character_flag = faceless_payed_gold_price
+			}
+		}
+
+		name = {
+			text = agot_faceless_interaction.0001.gold_price
+		}
+
+		switch = {
+			trigger = var:faceless_gold_price
+			flag:extreme = {
+				remove_short_term_gold = 3000
+			}
+			flag:high = {
+				remove_short_term_gold = 1500
+			}
+			flag:low = {
+				remove_short_term_gold = 900
+			}
+			flag:minimal = {
+				remove_short_term_gold = 300
+			}
+		}
+
+		add_character_flag = faceless_payed_gold_price
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				OR = {
+					AND = {
+						var:faceless_gold_price ?= flag:extreme
+						gold >= 3000
+					}
+					AND = {
+						var:faceless_gold_price ?= flag:high
+						gold >= 1500
+					}
+					AND = {
+						var:faceless_gold_price ?= flag:low
+						gold >= 900
+					}
+					AND = {
+						var:faceless_gold_price ?= flag:minimal
+						gold >= 300
+					}
+				}
+
+				add = 100
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			has_character_flag = faceless_blood_price
+		}
+		name = agot_faceless_interaction.0001.blood_price
+		custom_tooltip = agot_faceless_blood_price.tt
+		add_character_flag = faceless_chose_blood_price
+		# Wait until after death of mark to extol price
+		ai_chance = {
+			base = 0
+		}
+	}
+
+	option = {
+		trigger = {
+			exists = scope:child_price
+		}
+		name = agot_faceless_interaction.0001.child_price
+		scope:child_price = {
+
+			save_scope_as = face_to_add
+			global_var:hall_of_faces = {
+				title_province = {
+					add_to_variable_list = {
+						name = faces
+						target = scope:face_to_add
+					}
+				}
+			}
+
+			death = {
+				death_reason = death_vanished
+			}
+		}
+		add_character_flag = faceless_payed_child_price
+
+		ai_chance = {
+			base = 10
+
+			modifier = {
+				opinion = {
+					value >= medium_negative_opinion
+					target = scope:child_price
+				}
+				factor = 0
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			exists = scope:artifact_price
+		}
+		name = agot_faceless_interaction.0001.artifact_price
+		scope:artifact_price = {
+			set_owner = scope:faceless_man
+		}
+		add_character_flag = faceless_payed_artifact_price
+
+		ai_chance = {
+			base = 0
+		}
+	}
+
+	option = {
+		trigger = {
+			var:faceless_gold_price = flag:no
+		}
+		name = agot_faceless_interaction.0001.no
+		add_character_flag = faceless_cancel
+	}
+
+	option = {
+		trigger = {
+			NOT = { var:faceless_gold_price = flag:no }
+		}
+		name = agot_faceless_interaction.0001.cancel
+		add_character_flag = faceless_cancel
+		ai_chance = {
+			base = 100
+			modifier = {
+				OR = {
+					AND = {
+						var:faceless_gold_price ?= flag:extreme
+						gold >= 3000
+					}
+					AND = {
+						var:faceless_gold_price ?= flag:high
+						gold >= 1500
+					}
+					AND = {
+						var:faceless_gold_price ?= flag:low
+						gold >= 900
+					}
+					AND = {
+						var:faceless_gold_price ?= flag:minimal
+						gold >= 300
+					}
+					AND = {
+						exists = scope:child_price
+						opinion = {
+							value <= medium_negative_opinion
+							target = scope:child_price
+						}
+					}
+				}
+
+				factor = 0
+			}
+		}
+
+	}
+
+	after = {
+		remove_character_flag = faceless_blood_price
+		remove_variable = faceless_gold_price
+		remove_variable = price_significance
+
+		if = {
+			limit = {
+				NOT = {
+					has_character_flag = faceless_cancel
+				}
+			}
+			save_scope_as = murderer
+			scope:victim = {
+				trigger_event = {
+					id = agot_faceless_interaction.0003
+					days = { 10 20 }
+				}
+			}
+		}
+		else_if = {
+			limit = { # To prevent ai spamming interaction after closing it
+				is_ai = no
+			}
+			remove_interaction_cooldown = agot_send_for_faceless_interaction
+			remove_character_flag = faceless_cancel
+			scope:faceless_story = { end_story = yes }
+		}
+		else = {
+			remove_character_flag = faceless_cancel
+			scope:faceless_story = { end_story = yes }
+		}
+
+		scope:faceless_man = {
+			silent_disappearance_effect = yes
+		}
+	}
+}
+
+# The deed is done
+agot_faceless_interaction.0002 = {
+	type = character_event
+	theme = death
+
+	title = agot_faceless_interaction.0002.t
+	desc = {
+		desc = agot_faceless_interaction.0002.desc_intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					any_owned_story = {
+						story_type = story_hire_faceless
+						var:murder_style ?= flag:oysters
+					}
+				}
+				desc = agot_faceless_interaction.0002.desc_oyster
+			}
+			triggered_desc = {
+				trigger = {
+					any_owned_story = {
+						story_type = story_hire_faceless
+						var:murder_style ?= flag:furniture
+					}
+				}
+				desc = agot_faceless_interaction.0002.desc_furniture
+			}
+			triggered_desc = {
+				trigger = {
+					any_owned_story = {
+						story_type = story_hire_faceless
+						var:murder_style ?= flag:horse
+					}
+				}
+				desc = agot_faceless_interaction.0002.desc_horse
+			}
+			triggered_desc = {
+				trigger = {
+					any_owned_story = {
+						story_type = story_hire_faceless
+						var:murder_style ?= flag:slip
+					}
+				}
+				desc = agot_faceless_interaction.0002.desc_slip
+			}
+			triggered_desc = {
+				trigger = {
+					any_owned_story = {
+						story_type = story_hire_faceless
+						var:murder_style ?= flag:fall
+					}
+				}
+				desc = agot_faceless_interaction.0002.desc_fall
+			}
+			triggered_desc = {
+				trigger = {
+					any_owned_story = {
+						story_type = story_hire_faceless
+						var:murder_style ?= flag:dog
+					}
+				}
+				desc = agot_faceless_interaction.0002.desc_dog
+			}
+			desc = agot_faceless_interaction.0002.desc_fallback
+		}
+		triggered_desc = {
+			trigger = {
+				has_character_flag = faceless_chose_blood_price
+			}
+			desc = agot_faceless_interaction.0002.desc_blood_price
+		}
+	}
+
+
+	left_portrait = {
+		character = root
+	}
+
+	lower_center_portrait = {
+		character = scope:victim
+	}
+
+	right_portrait = {
+		character = scope:faceless_man
+	}
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_hire_faceless
+			}
+			save_scope_as = faceless_story
+			var:faceless_victim = {
+				save_scope_as = victim
+			}
+		}
+
+		agot_faceless_use_face_random = yes
+	}
+
+	option = {
+		name = agot_faceless_interaction.0002.a
+		if = {
+			limit = {
+				has_character_flag = faceless_chose_blood_price
+			}
+
+			save_scope_as = new_face
+			death = {
+				death_reason = death_murder
+				killer = scope:faceless_man
+			}
+
+			agot_make_unpruneable = yes
+
+			global_var:hall_of_faces = {
+				title_province = {
+					add_to_variable_list = {
+						name = faces
+						target = scope:new_face
+					}
+				}
+			}
+		}
+	}
+
+	after = {
+		scope:faceless_man = {
+			silent_disappearance_effect = yes
+		}
+		if = {
+			limit = {
+				is_alive = yes
+			}
+
+			scope:faceless_story = {
+				end_story = yes
+			}
+		}
+	}
+}
+
+agot_faceless_interaction.0003 = {
+	hidden = yes
+
+	trigger = {
+		scope:murderer = {
+			any_scheme = {
+				scheme_type = murder
+				scheme_target_character = root
+			}
+		}
+	}
+
+	immediate = {
+		scope:murderer = {
+			random_scheme = {
+				limit = {
+					scheme_type = murder
+					scheme_target_character = root
+				}
+
+				end_scheme = yes
+			}
+		}
+		random_list = {
+			1 = {
+				trigger = {
+					location = {
+						OR = {
+							is_coastal = yes
+							has_building_or_higher = common_tradeport_01
+						}
+					}
+				}
+				trigger_event = agot_faceless_interaction.0004
+			}
+			1 = {
+				trigger = { # Loc wise doesn't make sense for a landless ruler
+					is_landed = yes
+				}
+				trigger_event = agot_faceless_interaction.0005
+			}
+			1 = {
+				trigger = { # Loc wise doesn't make much sense for a child
+					is_adult = yes
+				}
+				trigger_event = agot_faceless_interaction.0006
+			}
+			1 = {
+				trigger = { # Loc wise doesn't make much sense for a child
+					is_adult = yes
+				}
+				trigger_event = agot_faceless_interaction.0007
+			}
+			1 = {
+				trigger_event = agot_faceless_interaction.0008
+			}
+			1 = {
+				trigger_event = agot_faceless_interaction.0009
+			}
+		}
+	}
+}
+
+# Oysters clams and cockles
+agot_faceless_interaction.0004 = {
+	type = character_event
+	theme = death
+	override_background = { reference = docks }
+	title = agot_faceless_interaction.0004.t
+	desc = {
+		desc = agot_faceless_interaction.0004.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:murderer
+				}
+				desc = agot_faceless_interaction.0004.desc_faceless
+			}
+			desc = agot_faceless_interaction.0004.desc_fakeout
+		}
+	}
+
+	left_portrait = {
+		character = root
+	}
+
+	lower_center_portrait = {
+		trigger = {
+			exists = scope:colleague
+		}
+		character = scope:colleague
+	}
+
+	immediate = {
+		scope:murderer ?= {
+			random_owned_story = {
+				limit = {
+					story_type = story_hire_faceless
+				}
+				set_variable = {
+					name = murder_style
+					value = flag:oysters
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				NOT = { exists = scope:murderer }
+			}
+			create_character = {
+				template = servant_character
+				dynasty = none
+				location = root.location
+				culture = root.location.culture
+				faith = root.location.faith
+				save_scope_as = colleague
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			exists = scope:murderer
+		}
+		name = agot_faceless_interaction.0004.a
+		death = {
+			death_reason = death_oyster
+		}
+	}
+
+	option = {
+		trigger = {
+			NOT = { exists = scope:murderer }
+		}
+		name = agot_faceless_interaction.0004.a_fakeout
+	}
+
+	after = {
+		scope:murderer ?= {
+			trigger_event = agot_faceless_interaction.0002
+		}
+		hidden_effect = {
+			scope:colleague ?= {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+}
+
+# Oh no, a crate is falling on my head
+agot_faceless_interaction.0005 = {
+	type = character_event
+	theme = death
+	override_background = { reference = courtyard }
+	title = agot_faceless_interaction.0005.t
+	desc = {
+		desc = agot_faceless_interaction.0005.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:murderer
+				}
+				desc = agot_faceless_interaction.0005.desc_faceless
+			}
+			desc = agot_faceless_interaction.0005.desc_fakeout
+		}
+	}
+
+	left_portrait = {
+		character = root
+	}
+
+	immediate = {
+		scope:murderer ?= {
+			random_owned_story = {
+				limit = {
+					story_type = story_hire_faceless
+				}
+				set_variable = {
+					name = murder_style
+					value = flag:furniture
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			exists = scope:murderer
+		}
+		name = agot_faceless_interaction.0005.a
+
+		death = {
+			death_reason = death_accident
+		}
+	}
+
+	option = {
+		trigger = {
+			NOT = { exists = scope:murderer }
+		}
+		name = agot_faceless_interaction.0005.a_fakeout
+	}
+
+	after = {
+		scope:murderer ?= {
+			trigger_event = agot_faceless_interaction.0002
+		}
+	}
+}
+
+# Kicked by a horse
+agot_faceless_interaction.0006 = {
+	type = character_event
+	theme = death
+	override_background = { reference = wilderness }
+	title = agot_faceless_interaction.0006.t
+	desc = {
+		desc = agot_faceless_interaction.0006.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:murderer
+				}
+				desc = agot_faceless_interaction.0006.desc_faceless
+			}
+			desc = agot_faceless_interaction.0006.desc_fakeout
+		}
+	}
+
+	left_portrait = {
+		character = root
+	}
+
+	lower_center_portrait = {
+		trigger = {
+			exists = scope:servant
+		}
+		character = scope:servant
+	}
+
+	immediate = {
+		scope:murderer ?= {
+			random_owned_story = {
+				limit = {
+					story_type = story_hire_faceless
+				}
+				set_variable = {
+					name = murder_style
+					value = flag:horse
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				NOT = { exists = scope:murderer }
+			}
+			create_character = {
+				template = servant_character
+				dynasty = none
+				location = root.location
+				culture = root.location.culture
+				faith = root.location.faith
+				save_scope_as = servant
+			}
+			scope:servant = {
+				death = {
+					death_reason = death_accident
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			exists = scope:murderer
+		}
+		name = agot_faceless_interaction.0006.a
+		death = {
+			death_reason = death_accident
+		}
+	}
+
+	option = {
+		trigger = {
+			NOT = { exists = scope:murderer }
+		}
+		name = agot_faceless_interaction.0006.a_fakeout
+	}
+
+	after = {
+		scope:murderer ?= {
+			trigger_event = agot_faceless_interaction.0002
+		}
+	}
+}
+
+# Just Out of Reach
+agot_faceless_interaction.0007 = {
+	type = character_event
+	theme = death
+	override_background = { reference = council_chamber }
+	title = agot_faceless_interaction.0007.t
+	desc = {
+		desc = agot_faceless_interaction.0007.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:murderer
+				}
+				desc = agot_faceless_interaction.0007.desc_faceless
+			}
+			desc = agot_faceless_interaction.0007.desc_fakeout
+		}
+	}
+
+	left_portrait = {
+		character = root
+	}
+
+	immediate = {
+		scope:murderer ?= {
+			random_owned_story = {
+				limit = {
+					story_type = story_hire_faceless
+				}
+				set_variable = {
+					name = murder_style
+					value = flag:slip
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			exists = scope:murderer
+		}
+		name = agot_faceless_interaction.0007.a
+		death = {
+			death_reason = death_accident
+		}
+	}
+
+	option = {
+		trigger = {
+			NOT = { exists = scope:murderer }
+		}
+		name = agot_faceless_interaction.0007.a_fakeout
+	}
+
+	after = {
+		scope:murderer ?= {
+			trigger_event = agot_faceless_interaction.0002
+		}
+	}
+}
+
+# All Along the Wallwalk
+agot_faceless_interaction.0008 = {
+	type = character_event
+	theme = death
+	override_background = { reference = courtyard }
+	title = agot_faceless_interaction.0008.t
+	desc = {
+		desc = agot_faceless_interaction.0008.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:murderer
+				}
+				desc = agot_faceless_interaction.0008.desc_faceless
+			}
+			desc = agot_faceless_interaction.0008.desc_fakeout
+		}
+	}
+
+	left_portrait = {
+		character = root
+	}
+
+	immediate = {
+		scope:murderer ?= {
+			random_owned_story = {
+				limit = {
+					story_type = story_hire_faceless
+				}
+				set_variable = {
+					name = murder_style
+					value = flag:fall
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			exists = scope:murderer
+		}
+		name = agot_faceless_interaction.0008.a
+		death = {
+			death_reason = death_fall
+		}
+	}
+
+	option = {
+		trigger = {
+			NOT = { exists = scope:murderer }
+		}
+		name = agot_faceless_interaction.0008.a_fakeout
+	}
+
+	after = {
+		scope:murderer ?= {
+			trigger_event = agot_faceless_interaction.0002
+		}
+	}
+}
+
+# The Pauper's Pup
+agot_faceless_interaction.0009 = {
+	type = character_event
+	theme = death
+	override_background = { reference = market }
+	title = agot_faceless_interaction.0009.t
+	desc = {
+		desc = agot_faceless_interaction.0009.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:murderer
+				}
+				desc = agot_faceless_interaction.0009.desc_faceless
+			}
+			desc = agot_faceless_interaction.0009.desc_fakeout
+		}
+	}
+
+	left_portrait = {
+		character = root
+	}
+
+	immediate = {
+		scope:murderer ?= {
+			random_owned_story = {
+				limit = {
+					story_type = story_hire_faceless
+				}
+				set_variable = {
+					name = murder_style
+					value = flag:dog
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			exists = scope:murderer
+		}
+		name = agot_faceless_interaction.0009.a
+		death = {
+			death_reason = death_dog_attack
+		}
+	}
+
+	option = {
+		trigger = {
+			NOT = { exists = scope:murderer }
+		}
+		name = agot_faceless_interaction.0009.a_fakeout
+		ai_chance = { base = 10 }
+	}
+
+	option = {
+		trigger = {
+			NOT = { exists = scope:murderer }
+			NOT = {
+				any_owned_story = { story_type = story_cycle_pet_dog }
+			}
+			OR = {
+				has_trait = greedy
+				has_trait = sadistic
+			}
+		}
+		name = agot_faceless_interaction.0009.b
+		remove_short_term_gold = 5
+		hidden_effect = { start_dog_story_cycle_effect = yes }
+		random_owned_story = {
+			limit = { story_type = story_cycle_pet_dog }
+			change_variable = {
+				name = dog_age_variable
+				add = 3
+			}
+		}
+		ai_chance = { base = 10 }
+	}
+
+	after = {
+		scope:murderer ?= {
+			trigger_event = agot_faceless_interaction.0002
+		}
+	}
+}
+
+# Faceless fakeout event trigger
+agot_faceless_interaction.9001 = {
+	hidden = yes
+
+	trigger = {
+		NOT = { has_character_flag = has_had_faceless_fakeout }
+	}
+
+	immediate = {
+		add_character_flag = has_had_faceless_fakeout
+		random_list = {
+			1 = {
+				trigger = {
+					location = {
+						OR = {
+							is_coastal = yes
+							has_building_or_higher = common_tradeport_01
+						}
+					}
+				}
+				trigger_event = agot_faceless_interaction.0004
+			}
+			1 = {
+				trigger = { # Loc wise doesn't make sense for a landless ruler
+					is_landed = yes
+				}
+				trigger_event = agot_faceless_interaction.0005
+			}
+			1 = {
+				trigger = { # Loc wise doesn't make much sense for a child
+					is_adult = yes
+				}
+				trigger_event = agot_faceless_interaction.0006
+			}
+			1 = {
+				trigger = { # Loc wise doesn't make much sense for a child
+					is_adult = yes
+				}
+				trigger_event = agot_faceless_interaction.0007
+			}
+			1 = {
+				trigger_event = agot_faceless_interaction.0008
+			}
+			1 = {
+				trigger_event = agot_faceless_interaction.0009
+			}
+		}
+	}
+}

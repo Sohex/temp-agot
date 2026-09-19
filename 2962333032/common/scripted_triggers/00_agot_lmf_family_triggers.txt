@@ -1,0 +1,118 @@
+﻿# a list of triggers used to define family relations (for custom loc)
+is_great_aunt_uncle_of = {
+	any_sibling = {
+		even_if_dead = yes
+		is_grandparent_of = $CHARACTER$
+	}
+}
+
+is_great_nibling_of = {
+	any_parent = {
+		even_if_dead = yes
+		is_nibling_of = $CHARACTER$
+	}
+}
+
+is_nibling_in_law_of = {
+	OR = {
+		any_spouse = {
+			is_nibling_of = $CHARACTER$
+			NOT = { this = $CHARACTER$ }
+		}
+		any_extended_family_member = {
+			is_nibling_of = prev
+			is_spouse_of = $CHARACTER$
+		}
+	}
+}
+
+is_sibling_in_law_of = {
+	NOT = { is_sibling_of = $CHARACTER$ }
+	OR = {
+		any_sibling = { is_spouse_of = $CHARACTER$ } #my sibling's spouse
+		any_spouse = { is_sibling_of = $CHARACTER$ } #my spouse's sibling
+		any_spouse = { any_sibling = { is_spouse_of = $CHARACTER$ } } #my spouse's sibling's spouse
+	}
+}
+
+is_aunt_uncle_in_law_of = {
+	OR = {
+		any_sibling = {
+			even_if_dead = yes
+			any_child = { is_spouse_of = $CHARACTER$ }
+		}
+		any_spouse = {
+			is_uncle_or_aunt_of = $CHARACTER$
+			NOT = { this = $CHARACTER$ }
+		}
+	}
+}
+
+is_cousin_in_law_of = {
+	OR = {
+		any_spouse = {
+			is_cousin_of = $CHARACTER$
+			NOT = { this = $CHARACTER$ }
+		}
+		any_extended_family_member = {
+			is_cousin_of = prev
+			is_spouse_of = $CHARACTER$
+		}
+	}
+}
+
+has_any_court_relationship_with = {
+	OR = {
+		is_close_or_extended_family_of = $CHARACTER$
+		is_consort_of = $CHARACTER$
+		is_heir_of = $CHARACTER$
+		is_knight_of = $CHARACTER$
+		is_councillor_of = $CHARACTER$
+		has_relation_friend = $CHARACTER$
+		is_hostage_of = $CHARACTER$
+		AND = {
+			has_any_court_position = yes
+			is_courtier_of = $CHARACTER$
+		}
+		AND = {
+			has_dynasty = yes
+			dynasty = $CHARACTER$.dynasty
+		}
+		# for guests
+		AND = {
+			is_courtier = no
+			is_playable_character = no
+			exists = host
+			host = $CHARACTER$
+		}
+	}
+}
+
+# used to determine if scoped character is a closer/equal relation to TARGET than CHARACTER (for custom loc)
+has_closer_or_equal_relation_than = {
+	$TARGET$ = { save_temporary_scope_as = relation_target }
+	family_relation_value <= $CHARACTER$.family_relation_value
+}
+
+# used to determine if the character is a relevant relation
+is_relevant_family_member = {
+	OR = {
+		is_close_or_extended_family_of = $CHARACTER$
+		is_great_grandchild_of = $CHARACTER$
+		is_great_grandparent_of = $CHARACTER$
+		is_consort_of = $CHARACTER$
+		is_councillor_of = $CHARACTER$
+		is_knight_of = $CHARACTER$
+		is_hostage_of = $CHARACTER$
+		has_relation_friend = $CHARACTER$
+		has_relation_lover = $CHARACTER$
+		AND = {
+			is_vassal_of = $CHARACTER$
+			highest_held_title_tier > tier_barony
+		}
+		AND = {
+			is_courtier_of = $CHARACTER$
+			has_any_court_position = yes
+		}
+	}
+}

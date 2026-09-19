@@ -1,0 +1,96 @@
+﻿#######
+# LMF #
+#######
+namespace = agot_pregnancy
+
+#In case the father is dead
+agot_pregnancy.3005 = {
+	hidden = yes
+
+	trigger = {
+		is_pregnant = yes
+		scope:real_father = { is_alive = no }
+	}
+
+	immediate = {
+		add_fornicator_trait_or_nothing_effect = yes
+	}
+}
+
+scripted_trigger agot_former_consort_was_father = {
+	OR = {
+		any_former_spouse = {
+			even_if_dead = yes
+			this = scope:father
+			this = scope:real_father
+			trigger_if = {
+				limit = {
+					is_alive = yes
+				}
+				NOT = { any_consort = { this = root } }
+			}
+		}
+		any_former_concubinist = {
+			even_if_dead = yes
+			this = scope:father
+			this = scope:real_father
+			trigger_if = {
+				limit = {
+					is_alive = yes
+				}
+				NOT = { any_consort = { this = root } }
+			}
+		}
+		any_former_concubine = {
+			even_if_dead = yes
+			this = scope:father
+			this = scope:real_father
+			trigger_if = {
+				limit = {
+					is_alive = yes
+				}
+				NOT = { any_consort = { this = root } }
+			}
+		}
+	}
+}
+
+#Liege's spymaster suspects unwed close relative is pregnant - LMF ADDED
+agot_pregnancy.9000 = {
+	hidden = yes
+
+	trigger = {
+		is_pregnant = yes # Fix to prevent pipeline failures on account of set_num_pregnancy_children being used on an unpregnant character
+		should_disallow_pregnancy_trigger = no
+		NOR = {
+			# If we are married or have concubines (or are a concubine) this event is not valid, as there is a (assumed) father.
+			any_consort = { count > 0 }
+			# Same for if a former spouse/concubine got us pregant.
+			agot_former_consort_was_father = yes
+			# Landed liege is a close relative who suspects the pregnancy
+		}
+		is_ruler = no
+		NOR = {
+			has_trait = fornicator
+			has_character_flag = liege_refused_seclusion
+		}
+		exists = liege
+		trait_is_shunned_or_criminal_in_my_or_lieges_faith_trigger = { TRAIT = trait:fornicator GENDER_CHARACTER = scope:mother }
+		scope:mother.liege = {
+			is_landed = yes
+			is_close_family_of = scope:mother
+			NOT = { scope:real_father = this }
+			exists = cp:councillor_spymaster
+			cp:councillor_spymaster.intrigue > scope:mother.intrigue
+		}
+	}
+
+	immediate = {
+		scope:mother = { save_scope_as = relative }
+		scope:real_father ?= { save_scope_as = baby_father }
+		liege = {
+			cp:councillor_spymaster = { save_scope_as = spymaster }
+			trigger_event = lmf_birth.1001
+		}
+	}
+}

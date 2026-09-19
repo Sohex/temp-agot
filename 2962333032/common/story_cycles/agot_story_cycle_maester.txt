@@ -1,0 +1,185 @@
+﻿story_maester = {
+	on_owner_death = {
+		story_owner = {
+			random_character_artifact = {
+				limit = {
+					OR = {
+						artifact_type = maester_link
+						artifact_type = maester_link_collection
+						artifact_type = maester_chain
+					}
+				}
+				destroy_artifact = this
+			}
+
+			if = { # Archmaester Succession
+				limit = {
+					has_trait = archmaester
+				}
+				save_scope_as = old_archmaester
+
+				random_living_maester = {
+					limit = {
+						agot_is_archmaester_candidate = yes
+						OR = {
+							agot_is_field_qualified = yes
+							agot_is_field_qualified_lesser = yes
+						}
+					}
+
+					weight = {
+						base = 10
+
+						modifier = {
+							add = 50
+
+							has_character_flag = maester_researcher
+						}
+
+						modifier = {
+							add = learning
+						}
+
+						modifier = { #Prioritize people with 2 links over 1
+							add = 1000
+							agot_is_field_qualified = yes
+						}
+
+						modifier = {
+							factor = 50
+							exists = dynasty
+							dynasty ?= { any_dynasty_member = { count > 1 } }
+						}
+					}
+					save_scope_as = archmaester_candidate
+				}
+
+				if = { # If somehow there isn't an applicable maester anywhere
+					limit = {
+						NOT = { exists = scope:archmaester_candidate }
+					}
+					create_character = {
+						location = root.capital_province
+						template = archmaester_character
+						save_scope_as = archmaester_candidate
+						age = { 40 75 }
+						dynasty = none
+					}
+				}
+				else = {
+					agot_progress_to_archmaester_effect = { ARCHMAESTER_CANDIDATE = scope:archmaester_candidate }
+				}
+
+				if = {
+					limit = {
+						NOT = { scope:archmaester_candidate.employer ?= global_var:citadel_title.holder }
+					}
+					scope:archmaester_candidate.employer ?= {
+						trigger_event = agot_maester.1001
+					}
+				}
+			}
+			else_if = { # Grandmaester progression
+				limit = {
+					has_inactive_trait = grandmaester
+				}
+
+				if = {
+					limit = {
+						has_character_flag = traveling_grandmaester
+					}
+					save_scope_as = old_grandmaester
+					title:h_the_iron_throne.holder ?= {
+						trigger_event = agot_maester.1004
+					}
+				}
+
+				agot_find_new_grandmaester_effect = yes
+			}
+
+			if = { # Seneschal election
+				limit = {
+					has_trait = archmaester
+					global_var:citadel_title.holder = this
+				}
+				save_scope_as = dead_archmaester
+				agot_seneschal_election_effect = { CURRENT_SENESCHAL = scope:dead_archmaester }
+			}
+		}
+		end_story = yes
+	}
+
+	effect_group = {
+		days = 365
+		triggered_effect = { # Some people are cast out, we can toss their story
+			trigger = {
+				story_owner = {
+					NOT = { has_trait = maester }
+				}
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+		triggered_effect = {
+			trigger = {}
+			effect = { # Back in your cage, little mouse
+				story_owner = {
+					agot_citadel_recover_lost_rats_effect = yes
+
+					# If this is too costly, will make 5 years instead
+					# maximum of 22 people ensure they have artifacts equipped every year
+					if = {
+						limit = { has_trait = archmaester }
+						if = {
+							limit = {
+								any_character_artifact = {
+									OR = {
+										artifact_type = archmaester_rod
+										artifact_type = archmaester_ring
+										artifact_type = archmaester_mask
+										artifact_type = maester_chain
+									}
+									is_equipped = no
+								}
+							}
+
+							agot_equip_archmaester_artifacts_effect = yes
+						}
+					}
+				}
+			}
+		}
+		triggered_effect = { # Maintnence for citadel
+			trigger = {
+				story_owner = {
+					has_title = global_var:citadel_title
+					has_trait = archmaester
+				}
+			}
+			effect = {
+				story_owner = {
+					every_courtier = {
+						agot_citadel_maintenance_effect = yes
+					}
+				}
+			}
+		}
+		triggered_effect = { # Novices and acolytes advance
+			trigger = {
+				story_owner = {
+					has_trait_xp = {
+						trait = maester
+						value < 100
+					}
+					age >= 8
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_citadel_maintenance.0101
+				}
+			}
+		}
+	}
+}

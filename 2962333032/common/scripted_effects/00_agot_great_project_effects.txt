@@ -1,0 +1,360 @@
+﻿agot_great_project_funded_great_fleet = {
+	if = {
+		limit = { $LEVEL$ = 1 }
+		if = {
+			limit = { religion = religion:the_ways_religion }
+			add_piety = 250
+		}
+		if = {
+			limit = { this != scope:owner }
+			dynasty ?= { add_dynasty_prestige = 100 }
+			reverse_add_opinion = {
+				modifier = friendliness_opinion
+				target = scope:owner
+				opinion = 20
+			}
+		}
+	}
+	else_if = {
+		limit = { $LEVEL$ = 2 }
+		if = {
+			limit = { religion = religion:the_ways_religion }
+			add_piety = 500
+		}
+		if = {
+			limit = { this != scope:owner }
+			dynasty ?= { add_dynasty_prestige = 200 }
+			reverse_add_opinion = {
+				modifier = friendliness_opinion
+				target = scope:owner
+				opinion = 30
+			}
+		}
+	}
+	else_if = {
+		limit = { $LEVEL$ = 3 }
+		if = {
+			limit = { religion = religion:the_ways_religion }
+			add_piety = 750
+		}
+		if = {
+			limit = { this != scope:owner }
+			dynasty ?= { add_dynasty_prestige = 250 }
+			reverse_add_opinion = {
+				modifier = friendliness_opinion
+				target = scope:owner
+				opinion = 40
+			}
+		}
+	}
+}
+
+agot_chroyane_gp_owner_reward_effect = {
+	add_prestige = massive_prestige_value
+	dynasty = { add_dynasty_prestige = massive_dynasty_prestige_value }
+	add_legitimacy = minor_legitimacy_gain
+}
+
+agot_chroyane_gp_contributor_reward_effect = {
+	$OVERLORD$ = { save_scope_as = overlord_scope }
+	add_prestige = major_prestige_value
+	add_legitimacy = miniscule_legitimacy_gain
+}
+
+agot_chroyane_gp_gather_contributors_in_list_effect = {
+	every_contribution = {
+		limit = { contribution_is_funded = yes }
+		contributor = {
+			if = {
+				limit = {
+					scope:great_project ?= {
+						trigger_if = {
+							limit = { has_variable = plundered_contributors }
+							NOT = {
+								is_target_in_variable_list = {
+									name = plundered_contributors
+									target = prev
+								}
+							}
+						}
+					}
+				}
+				add_to_list = agot_contributors_to_reward
+			}
+		}
+	}
+}
+
+agot_chroyane_gp_determine_if_contributed_and_save_scope_effect = {
+	scope:great_project ?= {
+		if = {
+			limit = {
+				any_contribution = {
+					contribution_id = $CONTRIBUTION$
+					contribution_is_funded = yes
+				}
+			}
+			every_contribution = {
+				limit = {
+					contribution_id = $CONTRIBUTION$
+					contribution_is_funded = yes
+				}
+				contributor = {
+					if = {
+						limit = {
+							is_alive = no
+							house = scope:owner.house
+						}
+						scope:owner = { save_scope_as = contributed_$CONTRIBUTION$ }
+					}
+					else = {
+						save_scope_as = contributed_$CONTRIBUTION$
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_chroyane_gp_contribution_rewards_effect = {
+	# Materials
+	if = {
+		limit = { scope:great_project ?= { scope:contributed_materials ?= root } }
+		agot_chroyane_gp_materials_contributor_reward_effect = yes
+	}
+	# Work force
+	if = {
+		limit = { scope:great_project ?= { scope:contributed_work_force ?= root } }
+		agot_chroyane_gp_work_force_contributor_reward_effect = yes
+	}
+	# Holdings
+	if = {
+		limit = { agot_has_character_contributed_to_chroyane_holding = yes }
+		agot_chroyane_gp_advanced_contributor_reward_effect = yes
+	}
+	# Buildings
+	if = {
+		limit = { agot_has_character_contributed_to_chroyane_building = yes }
+		agot_chroyane_gp_advanced_contributor_reward_effect = yes
+	}
+	# Special Buildings
+	if = {
+		limit = { agot_has_character_contributed_to_chroyane_special_building = yes }
+		agot_chroyane_gp_advanced_contributor_reward_effect = yes
+	}
+}
+
+# Memory effects
+agot_chroyane_ruins_gp_owner_planning_memory_effect = {
+	scope:owner ?= {
+		create_character_memory = {
+			type = agot_started_planning_chroyane_ruins_restoration_memory
+			participants = { founder = scope:owner }
+		}
+		scope:new_memory ?= {
+			if = {
+				limit = { NOT = { exists = var:ruins_restoration_planned_location } }
+				set_variable = {
+					name = ruins_restoration_planned_location
+					value = $PROVINCE$.title_province
+				}
+			}
+		}
+	}
+}
+
+agot_chroyane_ruins_gp_owner_completed_memory_effect = {
+	scope:owner ?= {
+		create_character_memory = {
+			type = agot_restored_chroyane_ruins_memory
+			participants = { founder = scope:owner }
+		}
+		scope:new_memory ?= {
+			if = {
+				limit = { NOT = { exists = var:ruins_restoration_completed_location } }
+				set_variable = {
+					name = ruins_restoration_completed_location
+					value = $PROVINCE$.title_province
+				}
+			}
+		}
+	}
+}
+
+agot_chroyane_building_gp_owner_planning_memory_effect = {
+	scope:owner ?= {
+		create_character_memory = {
+			type = agot_started_planning_chroyane_building_memory
+			participants = { founder = scope:owner }
+		}
+		scope:new_memory ?= {
+			if = {
+				limit = { NOT = { exists = var:building_upgrade_planned_location } }
+				set_variable = {
+					name = building_upgrade_planned_location
+					value = $PROVINCE$.title_province
+				}
+			}
+		}
+	}
+}
+
+agot_chroyane_building_gp_owner_completed_memory_effect = {
+	scope:owner ?= {
+		create_character_memory = {
+			type = agot_completed_chroyane_building_memory
+			participants = { founder = scope:owner }
+		}
+		scope:new_memory ?= {
+			if = {
+				limit = { NOT = { exists = var:building_upgrade_completed_location } }
+				set_variable = {
+					name = building_upgrade_completed_location
+					value = $PROVINCE$.title_province
+				}
+			}
+		}
+	}
+}
+
+agot_chroyane_gp_contributor_disappointment_effect = {
+	scope:owner = { add_prestige = monumental_prestige_loss }
+	every_contribution = {
+		limit = { contribution_is_funded = yes }
+		contributor = {
+			if = {
+				limit = {
+					this != scope:owner
+					this != scope:founder
+				}
+				add_to_list = contributors_to_disappoint
+			}
+		}
+	}
+	every_in_list = {
+		list = contributors_to_disappoint
+		add_opinion = {
+			modifier = wasted_our_efforts
+			target = scope:owner
+			opinion = -30
+		}
+	}
+}
+
+agot_chroyane_gp_work_force_contributor_reward_effect = {
+	if = {
+		limit = {
+			this != scope:owner
+			is_alive = yes
+		}
+		send_interface_toast = {
+			title = great_project_contribution_msg_t
+			left_icon = root
+			right_icon = scope:owner
+
+			if = {
+				limit = { government_allows = merit }
+				change_merit = medium_merit_gain # 60
+			}
+			if = {
+				limit = { government_allows = administrative }
+				change_influence = medium_influence_gain # 60
+			}
+			else = {
+				add_prestige = medium_prestige_gain # 150
+			}
+		}
+	}
+}
+
+agot_chroyane_gp_materials_contributor_reward_effect = {
+	if = {
+		limit = {
+			this != scope:owner
+			is_alive = yes
+		}
+		send_interface_toast = {
+			title = great_project_contribution_msg_t
+			left_icon = root
+			right_icon = scope:owner
+
+			if = {
+				limit = { government_allows = merit }
+				change_merit = major_merit_gain # 100
+			}
+			if = {
+				limit = { government_allows = administrative }
+				change_influence = major_influence_gain # 100
+			}
+			else = {
+				add_prestige = major_prestige_gain # 350
+			}
+		}
+	}
+}
+
+agot_chroyane_gp_advanced_contributor_reward_effect = {
+	if = {
+		limit = {
+			this != scope:owner
+			is_alive = yes
+		}
+		send_interface_toast = {
+			title = great_project_contribution_msg_t
+			left_icon = root
+			right_icon = scope:owner
+
+			if = {
+				limit = { government_allows = merit }
+				change_merit = massive_merit_gain # 150
+			}
+			if = {
+				limit = { government_allows = administrative }
+				change_influence = massive_influence_gain # 150
+			}
+			else = {
+				add_prestige = massive_prestige_gain # 750
+			}
+		}
+	}
+}
+
+agot_chroyane_gp_ruins_conversion_effect = {
+	$PROVINCE$ = {
+		set_coa = county.holder.house
+		if = {
+			limit = {
+				NOR = {
+					county.culture = county.holder.culture
+					county.culture = culture:westerosi_valyrian
+					county.culture = culture:essosi_valyrian
+				}
+			}
+			if = {
+				limit = {
+					NOT = { county.culture = culture:westerosi_valyrian }
+					county.holder.culture = culture:high_valyrian
+					has_game_rule = agot_hv_conversion_offshoots
+					title_province = { geographical_region = world_westeros }
+				}
+				county ?= { set_county_culture = culture:westerosi_valyrian }
+			}
+			else_if = {
+				limit = {
+					NOT = { county.culture = culture:essosi_valyrian }
+					county.holder.culture = culture:high_valyrian
+					has_game_rule = agot_hv_conversion_offshoots
+					NOT = { title_province = { geographical_region = world_westeros } }
+				}
+				county ?= { set_county_culture = culture:essosi_valyrian }
+			}
+			else = {
+				county ?= { set_county_culture = county.holder.culture }
+			}
+		}
+		if = {
+			limit = { NOT = { county.faith = county.holder.faith } }
+			county ?= { set_county_faith = county.holder.faith }
+		}
+	}
+}

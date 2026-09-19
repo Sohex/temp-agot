@@ -1,0 +1,470 @@
+﻿agot_wall_reclamation_cb = {
+	group = de_jure
+	should_check_for_interface_availability = yes # Covered by the county dejure cb
+
+	allowed_for_character = {
+		scope:attacker = {
+			NOT = { culture = { agot_is_wildling_culture = yes }}
+		}
+	}
+
+	allowed_against_character = {
+		exists = title:k_the_wall.holder
+		title:k_the_wall.holder = {
+			has_de_jure_claim_on = scope:defender
+			government_has_flag = government_is_nw
+		}
+		NOT = {
+			title:k_the_wall.holder = scope:defender
+			OR = {
+				scope:defender = { target_is_liege_or_above = scope:attacker }
+				scope:attacker = { target_is_liege_or_above = scope:defender }
+			}
+		}
+	}
+
+	target_titles = all
+	ai_only_against_neighbors = no
+	#target_title_tier = all
+	ignore_effect = change_title_holder
+	#target_de_jure_regions_above = yes
+	combine_into_one = yes
+	white_peace_possible = no
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	transfer_behavior = transfer
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = "RECLAIM_CB_WAR_NAME"
+	war_name_base = "RECLAIM_CB_WAR_NAME_BASE"
+	cb_name = RECLAIM_CB_NAME
+	interface_priority = 100
+
+	attacker_wargoal_percentage = 0.8
+
+	valid_to_start = {
+		scope:defender = {
+			agot_is_independent_ruler = yes
+			NOT = { has_trait = nightswatch }
+		}
+
+		exists = title:k_the_wall.holder
+
+		title:k_the_wall = {
+			any_in_de_jure_hierarchy = {
+				exists = holder
+				holder.top_liege = { culture = { agot_is_wildling_culture = yes }}
+				NOT = { holder.top_liege = title:k_the_wall.holder }
+				holder.top_liege = scope:defender
+			}
+		}
+	}
+
+	on_declaration = {
+		on_declared_war = yes
+	}
+
+	should_invalidate = {
+		any_false = {
+			scope:defender = {
+				agot_is_independent_ruler = yes
+				NOT = { has_trait = nightswatch }
+			}
+
+			exists = title:k_the_wall.holder
+
+			title:k_the_wall = {
+				any_in_de_jure_hierarchy = {
+					exists = holder
+					holder.top_liege = { culture = { agot_is_wildling_culture = yes }}
+					NOT = { holder.top_liege = title:k_the_wall.holder }
+					holder.top_liege = scope:defender
+				}
+			}
+		}
+	}
+
+	on_invalidated_desc = msg_reclaim_war_invalidated_message
+
+	on_invalidated = {
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		desc = WHITE_PEACE_DISABLED
+	}
+
+	on_victory_desc = {
+		desc = de_reclaim_wall_victory_desc
+	}
+
+	on_victory = {
+		create_title_and_vassal_change = {
+			type = conquest
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+
+		title:k_the_wall = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					exists = holder
+					holder.top_liege = { culture = { agot_is_wildling_culture = yes }}
+					NOT = { holder.top_liege = title:k_the_wall.holder }
+					holder.top_liege = scope:defender
+					NOT = {
+						tier = tier_barony
+						is_capital_barony = yes
+					}
+				}
+
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:change
+					take_baronies = yes
+				}
+			}
+
+			resolve_title_and_vassal_change = scope:change
+		}
+
+		modify_all_participants_fame_values = {
+			WINNER = scope:attacker
+			LOSER = scope:defender
+			FAME_BASE = 10
+			IS_RELIGIOUS_WAR = no
+			WINNER_FAME_SCALE = 50
+			LOSER_FAME_SCALE = -10
+			WINNER_ALLY_FAME_SCALE = 50
+			LOSER_ALLY_FAME_SCALE = 20
+		}
+
+		if = {
+			limit = {
+				scope:attacker.primary_title.tier > scope:defender.primary_title.tier
+			}
+
+			scope:attacker.dynasty = {
+				add_dynasty_prestige = miniscule_dynasty_prestige_value
+			}
+		}
+		else_if = {
+			limit = {
+				scope:attacker.primary_title.tier = scope:defender.primary_title.tier
+			}
+
+			scope:attacker.dynasty = {
+				add_dynasty_prestige = minor_dynasty_prestige_value
+			}
+		}
+		else = {
+			scope:attacker.dynasty = {
+				add_dynasty_prestige = medium_dynasty_prestige_value
+			}
+		}
+
+	}
+
+	on_defeat_desc = {
+		desc = de_reclaim_wall_defeat_desc
+	}
+
+	on_defeat = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		# Attacker loses Prestige, all other participants gain Prestige based on their war contribution (Defender gets full Prestige).
+		modify_all_participants_fame_values = {
+			WINNER = scope:defender
+			LOSER = scope:attacker
+			FAME_BASE = 10
+			IS_RELIGIOUS_WAR = no
+			WINNER_FAME_SCALE = 50
+			LOSER_FAME_SCALE = -100
+			WINNER_ALLY_FAME_SCALE = 50
+			LOSER_ALLY_FAME_SCALE = 20
+		}
+
+		if = {
+			limit = {
+				scope:attacker.primary_title.tier > scope:defender.primary_title.tier
+			}
+
+			scope:defender.dynasty = {
+				add_dynasty_prestige = major_dynasty_prestige_value
+			}
+		}
+		else_if = {
+			limit = {
+				scope:attacker.primary_title.tier = scope:defender.primary_title.tier
+			}
+
+			scope:defender.dynasty = {
+				add_dynasty_prestige = medium_dynasty_prestige_value
+			}
+		}
+		else = {
+			scope:defender.dynasty = {
+				add_dynasty_prestige = minor_dynasty_prestige_value
+			}
+		}
+
+		scope:attacker = {
+			save_temporary_scope_as = loser
+		}
+		on_lost_aggression_war_discontent_loss = yes
+	}
+
+	ai = no
+}
+
+agot_wall_reclamation_post_nw_cb = {
+	group = de_jure
+	should_check_for_interface_availability = yes # Covered by the county dejure cb
+
+	allowed_for_character = {
+		scope:attacker = {
+			NOT = { culture = { agot_is_wildling_culture = yes } }
+			primary_title ?= { has_variable = post_nw_quest }
+		}
+	}
+
+	allowed_against_character = {
+		exists = title:c_castle_black.holder
+		title:c_castle_black.holder = {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+		}
+		exists = title:c_eastwatch.holder
+		title:c_eastwatch.holder = {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+		}
+		exists = title:c_the_nightfort.holder
+		title:c_the_nightfort.holder = {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+		}
+		exists = title:c_the_shadow_tower.holder
+		title:c_the_shadow_tower.holder = {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+		}
+		trigger_if = {
+			limit = { title:c_castle_black.holder = { is_independent_ruler = yes } }
+			scope:defender = title:c_castle_black.holder
+		}
+		trigger_else = {
+			scope:defender = title:c_castle_black.holder.top_liege
+		}
+	}
+
+	valid_to_start = { always = no } # triggered from event
+
+	white_peace_possible = no
+
+	target_titles = all
+	ai_only_against_neighbors = no
+	ignore_effect = change_title_holder
+	combine_into_one = yes
+
+	on_primary_attacker_death = invalidate
+	on_primary_defender_death = inherit
+
+	transfer_behavior = transfer
+
+	attacker_allies_inherit = no
+	defender_allies_inherit = yes
+
+	war_name = "RECLAIM_CB_WAR_NAME"
+	war_name_base = "RECLAIM_CB_WAR_NAME_BASE"
+	cb_name = RECLAIM_CB_NAME
+	interface_priority = 100
+
+	attacker_wargoal_percentage = 0.8
+
+	on_declaration = {
+		on_declared_war = yes
+	}
+
+	should_invalidate = {
+		any_false = {
+			scope:defender = {
+				agot_is_independent_ruler = yes
+				NOT = { has_trait = nightswatch }
+				culture = { agot_is_wildling_culture = yes }
+			}
+
+			title:k_the_wall = {
+				any_in_de_jure_hierarchy = {
+					exists = holder
+					holder.top_liege = { culture = { agot_is_wildling_culture = yes } }
+				}
+			}
+			scope:attacker = {
+				is_alive = yes
+				is_playable_character = yes
+				primary_title = { has_variable = post_nw_quest }
+			}
+			NOT = { exists = title:k_the_wall.holder }
+		}
+	}
+
+	on_invalidated_desc = msg_reclaim_war_invalidated_message
+
+	on_invalidated = {
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		desc = WHITE_PEACE_DISABLED
+	}
+
+	on_victory_desc = {
+		desc = de_reclaim_wall_victory_desc
+	}
+
+	on_victory = {
+		create_title_and_vassal_change = {
+			type = conquest
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+
+		title:k_the_wall = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					exists = holder
+					tier > tier_barony
+					OR = {
+						holder = { culture = { agot_is_wildling_culture = yes } }
+						trigger_if = {
+							limit = { exists = holder.top_liege }
+							holder.top_liege = { culture = { agot_is_wildling_culture = yes } }
+						}
+					}
+					OR = {
+						this = title:c_castle_black
+						this = title:c_eastwatch
+						this = title:c_the_nightfort
+						this = title:c_the_shadow_tower
+						this = title:d_the_wall
+					}
+					holder = { NOT = { government_has_flag = government_is_ruins } }
+				}
+
+				change_title_holder_include_vassals = {
+					holder = scope:attacker
+					change = scope:change
+					take_baronies = yes
+				}
+			}
+
+			resolve_title_and_vassal_change = scope:change
+		}
+
+		scope:attacker = {
+			trigger_event = agot_nw_ranger_events.0106
+		}
+
+		modify_all_participants_fame_values = {
+			WINNER = scope:attacker
+			LOSER = scope:defender
+			FAME_BASE = 10
+			IS_RELIGIOUS_WAR = no
+			WINNER_FAME_SCALE = 50
+			LOSER_FAME_SCALE = -10
+			WINNER_ALLY_FAME_SCALE = 50
+			LOSER_ALLY_FAME_SCALE = 20
+		}
+
+		if = {
+			limit = {
+				scope:attacker.primary_title.tier > scope:defender.primary_title.tier
+			}
+
+			scope:attacker.dynasty = {
+				add_dynasty_prestige = miniscule_dynasty_prestige_value
+			}
+		}
+		else_if = {
+			limit = {
+				scope:attacker.primary_title.tier = scope:defender.primary_title.tier
+			}
+
+			scope:attacker.dynasty = {
+				add_dynasty_prestige = minor_dynasty_prestige_value
+			}
+		}
+		else = {
+			scope:attacker.dynasty = {
+				add_dynasty_prestige = medium_dynasty_prestige_value
+			}
+		}
+
+	}
+
+	on_defeat_desc = {
+		desc = de_reclaim_wall_defeat_desc
+	}
+
+	on_defeat = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+		if = {
+			limit = {
+				scope:attacker = { is_imprisoned = no }
+			}
+			hard_imprison_character_effect = {
+				TARGET = scope:attacker
+				IMPRISONER = scope:defender
+			}
+		}
+		scope:attacker = { trigger_event = agot_nw_ranger_events.0104 }
+
+		# Attacker loses Prestige, all other participants gain Prestige based on their war contribution (Defender gets full Prestige).
+		modify_all_participants_fame_values = {
+			WINNER = scope:defender
+			LOSER = scope:attacker
+			FAME_BASE = 10
+			IS_RELIGIOUS_WAR = no
+			WINNER_FAME_SCALE = 50
+			LOSER_FAME_SCALE = -100
+			WINNER_ALLY_FAME_SCALE = 50
+			LOSER_ALLY_FAME_SCALE = 20
+		}
+
+		if = {
+			limit = {
+				scope:attacker.primary_title.tier > scope:defender.primary_title.tier
+			}
+
+			scope:defender.dynasty = {
+				add_dynasty_prestige = major_dynasty_prestige_value
+			}
+		}
+		else_if = {
+			limit = {
+				scope:attacker.primary_title.tier = scope:defender.primary_title.tier
+			}
+
+			scope:defender.dynasty = {
+				add_dynasty_prestige = medium_dynasty_prestige_value
+			}
+		}
+		else = {
+			scope:defender.dynasty = {
+				add_dynasty_prestige = minor_dynasty_prestige_value
+			}
+		}
+
+		scope:attacker = {
+			save_temporary_scope_as = loser
+		}
+		on_lost_aggression_war_discontent_loss = yes
+	}
+}

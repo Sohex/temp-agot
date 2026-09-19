@@ -1,0 +1,1095 @@
+﻿###########################
+# Defiance Scenario Setup #
+###########################
+
+agot_8277_1_1_dd_scenario_setup = {
+	if = {
+		limit = {
+			AND = {
+				title:h_the_iron_throne.holder ?= character:Targaryen_1
+				title:e_the_westerlands.holder ?= character:Lannister_1
+			}
+		}
+		character:Targaryen_1 ?= { # Make Tywin hand and make Denys a nemesis
+			designate_diarch = title:e_the_westerlands.holder
+
+			create_story = {
+				type = story_agot_scenario_dd
+				save_scope_as = scenario_dd_story
+			}
+		}
+		set_global_variable = aerys_imprisoned # Used later if Aerys dies while in prison
+		character:Lannister_1 ?= { block_firing_councillor_effect = { COURT_OWNER = character:Targaryen_1 } } # Don't get rid of Tywin that easily
+		character:Darklyn_47 ?= { # Prevent Denys from traveling, creating a faction or marrying way above his station considering the circumstances
+			add_character_modifier = {
+				modifier = agot_precarious_reputation
+				years = 5
+			}
+			add_faction_cooldown_effect = { YEARS = 5 }
+			add_character_flag = planning_an_activity
+		}
+		scope:scenario_dd_story ?= { # Pre-fetch of Aerys council to use later
+			if = {
+				limit = {
+					NOT = { has_global_variable = initial_council_saved }
+				}
+				if = { # Chancellor
+					limit = { exists = character:Targaryen_1.cp:councillor_chancellor }
+					set_variable = {
+						name = aerys_chancellor
+						value = character:Targaryen_1.cp:councillor_chancellor
+					}
+				}
+				if = { # Steward
+					limit = { exists = character:Targaryen_1.cp:councillor_steward }
+					set_variable = {
+						name = aerys_steward
+						value = character:Targaryen_1.cp:councillor_steward
+					}
+				}
+				if = { # Marshal
+					limit = { exists = character:Targaryen_1.cp:councillor_marshal }
+					set_variable = {
+						name = aerys_marshal
+						value = character:Targaryen_1.cp:councillor_marshal
+					}
+				}
+				if = { # Spymaster
+					limit = { exists = character:Targaryen_1.cp:councillor_spymaster }
+					set_variable = {
+						name = aerys_spymaster
+						value = character:Targaryen_1.cp:councillor_spymaster
+					}
+				}
+				if = { # Admiral
+					limit = { exists = character:Targaryen_1.cp:councillor_admiral }
+					set_variable = {
+						name = aerys_admiral
+						value = character:Targaryen_1.cp:councillor_admiral
+					}
+				}
+				if = { # Chaplain
+					limit = { exists = character:Targaryen_1.cp:councillor_court_chaplain }
+					set_variable = {
+						name = aerys_chaplain
+						value = character:Targaryen_1.cp:councillor_court_chaplain
+					}
+				}
+				set_global_variable = initial_council_saved
+			}
+		}
+	}
+}
+
+##########################
+# Aerys Specific Effects #
+##########################
+
+agot_dd_set_aerys_free = { # Let the man breathe
+	character:Targaryen_3 ?= { # Remove Rhaegar flag
+		if = {
+			limit = { has_global_variable = aerys_imprisoned }
+			remove_global_variable = aerys_imprisoned
+		}
+	}
+	character:Targaryen_1 ?= { # Remove prison related items
+		if = {
+			limit = { has_character_flag = keep_imprisoned }
+			remove_character_flag = keep_imprisoned
+		}
+		if = {
+			limit = {
+				is_alive = yes
+				is_imprisoned = yes
+			}
+			release_from_prison = yes
+		}
+		trigger_event = {
+			id = agot_scenario_dd.0012
+			months = 6
+		}
+		hidden_effect = {
+			if = {
+				limit = { has_character_modifier = afraid_of_dying_modifier }
+				remove_character_modifier = afraid_of_dying_modifier
+			}
+			if = {
+				limit = { has_character_modifier = determined_to_live_modifier }
+				remove_character_modifier = determined_to_live_modifier
+			}
+		}
+	}
+	character:Selmy_3 ?= { # Remove rescue related flags
+		if = {
+			limit = {
+				is_alive = yes
+				has_character_flag = yearly_1010_abductor
+				has_character_flag = agot_is_at_unknown_place
+				has_character_flag = use_stealth_clothes
+			}
+			remove_character_flag = yearly_1010_abductor
+			remove_character_flag = agot_is_at_unknown_place
+			remove_character_flag = use_stealth_clothes
+		}
+	}
+}
+
+agot_dd_camping_dragons = {
+	if = {
+		limit = {
+			character:Targaryen_1 ?= {
+				is_alive = yes
+				is_landed = no
+				NOT = { has_trait = nightswatch }
+			}
+		}
+		# Set Up Camp
+		character:Targaryen_1 = {
+			if = {
+				limit = { has_character_flag = planning_an_activity }
+				remove_character_flag = planning_an_activity
+			}
+			create_landless_adventurer_title_effect = {
+				REASON = flag:exile
+				FLAVOR_CHAR = title:h_the_iron_throne.holder
+			}
+		}
+		# Bring the Wife
+		if = {
+			limit = { character:Targaryen_2 ?= { NOT = { is_courtier_of = character:Targaryen_1 } } }
+			character:Targaryen_2 = { character:Targaryen_1 = { add_courtier = prev } }
+		}
+	}
+}
+
+##########################
+# Release Result Effects #
+##########################
+
+agot_dd_execute_conspirators = { # Put Them to Death
+	if = {
+		limit = { # Aerys is choosing
+			title:h_the_iron_throne.holder ?= {
+				OR = {
+					has_character_flag = selmy_saved
+					has_character_flag = rescued_by_war
+				}
+			}
+		}
+		character:Darklyn_47.house.house_head ?= { # Execute House Darklyn
+			house ?= {
+				every_house_member = {
+					limit = {
+						is_alive = yes
+						NOR = {
+							this ?= title:d_duskendale.holder
+							this ?= character:Darklyn_47.house.house_head
+						}
+						NOR = {
+							has_trait = silent_sister
+							has_trait = septon
+							has_trait = kingsguard
+							has_trait = nightswatch
+						}
+						location = { geographical_region = world_westeros_seven_kingdoms }
+					}
+					death = { # Family first
+						death_reason = death_execution
+						killer = title:h_the_iron_throne.holder
+					}
+				}
+			}
+			death = { # Then primary playable character
+				death_reason = death_execution
+				killer = title:h_the_iron_throne.holder
+			}
+		}
+	}
+	else_if = { # Rhaegar is choosing
+		limit = { character:Targaryen_3 ?= { has_character_flag = casualty_of_war } }
+		character:Darklyn_47.house.house_head ?= { # Execute House Darklyn; Spare the Women and Children
+			house ?= {
+				every_house_member = {
+					limit = {
+						is_alive = yes
+						is_male = yes
+						NOR = {
+							this ?= title:d_duskendale.holder
+							this ?= character:Darklyn_47.house.house_head
+						}
+						age >= 18
+						NOR = {
+							has_trait = silent_sister
+							has_trait = septon
+							has_trait = kingsguard
+							has_trait = nightswatch
+						}
+						location = { geographical_region = world_westeros_seven_kingdoms }
+					}
+					death = { # Family first
+						death_reason = death_execution
+						killer = title:h_the_iron_throne.holder
+					}
+				}
+			}
+			death = { # Then primary playable character
+				death_reason = death_execution
+				killer = title:h_the_iron_throne.holder
+			}
+		}
+	}
+	character:Lavelos_22 ?= { # Burn the Witch
+		death = {
+			death_reason = death_burned_witch
+			killer = title:h_the_iron_throne.holder
+		}
+	}
+	if = {
+		limit = { # Aerys is choosing
+			title:h_the_iron_throne.holder ?= {
+				OR = {
+					has_character_flag = selmy_saved
+					has_character_flag = rescued_by_war
+				}
+			}
+		}
+		character:Hollard_34.house.house_head ?= { # Execute House Hollard, Leave Dontos Alive
+			house ?= {
+				every_house_member = {
+					limit = {
+						is_alive = yes
+						NOR = {
+							this ?= character:Hollard_10
+							this ?= title:c_crownback.holder
+							this ?= character:Hollard_34.house.house_head
+						}
+						NOR = {
+							has_trait = silent_sister
+							has_trait = septon
+							has_trait = kingsguard
+							has_trait = nightswatch
+						}
+						location = { geographical_region = world_westeros_seven_kingdoms }
+					}
+					death = { # Family first
+						death_reason = death_execution
+						killer = title:h_the_iron_throne.holder
+					}
+				}
+			}
+			death = { # Then primary playable character
+				death_reason = death_execution
+				killer = title:h_the_iron_throne.holder
+			}
+		}
+		character:Hollard_10 ?= {
+			remove_claim = title:c_crownback
+		}
+	}
+	else_if = { # Rhaegar is choosing
+		limit = { character:Targaryen_3 = { has_character_flag = casualty_of_war } }
+		character:Hollard_34.house.house_head ?= { # Execute House Hollard; Spare the Women and Children
+			house ?= {
+				every_house_member = {
+					limit = {
+						is_alive = yes
+						is_male = yes
+						age >= 18
+						NOR = {
+							this ?= title:c_crownback.holder
+							this ?= character:Hollard_34.house.house_head
+						}
+						NOR = {
+							has_trait = silent_sister
+							has_trait = septon
+							has_trait = kingsguard
+							has_trait = nightswatch
+						}
+						location = { geographical_region = world_westeros_seven_kingdoms }
+					}
+					death = { # Family first
+						death_reason = death_execution
+						killer = title:h_the_iron_throne.holder
+					}
+				}
+			}
+			death = { # Then primary playable character
+				death_reason = death_execution
+				killer = title:h_the_iron_throne.holder
+			}
+		}
+	}
+}
+
+#######################
+# Conspirator Effects #
+#######################
+
+agot_dd_claimless_conspirators = {
+	character:Darklyn_47.house ?= { # Remove House Darklyn's Claims
+		every_house_member = {
+			limit = {
+				is_alive = yes
+				OR = {
+					is_landed = yes
+					any_claim = {}
+				}
+			}
+			every_claim = {
+				limit = {
+					NOR = {
+						this ?= title:d_duskendale
+						this ?= title:c_duskendale
+					}
+				}
+				prev = {
+					remove_claim = prev
+				}
+			}
+			remove_claim = title:d_duskendale
+			remove_claim = title:c_duskendale
+		}
+	}
+	character:Hollard_34.house ?= { # Remove House Hollard's Claims
+		every_house_member = {
+			limit = {
+				is_alive = yes
+				OR = {
+					is_landed = yes
+					any_claim = {}
+				}
+			}
+			every_claim = {
+				limit = {
+					NOT = {
+						this ?= title:c_crownback
+					}
+				}
+				prev = {
+					remove_claim = prev
+				}
+			}
+			remove_claim = title:c_crownback
+		}
+	}
+}
+
+agot_dd_camping_conspirators = {
+	if = {
+		limit = {
+			character:Darklyn_47.house.house_head ?= {
+				this ?= character:Darklyn_47
+				is_alive = yes
+				is_landed = no
+				NOT = { has_trait = nightswatch }
+			}
+		}
+		# Set Up Camp
+		character:Darklyn_47.house.house_head = {
+			if = {
+				limit = { is_landed = yes }
+				depose = yes
+			}
+			if = {
+				limit = { has_character_flag = planning_an_activity }
+				remove_character_flag = planning_an_activity
+			}
+			create_landless_adventurer_title_effect = {
+				REASON = flag:exile
+				FLAVOR_CHAR = title:h_the_iron_throne.holder
+			}
+		}
+		# Bring the Family
+		character:Darklyn_47.house ?= {
+			every_house_member = {
+				limit = {
+					NOT = { this ?= character:Darklyn_47.house.house_head }
+					is_alive = yes
+					is_landed = no
+					NOT = { is_courtier_of = character:Darklyn_47.house.house_head }
+					NOR = {
+						has_trait = silent_sister
+						has_trait = septon
+						has_trait = kingsguard
+						has_trait = nightswatch
+					}
+					location = { geographical_region = world_westeros_seven_kingdoms }
+				}
+				character:Darklyn_47.house.house_head ?= {
+					add_courtier = prev
+				}
+			}
+		}
+		# Even Them Too
+		character:Hollard_7.house ?= {
+			every_house_member = {
+				limit = {
+					is_alive = yes
+					is_landed = no
+					NOT = { is_courtier_of = character:Darklyn_47.house.house_head }
+					NOR = {
+						has_trait = silent_sister
+						has_trait = septon
+						has_trait = kingsguard
+						has_trait = nightswatch
+					}
+					location = { geographical_region = world_westeros_seven_kingdoms }
+				}
+				character:Darklyn_47.house.house_head ?= {
+					add_courtier = prev
+				}
+				return_to_court = yes
+			}
+		}
+	}
+}
+
+agot_dd_denys_duskwashing_effect = {
+	$HOLDER$ = { save_scope_as = holder }
+	create_title_and_vassal_change = {
+		type = created
+		save_scope_as = ducks
+	}
+	title:k_duskwashes = {
+		change_title_holder = {
+			holder = scope:holder
+			change = scope:ducks
+		}
+	}
+	resolve_title_and_vassal_change = scope:ducks
+}
+
+##########################
+# Title Transfer Effects #
+##########################
+# Uses the above three effects
+
+agot_dd_duskendale_title_transfer = {
+	$HOLDER$ = { save_scope_as = holder }
+	# Transfer of Power
+	create_title_and_vassal_change = {
+		type = granted
+		save_scope_as = duskendale_change
+		add_claim_on_loss = no
+	}
+	if = {
+		limit = { scope:holder ?= { is_alive = yes } }
+		character:Darklyn_47.house ?= {
+			every_house_member = {
+				limit = {
+					any_held_title = {
+						count > 1
+						tier >= tier_county
+					}
+				}
+				every_held_title = {
+					limit = {
+						NOR = {
+							this ?= title:d_duskendale
+							this ?= title:c_duskendale
+							this ?= title:c_crownback
+						}
+						tier >= tier_county
+					}
+					change_title_holder_include_vassals = {
+						holder = scope:holder
+						change = scope:duskendale_change
+					}
+				}
+			}
+		}
+		character:Hollard_34.house ?= {
+			every_house_member = {
+				limit = {
+					any_held_title = {
+						count > 1
+						tier >= tier_county
+					}
+				}
+				every_held_title = {
+					limit = {
+						NOT = {
+							this ?= title:c_crownback
+						}
+						tier >= tier_county
+					}
+					change_title_holder_include_vassals = {
+						holder = scope:holder
+						change = scope:duskendale_change
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				title:d_duskendale.holder ?= {
+					OR = {
+						this ?= character:Darklyn_47.house.house_head
+						this ?= character:Hollard_34.house.house_head
+					}
+				}
+			}
+			title:d_duskendale ?= {
+				change_title_holder_include_vassals = {
+					holder = scope:holder
+					change = scope:duskendale_change
+				}
+			}
+			title:c_duskendale ?= {
+				change_title_holder_include_vassals = {
+					holder = scope:holder
+					change = scope:duskendale_change
+				}
+			}
+			title:c_crownback ?= {
+				change_title_holder_include_vassals = {
+					holder = scope:holder
+					change = scope:duskendale_change
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { scope:holder ?= { is_alive = no } }
+		character:Darklyn_47.house ?= {
+			every_house_member = {
+				limit = {
+					any_held_title = {
+						count > 1
+						tier >= tier_county
+					}
+				}
+				every_held_title = {
+					limit = {
+						NOR = {
+							this ?= title:d_duskendale
+							this ?= title:c_duskendale
+							this ?= title:c_crownback
+						}
+						tier >= tier_county
+					}
+					change_title_holder_include_vassals = {
+						holder = scope:holder.house.house_head
+						change = scope:duskendale_change
+					}
+				}
+			}
+		}
+		character:Hollard_34.house ?= {
+			every_house_member = {
+				limit = {
+					any_held_title = {
+						count > 1
+						tier >= tier_county
+					}
+				}
+				every_held_title = {
+					limit = {
+						NOT = {
+							this ?= title:c_crownback
+						}
+						tier >= tier_county
+					}
+					change_title_holder_include_vassals = {
+						holder = scope:holder.house.house_head
+						change = scope:duskendale_change
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				title:d_duskendale.holder ?= {
+					OR = {
+						this ?= character:Darklyn_47.house.house_head
+						this ?= character:Hollard_34.house.house_head
+					}
+				}
+			}
+			title:d_duskendale ?= {
+				change_title_holder_include_vassals = {
+					holder = scope:holder.house.house_head
+					change = scope:duskendale_change
+				}
+			}
+			title:c_duskendale ?= {
+				change_title_holder_include_vassals = {
+					holder = scope:holder.house.house_head
+					change = scope:duskendale_change
+				}
+			}
+			title:c_crownback ?= {
+				change_title_holder_include_vassals = {
+					holder = scope:holder.house.house_head
+					change = scope:duskendale_change
+				}
+			}
+		}
+	}
+	# Finalize the Transfer
+	resolve_title_and_vassal_change = scope:duskendale_change
+	# Execute Check
+	if = {
+		limit = { character:Darklyn_47.house.house_head ?= { has_character_flag = marked_for_death } }
+		agot_dd_execute_conspirators = yes
+	}
+	# Got Laamp?
+	hidden_effect = {
+		agot_dd_camping_conspirators = yes
+		agot_dd_claimless_conspirators = yes
+	}
+}
+
+# Remove planning flag
+agot_dd_remove_planning_flag = {
+	title:h_the_iron_throne.holder ?= { # Seven Kingdoms and the Crownlands Vassals
+		every_vassal = {
+			limit = {
+				primary_title.tier >= tier_duchy
+				NOR = {
+					agot_is_high_septon = yes
+					primary_title = title:d_kingsguard
+				}
+				has_character_flag = planning_an_activity
+				is_ai = yes
+				is_human = yes
+			}
+			remove_character_flag = planning_an_activity
+		}
+	}
+}
+
+#######################
+# War Related Effects #
+#######################
+
+agot_dd_invalidate_rescue_war = {
+	if = { # Tywin Engaged
+		limit = { character:Lannister_1 ?= { any_character_war = { using_cb = rv_duskendale_rescue_war } } }
+		character:Lannister_1 = {
+			random_character_war = {
+				limit = { using_cb = rv_duskendale_rescue_war }
+				save_scope_as = rescue_war_dd
+			}
+		}
+	}
+	else_if = { # Rhaegar Engaged
+		limit = { character:Targaryen_3 ?= { any_character_war = { using_cb = rv_duskendale_rescue_war } } }
+		character:Targaryen_3 = {
+			random_character_war = {
+				limit = { using_cb = rv_duskendale_rescue_war }
+				save_scope_as = rescue_war_dd
+			}
+		}
+	}
+	# End Rescue War
+	scope:rescue_war_dd ?= { # War Resolves
+		end_war = invalidated
+	}
+}
+
+agot_dd_wear_your_armor = {
+	if = {
+		limit = { NOT = { has_character_flag = wear_armor } }
+		add_character_flag = wear_armor
+	}
+	if = {
+		limit = { NOT = { has_character_flag = no_hat } }
+		add_character_flag = no_hat
+	}
+}
+
+agot_dd_tear_your_armor = {
+	if = {
+		limit = { has_character_flag = wear_armor }
+		remove_character_flag = wear_armor
+	}
+	if = {
+		limit = { has_character_flag = no_hat }
+		remove_character_flag = no_hat
+	}
+}
+
+##########################
+# Travel Related Effects #
+##########################
+
+agot_gc_travel_safety_boost = { # If you change this, there will be errors
+	if = {
+		limit = { current_travel_plan ?= { NOT = { has_travel_option = experienced_captains_option } } }
+		scope:blues_traveler.current_travel_plan = { add_travel_option = experienced_captains_option }
+	}
+	if = {
+		limit = { current_travel_plan ?= { NOT = { has_travel_option = hire_experienced_mercenaries_option } } }
+		scope:blues_traveler.current_travel_plan = { add_travel_option = hire_experienced_mercenaries_option }
+	}
+	if = {
+		limit = { current_travel_plan ?= { NOT = { has_travel_plan_modifier = travel_guide_modifier } } }
+		scope:blues_traveler.current_travel_plan = { add_travel_plan_modifier = travel_guide_modifier }
+	}
+	if = {
+		limit = { current_travel_plan ?= { NOT = { has_travel_plan_modifier = travel_well_fed_travellers } } }
+		scope:blues_traveler.current_travel_plan = { add_travel_plan_modifier = travel_well_fed_travellers }
+	}
+}
+
+############################
+# Rhaegar Specific Effects #
+############################
+
+agot_dd_rhaegar_can_marry = { # Remove infertility and refusing marriage
+	if = {
+		limit = { character:Targaryen_3 ?= { is_alive = yes } }
+		if = {
+			limit = { character:Targaryen_3 = { has_trait = refusing_marriage } }
+			character:Targaryen_3 = { remove_trait = refusing_marriage }
+		}
+		if = {
+			limit = { character:Targaryen_3 = { has_character_modifier = agot_dd_rhaegar_infertility } }
+			character:Targaryen_3 = { remove_character_modifier = agot_dd_rhaegar_infertility }
+		}
+	}
+}
+
+agot_dd_rhaegar_throne_setup = {
+	title:h_the_iron_throne.holder ?= { # Make Tywin Hand; Reinstate Council
+		if = {
+			limit = { exists = cp:councillor_castellan }
+			cp:councillor_castellan = { unblock_firing_councillor_effect = yes }
+			fire_councillor = cp:councillor_castellan
+		}
+		designate_diarch = title:e_the_westerlands.holder
+		assign_councillor_type = {
+			type = councillor_castellan
+			target = title:e_the_westerlands.holder
+		}
+		set_realm_capital = title:c_kings_landing
+
+		# Reinstate Small Council
+		if = {
+			limit = { # Chancellor
+				exists = scope:chancellor
+				NOT = { exists = root.cp:councillor_chancellor }
+			}
+			assign_councillor_type = {
+				type = councillor_chancellor
+				target = scope:chancellor
+			}
+		}
+		if = {
+			limit = { # Steward
+				exists = scope:steward
+				NOT = { exists = root.cp:councillor_steward }
+			}
+			assign_councillor_type = {
+				type = councillor_steward
+				target = scope:steward
+			}
+		}
+		if = {
+			limit = { # Marshal
+				exists = scope:marshal
+				NOT = { exists = root.cp:councillor_marshal }
+			}
+			assign_councillor_type = {
+				type = councillor_marshal
+				target = scope:marshal
+			}
+		}
+		if = {
+			limit = { # Spymaster
+				exists = scope:spymaster
+				NOT = { exists = root.cp:councillor_spymaster }
+			}
+			assign_councillor_type = {
+				type = councillor_spymaster
+				target = scope:spymaster
+			}
+		}
+		if = {
+			limit = { # Admiral
+				exists = scope:admiral
+				NOT = { exists = root.cp:councillor_admiral }
+			}
+			assign_councillor_type = {
+				type = councillor_admiral
+				target = scope:admiral
+			}
+		}
+		if = {
+			limit = { # Chaplain
+				exists = scope:chaplain
+				NOT = { exists = root.cp:councillor_court_chaplain }
+			}
+			assign_councillor_type = {
+				type = councillor_court_chaplain
+				target = scope:chaplain
+			}
+		}
+	}
+}
+
+############################
+# Rhaegar Marriage Effects #
+############################
+
+agot_scenario_dd_get_bachelor_effect = {
+	if = {
+		limit = {
+			title:h_the_iron_throne.holder ?= character:Targaryen_1
+			character:Targaryen_3 ?= { is_alive = yes }
+		}
+		character:Targaryen_3 = { save_scope_as = bachelor }
+	}
+	else_if = {
+		limit = {
+			title:h_the_iron_throne.holder ?= character:Targaryen_1
+			character:Targaryen_8 ?= { is_alive = yes }
+		}
+		character:Targaryen_8 = { save_scope_as = bachelor }
+	}
+	else_if = {
+		limit = { title:h_the_iron_throne.holder ?= character:Targaryen_3 }
+		character:Targaryen_3 = { save_scope_as = bachelor }
+	}
+	else_if = {
+		limit = { title:h_the_iron_throne.holder ?= character:Targaryen_8 }
+		character:Targaryen_8 = { save_scope_as = bachelor }
+	}
+}
+
+agot_scenario_dd_betrothe_cersei_effect = { # Send to Rhaegar in Event Option
+	custom_tooltip = { text = agot_scenario_dd_betrothe_cersei }
+	character:Lannister_6 ?= {
+		if = {
+			limit = {
+				is_ai = yes
+				NOT = { any_close_family_member = { is_ai = no } }
+				exists = betrothed
+				betrothed = {
+					is_ai = yes
+					NOT = { any_close_family_member = { is_ai = no } }
+				}
+			}
+			break_betrothal = betrothed
+		}
+		if = {
+			limit = { has_dlc_feature = tours_and_tournaments }
+			add_character_flag = agot_delayed_wedding
+		}
+	}
+	if = {
+		limit = { has_dlc_feature = tours_and_tournaments }
+		set_grand_wedding_betrothal_variables = {
+			SPOUSE_1 = scope:bachelor
+			SPOUSE_2 = character:Lannister_6
+			HOST = scope:bachelor
+			PROMISEE = title:c_casterly_rock.holder
+		}
+	}
+	scope:bachelor ?= {
+		if = {
+			limit = { has_dlc_feature = tours_and_tournaments }
+			add_character_flag = agot_delayed_wedding
+		}
+		create_betrothal = character:Lannister_6
+		set_variable = {
+			name = dd_betrothed
+			value = flag:cersei
+		}
+	}
+
+	create_alliance = { # Allied Through Marriage
+		target = title:c_casterly_rock.holder
+		allied_through_owner = root
+		allied_through_target = character:Lannister_6
+	}
+
+	if = {
+		limit = { character:Targaryen_1 ?= { is_alive = yes } }
+		character:Lannister_1 = {
+			add_opinion = { # Tywin Likes
+				target = character:Targaryen_1
+				modifier = kept_promise
+				opinion = 50
+			}
+		}
+	}
+	else = {
+		title:c_casterly_rock.holder ?= {
+			add_opinion = { # Respect
+				target = root
+				modifier = respect_opinion
+				opinion = 30
+			}
+		}
+	}
+}
+
+agot_scenario_dd_betrothe_lyanna_effect = { # Send to Rhaegar in Event Option
+	custom_tooltip = { text = agot_scenario_dd_betrothe_lyanna }
+	character:Stark_5 ?= {
+		if = {
+			limit = {
+				is_ai = yes
+				NOT = { any_close_family_member = { is_ai = no } }
+				exists = betrothed
+				betrothed = {
+					is_ai = yes
+					NOT = { any_close_family_member = { is_ai = no } }
+				}
+			}
+			break_betrothal = betrothed
+		}
+		if = {
+			limit = { has_dlc_feature = tours_and_tournaments }
+			add_character_flag = agot_delayed_wedding
+		}
+	}
+	if = {
+		limit = { has_dlc_feature = tours_and_tournaments }
+		set_grand_wedding_betrothal_variables = {
+			SPOUSE_1 = scope:bachelor
+			SPOUSE_2 = character:Stark_5
+			HOST = scope:bachelor
+			PROMISEE = title:c_winterfell.holder
+		}
+	}
+	scope:bachelor ?= {
+		if = {
+			limit = { has_dlc_feature = tours_and_tournaments }
+			add_character_flag = agot_delayed_wedding
+		}
+		create_betrothal = character:Stark_5
+		set_variable = {
+			name = dd_betrothed
+			value = flag:lyanna
+		}
+	}
+
+	create_alliance = { # Allied Through Marriage
+		target = title:c_winterfell.holder
+		allied_through_owner = root
+		allied_through_target = character:Stark_5
+	}
+
+	title:c_winterfell.holder ?= {
+		add_opinion = { # Respect
+			target = root
+			modifier = respect_opinion
+			opinion = 30
+		}
+	}
+}
+
+agot_scenario_dd_betrothe_elia_effect = { # Send to Rhaegar in Event Option
+	custom_tooltip = { text = agot_scenario_dd_betrothe_elia }
+	character:Martell_7 ?= {
+		if = {
+			limit = {
+				is_ai = yes
+				NOT = { any_close_family_member = { is_ai = no } }
+				exists = betrothed
+				betrothed = {
+					is_ai = yes
+					NOT = { any_close_family_member = { is_ai = no } }
+				}
+			}
+			break_betrothal = betrothed
+		}
+		if = {
+			limit = { has_dlc_feature = tours_and_tournaments }
+			add_character_flag = agot_delayed_wedding
+		}
+	}
+	if = {
+		limit = { has_dlc_feature = tours_and_tournaments }
+		set_grand_wedding_betrothal_variables = {
+			SPOUSE_1 = scope:bachelor
+			SPOUSE_2 = character:Martell_7
+			HOST = scope:bachelor
+			PROMISEE = title:c_sunspear.holder
+		}
+	}
+	scope:bachelor ?= {
+		if = {
+			limit = { has_dlc_feature = tours_and_tournaments }
+			add_character_flag = agot_delayed_wedding
+		}
+		create_betrothal = character:Martell_7
+		set_variable = {
+			name = dd_betrothed
+			value = flag:elia
+		}
+	}
+
+	create_alliance = { # Allied Through Marriage
+		target = title:c_sunspear.holder
+		allied_through_owner = root
+		allied_through_target = character:Martell_7
+	}
+
+	title:c_sunspear.holder ?= {
+		add_opinion = { # Respect
+			target = root
+			modifier = respect_opinion
+			opinion = 30
+		}
+	}
+}
+
+agot_scenario_dd_betrothe_ashara_effect = { # Send to Rhaegar in Event Option
+	custom_tooltip = { text = agot_scenario_dd_betrothe_ashara }
+	character:Dayne_4 ?= {
+		if = {
+			limit = {
+				is_ai = yes
+				NOT = { any_close_family_member = { is_ai = no } }
+				exists = betrothed
+				betrothed = {
+					is_ai = yes
+					NOT = { any_close_family_member = { is_ai = no } }
+				}
+			}
+			break_betrothal = betrothed
+		}
+		if = {
+			limit = { has_dlc_feature = tours_and_tournaments }
+			add_character_flag = agot_delayed_wedding
+		}
+	}
+	if = {
+		limit = { has_dlc_feature = tours_and_tournaments }
+		set_grand_wedding_betrothal_variables = {
+			SPOUSE_1 = scope:bachelor
+			SPOUSE_2 = character:Dayne_4
+			HOST = scope:bachelor
+			PROMISEE = title:c_starfall.holder
+		}
+	}
+	scope:bachelor ?= {
+		if = {
+			limit = { has_dlc_feature = tours_and_tournaments }
+			add_character_flag = agot_delayed_wedding
+		}
+		create_betrothal = character:Dayne_4
+		set_variable = {
+			name = dd_betrothed
+			value = flag:ashara
+		}
+	}
+
+	create_alliance = { # Allied Through Marriage
+		target = title:c_starfall.holder
+		allied_through_owner = root
+		allied_through_target = character:Dayne_4
+	}
+
+	title:c_starfall.holder ?= {
+		add_opinion = { # Respect
+			target = root
+			modifier = respect_opinion
+			opinion = 30
+		}
+	}
+}

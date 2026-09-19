@@ -1,0 +1,575 @@
+﻿demand_trial_by_combat_interaction = {
+	icon = icon_combat
+	interface_priority = 30
+	common_interaction = yes
+	category = interaction_category_prison
+	popup_on_receive = yes
+	pause_on_receive = yes
+	desc = demand_trial_by_combat_interaction_desc
+	highlighted_reason = challenge_to_trial_by_combat_interaction_HIGHLIGHTED
+	use_diplomatic_range = no
+
+	cooldown = { years = 3 }
+
+	greeting = negative
+	notification_text = REQUEST_TRIAL_BY_COMBAT_TEXT
+
+	redirect = {
+		if = {
+			limit = {
+				scope:actor = scope:recipient
+				exists = scope:actor.imprisoner
+			}
+			scope:actor.imprisoner = { save_scope_as = recipient }
+		}
+	}
+
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			is_imprisoned_by = scope:recipient
+		}
+		scope:recipient = {
+			OR = {
+				government_has_flag = government_is_feudal
+				government_has_flag = government_is_tribal
+				government_has_flag = government_is_clan
+				government_has_flag = government_is_nw
+			}
+		}
+		NOT = { scope:actor = { has_character_flag = keep_imprisoned } }
+	}
+
+	is_valid_showing_failures_only = {
+		scope:recipient = {
+			custom_description = {
+				text = "currently_being_tortured"
+				NOT = { has_character_flag = is_being_tortured }
+			}
+		}
+		NOT = {
+			scope:actor = { has_character_flag = lost_trial_by_combat }
+		}
+		NOT = {
+			scope:recipient = { is_imprisoned = yes }
+		}
+		NOT = {
+			scope:actor = { has_trait = incapable }
+		}
+		NOT = {
+			scope:recipient = { is_at_war = yes }
+		}
+		NOR = {
+			scope:recipient = { is_at_war_with = scope:actor }
+			scope:recipient = { any_liege_or_above = { is_at_war_with = scope:actor } }
+			scope:actor = { any_liege_or_above = { is_at_war_with = scope:recipient } }
+		}
+	}
+
+	can_send = {
+		scope:actor = {
+			custom_description = {
+				text = "character_interactions_hostile_actions_disabled_delay"
+				NOT = { has_character_flag = flag_hostile_actions_disabled_delay }
+			}
+		}
+	}
+
+	on_send = {
+		scope:actor = {
+			add_character_flag = {
+				flag = flag_hostile_actions_disabled_delay
+				days = 10
+			}
+		}
+	}
+
+	on_accept = {
+		# Will scope:recipient need to choose a champion?
+		scope:recipient = { trigger_event = agot_trial_by_combat.1000 }
+		# Your chosen champions will duel
+		custom_tooltip = demand_trial_by_combat_duel
+		# Clear up hostile actions flag.
+		if = {
+			limit = {
+				scope:actor = { has_character_flag = flag_hostile_actions_disabled_delay }
+			}
+			scope:actor = { remove_character_flag = flag_hostile_actions_disabled_delay }
+		}
+	}
+
+	on_decline = {
+		# Scope:recipient loses some prestige.
+		scope:recipient = {
+			add_prestige = major_prestige_loss
+			add_character_modifier = {
+				modifier = agot_denied_a_trial_by_combat
+				years = 15
+			}
+		}
+		# Scope:actor decline processing.
+		scope:actor = {
+			# Inform them of the declination.
+			trigger_event = agot_trial_by_combat.0001
+			add_opinion = {
+				target = scope:recipient
+				modifier = denied_trial_by_combat_opinion
+			}
+			every_close_family_member = {
+				limit = { this != scope:recipient }
+				add_opinion = {
+					target = scope:recipient
+					modifier = denied_family_member_trial_by_combat_opinion
+				}
+			}
+			# Clear up hostile actions flag.
+			if = {
+				limit = {
+					has_character_flag = flag_hostile_actions_disabled_delay
+				}
+				remove_character_flag = flag_hostile_actions_disabled_delay
+			}
+		}
+	}
+
+	auto_accept = no
+
+	ai_accept = {
+		base = 100
+
+		modifier = { # Rivals
+			add = -50
+			scope:recipient = {
+				has_relation_rival = scope:actor
+				NOT = { has_relation_nemesis = scope:actor }
+				ai_honor >= very_high_negative_ai_value
+			}
+			desc = "ACTOR_RIVAL_TO_ME_REASON"
+		}
+
+		modifier = { # Rivals and Dishonorable
+			add = -100
+			scope:recipient = {
+				has_relation_rival = scope:actor
+				NOT = { has_relation_nemesis = scope:actor }
+				ai_honor < very_high_negative_ai_value
+			}
+			desc = "ACTOR_RIVAL_TO_ME_REASON"
+		}
+
+		modifier = { # Say no to nemesis
+			add = -100
+			scope:recipient = {
+				has_relation_nemesis = scope:actor
+			}
+			desc = "ACTOR_NEMESIS_TO_ME_REASON"
+		}
+
+		modifier = { # Family Feud
+			add = -50
+			trigger = {
+				exists = scope:actor.house
+				exists = scope:recipient.house
+				scope:recipient = {
+					house_has_feud_relation_with_trigger = { TARGET = scope:actor }
+				}
+			}
+			desc = INTERACTION_FAMILY_FEUD_REVERSE_REASON
+		}
+
+		modifier = { # Honourable People accept
+			add = 200
+			trigger = {
+				scope:recipient = {
+					ai_honor > 0
+				}
+			}
+			desc = TRIAL_BY_COMBAT_HONOR_REASON
+		}
+
+		modifier = { # Trial of Seven modifier
+			add = 1000
+			agot_valid_tos_dishonorable_imprisonment_scenario_trigger = { ACTOR = scope:actor RECIPIENT = scope:recipient }
+		}
+	}
+
+	ai_frequency = 12
+
+	ai_targets = {
+		ai_recipients = self
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 100
+			OR = {
+				AND = {
+					imprisoner = { is_ai = yes }
+					time_in_prison = { months >= 12 }
+				}
+				AND = {
+					imprisoner = { is_ai = no }
+					time_in_prison = { months >= 3 }
+				}
+			}
+		}
+
+		# If you're not going to get a fair trial don't ask unless brave or trusting
+		modifier = {
+			add = -300
+			imprisoner = {
+				has_character_modifier = agot_unjust_trial_by_combat
+			}
+			NOT = { has_trait = brave }
+			NOT = { has_trait = trusting }
+		}
+
+		# People who can't afford a mercenary or can't fight themselves won't demand a trial
+		modifier = {
+			add = -1000
+			AND = {
+				is_lowborn = yes
+				NOT = {
+					any_spouse = {
+						is_landed = yes
+					}
+				}
+				gold < 50
+				prowess < 15
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = imprisoner }
+			}
+		}
+
+		# Trial of Seven modifier
+		modifier = {
+			add = 200
+
+			agot_valid_tos_dishonorable_imprisonment_scenario_trigger = { ACTOR = scope:actor RECIPIENT = scope:recipient }
+		}
+	}
+}
+
+demand_trial_of_seven_interaction = {
+	icon = icon_combat
+	interface_priority = 30
+	common_interaction = yes
+	category = interaction_category_hostile
+	popup_on_receive = yes
+	pause_on_receive = yes
+	desc = demand_trial_of_seven_interaction_desc
+	highlighted_reason = agot_challenge_to_trial_of_seven_interaction_HIGHLIGHTED
+	use_diplomatic_range = no
+
+	cooldown = { years = 3 }
+
+	greeting = negative
+	notification_text = AGOT_REQUEST_TRIAL_OF_SEVEN_TEXT
+
+	is_shown = {
+		NOT = { scope:actor = scope:recipient }
+		scope:recipient = { NOT = { has_character_flag = trial_of_seven_blocker } }
+		trigger_if = {
+			limit = { scope:actor = { is_ai = yes } }
+			scope:recipient = { NOT = { has_character_flag = trial_of_seven_blocker_ai } }
+		}
+		scope:recipient = { NOT = { has_character_flag = agot_declined_trial_of_seven } }
+		scope:actor = { agot_ready_for_tos_trigger = yes }
+		scope:recipient = { agot_ready_for_tos_trigger = yes }
+		OR = {
+			### Usurpation TOS
+			#Accuser: vassal/laamp claimant
+			#Criminal: king/queen
+			agot_valid_tos_usurpation_scenario_trigger = { ACTOR = scope:actor RECIPIENT = scope:recipient }
+			### Usurpation v Helper TOS
+			#Accuser: vassal/laamp claimant helper
+			#Criminal: king/queen
+			agot_valid_tos_usurpation_helper_scenario_trigger = { ACTOR = scope:actor RECIPIENT = scope:recipient }
+		}
+		scope:recipient.primary_title = { NOT = { has_variable = trial_of_seven_cooldown } }
+		scope:actor = { NOT = { is_imprisoned = yes } }
+	}
+
+	is_valid_showing_failures_only = {
+		scope:recipient = {
+			custom_description = {
+				text = "currently_being_tortured"
+				NOT = { has_character_flag = is_being_tortured }
+			}
+		}
+		NOT = {
+			scope:actor = { has_character_flag = lost_trial_by_combat }
+		}
+		NOT = {
+			scope:recipient = { is_imprisoned = yes }
+		}
+		NOT = {
+			scope:actor = { is_imprisoned = yes }
+		}
+		# NOT = {
+		# 	scope:recipient = { has_trait = incapable }
+		# }
+		# NOT = {
+		# 	scope:actor = { has_trait = incapable }
+		# }
+		NOT = {
+			scope:recipient = { is_at_war = yes }
+		}
+		NOT = {
+			scope:actor = { is_at_war = yes }
+		}
+		NOR = {
+			scope:recipient = { is_at_war_with = scope:actor }
+			scope:recipient = { any_liege_or_above = { is_at_war_with = scope:actor } }
+			scope:actor = { any_liege_or_above = { is_at_war_with = scope:recipient } }
+		}
+		scope:recipient = {
+			NOR = {
+				has_trait = pregnant
+				has_trait = incapable
+				has_trait = blind
+				has_contagious_deadly_disease_trigger = yes
+				can_start_single_combat_banned_checks_trigger = yes
+			}
+			is_adult = yes
+			custom_description = {
+				text = banned_from_combat_old_and_frail
+				NAND = {
+					age >= 70
+					prowess < 10
+				}
+			}
+		}
+		scope:actor = {
+			NOR = {
+				has_trait = pregnant
+				has_trait = incapable
+				has_trait = blind
+				has_contagious_deadly_disease_trigger = yes
+				can_start_single_combat_banned_checks_trigger = yes
+			}
+			is_adult = yes
+			custom_description = {
+				text = banned_from_combat_old_and_frail
+				NAND = {
+					age >= 70
+					prowess < 10
+				}
+			}
+		}
+		scope:recipient = {
+			custom_description = {
+				text = agot_unavailable_due_to_grand_wedding
+				trigger_if = {
+					limit = { exists = involved_activity }
+					involved_activity = { NOT = { has_activity_type = activity_wedding } }
+				}
+			}
+		}
+		scope:actor = {
+			custom_description = {
+				text = agot_unavailable_due_to_grand_wedding
+				trigger_if = {
+					limit = { exists = involved_activity }
+					involved_activity = { NOT = { has_activity_type = activity_wedding } }
+				}
+			}
+		}
+	}
+
+	can_send = {
+		scope:actor = {
+			custom_description = {
+				text = "character_interactions_hostile_actions_disabled_delay"
+				NOT = { has_character_flag = flag_hostile_actions_disabled_delay }
+			}
+		}
+	}
+
+	on_send = {
+		scope:actor = {
+			add_character_flag = {
+				flag = flag_hostile_actions_disabled_delay
+				days = 10
+			}
+		}
+		scope:recipient = {
+			add_opinion = {
+				target = scope:actor
+				modifier = accused_crime_opinion
+				opinion = -100
+			}
+		}
+	}
+
+	on_accept = {
+		scope:recipient = { save_scope_as = defender_leader }
+		scope:actor = { save_scope_as = accuser_leader }
+		if = {
+			limit = { agot_valid_tos_usurpation_scenario_trigger = { ACTOR = scope:actor RECIPIENT = scope:recipient } }
+			scope:defender_leader = {
+				add_character_flag = {
+					flag = agot_tos_royal_side
+					days = 90
+				}
+			}
+		}
+		else_if = {
+			limit = { agot_valid_tos_usurpation_helper_scenario_trigger = { ACTOR = scope:actor RECIPIENT = scope:recipient } }
+			scope:accuser_leader = { add_character_flag = true_heir_helper }
+			scope:defender_leader = {
+				add_character_flag = {
+					flag = agot_tos_royal_side
+					days = 90
+				}
+			}
+		}
+		scope:defender_leader = { trigger_event = agot_trial_of_seven.0100 }
+		custom_tooltip = demand_trial_of_seven
+		# Clear up hostile actions flag.
+		if = {
+			limit = {
+				scope:actor = { has_character_flag = flag_hostile_actions_disabled_delay }
+			}
+			scope:actor = { remove_character_flag = flag_hostile_actions_disabled_delay }
+		}
+		scope:recipient = { add_character_flag = trial_of_seven_blocker }
+		scope:recipient = { agot_trial_of_seven_cooldown_effect = yes }
+	}
+
+	on_decline = {
+		scope:recipient = { save_scope_as = defender_leader }
+		scope:actor = { save_scope_as = accuser_leader }
+		# Scope:recipient loses some prestige.
+		scope:recipient = {
+			add_prestige = -500
+			add_character_modifier = {
+				modifier = agot_denied_a_trial_of_seven
+				years = 50
+			}
+			add_piety = -500
+			add_piety_level = -1
+		}
+		# Scope:actor decline processing.
+		scope:actor = {
+			# Inform them of the declination.
+			trigger_event = agot_trial_of_seven.9999
+			add_opinion = {
+				target = scope:recipient
+				modifier = denied_trial_by_combat_opinion
+			}
+			every_close_family_member = {
+				limit = { this != scope:recipient }
+				add_opinion = {
+					target = scope:recipient
+					modifier = denied_family_member_trial_by_combat_opinion
+				}
+			}
+			# Clear up hostile actions flag.
+			if = {
+				limit = {
+					has_character_flag = flag_hostile_actions_disabled_delay
+				}
+				remove_character_flag = flag_hostile_actions_disabled_delay
+			}
+		}
+		scope:recipient = {
+			add_character_flag = {
+				flag = agot_declined_trial_of_seven
+				years = 25
+			}
+		}
+		scope:recipient = { agot_trial_of_seven_cooldown_effect = yes }
+	}
+
+	auto_accept = no
+
+	ai_accept = {
+		base = 100 # AI should always accept it.
+	}
+
+	ai_frequency = 12
+
+	ai_targets = {
+		ai_recipients = top_liege
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_will_do = {
+		base = 0
+
+		#Base line is prowess + some boldness and zeal
+		modifier = {
+			add = {
+				value = scope:actor.prowess
+				add = {
+					value = scope:actor.ai_boldness
+					multiply = 0.15
+				}
+				add = {
+					value = scope:actor.ai_zeal
+					multiply = 0.15
+				}
+			}
+		}
+
+		#Increase chance when they have moral differences
+		modifier = {
+			factor = 1.25
+			OR = {
+				AND = {
+					scope:actor.ai_honor < 0
+					scope:recipient.ai_honor >= 0
+				}
+				AND = {
+					scope:actor.ai_honor >= 0
+					scope:recipient.ai_honor < 0
+				}
+			}
+		}
+
+		#Decreaase chance for small lords
+		modifier = {
+			factor = 0.1
+			AND = {
+				exists = scope:actor.primary_title
+				scope:actor.primary_title.tier < tier_duchy
+			}
+		}
+
+		#Increase chance if they are rivals
+		modifier = {
+			factor = 3
+			scope:actor = {
+				has_relation_rival = scope:recipient
+			}
+		}
+
+		#No chance if they are friends/lovers
+		modifier = {
+			factor = 0
+			scope:actor = {
+				OR = {
+					has_relation_friend = scope:recipient
+					has_relation_lover = scope:recipient
+					trigger_if = {
+						limit = { is_close_or_extended_family_of = scope:recipient }
+						save_temporary_opinion_value_as = {
+							name = opinion_on_recipient
+							target = scope:recipient
+						}
+						scope:opinion_on_recipient >= 15
+					}
+				}
+			}
+		}
+	}
+}

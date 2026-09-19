@@ -1,0 +1,5273 @@
+﻿namespace = agot_trial_of_seven
+
+#####################################################################
+####### ####### ####### TRIAL OF SEVEN EVENTS ####### ####### #######
+#####################################################################
+
+##########################################
+####### SUCCESSION CRISIS SCENARIO #######
+##########################################
+
+# ToS - Succession Crisis: ToS Demanded
+agot_trial_of_seven.0100 = {
+	type = character_event
+	title = agot_trial_of_seven.0100.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = { exists = scope:true_heir }
+					NOT = { this = scope:accuser_leader }
+				}
+				desc = agot_trial_of_seven.0100.desc
+			}
+			triggered_desc = {
+				trigger = {
+					exists = scope:true_heir
+					NOT = { this = scope:accuser_leader }
+				}
+				desc = agot_trial_of_seven.0100.desc.helper
+			}
+			triggered_desc = {
+				trigger = { this = scope:accuser_leader }
+				desc = agot_trial_of_seven.0100.desc.accuser
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	left_portrait = {
+		character = scope:defender_leader
+		animation = personality_bold
+	}
+
+	right_portrait = {
+		character = scope:accuser_leader
+		animation = personality_bold
+	}
+
+	lower_left_portrait = {
+		trigger = {
+			exists = scope:true_heir
+			NOT = { scope:accuser_leader = scope:true_heir }
+		}
+		character = scope:true_heir
+	}
+
+	immediate = {
+		save_scope_as = trial_of_seven_usurpation
+
+		location = { save_scope_as = background_terrain_scope }
+		scope:defender_leader = { save_scope_as = bg_override_char }
+
+		#Add them to their teams.
+		if = {
+			limit = { this = scope:defender_leader }
+			scope:defender_leader = {
+				add_to_variable_list = {
+					name = multi_duel_tos_temp_list
+					target = scope:defender_leader
+				}
+			}
+			scope:accuser_leader = {
+				add_to_variable_list = {
+					name = multi_duel_tos_temp_list
+					target = scope:accuser_leader
+				}
+			}
+
+			#Helper Scenario Setup
+			if = {
+				limit = {
+					scope:accuser_leader = { has_character_flag = true_heir_helper }
+					scope:defender_leader.house = {
+						any_house_member = {
+							is_alive = yes
+							agot_eligible_heir_for_succession_crisis_legit_heir = { USURPER = scope:defender_leader LEGIT_HEIR = scope:defender_leader FINAL_USURPER = scope:defender_leader }
+							NOT = { this = scope:accuser_leader }
+							NOT = { this = scope:defender_leader }
+							NOT = { has_relation_rival = scope:accuser_leader }
+							NOT = { has_relation_friend = scope:defender_leader }
+							exists = var:usurped_my_birthright
+							any_claim = {
+								tier > tier_barony
+								holder = scope:defender_leader
+								count > 0
+							}
+							is_imprisoned = no
+							save_temporary_scope_as = t_legit_heir
+							scope:defender_leader.primary_title = {
+								scope:t_legit_heir = {
+									has_claim_on = prev
+								}
+							}
+						}
+					}
+				}
+				scope:defender_leader.house = {
+					random_house_member = {
+						limit = {
+							is_alive = yes
+							agot_eligible_heir_for_succession_crisis_legit_heir = { USURPER = scope:defender_leader LEGIT_HEIR = scope:defender_leader FINAL_USURPER = scope:defender_leader }
+							NOT = { this = scope:accuser_leader }
+							NOT = { this = scope:defender_leader }
+							NOT = { has_relation_rival = scope:accuser_leader }
+							NOT = { has_relation_friend = scope:defender_leader }
+							exists = var:usurped_my_birthright
+							any_claim = {
+								tier > tier_barony
+								holder = scope:defender_leader
+								count > 0
+							}
+							is_imprisoned = no
+							save_temporary_scope_as = t_legit_heir
+							scope:defender_leader.primary_title = {
+								scope:t_legit_heir = {
+									has_claim_on = prev
+								}
+							}
+						}
+						save_scope_as = true_heir
+					}
+				}
+			}
+			scope:accuser_leader = {
+				if = {
+					limit = { has_character_flag = true_heir_helper }
+					remove_character_flag = true_heir_helper
+				}
+			}
+
+			if = {
+				limit = {
+					this = scope:accuser_leader
+					this = { has_character_flag = agot_tos_royal_side }
+				}
+				scope:accuser_leader = { save_scope_as = the_royal_leader }
+				scope:defender_leader = { save_scope_as = the_other_leader }
+			}
+			else = {
+				scope:accuser_leader = { save_scope_as = the_other_leader }
+				scope:defender_leader = { save_scope_as = the_royal_leader }
+			}
+
+			#Memories
+			scope:defender_leader = {
+				create_character_memory = {
+					type = agot_trial_of_seven_accused_usurper
+					participants = {
+						accuser = scope:accuser_leader
+					}
+				}
+			}
+			scope:accuser_leader = {
+				create_character_memory = {
+					type = agot_trial_of_seven_accuser_usurper
+					participants = {
+						accused = scope:defender_leader
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { this = scope:defender_leader }
+						desc = agot_trial_of_seven.0100.a
+					}
+					triggered_desc = {
+						trigger = { this = scope:accuser_leader }
+						desc = agot_trial_of_seven.0100.a.accuser
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = { this = scope:defender_leader }
+
+			#SCENARIO
+			save_scope_as = tos_succession_crisis_scenario
+
+			scope:accuser_leader = { trigger_event = agot_trial_of_seven.0100 }
+			trigger_event = agot_trial_of_seven.1000
+		}
+	}
+}
+
+# ToS - Succession Crisis: Interaction now available
+agot_trial_of_seven.0101 = {
+	type = character_event
+	title = agot_trial_of_seven.0101.t
+	desc = {
+		first_valid = {
+			#Non-Legit POV
+			triggered_desc = {
+				trigger = {
+					NOT = { this = scope:crown_theft_king_legit_heir }
+				}
+				desc = agot_trial_of_seven.0101.desc
+			}
+			#Legit POV
+			triggered_desc = {
+				trigger = {
+					this = scope:crown_theft_king_legit_heir
+				}
+				desc = agot_trial_of_seven.0101.desc.legit_heir
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		character = scope:crown_thief
+		animation = personality_bold
+	}
+
+	trigger = {
+		scope:crown_thief = {
+			is_alive = yes
+			NOT = { has_character_flag = trial_of_seven_blocker }
+			NOT = { has_character_flag = agot_declined_trial_of_seven }
+		}
+		agot_ready_for_tos_trigger = yes
+		scope:crown_thief = { agot_ready_for_tos_trigger = yes }
+		exists = top_liege
+		top_liege = scope:crown_thief
+		agot_valid_tos_usurpation_scenario_trigger = { ACTOR = scope:challenger RECIPIENT = scope:crown_thief }
+	}
+
+	immediate = { scope:crown_thief = { save_scope_as = bg_override_char } }
+
+	option = {
+		name = agot_trial_of_seven.0101.a
+		custom_tooltip = agot_trial_of_seven.0101.a.tt
+	}
+}
+
+agot_trial_of_seven.0102 = {
+	hidden = yes
+	theme = default
+
+	trigger = {
+		scope:crown_thief = {
+			is_alive = yes
+			NOT = { has_character_flag = trial_of_seven_blocker }
+			NOT = { has_character_flag = agot_declined_trial_of_seven }
+		}
+		scope:crown_thief = { agot_ready_for_tos_trigger = yes }
+		scope:crown_theft_king_legit_heir = { is_alive = yes }
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				any_player = {
+					agot_ready_for_tos_trigger = yes
+				}
+			}
+			every_player = {
+				limit = { agot_ready_for_tos_trigger = yes }
+				save_scope_as = challenger
+				trigger_event = agot_trial_of_seven.0101
+			}
+		}
+	}
+
+	option = {
+		name = agot_debug.1001.a
+	}
+}
+
+###########################################################
+####### Succession Crisis - Trial of Seven Outcomes #######
+###########################################################
+
+# ToS - Succession Crisis: Usurpation Scenario Outcome
+agot_trial_of_seven.0103 = {
+	type = character_event
+	window = agot_character_event_huge
+	title = agot_trial_of_seven.0103.t
+	desc = {
+		first_valid = {
+			#Legit Heir is somehow already the king - Usurper POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:final_usurper
+					exists = scope:final_heir
+					scope:final_usurper = scope:final_heir
+					this = scope:usurper
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_heir_won_after_all.usurper
+			}
+			#Legit Heir is somehow already the king - Legit POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:final_usurper
+					exists = scope:final_heir
+					scope:final_usurper = scope:final_heir
+					this = scope:legit_heir
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_heir_won_after_all.legit_heir
+			}
+			#Legit Heir is somehow already the king - ? POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:final_usurper
+					exists = scope:final_heir
+					scope:final_usurper = scope:final_heir
+					NOT = { this = scope:usurper }
+					NOT = { this = scope:legit_heir }
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_heir_won_after_all
+			}
+			#Legit Heir won - Usurper POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_won
+					scope:usurper = { is_alive = yes }
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_won
+			}
+			#Legit Heir won - Usurper's Heir POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_won
+					scope:usurper = { NOT = { is_alive = yes } }
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_won.usurper_died
+			}
+			#Legit Heir Helper won - Usurper POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_helper_won
+					scope:usurper = { is_alive = yes }
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_helper_won
+			}
+			#Legit Heir Helper won - Usurper's Heir POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_helper_won
+					scope:usurper = { NOT = { is_alive = yes } }
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_helper_won.usurper_died
+			}
+			#Legit Heir Helper won but Legit Heir died - Usurper POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					exists = scope:heir_of_legit_heir
+					scope:usurper = { is_alive = yes }
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_helper_won.legit_heir_died
+			}
+			#Legit Heir Helper won but Legit Heir died - Usurper's Heir POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					exists = scope:heir_of_legit_heir
+					scope:usurper = { NOT = { is_alive = yes } }
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_helper_won.legit_heir_died.usurper_died
+			}
+			#Usurper won
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_usurper_won
+					scope:usurper = { is_alive = yes }
+				}
+				desc = agot_trial_of_seven.0103.desc.usurper_won
+			}
+			#Legit Heir Helper won but no heir - Usurper POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					NOT = { exists = scope:heir_of_legit_heir }
+				}
+				desc = agot_trial_of_seven.0103.desc.legit_helper_won.no_heir
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		trigger = { NOT = { scope:final_heir = scope:final_usurper } }
+		character = scope:final_usurper
+		triggered_animation = {
+			trigger = {
+				OR = {
+					exists = scope:tos_story_usurpation_usurper_won
+					trigger_if = {
+						limit = { NOT = { exists = scope:heir_of_legit_heir } }
+						exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					}
+				}
+			}
+			animation = personality_bold
+		}
+		animation = worry
+	}
+
+	lower_right_portrait = {
+		trigger = { NOT = { scope:usurper = scope:final_usurper } }
+		character = scope:usurper
+	}
+
+	left_portrait = {
+		character = scope:final_heir
+		triggered_animation = {
+			trigger = {
+				OR = {
+					exists = scope:tos_story_usurpation_legit_heir_won
+					exists = scope:tos_story_usurpation_legit_heir_helper_won
+					trigger_if = {
+						limit = { exists = scope:heir_of_legit_heir }
+						exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					}
+					scope:final_usurper = scope:legit_heir
+				}
+			}
+			animation = personality_bold
+		}
+		animation = worry
+	}
+
+	lower_left_portrait = {
+		trigger = { NOT = { scope:legit_heir = scope:final_heir } }
+		character = scope:legit_heir
+	}
+
+	immediate = {
+		save_scope_as = bg_override_char
+		scope:claim_keeper.var:succession_crisis_usurper = { save_scope_as = usurper }
+		scope:claim_keeper.var:succession_crisis_legit_heir = { save_scope_as = the_og_legit_heir }
+		scope:claim_keeper.var:final_usurpation_primary_title = { save_scope_as = main_title }
+		save_scope_as = final_usurper
+		if = {
+			limit = { exists = scope:claim_keeper.var:tos_true_heir }
+			scope:claim_keeper.var:tos_true_heir = { save_scope_as = legit_heir }
+			scope:claim_keeper.var:succession_crisis_legit_heir = { save_scope_as = legit_heir_helper }
+		}
+		else = {
+			scope:claim_keeper.var:succession_crisis_legit_heir = { save_scope_as = legit_heir }
+		}
+		scope:claim_keeper.var:succession_crisis_legit_heir = { save_scope_as = legit_combatant } #for loc only
+
+		# Find heir for the legitimate heir
+		if = {
+			limit = {
+				OR = {
+					exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					trigger_if = {
+						limit = { exists = scope:claim_keeper.var:tos_true_heir }
+						scope:legit_heir = { NOT = { is_alive = yes } }
+					}
+				}
+			}
+			save_scope_as = tos_looking_for_a_new_heir
+			scope:legit_heir = {
+				if = {
+					limit = {
+						any_child = {
+							agot_eligible_heir_for_succession_crisis_legit_heir = { USURPER = scope:usurper LEGIT_HEIR = scope:legit_heir FINAL_USURPER = scope:final_usurper }
+							count > 0
+						}
+					}
+					ordered_child = {
+						order_by = age
+						limit = {
+							agot_eligible_heir_for_succession_crisis_legit_heir = { USURPER = scope:usurper LEGIT_HEIR = scope:legit_heir FINAL_USURPER = scope:final_usurper }
+						}
+						save_scope_as = heir_of_legit_heir
+					}
+				}
+				else_if = {
+					limit = {
+						any_sibling = {
+							agot_eligible_heir_for_succession_crisis_legit_heir = { USURPER = scope:usurper LEGIT_HEIR = scope:legit_heir FINAL_USURPER = scope:final_usurper }
+							count > 0
+						}
+					}
+					ordered_sibling = {
+						order_by = age
+						limit = {
+							agot_eligible_heir_for_succession_crisis_legit_heir = { USURPER = scope:usurper LEGIT_HEIR = scope:legit_heir FINAL_USURPER = scope:final_usurper }
+						}
+						save_scope_as = heir_of_legit_heir
+					}
+				}
+			}
+		}
+
+		# Final Claimant
+		if = {
+			limit = {
+				scope:legit_heir = {
+					is_alive = yes
+					agot_can_be_ruler = yes
+				}
+			}
+			scope:legit_heir = { save_scope_as = final_claimant }
+		}
+		else_if = {
+			limit = {
+				exists = scope:heir_of_legit_heir
+				scope:heir_of_legit_heir = {
+					is_alive = yes
+					agot_can_be_ruler = yes
+				}
+			}
+			scope:heir_of_legit_heir = { save_scope_as = final_claimant }
+		}
+
+		#Portrait
+		if = {
+			limit = { exists = scope:heir_of_legit_heir }
+			scope:heir_of_legit_heir = { save_scope_as = final_heir }
+		}
+		else = { scope:legit_heir = { save_scope_as = final_heir } }
+
+		agot_multiduel_betrayer_kingsguard_post_tos = { IMPRISONER = scope:final_usurper }
+
+		#Memories
+		if = {
+			limit = { this = scope:final_usurper }
+			if = {
+				limit = {
+					scope:legit_combatant = { is_alive = yes }
+					exists = scope:tos_story_usurpation_usurper_won
+				}
+				scope:legit_combatant = {
+					create_character_memory = {
+						type = agot_trial_of_seven_loser_leader
+						participants = {
+							opponent = scope:usurper
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:legit_combatant = { is_alive = yes }
+					NOT = { exists = scope:tos_story_usurpation_usurper_won }
+				}
+				scope:legit_combatant = {
+					create_character_memory = {
+						type = agot_trial_of_seven_winner_leader
+						participants = {
+							opponent = scope:usurper
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					scope:usurper = { is_alive = yes }
+					exists = scope:tos_story_usurpation_usurper_won
+				}
+				scope:usurper = {
+					create_character_memory = {
+						type = agot_trial_of_seven_winner_leader
+						participants = {
+							opponent = scope:legit_combatant
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:usurper = { is_alive = yes }
+					NOT = { exists = scope:tos_story_usurpation_usurper_won }
+				}
+				scope:usurper = {
+					create_character_memory = {
+						type = agot_trial_of_seven_loser_leader
+						participants = {
+							opponent = scope:legit_combatant
+						}
+					}
+				}
+			}
+		}
+
+		#Death List - My Team
+		if = {
+			limit = {
+				has_variable_list = potential_multi_duel_bonding_list
+				any_in_list = {
+					variable = potential_multi_duel_bonding_list
+					is_alive = no
+					count > 0
+				}
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_list
+				limit = { is_alive = no }
+				show_as_tooltip = {
+					death = {
+						death_reason = death_duel_trial_by_seven
+					}
+				}
+			}
+		}
+		#Death List - Opponent Team
+		if = {
+			limit = {
+				has_variable_list = potential_multi_duel_bonding_opponent_list
+				any_in_list = {
+					variable = potential_multi_duel_bonding_opponent_list
+					is_alive = no
+					count > 0
+				}
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_opponent_list
+				limit = { is_alive = no }
+				show_as_tooltip = {
+					death = {
+						death_reason = death_duel_trial_by_seven
+					}
+				}
+			}
+		}
+
+		#Bonding
+		if = {
+			limit = { scope:usurper = { is_alive = yes } }
+			scope:usurper = {
+				if = {
+					limit = { exists = scope:tos_story_usurpation_usurper_won }
+					add_character_flag = { flag = we_won_the_tos days = 3 }
+				}
+			}
+			scope:usurper = { agot_tos_bonding_effect = yes }
+		}
+
+		if = {
+			limit = { scope:legit_combatant = { NOT = { is_ai = yes } } }
+			#Bonding
+			if = {
+				limit = { scope:legit_combatant = { is_alive = yes } }
+				scope:legit_combatant = {
+					if = {
+						limit = { NOT = { exists = scope:tos_story_usurpation_usurper_won } }
+						add_character_flag = { flag = we_won_the_tos days = 3 }
+					}
+				}
+				scope:legit_combatant = {
+					add_character_flag = {
+						flag = tos_bonding_effect_received
+						days = 40
+					}
+					agot_tos_bonding_effect = yes
+				}
+			}
+		}
+	}
+
+	#Ok I switch to play as the new ruler.
+	option = {
+		name = agot_trial_of_seven.0103.a
+		trigger = {
+			has_multiple_players = no
+			is_ai = no
+			exists = scope:final_claimant
+			OR = {
+				exists = scope:tos_story_usurpation_legit_heir_won
+				exists = scope:tos_story_usurpation_legit_heir_helper_won
+				trigger_if = {
+					limit = { exists = scope:heir_of_legit_heir }
+					exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+				}
+			}
+			NOT = { scope:final_usurper = scope:final_heir }
+		}
+
+		create_title_and_vassal_change = {
+			type = conquest_claim
+			save_scope_as = change
+			add_claim_on_loss = yes
+		}
+		every_held_title = {
+			limit = {
+				tier > tier_barony
+				save_temporary_scope_as = t_title
+				scope:claim_keeper = { is_target_in_variable_list = { name = final_usurpation_titles target = scope:t_title } }
+			}
+			change_title_holder_include_vassals = {
+				holder = scope:final_claimant
+				change = scope:change
+				take_baronies = yes
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+
+		agot_new_house_head_effect = { NEW_HOUSE_HEAD = scope:final_claimant }
+		save_scope_as = wos_usurper
+		scope:final_claimant = { save_scope_as = wos_king }
+		usurper_gives_back_artifacts = yes
+		unsave_usurper_artifact_after_war = yes
+		if = {
+			limit = { agot_is_independent_ruler = yes }
+			create_title_and_vassal_change = {
+				type = swear_fealty
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+			change_liege = {
+				liege = scope:final_claimant
+				change = scope:change
+			}
+			resolve_title_and_vassal_change = scope:change
+		}
+
+		show_as_tooltip = {
+			if = {
+				limit = { NOT = { is_imprisoned = yes } }
+				scope:final_claimant = {
+					hard_imprison_character_effect = {
+						TARGET = scope:final_usurper
+						IMPRISONER = scope:final_claimant
+					}
+				}
+			}
+		}
+		if = {
+			limit = { is_landed = yes }
+			add_prestige = -500
+			add_legitimacy = -500
+		}
+		show_as_tooltip = {
+			scope:final_claimant = {
+				add_prestige = 500
+				add_legitimacy = 500
+			}
+		}
+
+		set_player_character = scope:final_claimant
+
+		scope:final_claimant = { trigger_event = agot_trial_of_seven.0104 }
+		every_player = {
+			limit = {
+				trigger_if = {
+					limit = { exists = scope:final_claimant }
+					NOT = { this = scope:final_claimant }
+				}
+			}
+			trigger_event = { id = agot_trial_of_seven.0105 days = 1 }
+		}
+
+		if = {
+			limit = { scope:final_claimant = { has_variable = agot_wos_house_head_candidate } }
+			scope:final_claimant = { remove_variable = agot_wos_house_head_candidate }
+		}
+		if = {
+			limit = { scope:final_usurper = { has_variable = agot_wos_house_head_candidate } }
+			scope:final_usurper = { remove_variable = agot_wos_house_head_candidate }
+		}
+
+		#New Friend
+		if = {
+			limit = {
+				exists = scope:new_friend
+				exists = scope:new_friend.var:my_new_friend
+				this = scope:new_friend.var:my_new_friend
+			}
+			set_relation_friend = {
+				reason = friend_fought_for_me_in_a_trial_of_seven
+				target = scope:new_friend
+			}
+		}
+	}
+
+	#Ok.
+	option = {
+		name = agot_trial_of_seven.0103.b
+		trigger = {
+			exists = scope:final_claimant
+			OR = {
+				exists = scope:tos_story_usurpation_legit_heir_won
+				exists = scope:tos_story_usurpation_legit_heir_helper_won
+				trigger_if = {
+					limit = { exists = scope:heir_of_legit_heir }
+					exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+				}
+			}
+			NOT = { scope:final_usurper = scope:final_heir }
+		}
+
+		create_title_and_vassal_change = {
+			type = conquest_claim
+			save_scope_as = change
+			add_claim_on_loss = yes
+		}
+		every_held_title = {
+			limit = {
+				tier > tier_barony
+				save_temporary_scope_as = t_title
+				scope:claim_keeper = { is_target_in_variable_list = { name = final_usurpation_titles target = scope:t_title } }
+			}
+			change_title_holder_include_vassals = {
+				holder = scope:final_claimant
+				change = scope:change
+				take_baronies = yes
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+
+		agot_new_house_head_effect = { NEW_HOUSE_HEAD = scope:final_claimant }
+		save_scope_as = wos_usurper
+		scope:final_claimant = { save_scope_as = wos_king }
+		usurper_gives_back_artifacts = yes
+		unsave_usurper_artifact_after_war = yes
+		if = {
+			limit = { agot_is_independent_ruler = yes }
+			create_title_and_vassal_change = {
+				type = swear_fealty
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+			change_liege = {
+				liege = scope:final_claimant
+				change = scope:change
+			}
+			resolve_title_and_vassal_change = scope:change
+		}
+
+		show_as_tooltip = {
+			if = {
+				limit = { NOT = { is_imprisoned = yes } }
+				scope:final_claimant = {
+					hard_imprison_character_effect = {
+						TARGET = scope:final_usurper
+						IMPRISONER = scope:final_claimant
+					}
+				}
+			}
+		}
+		if = {
+			limit = { is_landed = yes }
+			add_prestige = -500
+			add_legitimacy = -500
+		}
+		show_as_tooltip = {
+			scope:final_claimant = {
+				add_prestige = 500
+				add_legitimacy = 500
+			}
+		}
+
+		scope:final_claimant = { trigger_event = agot_trial_of_seven.0104 }
+		every_player = {
+			limit = {
+				trigger_if = {
+					limit = { exists = scope:final_claimant }
+					NOT = { this = scope:final_claimant }
+				}
+			}
+			trigger_event = { id = agot_trial_of_seven.0105 days = 1 }
+		}
+
+		if = {
+			limit = { scope:final_claimant = { has_variable = agot_wos_house_head_candidate } }
+			scope:final_claimant = { remove_variable = agot_wos_house_head_candidate }
+		}
+		if = {
+			limit = { scope:final_usurper = { has_variable = agot_wos_house_head_candidate } }
+			scope:final_usurper = { remove_variable = agot_wos_house_head_candidate }
+		}
+
+		#New Friend
+		if = {
+			limit = {
+				exists = scope:new_friend
+				exists = scope:new_friend.var:my_new_friend
+				this = scope:new_friend.var:my_new_friend
+			}
+			set_relation_friend = {
+				reason = friend_fought_for_me_in_a_trial_of_seven
+				target = scope:new_friend
+			}
+		}
+	}
+
+	#Good.
+	option = {
+		name = agot_trial_of_seven.0103.c
+		trigger = {
+			OR = {
+				exists = scope:tos_story_usurpation_usurper_won
+				trigger_if = {
+					limit = { NOT = { exists = scope:heir_of_legit_heir } }
+					exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+				}
+			}
+			NOT = { scope:final_usurper = scope:final_heir }
+		}
+
+		show_as_tooltip = {
+			if = {
+				limit = {
+					exists = scope:legit_combatant
+					scope:legit_combatant = { NOT = { is_imprisoned = yes } }
+				}
+				scope:final_usurper = {
+					hard_imprison_character_effect = {
+						TARGET = scope:legit_combatant
+						IMPRISONER = scope:final_usurper
+					}
+				}
+			}
+			add_prestige = 500
+			add_legitimacy = 500
+			show_as_tooltip = {
+				scope:final_claimant = {
+					if = {
+						limit = {
+							is_landed = yes
+							this = scope:legit_combatant
+						}
+						add_prestige = -500
+						add_legitimacy = -500
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = { exists = scope:final_claimant }
+			scope:final_claimant = { trigger_event = agot_trial_of_seven.0104 }
+		}
+		every_player = {
+			limit = {
+				trigger_if = {
+					limit = { exists = scope:final_claimant }
+					NOT = { this = scope:final_claimant }
+				}
+			}
+			trigger_event = { id = agot_trial_of_seven.0105 days = 1 }
+		}
+
+		if = {
+			limit = {
+				scope:legit_heir = {
+					is_alive = yes
+					has_variable = agot_wos_house_head_candidate
+				}
+			}
+			scope:legit_heir = { remove_variable = agot_wos_house_head_candidate }
+		}
+		if = {
+			limit = { scope:final_usurper = { has_variable = agot_wos_house_head_candidate } }
+			scope:final_usurper = { remove_variable = agot_wos_house_head_candidate }
+		}
+
+		#New Friend
+		if = {
+			limit = {
+				exists = scope:new_friend
+				exists = scope:new_friend.var:my_new_friend
+				this = scope:new_friend.var:my_new_friend
+			}
+			set_relation_friend = {
+				reason = friend_fought_for_me_in_a_trial_of_seven
+				target = scope:new_friend
+			}
+		}
+	}
+
+	#All for nothing.
+	option = {
+		name = agot_trial_of_seven.0103.d
+		trigger = {
+			OR = {
+				NOT = { exists = scope:final_claimant }
+				scope:final_usurper = scope:final_heir
+			}
+		}
+
+		every_player = {
+			limit = {
+				trigger_if = {
+					limit = { exists = scope:final_claimant }
+					NOT = { this = scope:final_claimant }
+				}
+			}
+			trigger_event = { id = agot_trial_of_seven.0105 days = 1 }
+		}
+
+		if = {
+			limit = {
+				scope:legit_heir = {
+					is_alive = yes
+					has_variable = agot_wos_house_head_candidate
+				}
+			}
+			scope:legit_heir = { remove_variable = agot_wos_house_head_candidate }
+		}
+		if = {
+			limit = { scope:final_usurper = { has_variable = agot_wos_house_head_candidate } }
+			scope:final_usurper = { remove_variable = agot_wos_house_head_candidate }
+		}
+
+		#New Friend
+		if = {
+			limit = {
+				exists = scope:new_friend
+				exists = scope:new_friend.var:my_new_friend
+				this = scope:new_friend.var:my_new_friend
+			}
+			set_relation_friend = {
+				reason = friend_fought_for_me_in_a_trial_of_seven
+				target = scope:new_friend
+			}
+		}
+	}
+
+	#Clear variables
+	after = {
+		if = {
+			limit = {
+				exists = scope:claim_keeper
+				scope:claim_keeper = { is_alive = yes }
+			}
+			scope:claim_keeper = {
+				if = {
+					limit = { has_variable_list = final_usurpation_titles }
+					clear_variable_list = final_usurpation_titles
+				}
+				if = {
+					limit = { has_variable = final_usurpation_primary_title }
+					remove_variable = final_usurpation_primary_title
+				}
+				if = {
+					limit = { has_variable = succession_crisis_legit_heir }
+					remove_variable = succession_crisis_legit_heir
+				}
+				if = {
+					limit = { has_variable = succession_crisis_usurper }
+					remove_variable = succession_crisis_usurper
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:legit_heir
+				scope:legit_heir = { is_alive = yes }
+			}
+			scope:legit_heir = {
+				if = {
+					limit = { has_variable_list = usurpation_titles }
+					clear_variable_list = usurpation_titles
+				}
+				if = {
+					limit = { has_variable = usurped_my_birthright }
+					remove_variable = usurped_my_birthright
+				}
+			}
+		}
+	}
+}
+
+# ToS - Succession Crisis: Usurpation Scenario Outcome - legit_heir informed
+agot_trial_of_seven.0104 = {
+	type = character_event
+	window = agot_character_event_huge
+	title = agot_trial_of_seven.0104.t
+	desc = {
+		first_valid = {
+			#Legit Heir won - Legit Heir POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_won
+				}
+				desc = agot_trial_of_seven.0104.desc.legit_won
+			}
+			#Legit Heir Helper won - Legit Heir POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_helper_won
+				}
+				desc = agot_trial_of_seven.0104.desc.legit_helper_won
+			}
+			#Legit Heir Helper won but Legit Heir died - Legit Heir's Heir POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					exists = scope:heir_of_legit_heir
+				}
+				desc = agot_trial_of_seven.0104.desc.legit_helper_won.legit_heir_died
+			}
+			#Usurper won - Legit Heir POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_usurper_won
+					scope:usurper = { is_alive = yes }
+				}
+				desc = agot_trial_of_seven.0104.desc.usurper_won
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		trigger = { NOT = { scope:final_heir = scope:final_usurper } }
+		character = scope:final_usurper
+		triggered_animation = {
+			trigger = {
+				OR = {
+					exists = scope:tos_story_usurpation_usurper_won
+					trigger_if = {
+						limit = { NOT = { exists = scope:heir_of_legit_heir } }
+						exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					}
+				}
+			}
+			animation = personality_bold
+		}
+		animation = worry
+	}
+
+	lower_right_portrait = {
+		trigger = { NOT = { scope:usurper = scope:final_usurper } }
+		character = scope:usurper
+	}
+
+	left_portrait = {
+		character = scope:final_heir
+		triggered_animation = {
+			trigger = {
+				OR = {
+					exists = scope:tos_story_usurpation_legit_heir_won
+					exists = scope:tos_story_usurpation_legit_heir_helper_won
+					trigger_if = {
+						limit = { exists = scope:heir_of_legit_heir }
+						exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					}
+					scope:final_usurper = scope:legit_heir
+				}
+			}
+			animation = personality_bold
+		}
+		animation = worry
+	}
+
+	lower_left_portrait = {
+		trigger = { NOT = { scope:legit_heir = scope:final_heir } }
+		character = scope:legit_heir
+	}
+
+	immediate = {
+		scope:final_usurper = { save_scope_as = bg_override_char }
+
+		if = {
+			limit = {
+				exists = scope:legit_heir_helper
+				scope:legit_heir_helper = {	is_alive = yes }
+			}
+			if = {
+				limit = {
+					scope:legit_heir_helper = {
+						can_set_relation_friend_trigger = { CHARACTER = scope:final_heir }
+					}
+				}
+				scope:legit_heir_helper = {
+					set_relation_friend = {
+						reason = friend_fought_for_me_in_a_trial_of_seven
+						target = scope:final_heir
+					}
+				}
+			}
+			else = {
+				add_opinion = {
+					target = scope:legit_heir_helper
+					modifier = agot_trial_of_seven_mate
+					opinion = 60
+				}
+			}
+		}
+
+		#Death List - My Team
+		if = {
+			limit = {
+				has_variable_list = potential_multi_duel_bonding_list
+				any_in_list = {
+					variable = potential_multi_duel_bonding_list
+					is_alive = no
+					count > 0
+				}
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_list
+				limit = { is_alive = no }
+				show_as_tooltip = {
+					death = {
+						death_reason = death_duel_trial_by_seven
+					}
+				}
+			}
+		}
+		#Death List - Opponent Team
+		if = {
+			limit = {
+				has_variable_list = potential_multi_duel_bonding_opponent_list
+				any_in_list = {
+					variable = potential_multi_duel_bonding_opponent_list
+					is_alive = no
+					count > 0
+				}
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_opponent_list
+				limit = { is_alive = no }
+				show_as_tooltip = {
+					death = {
+						death_reason = death_duel_trial_by_seven
+					}
+				}
+			}
+		}
+
+		#Bonding
+		if = {
+			limit = { scope:legit_combatant = { is_alive = yes } }
+			scope:legit_combatant = {
+				if = {
+					limit = { NOT = { exists = scope:tos_story_usurpation_usurper_won } }
+					add_character_flag = { flag = we_won_the_tos days = 3 }
+				}
+			}
+			scope:legit_combatant = {
+				add_character_flag = {
+					flag = tos_bonding_effect_received
+					days = 40
+				}
+				agot_tos_bonding_effect = yes
+			}
+		}
+	}
+
+	#Ok.
+	option = {
+		name = agot_trial_of_seven.0104.a
+
+		if = {
+			limit = {
+				NOT = { exists = scope:tos_story_usurpation_usurper_won }
+				exists = scope:final_usurper
+				NOT = { this = scope:final_usurper }
+				scope:final_usurper = { NOT = { is_imprisoned = yes } }
+			}
+			scope:final_claimant = {
+				hard_imprison_character_effect = {
+					TARGET = scope:final_usurper
+					IMPRISONER = scope:final_claimant
+				}
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						scope:final_usurper = {
+							is_playable_character = no
+							NOT = { is_courtier_of = scope:final_claimant }
+						}
+					}
+					scope:final_claimant = { add_courtier = scope:final_usurper }
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:tos_story_usurpation_usurper_won
+				exists = scope:final_usurper
+				NOT = { this = scope:final_usurper }
+				NOT = { is_imprisoned = yes }
+			}
+			scope:final_usurper = {
+				hard_imprison_character_effect = {
+					TARGET = scope:legit_combatant
+					IMPRISONER = scope:final_usurper
+				}
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						scope:legit_combatant = {
+							is_playable_character = no
+							NOT = { is_courtier_of = scope:final_usurper }
+						}
+					}
+					scope:final_usurper = { add_courtier = scope:legit_combatant }
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:tos_story_usurpation_usurper_won
+				this = scope:legit_combatant
+			}
+			add_prestige = -500
+			add_legitimacy = -500
+		}
+		else = {
+			add_prestige = 500
+			add_legitimacy = 500
+		}
+
+		#New Friend
+		if = {
+			limit = {
+				exists = scope:new_friend
+				exists = scope:new_friend.var:my_new_friend
+				this = scope:new_friend.var:my_new_friend
+			}
+			set_relation_friend = {
+				reason = friend_fought_for_me_in_a_trial_of_seven
+				target = scope:new_friend
+			}
+		}
+	}
+}
+
+# ToS - Succession Crisis: Usurpation Scenario Outcome - players informed
+agot_trial_of_seven.0105 = {
+	type = character_event
+	window = agot_character_event_huge
+	title = agot_trial_of_seven.0105.t
+	desc = {
+		first_valid = {
+			#Legit Heir is somehow already the king - Observer POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:final_usurper
+					exists = scope:final_heir
+					scope:final_usurper = scope:final_heir
+				}
+				desc = agot_trial_of_seven.0105.desc.legit_heir_won_after_all
+			}
+			#Legit Heir won - Observer POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_won
+				}
+				desc = agot_trial_of_seven.0105.desc.legit_won
+			}
+			#Legit Heir Helper won - Observer POV
+			triggered_desc = {
+				trigger = {
+					OR = {
+						exists = scope:tos_story_usurpation_legit_heir_helper_won
+						trigger_if = {
+							limit = { exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir }
+							exists = scope:heir_of_legit_heir
+						}
+					}
+				}
+				desc = agot_trial_of_seven.0105.desc.legit_helper_won
+			}
+			#Usurper won - Observer POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_usurper_won
+				}
+				desc = agot_trial_of_seven.0105.desc.usurper_won
+			}
+			#Legit Heir Helper won but no heir - Observer POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					NOT = { exists = scope:heir_of_legit_heir }
+				}
+				desc = agot_trial_of_seven.0105.desc.legit_helper_won.no_heir
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		trigger = { NOT = { scope:final_heir = scope:final_usurper } }
+		character = scope:final_usurper
+		triggered_animation = {
+			trigger = {
+				OR = {
+					exists = scope:tos_story_usurpation_usurper_won
+					trigger_if = {
+						limit = { NOT = { exists = scope:heir_of_legit_heir } }
+						exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					}
+				}
+			}
+			animation = personality_bold
+		}
+		animation = worry
+	}
+
+	lower_right_portrait = {
+		trigger = { NOT = { scope:usurper = scope:final_usurper } }
+		character = scope:usurper
+	}
+
+	left_portrait = {
+		character = scope:final_heir
+		triggered_animation = {
+			trigger = {
+				OR = {
+					exists = scope:tos_story_usurpation_legit_heir_won
+					exists = scope:tos_story_usurpation_legit_heir_helper_won
+					trigger_if = {
+						limit = { exists = scope:heir_of_legit_heir }
+						exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir
+					}
+					scope:final_usurper = scope:legit_heir
+				}
+			}
+			animation = personality_bold
+		}
+		animation = worry
+	}
+
+	lower_left_portrait = {
+		trigger = { NOT = { scope:legit_heir = scope:final_heir } }
+		character = scope:legit_heir
+	}
+
+	immediate = {
+		scope:final_usurper = { save_scope_as = bg_override_char }
+
+		#Death List - Observer POV
+		scope:claim_keeper = {
+			#Death List - My Team
+			if = {
+				limit = {
+					has_variable_list = potential_multi_duel_bonding_list
+					any_in_list = {
+						variable = potential_multi_duel_bonding_list
+						is_alive = no
+						count > 0
+					}
+				}
+				every_in_list = {
+					variable = potential_multi_duel_bonding_list
+					limit = { is_alive = no }
+					show_as_tooltip = {
+						death = {
+							death_reason = death_duel_trial_by_seven
+						}
+					}
+				}
+			}
+			#Death List - Opponent Team
+			if = {
+				limit = {
+					has_variable_list = potential_multi_duel_bonding_opponent_list
+					any_in_list = {
+						variable = potential_multi_duel_bonding_opponent_list
+						is_alive = no
+						count > 0
+					}
+				}
+				every_in_list = {
+					variable = potential_multi_duel_bonding_opponent_list
+					limit = { is_alive = no }
+					show_as_tooltip = {
+						death = {
+							death_reason = death_duel_trial_by_seven
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				this = scope:legit_combatant
+				NOT = { has_character_flag = tos_bonding_effect_received }
+			}
+			#Bonding
+			if = {
+				limit = { scope:legit_combatant = { is_alive = yes } }
+				scope:legit_combatant = {
+					if = {
+						limit = { NOT = { exists = scope:tos_story_usurpation_usurper_won } }
+						add_character_flag = { flag = we_won_the_tos days = 3 }
+					}
+				}
+				scope:legit_combatant = { agot_tos_bonding_effect = yes }
+			}
+		}
+	}
+
+	#Ok.
+	option = {
+		name = agot_trial_of_seven.0105.a
+
+		#New Friend
+		if = {
+			limit = {
+				exists = scope:new_friend
+				exists = scope:new_friend.var:my_new_friend
+				this = scope:new_friend.var:my_new_friend
+			}
+			set_relation_friend = {
+				reason = friend_fought_for_me_in_a_trial_of_seven
+				target = scope:new_friend
+			}
+		}
+	}
+}
+
+##################################################
+####### DISHONORABLE IMPRISONMENT SCENARIO #######
+##################################################
+
+# ToS - Dishonorable Imprisonment: ToS Triggered
+agot_trial_of_seven.0200 = {
+	type = character_event
+	title = agot_trial_of_seven.0200.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					this = scope:defender_leader
+					NOT = { exists = scope:accuser_candidate_kin }
+				}
+				desc = agot_trial_of_seven.0200.desc.defender.against_accuser
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:defender_leader
+					exists = scope:accuser_candidate_kin
+				}
+				desc = agot_trial_of_seven.0200.desc.defender.against_accuser_kin
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					NOT = { exists = scope:accuser_candidate_kin }
+					NOT = { exists = scope:tbc_trial_of_seven_option }
+				}
+				desc = agot_trial_of_seven.0200.desc.accuser
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					NOT = { exists = scope:tbc_trial_of_seven_option }
+				}
+				desc = agot_trial_of_seven.0200.desc.accuser_kin.start
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					NOT = { exists = scope:accuser_candidate_kin }
+					exists = scope:tbc_trial_of_seven_option
+				}
+				desc = agot_trial_of_seven.0200.desc.accuser.from_tbc
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					exists = scope:tbc_trial_of_seven_option
+				}
+				desc = agot_trial_of_seven.0200.desc.accuser_kin.start.from_tbc
+			}
+		}
+		#Accuser Kind Middle Part
+		random_valid = {
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_plotting }
+				}
+				desc = accuser_kin_plotting
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_abduction }
+				}
+				desc = accuser_kin_abduction
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_murder }
+				}
+				desc = accuser_kin_murder
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_torture }
+				}
+				desc = accuser_kin_torture
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_maimed }
+				}
+				desc = accuser_kin_maimed
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_stole }
+				}
+				desc = accuser_kin_stole
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_sabotage }
+				}
+				desc = accuser_kin_sabotage
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_slander }
+				}
+				desc = accuser_kin_slander
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_imprison }
+				}
+				desc = accuser_kin_imprison
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_banished }
+				}
+				desc = accuser_kin_banished
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_deposed }
+				}
+				desc = accuser_kin_deposed
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_child_kill }
+				}
+				desc = accuser_kin_child_kill
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_execute }
+				}
+				desc = accuser_kin_execute
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_mute }
+				}
+				desc = accuser_kin_mute
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_tried_to_aith_me }
+				}
+				desc = accuser_kin_tried_to_aith_me
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_sacrifice }
+				}
+				desc = accuser_kin_sacrifice
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_beaten }
+				}
+				desc = accuser_kin_beaten
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					scope:accuser_candidate_kin = { has_character_flag = accuser_kin_insane }
+				}
+				desc = accuser_kin_insane
+			}
+		}
+		#Accuser Kind Ending Part
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					NOT = { exists = scope:tbc_trial_of_seven_option }
+				}
+				desc = agot_trial_of_seven.0200.desc.accuser_kin.end
+			}
+			triggered_desc = {
+				trigger = {
+					this = scope:accuser_ruler
+					exists = scope:accuser_candidate_kin
+					exists = scope:tbc_trial_of_seven_option
+				}
+				desc = agot_trial_of_seven.0200.desc.accuser_kin.end.from_tbc
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	left_portrait = {
+		character = scope:left_side
+		animation = personality_irrational
+	}
+
+	right_portrait = {
+		character = scope:right_side
+		triggered_animation = {
+			trigger = { scope:right_side = scope:defender_leader }
+			animation = prisonhouse
+		}
+		animation = personality_bold
+	}
+
+	lower_center_portrait = {
+		trigger = { exists = scope:bottom_char }
+		character = scope:bottom_char
+	}
+
+	immediate = {
+		save_scope_as = trial_of_seven_imprisonment
+
+
+		scope:accuser_ruler = { save_scope_as = bg_override_char }
+
+		if = {
+			limit = { this = scope:accuser_ruler }
+			#Who is the accuser?
+			if = {
+				limit = {
+					OR = {
+						scope:accuser_ruler = {
+							agot_valid_tos_dishonorable_imprisonment_char_trigger = { OG_ACCUSER = scope:accuser_ruler ACCUSER = this DEFENDER = scope:defender_leader }
+						}
+						scope:accuser_ruler.house = {
+							any_house_member = {
+								NOT = { this = scope:accuser_ruler }
+								agot_valid_tos_dishonorable_imprisonment_char_trigger = { OG_ACCUSER = scope:accuser_ruler ACCUSER = this DEFENDER = scope:defender_leader }
+							}
+						}
+					}
+				}
+				if = {
+					limit = {
+						scope:accuser_ruler = {
+							agot_valid_tos_dishonorable_imprisonment_char_trigger = { OG_ACCUSER = scope:accuser_ruler ACCUSER = this DEFENDER = scope:defender_leader }
+						}
+					}
+					scope:accuser_ruler = { save_scope_as = accuser_candidate_ruler }
+				}
+				if = {
+					limit = {
+						scope:accuser_ruler.house = {
+							any_house_member = {
+								NOT = { this = scope:accuser_ruler }
+								agot_valid_tos_dishonorable_imprisonment_char_trigger = { OG_ACCUSER = scope:accuser_ruler ACCUSER = this DEFENDER = scope:defender_leader }
+							}
+						}
+					}
+					scope:accuser_ruler.house = {
+						ordered_house_member = {
+							order_by = prowess
+							limit = {
+								NOT = { this = scope:accuser_ruler }
+								agot_valid_tos_dishonorable_imprisonment_char_trigger = { OG_ACCUSER = scope:accuser_ruler ACCUSER = this DEFENDER = scope:defender_leader }
+							}
+							save_scope_as = accuser_candidate_kin
+						}
+					}
+				}
+			}
+		}
+
+		#Accuser Cry CusLoc
+		if = {
+			limit = { exists = scope:accuser_candidate_kin }
+			scope:accuser_candidate_kin = {
+				tos_accuser_cry_effect = {
+					ACCUSER = scope:accuser_candidate_kin
+					ACCUSED = scope:defender_leader
+				}
+			}
+		}
+
+		#Portrait
+		if = {
+			limit = {
+				exists = scope:accuser_candidate_kin
+				NOT = { exists = scope:accuser_candidate_ruler }
+			}
+			scope:accuser_candidate_kin = { save_scope_as = left_side }
+			scope:accuser_ruler = { save_scope_as = bottom_char }
+			scope:defender_leader = { save_scope_as = right_side }
+		}
+		else_if = {
+			limit = {
+				exists = scope:accuser_candidate_kin
+				exists = scope:accuser_candidate_ruler
+			}
+			scope:accuser_candidate_kin = { save_scope_as = right_side }
+			scope:accuser_ruler = { save_scope_as = left_side }
+			scope:defender_leader = { save_scope_as = bottom_char }
+		}
+		else = {
+			scope:accuser_ruler = { save_scope_as = left_side }
+			scope:defender_leader = { save_scope_as = right_side }
+		}
+	}
+
+	#ToS - I let my kin do it
+	option = {
+		trigger = {
+			NOT = { this = scope:defender_leader }
+			exists = scope:accuser_candidate_kin
+		}
+		name = agot_trial_of_seven.0200.a
+
+		if = {
+			limit = { exists = scope:tbc_trial_of_seven_option }
+			custom_tooltip = agot_trial_of_seven.0200.a.tt.from_tbc
+		}
+		else = { custom_tooltip = agot_trial_of_seven.0200.a.tt }
+
+		scope:accuser_candidate_kin = { save_scope_as = accuser_leader }
+
+		scope:accuser_leader = { save_scope_as = the_royal_leader }
+		scope:defender_leader = { save_scope_as = the_other_leader }
+
+		scope:defender_leader = {
+			add_opinion = {
+				target = scope:accuser_leader
+				modifier = accused_crime_opinion
+				opinion = -100
+			}
+		}
+
+		#Memories
+		scope:defender_leader = {
+			create_character_memory = {
+				type = agot_trial_of_seven_accused_criminal
+				participants = {
+					accuser = scope:accuser_leader
+				}
+			}
+		}
+		scope:accuser_leader = {
+			create_character_memory = {
+				type = agot_trial_of_seven_accuser_criminal
+				participants = {
+					accused = scope:defender_leader
+				}
+			}
+		}
+
+		if = {
+			limit = { this = scope:accuser_ruler }
+			scope:defender_leader = { trigger_event = agot_trial_of_seven.0200 }
+		}
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				add = {
+					value = scope:accuser_candidate_kin.prowess
+					multiply = {
+						value = scope:accuser_candidate_kin.ai_boldness
+						multiply = 0.05
+						min = 1
+					}
+				}
+			}
+
+			modifier = {
+				add = {
+					value = scope:accuser_candidate_kin.ai_honor
+					multiply = -0.25
+				}
+			}
+
+			ai_value_modifier = {
+				ai_boldness = 0.75
+			}
+		}
+	}
+
+	#ToS - I will do it
+	option = {
+		trigger = {
+			NOT = { this = scope:defender_leader }
+			exists = scope:accuser_candidate_ruler
+		}
+		name = {
+			trigger = {
+				exists = scope:accuser_candidate_kin
+			}
+			text = agot_trial_of_seven.0200.b
+		}
+		name = {
+			trigger = {
+				exists = scope:tbc_trial_of_seven_option
+				NOT = { exists = scope:accuser_candidate_kin }
+			}
+			text = agot_trial_of_seven.0200.b.from_tbc
+		}
+		name = {
+			trigger = {
+				NOT = { exists = scope:tbc_trial_of_seven_option }
+				NOT = { exists = scope:accuser_candidate_kin }
+			}
+			text = agot_trial_of_seven.0200.b.generic
+		}
+
+		if = {
+			limit = { exists = scope:tbc_trial_of_seven_option }
+			custom_tooltip = agot_trial_of_seven.0200.a.tt.from_tbc
+		}
+		else = { custom_tooltip = agot_trial_of_seven.0200.a.tt }
+
+		scope:accuser_ruler = { save_scope_as = accuser_leader }
+
+		scope:accuser_leader = { save_scope_as = the_royal_leader }
+		scope:defender_leader = { save_scope_as = the_other_leader }
+
+		#Memories
+		scope:defender_leader = {
+			create_character_memory = {
+				type = agot_trial_of_seven_accused_criminal
+				participants = {
+					accuser = scope:accuser_leader
+				}
+			}
+		}
+		scope:accuser_leader = {
+			create_character_memory = {
+				type = agot_trial_of_seven_accuser_criminal
+				participants = {
+					accused = scope:defender_leader
+				}
+			}
+		}
+
+		scope:defender_leader = {
+			add_opinion = {
+				target = scope:accuser_leader
+				modifier = accused_crime_opinion
+				opinion = -100
+			}
+		}
+
+		if = {
+			limit = { this = scope:accuser_ruler }
+			scope:defender_leader = { trigger_event = agot_trial_of_seven.0200 }
+		}
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				add = {
+					value = scope:accuser_ruler.prowess
+					multiply = {
+						value = scope:accuser_ruler.ai_boldness
+						multiply = 0.05
+						min = 1
+					}
+				}
+			}
+
+			ai_value_modifier = {
+				ai_honor = -0.25
+				ai_boldness = 0.75
+			}
+		}
+	}
+
+	#TbC
+	option = {
+		trigger = {
+			NOT = { this = scope:defender_leader }
+			NOT = { exists = scope:tbc_trial_of_seven_option }
+		}
+		name = agot_trial_of_seven.0200.c
+
+		if = {
+			limit = {
+				exists = primary_title
+				primary_title = { has_variable = trial_of_seven_cooldown }
+			}
+			remove_variable = trial_of_seven_cooldown
+			set_variable = {
+				name = trial_of_seven_cooldown
+				years = 5
+			}
+		}
+
+		trigger_event = agot_trial_by_combat.1000
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_boldness = -0.75
+				ai_honor = 0.25
+			}
+
+			modifier = {
+				add = -50
+				scope:defender_leader = { has_character_flag = tos_from_story }
+			}
+		}
+	}
+
+	#Defender POV
+	option = {
+		trigger = { this = scope:defender_leader }
+		name = agot_trial_of_seven.0200.d
+
+		#SCENARIO
+		save_scope_as = tos_dishonorable_imprisonment_scenario
+
+		hidden_effect = {
+			if = {
+				limit = {
+					this = scope:defender_leader
+					is_imprisoned = yes
+				}
+				add_character_flag = {
+					flag = block_for_prison_release_notification
+					days = 1
+				}
+				release_from_prison = yes
+			}
+		}
+
+		#Add them to their teams.
+		scope:the_other_leader = {
+			add_to_variable_list = {
+				name = multi_duel_tos_temp_list
+				target = scope:the_other_leader
+			}
+		}
+		scope:the_royal_leader = {
+			add_to_variable_list = {
+				name = multi_duel_tos_temp_list
+				target = scope:the_royal_leader
+			}
+			add_character_flag = {
+				flag = agot_tos_royal_side
+				days = 90
+			}
+		}
+
+		scope:the_royal_leader = { trigger_event = agot_trial_of_seven.1000 }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+###################################################################
+####### Dishonorable Imprisonment - Trial of Seven Outcomes #######
+###################################################################
+
+agot_trial_of_seven.0201 = {
+	type = character_event
+	window = agot_character_event_huge
+	title = agot_trial_of_seven.0201.t
+	desc = {
+		first_valid = {
+			# Defender won - Accuser POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+					scope:tos_final_accuser = { is_alive = yes }
+					this = scope:tos_final_ruler
+				}
+				desc = agot_trial_of_seven.0201.desc.defender_won_default.accuser_pov
+			}
+			# Defender won (Accuser died) - Accuser's Heir POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+					scope:tos_final_accuser = { NOT = { is_alive = yes } }
+					this = scope:tos_final_ruler
+				}
+				desc = agot_trial_of_seven.0201.desc.defender_won_accuser_died.accuser_pov
+			}
+			# Defender lost - Accuser POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_accuser_won
+					scope:tos_final_accused = { is_alive = yes }
+					this = scope:tos_final_ruler
+				}
+				desc = agot_trial_of_seven.0201.desc.accuser_won_default.accuser_pov
+			}
+			# Defender lost (Defender died) - Accuser POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_accuser_won
+					scope:tos_final_accused = { NOT = { is_alive = yes } }
+					this = scope:tos_final_ruler
+				}
+				desc = agot_trial_of_seven.0201.desc.accuser_won_defender_died.accuser_pov
+			}
+			# Defender won - Defender POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+					scope:tos_final_accuser = { is_alive = yes }
+					this = scope:tos_final_accused
+				}
+				desc = agot_trial_of_seven.0201.desc.defender_won_default.defender_pov
+			}
+			# Defender won (Accuser died) - Defender POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+					scope:tos_final_accuser = { NOT = { is_alive = yes } }
+					this = scope:tos_final_accused
+				}
+				desc = agot_trial_of_seven.0201.desc.defender_won_accuser_died.defender_pov
+			}
+			# Defender won (Accuser died, Defender inherited) - Defender POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+					scope:tos_final_accuser = { NOT = { is_alive = yes } }
+					this = scope:tos_final_accused
+					scope:tos_final_accused = scope:tos_final_ruler
+				}
+				desc = agot_trial_of_seven.0201.desc.defender_won_accuser_died.inherited_crown_pov
+			}
+			# Defender lost - Defender POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_accuser_won
+					scope:tos_final_accused = { is_alive = yes }
+					this = scope:tos_final_accused
+				}
+				desc = agot_trial_of_seven.0201.desc.accuser_won_default.defender_pov
+			}
+			# Defender won - Observer POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+					scope:tos_final_accuser = { is_alive = yes }
+					NOT = { this = scope:tos_final_ruler }
+					NOT = { this = scope:tos_final_accused }
+				}
+				desc = agot_trial_of_seven.0201.desc.defender_won_default.observer_pov
+			}
+			# Defender won (Accuser died) - Observer POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+					scope:tos_final_accuser = { NOT = { is_alive = yes } }
+					NOT = { this = scope:tos_final_ruler }
+					NOT = { this = scope:tos_final_accused }
+				}
+				desc = agot_trial_of_seven.0201.desc.defender_won_accuser_died.observer_pov
+			}
+			# Defender lost - Observer POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_accuser_won
+					scope:tos_final_accused = { is_alive = yes }
+					NOT = { this = scope:tos_final_ruler }
+					NOT = { this = scope:tos_final_accused }
+				}
+				desc = agot_trial_of_seven.0201.desc.accuser_won_default.observer_pov
+			}
+			# Defender lost (Defender died) - Observer POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_accuser_won
+					scope:tos_final_accused = { NOT = { is_alive = yes } }
+					NOT = { this = scope:tos_final_ruler }
+					NOT = { this = scope:tos_final_accused }
+				}
+				desc = agot_trial_of_seven.0201.desc.accuser_won_defender_died.observer_pov
+			}
+			# Defender won (Accuser died, Defender inherited) - Observer POV
+			triggered_desc = {
+				trigger = {
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+					scope:tos_final_accuser = { NOT = { is_alive = yes } }
+					NOT = { this = scope:tos_final_ruler }
+					NOT = { this = scope:tos_final_accused }
+					scope:tos_final_accused = scope:tos_final_ruler
+				}
+				desc = agot_trial_of_seven.0201.desc.defender_won_accuser_died.inherited_crown_pov
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		character = scope:tos_final_accuser
+		triggered_animation = {
+			trigger = { exists = scope:tos_story_dishonorable_imprisonment_accuser_won }
+			animation = personality_bold
+		}
+		animation = worry
+	}
+
+	left_portrait = {
+		character = scope:tos_final_accused
+		triggered_animation = {
+			trigger = { exists = scope:tos_story_dishonorable_imprisonment_defender_won }
+			animation = personality_bold
+		}
+		animation = worry
+	}
+
+	trigger = { NOT = { has_character_flag = already_received_tos_0201 } }
+
+	immediate = {
+		scope:claim_keeper.var:final_tos_accuser = { save_scope_as = tos_final_accuser }
+		scope:claim_keeper.var:final_tos_accused = { save_scope_as = tos_final_accused }
+		scope:claim_keeper.var:final_tos_accuser_ruler_title.holder = { save_scope_as = tos_final_ruler }
+		scope:tos_final_ruler = { save_scope_as = bg_override_char }
+
+		if = {
+			limit = {
+				exists = scope:tos_story_dishonorable_imprisonment_accuser_won
+				scope:tos_final_accused = { is_alive = yes }
+				NOT = { this = scope:tos_final_ruler }
+				NOT = { this = scope:tos_final_accused }
+			}
+			show_as_tooltip = {
+				scope:tos_final_ruler = {
+					hard_imprison_character_effect = {
+						TARGET = scope:tos_final_accused
+						IMPRISONER = scope:tos_final_ruler
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = { this = scope:tos_final_ruler }
+			scope:tos_final_ruler = { agot_multiduel_betrayer_kingsguard_post_tos = { IMPRISONER = scope:tos_final_ruler } }
+		}
+
+		#Death List - My Team
+		if = {
+			limit = {
+				has_variable_list = potential_multi_duel_bonding_list
+				any_in_list = {
+					variable = potential_multi_duel_bonding_list
+					is_alive = no
+					count > 0
+				}
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_list
+				limit = { is_alive = no }
+				show_as_tooltip = {
+					death = {
+						death_reason = death_duel_trial_by_seven
+					}
+				}
+			}
+		}
+		#Death List - Opponent Team
+		if = {
+			limit = {
+				has_variable_list = potential_multi_duel_bonding_opponent_list
+				any_in_list = {
+					variable = potential_multi_duel_bonding_opponent_list
+					is_alive = no
+					count > 0
+				}
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_opponent_list
+				limit = { is_alive = no }
+				show_as_tooltip = {
+					death = {
+						death_reason = death_duel_trial_by_seven
+					}
+				}
+			}
+		}
+		#Death List - Observer POV
+		if = {
+			limit = {
+				NOT = { this = scope:tos_final_accuser }
+				NOT = { this = scope:tos_final_accused }
+			}
+			scope:claim_keeper = {
+				#Death List - My Team
+				if = {
+					limit = {
+						has_variable_list = potential_multi_duel_bonding_list
+						any_in_list = {
+							variable = potential_multi_duel_bonding_list
+							is_alive = no
+							count > 0
+						}
+					}
+					every_in_list = {
+						variable = potential_multi_duel_bonding_list
+						limit = { is_alive = no }
+						show_as_tooltip = {
+							death = {
+								death_reason = death_duel_trial_by_seven
+							}
+						}
+					}
+				}
+				#Death List - Opponent Team
+				if = {
+					limit = {
+						has_variable_list = potential_multi_duel_bonding_opponent_list
+						any_in_list = {
+							variable = potential_multi_duel_bonding_opponent_list
+							is_alive = no
+							count > 0
+						}
+					}
+					every_in_list = {
+						variable = potential_multi_duel_bonding_opponent_list
+						limit = { is_alive = no }
+						show_as_tooltip = {
+							death = {
+								death_reason = death_duel_trial_by_seven
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Bonding
+		if = {
+			limit = { this = scope:tos_final_ruler }
+			if = {
+				limit = { scope:tos_final_accuser = { is_alive = yes } }
+				scope:tos_final_accuser = {
+					if = {
+						limit = { exists = scope:tos_story_dishonorable_imprisonment_accuser_won }
+						add_character_flag = { flag = we_won_the_tos days = 3 }
+					}
+				}
+				scope:tos_final_accuser = { agot_tos_bonding_effect = yes }
+			}
+		}
+		else_if = {
+			limit = { this = scope:tos_final_accused }
+			if = {
+				limit = { scope:tos_final_accused = { is_alive = yes } }
+				scope:tos_final_accused = {
+					if = {
+						limit = { NOT = { exists = scope:tos_story_dishonorable_imprisonment_accuser_won } }
+						add_character_flag = { flag = we_won_the_tos days = 3 }
+					}
+				}
+				scope:tos_final_accused = { agot_tos_bonding_effect = yes }
+			}
+		}
+
+		#Prestige
+		if = {
+			limit = { this = scope:tos_final_ruler }
+			if = {
+				limit = { exists = scope:tos_story_dishonorable_imprisonment_accuser_won }
+				scope:tos_final_accuser = { add_prestige = 500 }
+				if = {
+					limit = { scope:tos_final_accused = { is_alive = yes } }
+					show_as_tooltip = { scope:tos_final_accused = { add_prestige = -500 } }
+				}
+			}
+			else_if = {
+				limit = { exists = scope:tos_story_dishonorable_imprisonment_defender_won }
+				show_as_tooltip = { scope:tos_final_accused = { add_prestige = 500 } }
+				if = {
+					limit = { scope:tos_final_accuser = { is_alive = yes } }
+					scope:tos_final_accuser = { add_prestige = -500 }
+				}
+			}
+		}
+		else_if = {
+			limit = { this = scope:tos_final_accused }
+			if = {
+				limit = { exists = scope:tos_story_dishonorable_imprisonment_accuser_won }
+				show_as_tooltip = { scope:tos_final_accuser = { add_prestige = 500 } }
+				if = {
+					limit = { scope:tos_final_accused = { is_alive = yes } }
+					scope:tos_final_accused = { add_prestige = -500 }
+				}
+			}
+			else_if = {
+				limit = { exists = scope:tos_story_dishonorable_imprisonment_defender_won }
+				scope:tos_final_accused = { add_prestige = 500 }
+				if = {
+					limit = { scope:tos_final_accuser = { is_alive = yes } }
+					show_as_tooltip = { scope:tos_final_accuser = { add_prestige = -500 } }
+				}
+			}
+		}
+
+		#Memories
+		if = {
+			limit = { this = scope:tos_final_ruler }
+			if = {
+				limit = {
+					scope:tos_final_accuser = { is_alive = yes }
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+				}
+				scope:tos_final_accuser = {
+					create_character_memory = {
+						type = agot_trial_of_seven_loser_leader
+						participants = {
+							opponent = scope:tos_final_accused
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:tos_final_accuser = { is_alive = yes }
+					NOT = { exists = scope:tos_story_dishonorable_imprisonment_defender_won }
+				}
+				scope:tos_final_accuser = {
+					create_character_memory = {
+						type = agot_trial_of_seven_winner_leader
+						participants = {
+							opponent = scope:tos_final_accused
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					scope:tos_final_accused = { is_alive = yes }
+					exists = scope:tos_story_dishonorable_imprisonment_defender_won
+				}
+				scope:tos_final_accused = {
+					create_character_memory = {
+						type = agot_trial_of_seven_winner_leader
+						participants = {
+							opponent = scope:tos_final_accuser
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					scope:tos_final_accused = { is_alive = yes }
+					NOT = { exists = scope:tos_story_dishonorable_imprisonment_defender_won }
+				}
+				scope:tos_final_accused = {
+					create_character_memory = {
+						type = agot_trial_of_seven_loser_leader
+						participants = {
+							opponent = scope:tos_final_accuser
+						}
+					}
+				}
+			}
+		}
+		add_character_flag = {
+			flag = already_received_tos_0201
+			years = 1
+		}
+	}
+
+	option = {
+		name = agot_trial_of_seven.0201.a
+
+		if = {
+			limit = {
+				exists = scope:tos_story_dishonorable_imprisonment_accuser_won
+				scope:tos_final_accused = { is_alive = yes }
+				this = scope:tos_final_ruler
+			}
+			show_as_tooltip = {
+				scope:tos_final_ruler = {
+					hard_imprison_character_effect = {
+						TARGET = scope:tos_final_accused
+						IMPRISONER = scope:tos_final_ruler
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:tos_story_dishonorable_imprisonment_accuser_won
+				scope:tos_final_accused = { is_alive = yes }
+				this = scope:tos_final_accused
+			}
+			scope:tos_final_ruler = {
+				hard_imprison_character_effect = {
+					TARGET = scope:tos_final_accused
+					IMPRISONER = scope:tos_final_ruler
+				}
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						scope:tos_final_accused = {
+							is_playable_character = no
+							NOT = { is_courtier_of = scope:tos_final_ruler }
+						}
+					}
+					scope:tos_final_ruler = { add_courtier = scope:tos_final_accused }
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				this = scope:tos_final_ruler
+				scope:tos_final_accused = { is_alive = yes }
+				NOT = { this = scope:tos_final_accused }
+			}
+			scope:tos_final_accused = { trigger_event = agot_trial_of_seven.0201 }
+		}
+
+		if = {
+			limit = { this = scope:tos_final_accused }
+			#ObserverPlayerEvent
+			if = {
+				limit = { any_player = { has_character_flag = agot_observing_trial_of_seven } }
+				every_player = { limit = { has_character_flag = agot_observing_trial_of_seven } trigger_event = { id = agot_trial_of_seven.0201 days = 1 } }
+			}
+		}
+		else_if = {
+			limit = { scope:tos_final_accused = { NOT = { is_alive = yes } } }
+			#ObserverPlayerEvent
+			if = {
+				limit = { any_player = { has_character_flag = agot_observing_trial_of_seven } }
+				every_player = { limit = { has_character_flag = agot_observing_trial_of_seven } trigger_event = { id = agot_trial_of_seven.0201 days = 1 } }
+			}
+		}
+
+		#New Friend
+		if = {
+			limit = {
+				exists = scope:new_friend
+				exists = scope:new_friend.var:my_new_friend
+				this = scope:tos_final_ruler
+				scope:new_friend.var:my_new_friend = scope:tos_final_accuser
+			}
+			scope:tos_final_accuser = {
+				set_relation_friend = {
+					reason = friend_fought_for_me_in_a_trial_of_seven
+					target = scope:new_friend
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:new_friend
+				exists = scope:new_friend.var:my_new_friend
+				this = scope:tos_final_accused
+				scope:new_friend.var:my_new_friend = scope:tos_final_accused
+			}
+			scope:tos_final_accused = {
+				set_relation_friend = {
+					reason = friend_fought_for_me_in_a_trial_of_seven
+					target = scope:new_friend
+				}
+			}
+		}
+	}
+}
+
+#####################################################################
+####### Dishonorable Imprisonment - Trial of Seven Pre-Events #######
+#####################################################################
+
+# ToS: Imprisoned.. Friend Visits
+agot_trial_of_seven.0202 = {
+	type = character_event
+	title = agot_trial_of_seven.0202.t
+	desc = agot_trial_of_seven.0202.desc
+
+	theme = prison
+
+	override_background = { reference = dungeon }
+
+	right_portrait = {
+		character = scope:tos_friend
+		animation = personality_rational
+	}
+
+	left_portrait = {
+		character = scope:tos_prisoner
+		animation = worry
+	}
+
+	lower_center_portrait = {
+		character = scope:tos_imprisoner
+	}
+
+	trigger = {
+		exists = scope:tos_prisoner
+		exists = scope:tos_imprisoner
+		exists = scope:tos_friend
+		scope:tos_prisoner = { is_alive = yes }
+		scope:tos_imprisoner = { is_alive = yes }
+		scope:tos_friend = { is_alive = yes }
+		scope:tos_prisoner = {
+			is_imprisoned = yes
+			is_imprisoned_by = scope:tos_imprisoner
+			OR = {
+				has_relation_friend = scope:tos_friend
+				has_relation_lover = scope:tos_friend
+			}
+		}
+	}
+
+	immediate = {
+		scope:tos_prisoner = { add_character_flag = tos_imprisonment_initial_event_sent }
+	}
+
+	# Yes please set me free
+	option = {
+		name = agot_trial_of_seven.0202.a
+		add_character_flag = tos_king_considering
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_rationality = 0.5
+				ai_boldness = 0.5
+			}
+		}
+	}
+
+	# I don't need your help
+	option = {
+		trigger = { this = { is_ai = no } }
+		name = agot_trial_of_seven.0202.b
+		add_character_flag = {
+			flag = tos_refused_help_from_friend
+			years = 1
+		}
+		scope:tos_friend = {
+			add_opinion = {
+				target = scope:tos_prisoner
+				modifier = disappointed_opinion
+				opinion = -10
+			}
+		}
+		scope:story = { end_story = yes }
+
+		ai_chance = {
+			base = 0
+
+			opinion_modifier = {
+				who = scope:tos_prisoner
+				opinion_target = scope:tos_imprisoner
+				multiplier = -1
+			}
+		}
+	}
+}
+
+# ToS: Imprisoned.. I can demand TbC
+agot_trial_of_seven.0203 = {
+	type = character_event
+	title = agot_trial_of_seven.0203.t
+	desc = agot_trial_of_seven.0203.desc
+
+	theme = prison
+
+	override_background = { reference = throne_room }
+
+	right_portrait = {
+		character = scope:tos_friend
+		animation = personality_rational
+	}
+
+	left_portrait = {
+		character = scope:tos_prisoner
+		animation = personality_bold
+	}
+
+	lower_center_portrait = {
+		character = scope:tos_imprisoner
+	}
+
+	trigger = {
+		exists = scope:tos_prisoner
+		exists = scope:tos_imprisoner
+		exists = scope:tos_friend
+		scope:tos_prisoner = { is_alive = yes }
+		scope:tos_imprisoner = { is_alive = yes }
+		scope:tos_friend = { is_alive = yes }
+		scope:tos_prisoner = {
+			is_imprisoned = yes
+			is_imprisoned_by = scope:tos_imprisoner
+			OR = {
+				has_relation_friend = scope:tos_friend
+				has_relation_lover = scope:tos_friend
+			}
+		}
+		agot_valid_tos_dishonorable_imprisonment_scenario_trigger = { ACTOR = scope:tos_prisoner RECIPIENT = scope:tos_imprisoner }
+		NOT = { has_character_flag = tos_refused_help_from_friend }
+	}
+
+	immediate = {
+		#Scopes for ToS
+		scope:tos_imprisoner = { save_scope_as = accuser_ruler }
+		scope:tos_prisoner = { save_scope_as = defender_leader }
+		#Scopes for TbC
+		scope:tos_imprisoner = { save_scope_as = recipient }
+		scope:tos_prisoner = { save_scope_as = actor }
+	}
+
+	# Demand "Trial by Combat"
+	option = {
+		name = agot_trial_of_seven.0203.a
+		custom_tooltip = demand_trial_by_combat_duel_self
+
+		scope:actor = {
+			agot_remove_imprisonment_flags = yes
+		}
+
+		scope:accuser_ruler = { agot_trial_of_seven_cooldown_effect = yes }
+		scope:accuser_ruler = { add_character_flag = trial_of_seven_blocker }
+		scope:accuser_ruler = { trigger_event = agot_trial_of_seven.0200 }
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_boldness = 1
+			}
+		}
+	}
+
+	# Changed my mind
+	option = {
+		name = agot_trial_of_seven.0203.b
+		custom_tooltip = agot_trial_of_seven.0203.b.tt
+
+		scope:actor = {
+			agot_remove_imprisonment_flags = yes
+		}
+
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_boldness = -1
+			}
+		}
+	}
+}
+
+# ToS: Imprisoned.. King considers the release of the prisoner
+agot_trial_of_seven.0204 = {
+	type = character_event
+	title = agot_trial_of_seven.0204.t
+	desc = agot_trial_of_seven.0204.desc
+
+	theme = court
+
+	override_background = { reference = dungeon }
+
+	right_portrait = {
+		character = scope:tos_friend
+		animation = personality_rational
+	}
+
+	left_portrait = {
+		character = scope:tos_prisoner
+		animation = worry
+	}
+
+	lower_center_portrait = {
+		character = scope:tos_imprisoner
+	}
+
+	trigger = {
+		exists = scope:tos_prisoner
+		exists = scope:tos_imprisoner
+		exists = scope:tos_friend
+		scope:tos_prisoner = { is_alive = yes }
+		scope:tos_imprisoner = { is_alive = yes }
+		scope:tos_friend = { is_alive = yes }
+		scope:tos_prisoner = {
+			is_imprisoned = yes
+			is_imprisoned_by = scope:tos_imprisoner
+			OR = {
+				has_relation_friend = scope:tos_friend
+				has_relation_lover = scope:tos_friend
+			}
+		}
+	}
+
+	immediate = {
+		scope:tos_prisoner = {
+			add_character_flag = {
+				flag = check_if_tos_prisoner_story_is_over
+				months = 6
+			}
+			add_character_flag = tos_204_received
+		}
+	}
+
+	# Ok
+	option = {
+		name = agot_trial_of_seven.0204.a
+
+		show_as_tooltip = {
+			scope:tos_prisoner = {
+				release_from_prison = yes
+				add_opinion = {
+					target = scope:tos_imprisoner
+					modifier = pleased_opinion
+					opinion = 10
+				}
+			}
+		}
+
+		scope:tos_prisoner = {
+			add_character_flag = {
+				flag = tos_0204_ok
+				days = 50
+			}
+
+			trigger_event = agot_trial_of_seven.0205
+		}
+
+		scope:tos_friend = {
+			add_opinion = {
+				target = scope:tos_imprisoner
+				modifier = pleased_opinion
+				opinion = 25
+			}
+		}
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_honor = 0.5
+			}
+
+			opinion_modifier = {
+				who = scope:tos_imprisoner
+				opinion_target = scope:tos_prisoner
+				multiplier = 0.5
+			}
+		}
+	}
+
+	# Prisoner can go free for some gold
+	option = {
+		name = agot_trial_of_seven.0204.b
+
+		show_as_tooltip = {
+			scope:tos_prisoner = {
+				pay_short_term_gold = {
+					target = scope:tos_imprisoner
+					gold = 20
+				}
+				release_from_prison = yes
+				add_opinion = {
+					target = scope:tos_imprisoner
+					modifier = pleased_opinion
+					opinion = 5
+				}
+			}
+		}
+
+		scope:tos_prisoner = {
+			add_character_flag = {
+				flag = tos_0204_gold
+				days = 50
+			}
+
+			trigger_event = agot_trial_of_seven.0205
+		}
+
+		scope:tos_friend = {
+			add_opinion = {
+				target = scope:tos_imprisoner
+				modifier = pleased_opinion
+				opinion = 10
+			}
+		}
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_greed = 1
+			}
+		}
+	}
+
+	# No
+	option = {
+		name = agot_trial_of_seven.0204.c
+
+		show_as_tooltip = {
+			scope:tos_prisoner = {
+				add_opinion = {
+					target = scope:tos_imprisoner
+					modifier = disappointed_opinion
+					opinion = -10
+				}
+			}
+		}
+
+		scope:tos_prisoner = {
+			add_character_flag = {
+				flag = tos_0204_no
+				days = 50
+			}
+
+			trigger_event = agot_trial_of_seven.0205
+		}
+
+		scope:tos_friend = {
+			add_opinion = {
+				target = scope:tos_imprisoner
+				modifier = angry_opinion
+				opinion = -25
+			}
+		}
+
+		ai_chance = {
+			base = 0
+
+			opinion_modifier = {
+				who = scope:tos_imprisoner
+				opinion_target = scope:tos_prisoner
+				multiplier = -1
+			}
+		}
+	}
+
+	# Okay they can go.. to the Wall
+	option = {
+		trigger = { agot_nw_can_banish = { BANISHER = scope:tos_imprisoner BANISHEE = scope:tos_prisoner } }
+		name = agot_trial_of_seven.0204.d
+
+		show_as_tooltip = {
+			agot_send_to_nightswatch_effect = { ACTOR = scope:tos_imprisoner NIGHTSWATCH_CANDIDATE = scope:tos_prisoner }
+			scope:tos_prisoner = {
+				add_opinion = {
+					target = scope:tos_imprisoner
+					modifier = disappointed_opinion
+					opinion = -50
+				}
+			}
+		}
+
+		scope:tos_prisoner = {
+			add_character_flag = {
+				flag = tos_0204_nw
+				days = 50
+			}
+
+			trigger_event = agot_trial_of_seven.0205
+		}
+
+		scope:tos_friend = {
+			add_opinion = {
+				target = scope:tos_imprisoner
+				modifier = cruelty_opinion
+				opinion = -50
+			}
+		}
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_rationality = -1
+			}
+		}
+	}
+}
+
+# ToS: Imprisoned.. Prisoner informed
+agot_trial_of_seven.0205 = {
+	type = character_event
+	title = agot_trial_of_seven.0205.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:tos_prisoner = { has_character_flag = tos_0204_ok }
+				}
+				desc = agot_trial_of_seven.0205.desc.ok
+			}
+			triggered_desc = {
+				trigger = {
+					scope:tos_prisoner = { has_character_flag = tos_0204_gold }
+				}
+				desc = agot_trial_of_seven.0205.desc.gold
+			}
+			triggered_desc = {
+				trigger = {
+					scope:tos_prisoner = { has_character_flag = tos_0204_no }
+				}
+				desc = agot_trial_of_seven.0205.desc.no
+			}
+			triggered_desc = {
+				trigger = {
+					scope:tos_prisoner = { has_character_flag = tos_0204_nw }
+				}
+				desc = agot_trial_of_seven.0205.desc.nw
+			}
+		}
+	}
+
+	theme = prison
+
+	override_background = { reference = throne_room }
+
+	right_portrait = {
+		character = scope:tos_friend
+		animation = personality_rational
+	}
+
+	left_portrait = {
+		character = scope:tos_prisoner
+		animation = personality_bold
+	}
+
+	lower_center_portrait = {
+		character = scope:tos_imprisoner
+	}
+
+	trigger = {
+		exists = scope:tos_prisoner
+		exists = scope:tos_imprisoner
+		exists = scope:tos_friend
+		scope:tos_prisoner = { is_alive = yes }
+		scope:tos_imprisoner = { is_alive = yes }
+		scope:tos_friend = { is_alive = yes }
+		scope:tos_prisoner = {
+			is_imprisoned = yes
+			is_imprisoned_by = scope:tos_imprisoner
+			OR = {
+				has_relation_friend = scope:tos_friend
+				has_relation_lover = scope:tos_friend
+			}
+		}
+		NOT = { has_character_flag = tos_refused_help_from_friend }
+	}
+
+	immediate = {
+		if = {
+			limit = { has_character_flag = tos_0204_ok }
+			scope:tos_prisoner = {
+				add_opinion = {
+					target = scope:tos_imprisoner
+					modifier = pleased_opinion
+					opinion = 10
+				}
+				add_opinion = {
+					target = scope:tos_friend
+					modifier = pleased_opinion
+					opinion = 25
+				}
+			}
+		}
+		else_if = {
+			limit = { has_character_flag = tos_0204_no }
+			scope:tos_prisoner = {
+				add_opinion = {
+					target = scope:tos_imprisoner
+					modifier = disappointed_opinion
+					opinion = -10
+				}
+			}
+		}
+		else_if = {
+			limit = { has_character_flag = tos_0204_nw }
+			scope:tos_prisoner = {
+				add_opinion = {
+					target = scope:tos_imprisoner
+					modifier = disappointed_opinion
+					opinion = -50
+				}
+				add_opinion = {
+					target = scope:tos_friend
+					modifier = disappointed_opinion
+					opinion = -25
+				}
+			}
+		}
+	}
+
+	# Ok I take it
+	option = {
+		trigger = { NOT = { has_character_flag = tos_0204_no } }
+		name = agot_trial_of_seven.0205.a
+
+		if = {
+			limit = { has_character_flag = tos_0204_ok }
+			scope:tos_prisoner = {
+				release_from_prison = yes
+			}
+		}
+		else_if = {
+			limit = { has_character_flag = tos_0204_gold }
+			scope:tos_prisoner = {
+				pay_short_term_gold = {
+					target = scope:tos_imprisoner
+					gold = 20
+				}
+				release_from_prison = yes
+
+				add_opinion = {
+					target = scope:tos_imprisoner
+					modifier = pleased_opinion
+					opinion = 5
+				}
+				add_opinion = {
+					target = scope:tos_friend
+					modifier = pleased_opinion
+					opinion = 15
+				}
+			}
+		}
+		else_if = {
+			limit = { has_character_flag = tos_0204_nw }
+			agot_send_to_nightswatch_effect = { ACTOR = scope:tos_imprisoner NIGHTSWATCH_CANDIDATE = scope:tos_prisoner }
+		}
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_energy = -0.5
+				ai_greed = -0.5
+			}
+
+			modifier = {
+				AND = {
+					has_character_flag = tos_0204_gold
+					scope:tos_prisoner.gold < 20
+				}
+				add = -50
+			}
+		}
+	}
+
+	# I can not accept this
+	option = {
+		trigger = {
+			NOT = { has_character_flag = tos_0204_ok }
+			agot_valid_tos_dishonorable_imprisonment_scenario_trigger = { ACTOR = scope:tos_prisoner RECIPIENT = scope:tos_imprisoner }
+		}
+		name = {
+			trigger = { NOT = { has_character_flag = tos_0204_nw } }
+			text = agot_trial_of_seven.0205.b
+		}
+		name = {
+			trigger = { has_character_flag = tos_0204_nw }
+			text = agot_trial_of_seven.0205.b.nw
+		}
+
+		if = {
+			limit = { has_character_flag = tos_0204_nw }
+			#Scopes for ToS
+			scope:tos_imprisoner = { save_scope_as = accuser_ruler }
+			scope:tos_prisoner = { save_scope_as = defender_leader }
+			#Scopes for TbC
+			scope:tos_imprisoner = { save_scope_as = recipient }
+			scope:tos_prisoner = { save_scope_as = actor }
+
+			custom_tooltip = demand_trial_by_combat_duel_self
+
+			scope:actor = {
+				agot_remove_imprisonment_flags = yes
+			}
+
+			scope:accuser_ruler = { agot_trial_of_seven_cooldown_effect = yes }
+			scope:accuser_ruler = { add_character_flag = trial_of_seven_blocker }
+			scope:accuser_ruler = { trigger_event = agot_trial_of_seven.0200 }
+		}
+		else = {
+			trigger_event = {
+				id = agot_trial_of_seven.0203
+				days = 3
+			}
+		}
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_boldness = 0.5
+				ai_honor = 0.5
+			}
+		}
+	}
+
+	# OK
+	option = {
+		trigger = {
+			NOT = { agot_valid_tos_dishonorable_imprisonment_scenario_trigger = { ACTOR = scope:tos_prisoner RECIPIENT = scope:tos_imprisoner } }
+		}
+		name = agot_trial_of_seven.0205.c
+
+		ai_chance = {
+			base = 1
+		}
+	}
+}
+
+#################################
+####### TEAM SETUP EVENTS #######
+#################################
+
+# ToS: Selecting Champions
+agot_trial_of_seven.1000 = {
+	type = character_event
+	title = agot_trial_of_seven.1000.t
+	desc = {
+		random_valid = {
+			triggered_desc = {
+				trigger = {
+					has_character_flag = agot_tos_lost_before_started
+				}
+				desc = agot_trial_of_seven.1000.desc.lost_before_started
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+					NOT = { has_character_flag = agot_tos_has_helper_knight }
+					NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+					NOT = { has_character_flag = tos_non_royal_sellsword_gained }
+				}
+				desc = agot_trial_of_seven.1000.desc
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+					has_character_flag = agot_tos_has_helper_knight
+					has_character_flag = tos_squire_wants_to_be_knighted
+					NOT = { has_character_flag = tos_non_royal_sellsword_gained }
+				}
+				desc = agot_trial_of_seven.1000.desc.helper_squire
+			}
+			#variants
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+					has_character_flag = agot_tos_has_helper_knight
+					NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+					NOT = { has_character_flag = tos_non_royal_sellsword_gained }
+				}
+				desc = agot_trial_of_seven.1000.desc.helper_knight.a
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+					has_character_flag = agot_tos_has_helper_knight
+					NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+					NOT = { has_character_flag = tos_non_royal_sellsword_gained }
+				}
+				desc = agot_trial_of_seven.1000.desc.helper_knight.b
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+					has_character_flag = agot_tos_has_helper_knight
+					NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+					NOT = { has_character_flag = tos_non_royal_sellsword_gained }
+				}
+				desc = agot_trial_of_seven.1000.desc.helper_knight.c
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+					has_character_flag = agot_tos_has_helper_knight
+					NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+					NOT = { has_character_flag = tos_non_royal_sellsword_gained }
+				}
+				desc = agot_trial_of_seven.1000.desc.helper_knight.d
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+					has_character_flag = agot_tos_has_helper_knight
+					NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+					NOT = { has_character_flag = tos_non_royal_sellsword_gained }
+				}
+				desc = agot_trial_of_seven.1000.desc.helper_knight.e
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+					has_character_flag = tos_non_royal_sellsword_gained
+					NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+				}
+				desc = agot_trial_of_seven.1000.desc.sellsword
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		character = root
+		animation = personality_bold
+	}
+
+	left_portrait = {
+		trigger = {
+			exists = scope:left_side_char
+			scope:duel_leader = {
+				NOT = { has_character_flag = tos_already_knighted_once }
+				NOT = { has_character_flag = agot_tos_lost_before_started }
+				has_character_flag = tos_a_knight_steps_forward
+			}
+		}
+		character = scope:left_side_char
+		triggered_animation = {
+			trigger = { scope:duel_leader = { has_character_flag = tos_squire_wants_to_be_knighted } }
+			animation = throne_room_kneel_1
+		}
+		animation = personality_bold
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+			NOT = { has_character_flag = agot_tos_lost_before_started }
+			NOT = { has_character_flag = agot_tos_need_new_char }
+			NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+			NOT = { has_character_flag = tos_a_knight_steps_forward }
+		}
+		gui = "agot_character_selection_three_options"
+		container = "custom_widgets_container"
+	}
+
+	trigger = {
+		has_variable_list = multi_duel_tos_temp_list
+		any_in_list = {
+			variable = multi_duel_tos_temp_list
+			count <= 7
+		}
+	}
+
+	immediate = {
+		scope:defender_leader = {
+			agot_multi_duel_add_martial_flags = yes
+		}
+		scope:accuser_leader = {
+			agot_multi_duel_add_martial_flags = yes
+		}
+
+		location = { save_scope_as = background_terrain_scope }
+		scope:the_royal_leader = { save_scope_as = bg_override_char }
+		save_scope_as = duel_leader
+
+		#Rulers
+		if = {
+			limit = { exists = primary_title }
+			agot_tos_champion_selection_every_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+		}
+		#Unlanded
+		else_if = {
+			limit = {
+				exists = liege
+				liege = {
+					OR = {
+						any_courtier = {
+							agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+						}
+						any_vassal_or_below = {
+							agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+						}
+						any_vassal = {
+							any_courtier = { agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+						}
+					}
+				}
+			}
+			liege = {
+				agot_tos_champion_selection_every_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+		}
+		#Royal Privilege
+		if = {
+			limit = {
+				exists = house
+				exists = top_liege
+				exists = top_liege.house
+				house = top_liege.house
+				exists = top_liege.primary_title
+				top_liege.primary_title.tier >= tier_empire
+				top_liege = { agot_is_independent_ruler = yes }
+				top_liege = {
+					OR = {
+						any_courtier = {
+							agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+						}
+						any_vassal_or_below = {
+							agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+						}
+						any_vassal = {
+							any_courtier = { agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+						}
+					}
+				}
+			}
+			top_liege = {
+				agot_tos_champion_selection_every_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+		}
+		#Friends & Family
+		agot_tos_champion_selection_friends_lovers_family = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+
+		#Fallback: If no other options extra characters can be invited
+		if = {
+			limit = {
+				OR = {
+					NOT = { has_variable_list = possible_characters_temp }
+					any_in_list = {
+						variable = possible_characters_temp
+						save_temporary_scope_as = temp_char
+						scope:duel_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_char } } }
+						count = 0
+					}
+				}
+			}
+			#Special Seceltion Pool
+			if = {
+				limit = {
+					OR = {
+						has_character_flag = tos_honorable_knight
+						has_character_flag = tos_greedy_knight
+						has_character_flag = tos_dishonorable_knight
+					}
+				}
+				#Honorable
+				if = {
+					limit = {
+						has_character_flag = tos_honorable_knight
+						exists = top_liege
+						exists = location.empire
+						NOT = { government_has_flag = government_is_landless_adventurer }
+						top_liege = {
+							OR = {
+								any_courtier = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal_or_below = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal = {
+									any_courtier = { agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+								}
+							}
+						}
+					}
+					top_liege = {
+						agot_tos_champion_selection_random_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+					}
+				}
+				#Honorable (for laamps)
+				else_if = {
+					limit = {
+						has_character_flag = tos_honorable_knight
+						government_has_flag = government_is_landless_adventurer
+						exists = location.empire
+						exists = location.county.holder.top_liege
+						location.county.holder.top_liege = scope:the_royal_leader.top_liege
+						location.county.holder.top_liege = {
+							OR = {
+								any_courtier = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal_or_below = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal = {
+									any_courtier = { agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+								}
+							}
+						}
+					}
+					location.county.holder.top_liege = {
+						agot_tos_champion_selection_random_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+					}
+				}
+				#Greedy
+				else_if = {
+					limit = {
+						has_character_flag = tos_greedy_knight
+						exists = top_liege
+						exists = location.empire
+						NOT = { government_has_flag = government_is_landless_adventurer }
+						top_liege = {
+							OR = {
+								any_courtier = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal_or_below = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal = {
+									any_courtier = { agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+								}
+							}
+						}
+					}
+					top_liege = {
+						agot_tos_champion_selection_random_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+					}
+					if = {
+						limit = { NOT = { has_character_flag = tos_non_royal_sellsword_gained } }
+						add_character_flag = tos_non_royal_sellsword_gained
+					}
+				}
+				#Greedy (for laamps)
+				else_if = {
+					limit = {
+						has_character_flag = tos_greedy_knight
+						government_has_flag = government_is_landless_adventurer
+						exists = location.empire
+						exists = location.county.holder.top_liege
+						location.county.holder.top_liege = scope:the_royal_leader.top_liege
+						location.county.holder.top_liege = {
+							OR = {
+								any_courtier = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal_or_below = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal = {
+									any_courtier = { agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+								}
+							}
+						}
+					}
+					location.county.holder.top_liege = {
+						agot_tos_champion_selection_random_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+					}
+					if = {
+						limit = { NOT = { has_character_flag = tos_non_royal_sellsword_gained } }
+						add_character_flag = tos_non_royal_sellsword_gained
+					}
+				}
+				#Dishonorable
+				else_if = {
+					limit = {
+						has_character_flag = tos_dishonorable_knight
+						exists = top_liege
+						exists = location.empire
+						NOT = { government_has_flag = government_is_landless_adventurer }
+						top_liege = {
+							OR = {
+								any_courtier = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal_or_below = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal = {
+									any_courtier = { agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+								}
+							}
+						}
+					}
+					top_liege = {
+						agot_tos_champion_selection_random_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+					}
+				}
+				#Dishonorable (for laamps)
+				else_if = {
+					limit = {
+						has_character_flag = tos_dishonorable_knight
+						government_has_flag = government_is_landless_adventurer
+						exists = location.empire
+						exists = location.county.holder.top_liege
+						location.county.holder.top_liege = scope:the_royal_leader.top_liege
+						location.county.holder.top_liege = {
+							OR = {
+								any_courtier = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal_or_below = {
+									agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal = {
+									any_courtier = { agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+								}
+							}
+						}
+					}
+					location.county.holder.top_liege = {
+						agot_tos_champion_selection_random_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+					}
+				}
+				#A squire asks me to be knighted
+				else_if = {
+					limit = {
+						any_in_list = {
+							variable = multi_duel_tos_temp_list
+							count >= 6
+						}
+						NOT = { this = scope:the_royal_leader }
+						NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+						exists = location.empire
+						exists = location.county.holder.top_liege
+						location.county.holder.top_liege = scope:the_royal_leader.top_liege
+						location.county.holder.top_liege = {
+							OR = {
+								any_courtier = {
+									agot_can_be_trial_of_seven_duelist_squire_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal_or_below = {
+									agot_can_be_trial_of_seven_duelist_squire_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+								}
+								any_vassal = {
+									any_courtier = { agot_can_be_trial_of_seven_duelist_squire_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+								}
+							}
+						}
+					}
+					location.county.holder.top_liege = {
+						agot_tos_squire_selection_random_vassal_or_below = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+					}
+				}
+			}
+		}
+		#Final Fallback: If no other options royal side can buy new characters
+		if = {
+			limit = {
+				OR = {
+					has_character_flag = tos_honorable_knight
+					has_character_flag = tos_greedy_knight
+					has_character_flag = tos_dishonorable_knight
+				}
+				OR = {
+					NOT = { has_variable_list = possible_characters_temp }
+					any_in_list = {
+						variable = possible_characters_temp
+						save_temporary_scope_as = temp_char
+						scope:duel_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_char } } }
+						count = 0
+					}
+				}
+			}
+			if = {
+				limit = {
+					OR = {
+						has_character_flag = tos_greedy_knight
+						has_character_flag = tos_greedy_knight_allowed
+					}
+					NOT = { has_character_flag = tos_non_royal_sellsword_blocker }
+				}
+				#A greedy knight steps forward..
+				create_character = {
+					age = { 16 40 }
+					dynasty = none
+					culture = scope:duel_leader.culture
+					faith = scope:duel_leader.faith
+					location = scope:duel_leader.location
+					gender = male
+					random_traits = yes
+					trait = greedy
+					prowess = { 10 20 }
+					save_scope_as = new_char
+					after_creation = {
+						scope:duel_leader = {
+							add_courtier = scope:new_char
+							add_to_variable_list = {
+								name = possible_characters_temp
+								target = scope:new_char
+							}
+						}
+						scope:new_char = {
+							agot_multi_duel_set_weapon_for_new_char = yes
+							add_trait = squire
+							add_trait_xp = {
+								trait = squire
+								track = knight
+								value = 100
+							}
+							if = {
+								limit = {
+									NOR = {
+										has_trait = education_martial_prowess_1
+										has_trait = education_martial_prowess_2
+										has_trait = education_martial_prowess_3
+										has_trait = education_martial_prowess_4
+										has_trait = education_martial_prowess_5
+									}
+								}
+								random_list = {
+									3000 = { add_trait = education_martial_prowess_1 }
+									3000 = { add_trait = education_martial_prowess_2 }
+									2500 = { add_trait = education_martial_prowess_3 }
+									1500 = { add_trait = education_martial_prowess_4 }
+									1 = { add_trait = education_martial_prowess_5 }
+								}
+							}
+						}
+					}
+				}
+				add_character_flag = agot_tos_new_char_created
+				if = {
+					limit = { NOT = { has_character_flag = tos_non_royal_sellsword_gained } }
+					add_character_flag = tos_non_royal_sellsword_gained
+				}
+				if = {
+					limit = { NOT = { has_character_flag = tos_greedy_knight } }
+					add_character_flag = tos_non_royal_sellsword_blocker
+				}
+			}
+			else = { add_character_flag = agot_tos_lost_before_started }
+		}
+
+		if = {
+			limit = {
+				has_variable_list = possible_characters_temp
+				any_in_list = {
+					variable = possible_characters_temp
+					save_temporary_scope_as = temp_char
+					scope:duel_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_char } } }
+					count > 0
+				}
+			}
+			if = {
+				limit = { is_ai = no }
+				ordered_in_list = {
+					variable = possible_characters_temp
+					order_by = prowess
+					max = 20
+					prev = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+					check_range_bounds = no
+				}
+				ordered_in_list = {
+					variable = possible_characters
+					order_by = prowess
+					root = { set_variable = { name = si_selected_character value = prev } }
+					save_scope_as = new_champion
+				}
+				clear_variable_list = possible_characters_temp
+			}
+			else = {
+				ordered_in_list = {
+					variable = possible_characters_temp
+					order_by = prowess
+					prev = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+				ordered_in_list = {
+					variable = possible_characters
+					order_by = prowess
+					save_scope_as = new_champion
+				}
+				clear_variable_list = possible_characters_temp
+			}
+		}
+		#If still nothing look further
+		if = {
+			limit = {
+				OR = {
+					NOT = { has_variable_list = possible_characters }
+					any_in_list = {
+						variable = possible_characters
+						count = 0
+					}
+				}
+			}
+			add_character_flag = agot_tos_need_new_char
+		}
+
+		#Save left side character
+		if = {
+			limit = { exists = scope:new_champion }
+			scope:new_champion = { save_scope_as = left_side_char }
+		}
+		else_if = {
+			limit = { exists = scope:helper_knight }
+			scope:helper_knight = { save_scope_as = left_side_char }
+		}
+	}
+
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							has_character_flag = agot_tos_lost_before_started
+						}
+						desc = agot_trial_of_seven.1000.a.lost_before_started
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = agot_tos_need_new_char
+						}
+						desc = agot_trial_of_seven.1000.a.need_new_char
+					}
+					triggered_desc = {
+						trigger = {
+							NOT = { has_character_flag = agot_tos_new_char_created }
+							NOT = { has_character_flag = tos_squire_wants_to_be_knighted }
+						}
+						desc = agot_trial_of_seven.1000.a
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = agot_tos_new_char_created
+						}
+						desc = agot_trial_of_seven.1000.a.buy
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_squire_wants_to_be_knighted
+						}
+						desc = agot_trial_of_seven.1000.a.squire_approved
+					}
+				}
+			}
+		}
+
+		#Add new character to the team
+		if = {
+			limit = {
+				exists = var:si_selected_character
+				exists = scope:new_champion
+				scope:new_champion = { NOT = { has_character_flag = tos_duelist_already_picked } }
+				is_ai = no
+			}
+			var:si_selected_character = {
+				save_scope_as = new_champion
+				remove_variable = si_selecting_character
+			}
+			if = {
+				limit = { NOT = { has_character_flag = agot_tos_lost_before_started } }
+				custom_tooltip = agot_trial_of_seven.1000.a.tt
+			}
+
+			add_to_variable_list = {
+				name = multi_duel_tos_temp_list
+				target = scope:new_champion
+			}
+			scope:new_champion = {
+				add_character_flag = {
+					flag = tos_duelist_already_picked
+					days = 100
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:new_champion
+				scope:new_champion = { NOT = { has_character_flag = tos_duelist_already_picked } }
+				is_ai = yes
+			}
+
+			add_to_variable_list = {
+				name = multi_duel_tos_temp_list
+				target = scope:new_champion
+			}
+			scope:new_champion = {
+				add_character_flag = {
+					flag = tos_duelist_already_picked
+					days = 100
+				}
+			}
+		}
+		else_if = {
+			limit = { has_variable = si_selecting_character }
+			remove_variable = si_selecting_character
+		}
+
+		#In the name of the Warrior..
+		if = {
+			limit = {
+				has_character_flag = tos_squire_wants_to_be_knighted
+				NOT = { has_character_flag = tos_already_knighted_once }
+			}
+			custom_tooltip = agot_trial_of_seven.1000.a.squire_approved.tt
+
+			agot_become_a_knight_effect = {
+				KNIGHT_MAKER = scope:duel_leader
+				KNIGHT_TO_BE = scope:helper_knight
+			}
+
+			add_character_flag = {
+				flag = tos_already_knighted_once
+				days = 90
+			}
+		}
+
+		#Opinion/Gold/Prestige
+		if = {
+			limit = { has_character_flag = agot_tos_new_char_created }
+			scope:duel_leader = {
+				add_to_variable_list = {
+					name = tos_money_owed
+					target = scope:new_champion
+				}
+			}
+			show_as_tooltip = {
+				pay_short_term_gold = {
+					target = scope:new_champion
+					gold = 150
+				}
+			}
+			remove_character_flag = agot_tos_new_char_created
+		}
+
+		if = {
+			limit = {
+				exists = scope:helper_knight
+				scope:helper_knight = { NOT = { has_character_flag = agot_trial_of_seven_mate_cooldown } }
+			}
+			scope:helper_knight = {
+				add_character_flag = {
+					flag = agot_trial_of_seven_mate_cooldown
+					days = 90
+				}
+			}
+			add_opinion = {
+				target = scope:helper_knight
+				modifier = agot_trial_of_seven_mate
+				opinion = 50
+			}
+			if = {
+				limit = { scope:helper_knight = { has_trait = kingsguard } }
+				scope:helper_knight = {
+					add_prestige = -700
+					add_piety = -700
+				}
+			}
+			clear_saved_scope = helper_knight
+		}
+		else_if = {
+			limit = {
+				exists = scope:new_champion
+				scope:new_champion = { NOT = { has_character_flag = agot_trial_of_seven_mate_cooldown } }
+			}
+			scope:new_champion = {
+				add_character_flag = {
+					flag = agot_trial_of_seven_mate_cooldown
+					days = 90
+				}
+			}
+			add_opinion = {
+				target = scope:new_champion
+				modifier = agot_trial_of_seven_mate
+				opinion = 25
+			}
+			clear_saved_scope = new_champion
+		}
+
+		#Royal Leader have all 7 trigger event for the accuser too
+		if = {
+			limit = {
+				this = scope:the_royal_leader
+				any_in_list = {
+					variable = multi_duel_tos_temp_list
+					count = 7
+				}
+			}
+			scope:the_royal_leader = {
+				agot_tos_remove_selection_pool_flags = yes
+			}
+			if = {
+				limit = { has_variable_list = possible_characters }
+				clear_variable_list = possible_characters
+			}
+			if = {
+				limit = { has_variable = si_selected_character }
+				remove_variable = si_selected_character
+			}
+			if = {
+				limit = { exists = scope:helper_knight }
+				clear_saved_scope = helper_knight
+			}
+			if = {
+				limit = { exists = scope:new_champion }
+				clear_saved_scope = new_champion
+			}
+
+			scope:the_other_leader = { trigger_event = { id = agot_trial_of_seven.1000 days = 1 } }
+		}
+		#Other Leader have all 7 trigger event for the accuser too
+		else_if = {
+			limit = {
+				this = scope:the_other_leader
+				any_in_list = {
+					variable = multi_duel_tos_temp_list
+					count = 7
+				}
+			}
+			scope:the_other_leader = {
+				agot_tos_remove_selection_pool_flags = yes
+			}
+			if = {
+				limit = { has_variable_list = possible_characters }
+				clear_variable_list = possible_characters
+			}
+			if = {
+				limit = { has_variable = si_selected_character }
+				remove_variable = si_selected_character
+			}
+			#Send ToS Start event if both team's have 7 to observer character
+			if = {
+				limit = {
+					has_multiple_players = no
+					any_player = {
+						save_temporary_scope_as = t_player
+						scope:the_other_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:t_player } } }
+						scope:the_royal_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:t_player } } }
+						trigger_if = {
+							limit = {
+								is_landed = yes
+								exists = top_liege
+							}
+							OR = {
+								capital_county.title_province = { geographical_region = world_westeros_seven_kingdoms }
+								top_liege = scope:the_royal_leader
+								trigger_if = {
+									limit = { exists = scope:the_royal_leader.top_liege }
+									top_liege = scope:the_royal_leader.top_liege
+								}
+							}
+						}
+						trigger_else = {
+							exists = domicile.domicile_location.county.holder.top_liege
+							OR = {
+								domicile.domicile_location = { geographical_region = world_westeros_seven_kingdoms }
+								domicile.domicile_location.county.holder.top_liege = scope:the_royal_leader
+								trigger_if = {
+									limit = { exists = scope:the_royal_leader.top_liege }
+									domicile.domicile_location.county.holder.top_liege = scope:the_royal_leader.top_liege
+								}
+							}
+						}
+					}
+				}
+				every_player = {
+					limit = {
+						save_temporary_scope_as = t_player
+						scope:the_other_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:t_player } } }
+						scope:the_royal_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:t_player } } }
+						trigger_if = {
+							limit = {
+								is_landed = yes
+								exists = top_liege
+							}
+							OR = {
+								capital_county.title_province = { geographical_region = world_westeros_seven_kingdoms }
+								top_liege = scope:the_royal_leader
+								trigger_if = {
+									limit = { exists = scope:the_royal_leader.top_liege }
+									top_liege = scope:the_royal_leader.top_liege
+								}
+							}
+						}
+						trigger_else = {
+							exists = domicile.domicile_location.county.holder.top_liege
+							OR = {
+								domicile.domicile_location = { geographical_region = world_westeros_seven_kingdoms }
+								domicile.domicile_location.county.holder.top_liege = scope:the_royal_leader
+								trigger_if = {
+									limit = { exists = scope:the_royal_leader.top_liege }
+									domicile.domicile_location.county.holder.top_liege = scope:the_royal_leader.top_liege
+								}
+							}
+						}
+					}
+					trigger_event = agot_trial_of_seven.1002
+				}
+			}
+			#Or to the accuser if no player observer exists
+			else = {
+				trigger_event = agot_trial_of_seven.1001
+			}
+		}
+		#No one will join me.
+		else_if = {
+			limit = { has_character_flag = agot_tos_lost_before_started }
+			scope:the_royal_leader = {
+				if = {
+					limit = { has_variable_list = multi_duel_tos_temp_list }
+					clear_variable_list = multi_duel_tos_temp_list
+				}
+				if = {
+					limit = { has_variable_list = possible_characters }
+					clear_variable_list = possible_characters
+				}
+				if = {
+					limit = { has_variable = si_selected_character }
+					remove_variable = si_selected_character
+				}
+			}
+			scope:the_other_leader = {
+				if = {
+					limit = { has_variable_list = multi_duel_tos_temp_list }
+					clear_variable_list = multi_duel_tos_temp_list
+				}
+				if = {
+					limit = { has_variable_list = possible_characters }
+					clear_variable_list = possible_characters
+				}
+				if = {
+					limit = { has_variable = si_selected_character }
+					remove_variable = si_selected_character
+				}
+			}
+			scope:the_other_leader = {
+				agot_tos_remove_selection_pool_flags = yes
+				agot_multi_duel_remove_martial_flags = yes
+			}
+			scope:the_royal_leader = {
+				agot_tos_remove_selection_pool_flags = yes
+				agot_multi_duel_remove_martial_flags = yes
+			}
+			if = {
+				limit = { is_imprisoned = no }
+				if = {
+					limit = { this = scope:the_other_leader }
+					save_scope_as = leader_lost_before_started
+					scope:the_royal_leader = {
+						save_scope_as = leader_won_without_fight
+						trigger_event = agot_trial_of_seven.1004
+					}
+					show_as_tooltip = {
+						hard_imprison_character_effect = {
+							TARGET = this
+							IMPRISONER = scope:final_victor
+						}
+					}
+				}
+				else = {
+					save_scope_as = leader_lost_before_started
+					scope:the_other_leader = {
+						save_scope_as = leader_won_without_fight
+						trigger_event = agot_trial_of_seven.1004
+					}
+					show_as_tooltip = {
+						hard_imprison_character_effect = {
+							TARGET = this
+							IMPRISONER = scope:final_victor
+						}
+					}
+				}
+
+				if = {
+					limit = { exists = scope:accuser_ruler }
+					scope:accuser_ruler = { save_scope_as = final_victor }
+				}
+				else_if = {
+					limit = { scope:defender_leader = scope:leader_won_without_fight }
+					scope:leader_won_without_fight = { save_scope_as = final_victor }
+				}
+			}
+			remove_character_flag = agot_tos_lost_before_started
+		}
+		#Need more knighs?
+		else = {
+			if = {
+				limit = {
+					OR = {
+						NOT = { has_variable_list = possible_characters }
+						any_in_list = {
+							variable = possible_characters
+							save_temporary_scope_as = temp_char
+							scope:duel_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_char } } }
+							count = 0
+						}
+					}
+				}
+				if = {
+					limit = { has_variable_list = possible_characters }
+					clear_variable_list = possible_characters
+				}
+				#Adding character type for new selection pools
+				if = {
+					limit = { ai_honor >= 0 }
+					add_character_flag = tos_honorable_knight
+				}
+				else_if = {
+					limit = { has_character_flag = agot_tos_royal_side }
+					add_character_flag = tos_greedy_knight
+				}
+				else = {
+					add_character_flag = tos_dishonorable_knight
+				}
+				trigger_event = agot_trial_of_seven.1003
+			}
+			else = {
+				if = {
+					limit = { has_variable_list = possible_characters }
+					clear_variable_list = possible_characters
+				}
+				trigger_event = agot_trial_of_seven.1000
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = {
+		name = agot_trial_of_seven.1000.b.squire_denied
+		trigger = {
+			this = scope:the_other_leader
+			has_character_flag = tos_squire_wants_to_be_knighted
+			scope:duel_leader = { NOT = { has_character_flag = tos_already_knighted_once } }
+		}
+
+		if = {
+			limit = { has_variable = si_selecting_character }
+			remove_variable = si_selecting_character
+		}
+		custom_tooltip = agot_trial_of_seven.1000.b.squire_denied.tt
+
+		#No one will join me.
+		scope:the_royal_leader = {
+			if = {
+				limit = { has_variable_list = multi_duel_tos_temp_list }
+				clear_variable_list = multi_duel_tos_temp_list
+			}
+			if = {
+				limit = { has_variable_list = possible_characters }
+				clear_variable_list = possible_characters
+			}
+			if = {
+				limit = { has_variable = si_selected_character }
+				remove_variable = si_selected_character
+			}
+		}
+		scope:the_other_leader = {
+			if = {
+				limit = { has_variable_list = multi_duel_tos_temp_list }
+				clear_variable_list = multi_duel_tos_temp_list
+			}
+			if = {
+				limit = { has_variable_list = possible_characters }
+				clear_variable_list = possible_characters
+			}
+			if = {
+				limit = { has_variable = si_selected_character }
+				remove_variable = si_selected_character
+			}
+		}
+		scope:the_other_leader = {
+			agot_tos_remove_selection_pool_flags = yes
+			agot_multi_duel_remove_martial_flags = yes
+		}
+		scope:the_royal_leader = {
+			agot_tos_remove_selection_pool_flags = yes
+			agot_multi_duel_remove_martial_flags = yes
+		}
+		if = {
+			limit = { is_imprisoned = no }
+			if = {
+				limit = { this = scope:the_other_leader }
+				save_scope_as = leader_lost_before_started
+				scope:the_royal_leader = {
+					save_scope_as = leader_won_without_fight
+					trigger_event = agot_trial_of_seven.1004
+				}
+				show_as_tooltip = {
+					hard_imprison_character_effect = {
+						TARGET = this
+						IMPRISONER = scope:final_victor
+					}
+				}
+			}
+			else = {
+				save_scope_as = leader_lost_before_started
+				scope:the_other_leader = {
+					save_scope_as = leader_won_without_fight
+					trigger_event = agot_trial_of_seven.1004
+				}
+				show_as_tooltip = {
+					hard_imprison_character_effect = {
+						TARGET = this
+						IMPRISONER = scope:final_victor
+					}
+				}
+			}
+
+			if = {
+				limit = { exists = scope:accuser_ruler }
+				scope:accuser_ruler = { save_scope_as = final_victor }
+			}
+			else_if = {
+				limit = { scope:defender_leader = scope:leader_won_without_fight }
+				scope:leader_won_without_fight = { save_scope_as = final_victor }
+			}
+		}
+
+		ai_chance = {
+			base = 1
+		}
+	}
+}
+
+# ToS: Trial of Seven Starts
+agot_trial_of_seven.1001 = {
+	type = character_event
+	window = agot_multi_duel_team_event_window
+	title = {
+		random_valid = {
+			triggered_desc = {
+				trigger = {
+					OR = {
+						AND = {
+							NOT = { has_character_flag = received_agot_tos_1001_twice }
+							scope:defender_leader = scope:the_royal_leader
+						}
+						AND = {
+							has_character_flag = received_agot_tos_1001_twice
+							NOT = { scope:defender_leader = scope:the_royal_leader }
+						}
+					}
+				}
+				desc = agot_trial_of_seven.1001.t.accusers
+			}
+			triggered_desc = {
+				trigger = {
+					OR = {
+						AND = {
+							NOT = { has_character_flag = received_agot_tos_1001_twice }
+							NOT = { scope:defender_leader = scope:the_royal_leader }
+						}
+						AND = {
+							has_character_flag = received_agot_tos_1001_twice
+							scope:defender_leader = scope:the_royal_leader
+						}
+					}
+				}
+				desc = agot_trial_of_seven.1001.t.defenders
+			}
+		}
+	}
+	desc = agot_trial_of_seven.1001.desc
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	lower_left_portrait = {
+		character = scope:champ_5
+		animation = personality_bold
+		camera = shop_camera_main_near_angle_0
+	}
+	left_portrait = {
+		character = scope:champ_4
+		scripted_animation = duel_wield_weapon
+		camera = shop_camera_main_near_angle_345
+	}
+	lower_center_portrait = {
+		character = scope:champ_2
+		scripted_animation = agot_duel_pose_a
+		camera = shop_camera_main_near_angle_345
+	}
+	center_portrait = {
+		character = scope:champ_1
+		scripted_animation = duel_wield_weapon
+		camera = shop_camera_main_near_angle_330
+	}
+	right_portrait = {
+		character = scope:champ_3
+		animation = map_disgust
+		camera = shop_camera_main_near_angle_330
+	}
+	lower_right_portrait = {
+		character = scope:champ_6
+		scripted_animation = agot_duel_pose_b
+		camera = shop_camera_main_near_angle_330
+	}
+
+	immediate = {
+		agot_multiduel_betrayer_kingsguard_pre_tos = yes
+		scope:the_royal_leader.location = { save_scope_as = background_terrain_scope }
+		scope:the_royal_leader = { save_scope_as = bg_override_char }
+		scope:the_royal_leader = {
+			agot_multi_duel_add_martial_flags = yes
+		}
+		scope:the_other_leader = {
+			agot_multi_duel_add_martial_flags = yes
+		}
+
+		#Royal Side
+		if = {
+			limit = {
+				exists = scope:trial_of_seven_usurpation
+			}
+			scope:the_royal_leader = { save_scope_as = tos_royal_side_char }
+		}
+		else_if = {
+			limit = {
+				exists = scope:trial_of_seven_imprisonment
+				exists = scope:accuser_ruler
+			}
+			scope:accuser_ruler = { save_scope_as = tos_royal_side_char }
+		}
+
+		#Finalize the Teams
+		if = {
+			limit = {
+				this = scope:the_other_leader
+				NOT = { has_character_flag = received_agot_tos_1001 }
+				NOT = { has_character_flag = received_agot_tos_1001_twice }
+			}
+			scope:the_royal_leader = {
+				save_scope_as = roy_1
+				remove_list_variable = { name = multi_duel_tos_temp_list target = scope:roy_1 }
+				agot_multi_duel_add_martial_flags = yes
+				agot_remove_from_activity_and_travel_effect = yes
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = roy_2
+					scope:the_royal_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:roy_2 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = roy_3
+					scope:the_royal_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:roy_3 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = roy_4
+					scope:the_royal_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:roy_4 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = roy_5
+					scope:the_royal_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:roy_5 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = roy_6
+					scope:the_royal_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:roy_6 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = roy_7
+					scope:the_royal_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:roy_7 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+			}
+			scope:the_other_leader = {
+				save_scope_as = oth_1
+				remove_list_variable = { name = multi_duel_tos_temp_list target = scope:oth_1 }
+				agot_multi_duel_add_martial_flags = yes
+				agot_remove_from_activity_and_travel_effect = yes
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = oth_2
+					scope:the_other_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:oth_2 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = oth_3
+					scope:the_other_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:oth_3 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = oth_4
+					scope:the_other_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:oth_4 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = oth_5
+					scope:the_other_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:oth_5 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = oth_6
+					scope:the_other_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:oth_6 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+				random_in_list = {
+					variable = multi_duel_tos_temp_list
+					save_scope_as = oth_7
+					scope:the_other_leader = { remove_list_variable = { name = multi_duel_tos_temp_list target = scope:oth_7 } }
+					agot_multi_duel_add_martial_flags = yes
+					agot_remove_from_activity_and_travel_effect = yes
+				}
+			}
+			#Remove possible_characters list
+			scope:the_royal_leader = {
+				if = {
+					limit = { has_variable_list = multi_duel_tos_temp_list }
+					clear_variable_list = multi_duel_tos_temp_list
+				}
+				if = {
+					limit = { has_variable_list = possible_characters }
+					clear_variable_list = possible_characters
+				}
+			}
+			scope:the_other_leader = {
+				if = {
+					limit = { has_variable_list = multi_duel_tos_temp_list }
+					clear_variable_list = multi_duel_tos_temp_list
+				}
+				if = {
+					limit = { has_variable_list = possible_characters }
+					clear_variable_list = possible_characters
+				}
+			}
+		}
+
+		#Music
+		if = {
+			limit = { NOT = { has_character_flag = received_agot_tos_1001 } }
+			play_music_cue = mood_fots
+		}
+
+		#Event Characters
+		if = {
+			limit = {
+				exists = scope:roy_1
+				exists = scope:roy_2
+				exists = scope:roy_3
+				exists = scope:roy_4
+				exists = scope:roy_5
+				exists = scope:roy_6
+				exists = scope:roy_7
+				exists = scope:oth_1
+				exists = scope:oth_2
+				exists = scope:oth_3
+				exists = scope:oth_4
+				exists = scope:oth_5
+				exists = scope:oth_6
+				exists = scope:oth_7
+			}
+			if = {
+				limit = { NOT = { has_character_flag = received_agot_tos_1001 } }
+				scope:oth_1 = { save_scope_as = champ_1 }
+				scope:oth_2 = { save_scope_as = champ_2 }
+				scope:oth_3 = { save_scope_as = champ_3 }
+				scope:oth_4 = { save_scope_as = champ_4 }
+				scope:oth_5 = { save_scope_as = champ_5 }
+				scope:oth_6 = { save_scope_as = champ_6 }
+				scope:oth_7 = { save_scope_as = champ_7 }
+			}
+			else = {
+				scope:roy_1 = { save_scope_as = champ_1 }
+				scope:roy_2 = { save_scope_as = champ_2 }
+				scope:roy_3 = { save_scope_as = champ_3 }
+				scope:roy_4 = { save_scope_as = champ_4 }
+				scope:roy_5 = { save_scope_as = champ_5 }
+				scope:roy_6 = { save_scope_as = champ_6 }
+				scope:roy_7 = { save_scope_as = champ_7 }
+			}
+		}
+
+		#Seventh character in the event window
+		if = {
+			limit = {
+				NOT = { has_character_flag = received_agot_tos_1001 }
+				exists = scope:champ_7
+			}
+			set_variable = {
+				name = seventh_multi_duelist
+				value = scope:champ_7
+				days = 40
+			}
+		}
+		else_if = {
+			limit = {
+				has_character_flag = received_agot_tos_1001
+				exists = scope:champ_7
+			}
+			remove_variable = seventh_multi_duelist
+			set_variable = {
+				name = seventh_multi_duelist
+				value = scope:champ_7
+				days = 40
+			}
+		}
+
+		#Event Blockers
+		if = {
+			limit = {
+				has_character_flag = received_agot_tos_1001
+			}
+			add_character_flag = {
+				flag = received_agot_tos_1001_twice
+				days = 40
+			}
+		}
+		else = {
+			add_character_flag = {
+				flag = received_agot_tos_1001
+				days = 40
+			}
+		}
+
+		#Pay the sellswords
+		if = {
+			limit = { has_variable_list = tos_money_owed }
+			hidden_effect = {
+				every_in_list = {
+					variable = tos_money_owed
+					limit = { is_alive = yes }
+					scope:duel_leader = {
+						pay_short_term_gold = {
+							target = prev
+							gold = 150
+						}
+					}
+				}
+			}
+			clear_variable_list = tos_money_owed
+		}
+	}
+
+	option = {
+		name = {
+			text = {
+				random_valid = {
+					triggered_desc = {
+						trigger = { NOT = { has_character_flag = agot_trial_of_seven_1001_a_text } }
+						desc = agot_trial_of_seven.1001.a
+					}
+					triggered_desc = {
+						trigger = { has_character_flag = agot_trial_of_seven_1001_a_text }
+						desc = agot_trial_of_seven.1001.a.second
+					}
+				}
+			}
+		}
+
+		add_character_flag = {
+			flag = agot_trial_of_seven_1001_a_text
+			days = 3
+		}
+
+		if = {
+			limit = { this = scope:the_other_leader }
+
+			if = {
+				limit = { exists = scope:true_heir }
+				scope:the_other_leader = {
+					set_variable = {
+						name = tos_true_heir
+						value = scope:true_heir
+						years = 10
+					}
+				}
+				scope:the_royal_leader = {
+					set_variable = {
+						name = tos_true_heir
+						value = scope:true_heir
+						years = 10
+					}
+				}
+			}
+
+			scope:the_other_leader = {
+				add_character_flag = duelist_heir_blocker
+				agot_tos_remove_selection_pool_flags = yes
+
+				set_variable = {
+					name = tos_accuser
+					value = scope:accuser_leader
+				}
+				set_variable = {
+					name = tos_accused
+					value = scope:defender_leader
+				}
+
+				if = {
+					limit = { exists = scope:tos_dishonorable_imprisonment_scenario }
+					set_variable = {
+						name = tos_accuser_ruler
+						value = scope:accuser_ruler
+					}
+					set_variable = {
+						name = tos_accuser_ruler_title
+						value = scope:accuser_ruler.primary_title
+					}
+				}
+			}
+			scope:the_royal_leader = {
+				add_character_flag = duelist_heir_blocker
+				agot_tos_remove_selection_pool_flags = yes
+
+				set_variable = {
+					name = tos_accuser
+					value = scope:accuser_leader
+				}
+				set_variable = {
+					name = tos_accused
+					value = scope:defender_leader
+				}
+
+				if = {
+					limit = { exists = scope:tos_dishonorable_imprisonment_scenario }
+					set_variable = {
+						name = tos_accuser_ruler
+						value = scope:accuser_ruler
+					}
+					set_variable = {
+						name = tos_accuser_ruler_title
+						value = scope:accuser_ruler.primary_title
+					}
+				}
+			}
+
+			if = {
+				limit = { has_character_flag = received_agot_tos_1001_twice }
+				if = {
+					limit = { exists = scope:tos_succession_crisis_scenario }
+					multi_duel_leaders_effect = {
+						SIDE_A_LEADER = scope:the_royal_leader
+						SIDE_B_LEADER = scope:the_other_leader
+						#OBSERVER_CHARACTER: Characters who don't participate in the duel can receive events about the duel. If you don't want to use it set "title:b_ruins.holder"
+						DUEL_BACKGROUND = tos_bg
+						EVENT_BACKGROUND_REFERENCE_CHARACTER = scope:tos_royal_side_char #Needs to be landed
+						### DUEL_BACKGROUND
+						# terrain_type - Terrain of your current location.
+						# army_camp - Usual army camp background.
+						# battlefield - Usual battlefield background.
+						SIDE_A_TEAM_SELECTION = agot_multi_duel.0001 #Team setup event. Should be unique for every feature.
+						SIDE_B_TEAM_SELECTION = agot_multi_duel.0001 #Team setup event. Should be unique for every feature.
+						UNIQUE_STORY_NAME = tos_story #This is the story identifier. Should be unique for every feature.
+						STORY_VARIANT = usurpation #Put "none" if not needed.
+						END_STORY_ON = dead_leader
+						### END STORY ON
+						# dead_leader - Ends the the story for everyone when one of the leader dies.
+						# dead_every - Ends the story when everyone died on one side.
+						# TODO defeated_every - Ends the story when everyone is defeated on one side.
+					}
+				}
+				else_if = {
+					limit = { exists = scope:tos_dishonorable_imprisonment_scenario }
+					multi_duel_leaders_effect = {
+						SIDE_A_LEADER = scope:the_royal_leader
+						SIDE_B_LEADER = scope:the_other_leader
+						#OBSERVER_CHARACTER: Characters who don't participate in the duel can receive events about the duel. If you don't want to use it set "title:b_ruins.holder"
+						DUEL_BACKGROUND = tos_bg
+						EVENT_BACKGROUND_REFERENCE_CHARACTER = scope:tos_royal_side_char #Needs to be landed
+						### DUEL_BACKGROUND
+						# terrain_type - Terrain of your current location.
+						# army_camp - Usual army camp background.
+						# battlefield - Usual battlefield background.
+						SIDE_A_TEAM_SELECTION = agot_multi_duel.0001 #Team setup event. Should be unique for every feature.
+						SIDE_B_TEAM_SELECTION = agot_multi_duel.0001 #Team setup event. Should be unique for every feature.
+						UNIQUE_STORY_NAME = tos_story #This is the story identifier. Should be unique for every feature.
+						STORY_VARIANT = dishonorable_imprisonment #Put "none" if not needed.
+						END_STORY_ON = dead_leader
+						### END STORY ON
+						# dead_leader - Ends the the story for everyone when one of the leader dies.
+						# dead_every - Ends the story when everyone died on one side.
+						# TODO defeated_every - Ends the story when everyone is defeated on one side.
+					}
+				}
+				scope:the_royal_leader = { trigger_event = agot_trial_of_seven.1001 }
+				#ObserverPlayerEvent
+				if = {
+					limit = { any_player = { has_character_flag = agot_observing_trial_of_seven } }
+					every_player = { limit = { has_character_flag = agot_observing_trial_of_seven } trigger_event = agot_trial_of_seven.1001 }
+				}
+			}
+		}
+
+		#Show the other team too
+		if = {
+			limit = {
+				NOT = { has_character_flag = received_agot_tos_1001_twice }
+			}
+			trigger_event = agot_trial_of_seven.1001
+		}
+	}
+}
+
+# ToS - Succession Crisis: Notification about Tos - Player can observe
+agot_trial_of_seven.1002 = {
+	type = character_event
+	title = agot_trial_of_seven.1002.t
+	desc = {
+		random_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:trial_of_seven_usurpation
+				}
+				desc = agot_trial_of_seven.1002.desc.usurpation
+			}
+			triggered_desc = {
+				trigger = {
+					exists = scope:trial_of_seven_imprisonment
+				}
+				desc = agot_trial_of_seven.1002.desc.imprisonment
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		character = scope:defender_leader
+		scripted_animation = duel_wield_weapon
+	}
+
+	left_portrait = {
+		character = scope:accuser_leader
+		scripted_animation = duel_wield_weapon
+	}
+
+	trigger = {
+		is_ai = no
+	}
+
+	immediate = {
+		scope:defender_leader = { save_scope_as = bg_override_char }
+		scope:defender_leader = {
+			agot_multi_duel_add_martial_flags = yes
+		}
+		scope:accuser_leader = {
+			agot_multi_duel_add_martial_flags = yes
+		}
+	}
+
+	#Observe
+	option = {
+		name = agot_trial_of_seven.1002.a
+		custom_tooltip = agot_trial_of_seven.1002.a.tt
+		add_character_flag = {
+			flag = agot_observing_trial_of_seven
+			years = 2
+		}
+	}
+
+	#Ignore
+	option = {
+		name = agot_trial_of_seven.1002.b
+	}
+
+	after = {
+		scope:the_other_leader = { trigger_event = agot_trial_of_seven.1001 }
+	}
+}
+
+# I ask people from the crowd to join me
+agot_trial_of_seven.1003 = {
+	type = character_event
+	title = agot_trial_of_seven.1003.t
+	desc = {
+		random_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+				}
+				desc = agot_trial_of_seven.1003.desc.need_more_knights.a
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+				}
+				desc = agot_trial_of_seven.1003.desc.need_more_knights.b
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+				}
+				desc = agot_trial_of_seven.1003.desc.need_more_knights.c
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+				}
+				desc = agot_trial_of_seven.1003.desc.need_more_knights.d
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = agot_tos_lost_before_started }
+				}
+				desc = agot_trial_of_seven.1003.desc.need_more_knights.e
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		character = root
+		animation = war_attacker
+	}
+
+	immediate = {
+		scope:the_royal_leader = { save_scope_as = bg_override_char }
+		remove_character_flag = agot_tos_need_new_char
+
+		if = {
+			limit = {
+				OR = {
+					NOT = { has_character_flag = tos_non_royal_sellsword_blocker }
+					NOT = { has_character_flag = tos_squire_wants_to_be_knighted_sellsword_blocker }
+					has_character_flag = tos_honorable_knight
+					has_character_flag = tos_dishonorable_knight
+				}
+				gold >= 150
+			}
+			add_character_flag = {
+				flag = tos_greedy_knight_allowed
+				days = 90
+			}
+		}
+	}
+
+	#Ok.
+	option = {
+		name = {
+			text = {
+				random_valid = {
+					#honorable
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_honorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.honorable.a
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_honorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.honorable.b
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_honorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.honorable.c
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_honorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.honorable.d
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_honorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.honorable.e
+					}
+
+					#greedy
+					triggered_desc = {
+						trigger = {
+							OR = {
+								has_character_flag = tos_greedy_knight
+								has_character_flag = tos_greedy_knight_allowed
+							}
+						}
+						desc = agot_trial_of_seven.1003.a.greedy.a
+					}
+					triggered_desc = {
+						trigger = {
+							OR = {
+								has_character_flag = tos_greedy_knight
+								has_character_flag = tos_greedy_knight_allowed
+							}
+						}
+						desc = agot_trial_of_seven.1003.a.greedy.b
+					}
+					triggered_desc = {
+						trigger = {
+							OR = {
+								has_character_flag = tos_greedy_knight
+								has_character_flag = tos_greedy_knight_allowed
+							}
+						}
+						desc = agot_trial_of_seven.1003.a.greedy.c
+					}
+					triggered_desc = {
+						trigger = {
+							OR = {
+								has_character_flag = tos_greedy_knight
+								has_character_flag = tos_greedy_knight_allowed
+							}
+						}
+						desc = agot_trial_of_seven.1003.a.greedy.d
+					}
+					triggered_desc = {
+						trigger = {
+							OR = {
+								has_character_flag = tos_greedy_knight
+								has_character_flag = tos_greedy_knight_allowed
+							}
+						}
+						desc = agot_trial_of_seven.1003.a.greedy.e
+					}
+
+					#arrogant
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_dishonorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.dishonorable.a
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_dishonorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.dishonorable.b
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_dishonorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.dishonorable.c
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_dishonorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.dishonorable.d
+					}
+					triggered_desc = {
+						trigger = {
+							has_character_flag = tos_dishonorable_knight
+						}
+						desc = agot_trial_of_seven.1003.a.dishonorable.e
+					}
+				}
+			}
+		}
+		if = {
+			limit = { has_character_flag = tos_squire_wants_to_be_knighted_sellsword_blocker }
+			remove_character_flag = tos_squire_wants_to_be_knighted_sellsword_blocker
+		}
+		trigger_event = agot_trial_of_seven.1000
+	}
+}
+
+# Noone else would join the accuser
+agot_trial_of_seven.1004 = {
+	type = character_event
+	title = agot_trial_of_seven.1004.t
+	desc = agot_trial_of_seven.1004.desc
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		character = scope:leader_lost_before_started
+		animation = worry
+	}
+
+	immediate = {
+		scope:leader_won_without_fight = { save_scope_as = bg_override_char }
+
+		if = {
+			limit = { exists = scope:accuser_ruler }
+			scope:accuser_ruler = { save_scope_as = final_victor }
+		}
+		else_if = {
+			limit = { scope:defender_leader = scope:leader_won_without_fight }
+			scope:leader_won_without_fight = { save_scope_as = final_victor }
+		}
+
+		if = {
+			limit = {
+				scope:leader_lost_before_started = { is_imprisoned = no }
+			}
+			hard_imprison_character_effect = {
+				TARGET = scope:leader_lost_before_started
+				IMPRISONER = scope:final_victor
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						scope:leader_lost_before_started = {
+							is_playable_character = no
+							NOT = { is_courtier_of = scope:final_victor }
+						}
+					}
+					scope:final_victor = { add_courtier = scope:leader_lost_before_started }
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				exists = scope:final_victor.primary_title
+				scope:final_victor.primary_title = { has_variable = trial_of_seven_cooldown }
+			}
+			scope:final_victor.primary_title = {
+				remove_variable = trial_of_seven_cooldown
+				set_variable = {
+					name = trial_of_seven_cooldown
+					years = 5
+				}
+			}
+		}
+	}
+
+	#Ok.
+	option = {
+		name = agot_trial_of_seven.1004.a
+	}
+}
+
+##################################
+####### INTERACTION DENIED #######
+##################################
+
+# ToS Denied
+agot_trial_of_seven.9999 = {
+	type = character_event
+	title = agot_trial_of_seven.9999.t
+	desc = agot_trial_of_seven.9999.desc
+
+	theme = war
+
+	override_background = {
+		reference = courtyard_location
+	}
+
+	right_portrait = {
+		character = scope:recipient
+		animation = personality_irrational
+	}
+
+	immediate = {
+		location = { save_scope_as = background_terrain_scope }
+		scope:defender_leader = { save_scope_as = bg_override_char }
+	}
+
+	option = {
+		name = agot_trial_of_seven.9999.a
+	}
+}

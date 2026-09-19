@@ -1,0 +1,145 @@
+﻿###########################
+### Dragon Tree Effects ###
+###########################
+
+agot_dragon_tree_creation_effect = {
+	$DRAGON$ = { save_scope_as = dragon }
+	if = {
+		limit = {
+			exists = scope:dragon.mother
+			scope:dragon.mother = { has_trait = dragon }
+		}
+		agot_add_to_dragon_tree = { PARENT = scope:dragon.mother CHILD = scope:dragon }
+	}
+	else_if = {
+		limit = {
+			exists = character:dragon_vermax
+			exists = scope:dragon.father
+			scope:dragon.father = character:dragon_vermax
+		}
+		agot_add_to_dragon_tree = { PARENT = character:dragon_vermax CHILD = scope:dragon }
+	}
+}
+
+agot_add_to_dragon_tree = {
+	$PARENT$ = { save_scope_as = parent }
+	$CHILD$ = { save_scope_as = child }
+	if = {
+		limit = {
+			title:c_ruins.holder = {
+				any_owned_story = {
+					story_type = agot_dragon_tree_structure
+					has_variable_list = dragon_tree_gui
+					any_in_list = {
+						variable = parent_story_container
+						OR = {
+							var:this_parent ?= scope:parent
+							any_in_list = {
+								variable = child_container
+								this = scope:parent
+							}
+						}
+					}
+				}
+			}
+		}
+		if = { # the parent already has a parent story
+			limit = {
+				title:c_ruins.holder = {
+					any_owned_story = {
+						story_type = agot_dragon_tree_parent
+						var:this_parent = scope:parent
+					}
+				}
+			}
+			title:c_ruins.holder = {
+				random_owned_story = { # Add this child to the existing list of children
+					limit = {
+						story_type = agot_dragon_tree_parent
+						var:this_parent = scope:parent
+					}
+					add_to_variable_list = {
+						name = child_container
+						target = scope:child
+					}
+				}
+			}
+		}
+		else = { # the parent does not have a parent story yet
+			title:c_ruins.holder = {
+				set_variable = {
+					name = dragon_parent
+					value = scope:parent
+				}
+				create_story = {
+					type = agot_dragon_tree_parent
+					save_scope_as = parent_story
+				}
+			}
+			scope:parent_story = { # Create list of children and add this child to it
+				add_to_variable_list = {
+					name = child_container
+					target = scope:child
+				}
+			}
+			title:c_ruins.holder = {
+				random_owned_story = {
+					limit = {
+						story_type = agot_dragon_tree_structure
+						any_in_list = {
+							variable = parent_story_container
+							any_in_list = {
+								variable = child_container
+								this = scope:parent
+							}
+						}
+					}
+					add_to_variable_list = {
+						name = parent_story_container
+						target = scope:parent_story
+					}
+				}
+			}
+		}
+	}
+	else = { # the parent does not have a tree
+		title:c_ruins.holder = {
+			set_variable = {
+				name = dragon_parent
+				value = scope:parent
+			}
+			create_story = {
+				type = agot_dragon_tree_parent
+				save_scope_as = parent_story
+			}
+			create_story = {
+				type = agot_dragon_tree_structure
+				save_scope_as = tree_story
+			}
+		}
+		scope:parent_story = { # Create list of children and add this child to it
+			add_to_variable_list = {
+				name = child_container
+				target = scope:child
+			}
+		}
+		scope:tree_story = { # Assign founder position for the tree
+			set_variable = {
+				name = dragon_tree_founder
+				value = scope:parent
+			}
+			add_to_variable_list = {
+				name = parent_story_container
+				target = scope:parent_story
+			}
+			add_to_variable_list = { # Checked for in GUI datamodel
+				name = dragon_tree_gui
+				target = scope:parent
+			}
+			add_to_global_variable_list = {
+				name = known_dragon_trees
+				target = this
+			}
+		}
+	}
+}

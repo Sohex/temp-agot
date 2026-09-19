@@ -1,0 +1,1798 @@
+﻿#crown_theft_tbc_effect
+#crown_theft_battle_effect
+#crown_theft_battleother_effect
+#crown_theft_illness_effect
+#crown_theft_siege_effect
+
+#######################
+### STARTER EFFECTS ###
+#######################
+
+crown_theft_tbc_effect = {
+	if = {
+		limit = {
+			scope:crown_theft_king = {
+				agot_eligible_succession_war_king = yes
+			}
+			any_succession_crisis_scenario_available = yes
+		}
+		scope:crown_theft_king = {
+			if = {
+				limit = { has_character_flag = trial_by_combat }
+				remove_character_flag = trial_by_combat
+			}
+			add_character_flag = {
+				flag = ct_tbc
+				days = 60
+			}
+			trigger_event = agot_crown_theft.0001
+		}
+	}
+	else_if = {
+		limit = { has_character_flag = trial_by_combat }
+		death = {
+			killer = scope:sc_victor
+			death_reason = death_duel_trial_by_combat
+		}
+	}
+	else = {
+		death = {
+			killer = scope:sc_victor
+			death_reason = death_duel
+		}
+	}
+}
+
+crown_theft_battle_effect = {
+	if = {
+		limit = {
+			scope:crown_theft_king = {
+				agot_eligible_succession_war_king = yes
+			}
+			any_succession_crisis_scenario_available = yes
+		}
+		scope:crown_theft_king = {
+			add_character_flag = {
+				flag = ct_battle
+				days = 60
+			}
+			trigger_event = agot_crown_theft.0001
+		}
+	}
+	else_if = {
+		limit = {
+			scope:enemy_knight = { is_alive = yes }
+		}
+		death = {
+			death_reason = death_battle
+			killer = scope:enemy_knight
+		}
+	}
+	else = {
+		death = { death_reason = death_battle }
+	}
+}
+
+crown_theft_battleother_effect = {
+	if = {
+		limit = {
+			scope:crown_theft_king = {
+				agot_eligible_succession_war_king = yes
+			}
+			any_succession_crisis_scenario_available = yes
+		}
+		scope:crown_theft_king = {
+			add_character_flag = {
+				flag = ct_battle
+				days = 60
+			}
+			trigger_event = agot_crown_theft.0001
+		}
+	}
+	else_if = {
+		limit = {
+			scope:sc_victor = { is_alive = yes }
+		}
+		death = {
+			death_reason = death_battle
+			killer = scope:sc_victor
+		}
+	}
+	else = {
+		death = { death_reason = death_battle }
+	}
+}
+
+crown_theft_illness_effect = {
+	if = {
+		limit = {
+			scope:crown_theft_king = {
+				agot_eligible_succession_war_king = yes
+			}
+			any_succession_crisis_scenario_available = yes
+		}
+		scope:crown_theft_king = {
+			add_character_flag = {
+				flag = ct_illness
+				days = 60
+			}
+			trigger_event = agot_crown_theft.0001
+		}
+	}
+	else = {
+		death = natural
+	}
+}
+
+crown_theft_siege_effect = {
+	if = {
+		limit = {
+			scope:crown_theft_king = {
+				agot_eligible_succession_war_king = yes
+			}
+			any_succession_crisis_scenario_available = yes
+		}
+		scope:crown_theft_king = {
+			add_character_flag = {
+				flag = ct_siege
+				days = 60
+			}
+			trigger_event = agot_crown_theft.0001
+		}
+	}
+	else = {
+		death = { death_reason = death_siege }
+	}
+}
+
+#####################
+### EVENT EFFECTS ###
+#####################
+
+the_king_dies_effect = {
+	if = {
+		limit = { exists = scope:dying_king_tbc_event }
+		if = {
+			limit = { has_character_flag = trial_by_combat }
+			death = {
+				killer = scope:sc_victor
+				death_reason = death_duel_trial_by_combat
+			}
+		}
+		else = {
+			death = {
+				killer = scope:sc_victor
+				death_reason = death_duel
+			}
+		}
+	}
+	else_if = {
+		limit = { exists = scope:dying_king_battle_event }
+		add_trait = wounded_2
+		if = {
+			limit = {
+				exists = scope:enemy_knight
+				scope:enemy_knight = { is_alive = yes }
+			}
+			death = {
+				death_reason = death_battle
+				killer = scope:enemy_knight
+			}
+		}
+		else = {
+			death = { death_reason = death_battle }
+		}
+	}
+	else_if = {
+		limit = { exists = scope:dying_king_illness_event }
+		death = natural
+	}
+	else_if = {
+		limit = { exists = scope:dying_king_siege_event }
+		death = {
+			death_reason = death_siege
+		}
+		add_trait = wounded_2
+	}
+	else = { death = natural }
+}
+
+succession_war_ironborn_penalty_effect = {
+	if = {
+		limit = {
+			has_culture = culture:ironborn
+			OR = {
+				has_faith = faith:drowned_god
+				has_faith = faith:fots_drowned
+				has_faith = faith:storm_god
+			}
+			scope:crown_theft_king.primary_title = title:e_the_iron_islands
+		}
+		add_stress = minor_stress_gain
+		add_prestige = monumental_prestige_loss
+		add_piety = massive_piety_loss
+	}
+}
+
+usurpers_deal_offer_effect = {
+	#artifact1
+	if = {
+		limit = {
+			any_character_artifact = {
+				artifact_owner = scope:crown_thief
+				NOT = { has_variable = iron_throne }
+				NOT = { has_variable = artifact_succession_title }
+				rarity = illustrious
+			}
+		}
+		every_character_artifact = {
+			limit = {
+				artifact_owner = scope:crown_thief
+				NOT = { has_variable = iron_throne }
+				NOT = { has_variable = artifact_succession_title }
+				rarity = illustrious
+			}
+			add_to_list = thief_artifacts
+		}
+		random_in_list = {
+			list = thief_artifacts
+			save_scope_as = random_artifact_one
+		}
+	}
+	#artifact2
+	if = {
+		limit = {
+			any_character_artifact = {
+				artifact_owner = scope:crown_thief
+				trigger_if = {
+					limit = { exists = scope:random_artifact_one }
+					NOT = { this = scope:random_artifact_one }
+				}
+				NOT = { has_variable = iron_throne }
+				NOT = { has_variable = artifact_succession_title }
+				rarity = illustrious
+			}
+		}
+		every_character_artifact = {
+			limit = {
+				artifact_owner = scope:crown_thief
+				trigger_if = {
+					limit = { exists = scope:random_artifact_one }
+					NOT = { this = scope:random_artifact_one }
+				}
+				NOT = { has_variable = iron_throne }
+				NOT = { has_variable = artifact_succession_title }
+				rarity = illustrious
+			}
+			add_to_list = thief_artifacts_two
+		}
+		random_in_list = {
+			list = thief_artifacts_two
+			save_scope_as = random_artifact_two
+		}
+	}
+	#title
+	if = {
+		limit = {
+			any_held_title = {
+				tier = tier_duchy
+				NOT = { is_de_jure_liege_or_above_target = scope:crown_thief.capital_county }
+			}
+		}
+		every_held_title = {
+			limit = {
+				tier = tier_duchy
+				NOT = { is_de_jure_liege_or_above_target = scope:crown_thief.capital_county }
+			}
+			add_to_list = thief_giveaway_titles
+		}
+		random_in_list = {
+			list = thief_giveaway_titles
+			save_scope_as = random_giveaway_title
+		}
+	}
+}
+
+usuerper_deal_offer_accepted_effect = {
+	if = {
+		limit = {
+			scope:crown_theft_king_legit_heir = {
+				has_character_flag = thief_artifact_one
+			}
+		}
+		scope:random_artifact_one = {
+			set_owner = scope:crown_theft_king_legit_heir
+		}
+	}
+	else_if = {
+		limit = {
+			scope:crown_theft_king_legit_heir = {
+				has_character_flag = thief_artifact_two
+			}
+		}
+		scope:random_artifact_two = {
+			set_owner = scope:crown_theft_king_legit_heir
+		}
+	}
+	else_if = {
+		limit = {
+			scope:crown_theft_king_legit_heir = {
+				has_character_flag = thief_title
+			}
+		}
+		scope:crown_theft_king_legit_heir = {
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change
+			}
+			scope:random_giveaway_title = {
+				change_title_holder_include_vassals = {
+					holder = scope:crown_theft_king_legit_heir
+					change = scope:change
+				}
+			}
+			resolve_title_and_vassal_change = scope:change
+		}
+	}
+}
+
+usurper_gave_up_effect = {
+	hidden_effect = {
+		scope:crown_theft_king_legit_heir = {
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change
+			}
+			scope:crown_thief = {
+				every_held_title = {
+					limit = {
+						tier > tier_barony
+						has_variable = usurped_titles
+					}
+					change_title_holder_include_vassals = {
+						holder = scope:crown_theft_king_legit_heir
+						change = scope:change
+					}
+				}
+			}
+			resolve_title_and_vassal_change = scope:change
+		}
+		scope:crown_thief = {
+			if = {
+				limit = {
+					any_character_artifact = {
+						artifact_owner = scope:crown_thief
+						has_variable = usurped_artifacts
+					}
+				}
+				every_character_artifact = {
+					limit = {
+						artifact_owner = scope:crown_thief
+						has_variable = usurped_artifacts
+					}
+					set_owner = scope:crown_theft_king_legit_heir
+				}
+			}
+			if = {
+				limit = { gold > 0 }
+				pay_short_term_gold = { target = scope:crown_theft_king_legit_heir gold = scope:crown_thief.gold }
+			}
+
+			if = {
+				limit = {
+					has_multiple_players = no
+					is_ai = no
+					NOT = { has_character_flag = thief_already_landed }
+				}
+				set_player_character = scope:crown_theft_king_legit_heir
+			}
+		}
+
+		every_in_list = {
+			list = courtiers_of_the_king
+			limit = {
+				NOT = { is_courtier_of = scope:crown_theft_king_legit_heir }
+			}
+			scope:crown_theft_king_legit_heir = { add_courtier = prev }
+		}
+		agot_new_house_head_effect = { NEW_HOUSE_HEAD = scope:crown_theft_king_legit_heir }
+	}
+
+	scope:crown_thief = {
+		consume_all_criminal_reasons_effect = {
+			LIEGE = scope:crown_thief
+			CRIMINAL = scope:crown_theft_king_legit_heir
+		}
+		hidden_effect = { fp1_remove_humsac_offended_counties_effect = yes }
+
+		if = {
+			limit = {
+				is_imprisoned = no
+				scope:crown_theft_king_legit_heir = { is_playable_character = yes }
+			}
+			hard_imprison_character_effect = {
+				TARGET = this
+				IMPRISONER = scope:crown_theft_king_legit_heir
+			}
+		}
+	}
+}
+
+usurper_gives_back_artifacts = {
+	scope:wos_usurper = {
+		if = {
+			limit = {
+				any_character_artifact = {
+					artifact_owner = scope:wos_usurper
+					has_variable = usurped_artifacts
+				}
+			}
+			every_character_artifact = {
+				limit = {
+					artifact_owner = scope:wos_usurper
+					has_variable = usurped_artifacts
+				}
+				set_owner = scope:wos_king
+			}
+		}
+		#give up the gold too
+		if = {
+			limit = { gold > 0 }
+			pay_short_term_gold = { target = scope:wos_king gold = scope:wos_usurper.gold }
+		}
+	}
+}
+
+save_usurped_artifacts = {
+	if = {
+		limit = {
+			any_character_artifact = {
+				artifact_owner = scope:crown_theft_king
+			}
+		}
+		every_character_artifact = {
+			limit = {
+				artifact_owner = scope:crown_theft_king
+			}
+			set_variable = {
+				name = usurped_artifacts
+				value = yes
+			}
+		}
+	}
+}
+
+save_usurped_artifacts_temp = {
+	if = {
+		limit = {
+			any_character_artifact = {
+				artifact_owner = scope:crown_theft_king
+			}
+		}
+		every_character_artifact = {
+			limit = {
+				artifact_owner = scope:crown_theft_king
+			}
+			set_variable = {
+				name = usurped_artifacts
+				value = yes
+				years = 10
+			}
+		}
+	}
+}
+
+save_usurped_artifacts_and_titles = {
+	save_usurped_artifacts = yes
+	every_held_title = {
+		limit = { tier > tier_barony }
+		set_variable = {
+			name = usurped_titles
+			value = yes
+		}
+	}
+
+	if = {
+		limit = {
+			scope:crown_thief = { is_playable_character = yes }
+		}
+		scope:crown_thief = {
+			add_character_flag = {
+				flag = thief_already_landed
+				days = 90
+			}
+		}
+	}
+}
+
+unsave_usurped_artifacts = {
+	if = {
+		limit = {
+			any_character_artifact = {
+				OR = {
+					artifact_owner = scope:crown_thief
+					artifact_owner = scope:crown_theft_king_legit_heir
+				}
+				has_variable = usurped_artifacts
+			}
+		}
+		every_character_artifact = {
+			limit = {
+				OR = {
+					artifact_owner = scope:crown_thief
+					artifact_owner = scope:crown_theft_king_legit_heir
+				}
+				has_variable = usurped_artifacts
+			}
+			remove_variable = usurped_artifacts
+		}
+	}
+}
+
+unsave_usurper_artifact_after_war = {
+	if = {
+		limit = {
+			any_character_artifact = {
+				OR = {
+					artifact_owner = scope:wos_king
+					artifact_owner = scope:wos_usurper
+				}
+				has_variable = usurped_artifacts
+			}
+		}
+		every_character_artifact = {
+			limit = {
+				OR = {
+					artifact_owner = scope:wos_king
+					artifact_owner = scope:wos_usurper
+				}
+				has_variable = usurped_artifacts
+			}
+			remove_variable = usurped_artifacts
+		}
+	}
+}
+
+unsave_usurper_artifact_after_war_invalid = {
+	if = {
+		limit = {
+			any_character_artifact = {
+				artifact_owner = scope:wos_usurper
+				has_variable = usurped_artifacts
+			}
+		}
+		every_character_artifact = {
+			limit = {
+				artifact_owner = scope:wos_usurper
+				has_variable = usurped_artifacts
+			}
+			remove_variable = usurped_artifacts
+		}
+	}
+}
+
+war_of_succession_usurper_effect = {
+	scope:crown_theft_king.primary_heir = {
+		save_scope_as = crown_theft_king_legit_heir
+	}
+
+	#Standard, FleeingToSpouseHEIR & FleeingToFriendHEIR Scenarios
+	scope:crown_theft_king.primary_title = {
+		every_claimant = {
+			limit = {
+				agot_usurper_has_claim = yes
+				is_adult = yes
+				agot_can_be_usurper = yes
+				agot_can_be_feudal_ruler = yes
+				NOT = { agot_positive_relation_with_the_king = yes }
+				location ?= scope:crown_theft_king.capital_province
+				NOT = { has_trait = disinherited }
+				NOT = { has_trait = bastard }
+				NOT = { has_trait = bastard_founder }
+				agot_usurper_same_house = yes
+			}
+			add_to_list = potential_crown_thief
+		}
+	}
+
+	every_courtier_or_guest = {
+		limit = {
+			agot_usurper_has_claim = yes
+			is_adult = yes
+			agot_can_be_usurper = yes
+			agot_can_be_feudal_ruler = yes
+			NOT = { agot_positive_relation_with_the_king = yes }
+			location ?= scope:crown_theft_king.capital_province
+			NOT = { has_trait = disinherited }
+			NOT = { has_trait = bastard }
+			NOT = { has_trait = bastard_founder }
+			agot_usurper_same_house = yes
+		}
+		add_to_list = potential_crown_thief
+	}
+
+	#Guardian, FleeingToSpouseHEIR & FleeingToFriendHEIR Scenarios Scenario
+	scope:crown_theft_king.primary_title = {
+		every_claimant = {
+			limit = {
+				agot_usurper_has_claim = yes
+				NOT = { is_adult = yes }
+				agot_is_free_human = yes
+				agot_can_be_feudal_ruler = yes
+				NOT = { agot_positive_relation_with_the_king = yes }
+				location ?= scope:crown_theft_king.capital_province
+				NOT = { has_trait = disinherited }
+				NOT = { has_trait = bastard }
+				NOT = { has_trait = bastard_founder }
+				agot_usurper_same_house = yes
+				any_relation = {
+					type = guardian
+					agot_can_be_usurper_helper = yes
+					NOT = { agot_positive_relation_with_the_king = yes }
+					NOT = { this = scope:crown_theft_king }
+				}
+			}
+			add_to_list = potential_crown_thief
+		}
+	}
+
+	every_courtier_or_guest = {
+		limit = {
+			agot_usurper_has_claim = yes
+			NOT = { is_adult = yes }
+			agot_is_free_human = yes
+			agot_can_be_feudal_ruler = yes
+			NOT = { agot_positive_relation_with_the_king = yes }
+			location ?= scope:crown_theft_king.capital_province
+			NOT = { has_trait = disinherited }
+			NOT = { has_trait = bastard }
+			NOT = { has_trait = bastard_founder }
+			agot_usurper_same_house = yes
+			any_relation = {
+				type = guardian
+				agot_can_be_usurper_helper = yes
+				NOT = { agot_positive_relation_with_the_king = yes }
+				NOT = { this = scope:crown_theft_king }
+			}
+		}
+		add_to_list = potential_crown_thief
+	}
+
+	#Bastard & Disinherited Scenarios
+	every_courtier_or_guest = {
+		limit = {
+			is_adult = yes
+			agot_can_be_usurper = yes
+			agot_can_be_feudal_ruler = yes
+			NOT = { agot_positive_relation_with_the_king = yes }
+			location ?= scope:crown_theft_king.capital_province
+			dynasty = scope:crown_theft_king.primary_heir.dynasty
+			OR = {
+				has_trait = bastard
+				has_trait = bastard_founder
+				AND = {
+					has_trait = disinherited
+					agot_usurper_same_house = yes
+				}
+			}
+			OR = {
+				is_child_of = scope:crown_theft_king
+				is_sibling_of = scope:crown_theft_king
+			}
+		}
+		add_to_list = potential_crown_thief
+	}
+
+	random_in_list = {
+		list = potential_crown_thief
+		save_scope_as = crown_thief
+
+		scope:crown_thief = {
+			trigger_event = {
+				id = agot_crown_theft.0099
+				days = 3
+			}
+		}
+	}
+}
+
+helper_effect = {
+	scope:landed_helper = {
+		if = {
+			limit = {
+				scope:crown_theft_king_legit_heir = { is_imprisoned = no }
+				NOT = { agot_wos_helper_opinion_trigger = yes }
+			}
+			add_character_flag = {
+				flag = supports_me_in_war
+				days = 100
+			}
+		}
+	}
+}
+
+flee_to_safety_effect = {
+	if = {
+		limit = {
+			scope:landed_helper = {
+				is_playable_character = yes
+				highest_held_title_tier >= tier_duchy
+			}
+			NOT = { scope:crown_theft_king_legit_heir = { is_courtier_of = scope:landed_helper } }
+		}
+		scope:landed_helper = {
+			add_courtier = scope:crown_theft_king_legit_heir
+		}
+	}
+	if = {
+		limit = {
+			scope:crown_theft_king_legit_heir = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes NOT = { is_courtier_of = scope:landed_helper } }
+			}
+		}
+		scope:crown_theft_king_legit_heir = {
+			every_relation = {
+				type = agot_dragon
+				limit = { is_alive = yes NOT = { is_courtier_of = scope:landed_helper } }
+				save_scope_as = heirs_dragon
+			}
+		}
+		scope:landed_helper = {
+			add_courtier = scope:heirs_dragon
+		}
+	}
+	if = {
+		limit = {
+			scope:landed_helper = {
+				is_playable_character = yes
+				highest_held_title_tier >= tier_duchy
+			}
+			scope:crown_theft_king_legit_heir = { is_married = yes }
+			NOT = { scope:crown_theft_king_legit_heir.primary_spouse = scope:landed_helper }
+			scope:crown_theft_king_legit_heir.primary_spouse = { NOT = { is_courtier_of = scope:landed_helper } }
+		}
+		scope:landed_helper = {
+			add_courtier = scope:crown_theft_king_legit_heir.primary_spouse
+		}
+	}
+	if = {
+		limit = {
+			scope:crown_theft_king_legit_heir = { is_married = yes }
+			scope:crown_theft_king_legit_heir.primary_spouse = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes NOT = { is_courtier_of = scope:landed_helper } }
+			}
+		}
+		scope:crown_theft_king_legit_heir.primary_spouse = {
+			every_relation = {
+				type = agot_dragon
+				limit = { is_alive = yes NOT = { is_courtier_of = scope:landed_helper } }
+				save_scope_as = legit_spouse_dragon
+			}
+		}
+		scope:landed_helper = {
+			add_courtier = scope:legit_spouse_dragon
+		}
+	}
+	if = {
+		limit = { scope:landed_helper = { NOT = { is_allied_to = scope:crown_theft_king_legit_heir } } }
+		scope:landed_helper = {
+			create_alliance = {
+				target = scope:crown_theft_king_legit_heir
+				allied_through_owner = scope:landed_helper
+				allied_through_target = scope:crown_theft_king_legit_heir
+			}
+		}
+	}
+}
+
+create_primary_title_usurpation_history_effect = {
+	#Copy the king's primary title history to it
+	title:d_dummy_empire = {
+		copy_title_history = scope:crown_theft_king.primary_title
+	}
+	scope:crown_thief = { add_character_flag = i_am_usurper }
+	#Add usurpation history to it
+	create_title_and_vassal_change = {
+		type = usurped
+		save_scope_as = change
+		add_claim_on_loss = yes
+	}
+	title:d_dummy_empire = {
+		change_title_holder = {
+			holder = scope:crown_thief
+			change = scope:change
+		}
+	}
+	resolve_title_and_vassal_change = scope:change
+	scope:crown_thief = { remove_character_flag = i_am_usurper }
+}
+
+apply_primary_title_usurpation_history_effect = {
+	#Copy the fake title history to the primary title
+	scope:crown_thief.primary_title = {
+		copy_title_history = title:d_dummy_empire
+	}
+	#Destroy the fake title
+	destroy_title = title:d_dummy_empire
+}
+
+#Set them as house head
+agot_new_house_head_effect = {
+	$NEW_HOUSE_HEAD$ = { save_scope_as = new_house_head }
+	hidden_effect = {
+		if = {
+			limit = {
+				scope:new_house_head = { has_variable = agot_wos_house_head_candidate }
+				NOT = { scope:new_house_head = scope:new_house_head.house.house_head }
+			}
+			scope:new_house_head.house = { set_house_head = scope:new_house_head }
+		}
+	}
+}
+
+###################
+### WAR EFFECTS ###
+###################
+
+#Create adventurer title
+agot_wos_create_landless_title = {
+	hidden_effect = {
+		create_adventurer_title = {
+			name = agot_crown_theft_adventurer_name
+			holder = scope:crown_theft_king_legit_heir
+			save_scope_as = new_title
+		}
+		create_title_and_vassal_change = {
+			type = created
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		scope:new_title ?= {
+			create_landless_adventurer_title_history_effect = yes
+			change_title_holder = {
+				holder = scope:crown_theft_king_legit_heir
+				change = scope:change
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+		scope:new_title = { save_scope_as = new_landless_adventurer_title }
+		scope:crown_theft_king_legit_heir = {
+			if = {
+				limit = {
+					NOT = { has_government = landless_adventurer_government }
+				}
+				change_government = landless_adventurer_government
+			}
+			if = {
+				limit = {
+					NOT = { has_realm_law = landless_adventurer_succession_law }
+				}
+				add_realm_law = landless_adventurer_succession_law
+			}
+			if = {
+				limit = {
+					has_realm_law = crown_authority_0
+				}
+				remove_realm_law = crown_authority_0
+			}
+			domicile = { change_provisions = starting_provisions_value }
+
+			set_variable = {
+				name = wos_landless_title
+				value = scope:new_landless_adventurer_title
+			}
+		}
+	}
+	every_player = {
+		limit = {
+			NOR = {
+				root ?= this
+				this = scope:crown_theft_king_legit_heir
+			}
+			OR = {
+				# Either they're important to us.
+				is_close_or_extended_family_of = scope:crown_theft_king_legit_heir
+				is_consort_of = scope:crown_theft_king_legit_heir
+				has_important_relationship_with_character_trigger = { CHARACTER = scope:crown_theft_king_legit_heir }
+				# Or they're just close enough.
+				AND = {
+					capital_province = { "squared_distance(scope:crown_theft_king_legit_heir.location)" <= squared_distance_medium }
+					OR = {
+						top_liege = root.top_liege
+						any_neighboring_and_across_water_top_liege_realm_owner = { this = root.top_liege }
+					}
+				}
+			}
+		}
+		send_interface_message = {
+			type = msg_landless_adventurer_nearby
+			title = agot_crown_theft_adventurer_name_message_title
+			left_icon = scope:crown_theft_king_legit_heir
+			right_icon = scope:crown_thief
+			custom_tooltip = agot_crown_theft_adventurer_name_message_tt
+		}
+	}
+	custom_tooltip = laamp_become_adventurer_tt
+	add_to_global_variable_list = {
+		name = laamps_tally
+		target = scope:crown_theft_king_legit_heir.primary_title
+	}
+	set_variable = flavourise_camp_purpose_wanderers
+
+	scope:crown_theft_king_legit_heir = {
+		every_councillor = {
+			if = {
+				limit = {
+					NOR = {
+						has_council_position = councillor_court_chaplain
+						has_council_position = councillor_spouse
+					}
+				}
+				scope:new_landless_adventurer = {
+					fire_councillor = prev
+				}
+				remove_opinion = {
+					modifier = fired_from_council_opinion
+					target = scope:new_landless_adventurer
+				}
+			}
+			else_if = {
+				limit = {
+					NOR = {
+						is_close_or_extended_family_of = scope:crown_theft_king_legit_heir
+						has_relation_lover = scope:crown_theft_king_legit_heir
+						has_relation_friend = scope:crown_theft_king_legit_heir
+						is_consort_of = scope:crown_theft_king_legit_heir
+						has_council_position = councillor_spouse
+					}
+				}
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+		every_courtier = {
+			limit = {
+				NOR = {
+					is_close_or_extended_family_of = scope:crown_theft_king_legit_heir
+					has_relation_lover = scope:crown_theft_king_legit_heir
+					has_relation_friend = scope:crown_theft_king_legit_heir
+					is_consort_of = scope:crown_theft_king_legit_heir
+				}
+			}
+			move_to_pool = yes
+		}
+		trigger_event = {
+			id = ep3_laamps.1001
+			days = { 3 5 }
+		}
+		add_character_flag = agot_landless_interaction_blocker
+	}
+}
+
+
+#Make the vassals remember who was the legitimate heir
+agot_succession_war_prewar_effect = {
+	if = {
+		limit = {
+			scope:crown_theft_king_legit_heir.dynasty = scope:crown_thief.dynasty
+			exists = dynasty
+			succession_war_dynastic_war_name = yes
+		}
+		war_of_succession_number_effect = yes
+	}
+
+	scope:crown_theft_king_legit_heir = {
+		add_character_flag = {
+			flag = dance_name
+			days = 40
+		}
+	}
+
+	#Spawn Army for Landless Adventurer
+	if = {
+		limit = { scope:crown_theft_king_legit_heir = { is_landless_adventurer = yes } }
+		scope:crown_theft_king_legit_heir = { save_scope_as = secret_child }
+		scope:secret_child = {
+			scope:crown_thief = { save_scope_as = war_target }
+			agot_create_secret_character_army_effect = yes
+		}
+	}
+}
+
+#Start War and add blockers
+agot_succession_war_start_effect = {
+	#War -  For Empires
+	if = {
+		limit = { scope:crown_thief = { highest_held_title_tier = tier_empire } }
+		start_war = {
+			cb = agot_succession_war
+			target = scope:crown_thief
+			claimant = scope:crown_theft_king_legit_heir
+			target_title = scope:crown_thief.capital_county.empire
+			target_title = scope:crown_thief.capital_county
+		}
+	}
+	#War -  For Hegemonies
+	else_if = {
+		limit = { scope:crown_thief = { highest_held_title_tier = tier_hegemony } }
+		start_war = {
+			cb = agot_succession_war
+			target = scope:crown_thief
+			claimant = scope:crown_theft_king_legit_heir
+			target_title = scope:crown_thief.capital_county.hegemony
+			target_title = scope:crown_thief.capital_county
+		}
+	}
+
+	#Cooldown
+	scope:crown_thief = { add_character_flag = succession_war_cooldown }
+	scope:crown_theft_king_legit_heir = { add_character_flag = succession_war_cooldown }
+
+	#Banger
+	scope:crown_thief = { play_music_cue = mood_dragons_at_war }
+	scope:crown_theft_king_legit_heir = { play_music_cue = mood_dragons_at_war }
+	if = {
+		limit = { exists = scope:landed_helper }
+		scope:landed_helper = { play_music_cue = mood_dragons_at_war }
+	}
+}
+
+agot_succession_war_faction_selection_effect = {
+	#LOYALIST FACTION WILL IGNORE THIS WAR
+	if = {
+		limit = {
+			scope:crown_thief = { NOT = { has_character_flag = war_of_succession_leader } }
+		}
+		scope:crown_thief = {
+			add_character_flag = {
+				flag = war_of_succession_leader
+				months = 40
+			}
+		}
+	}
+	if = {
+		limit = {
+			scope:crown_theft_king_legit_heir = { NOT = { has_character_flag = war_of_succession_leader } }
+		}
+		scope:crown_theft_king_legit_heir = {
+			add_character_flag = {
+				flag = war_of_succession_leader
+				months = 40
+			}
+		}
+	}
+	#FACTION SELECTION - happens only if they have other family members in their courts
+	if = {
+		limit = {
+			OR = {
+				scope:crown_thief = {
+					any_close_or_extended_family_member = {
+						OR = {
+							location ?= scope:crown_thief.location
+							is_courtier_of = scope:crown_thief
+						}
+					}
+				}
+				scope:crown_theft_king_legit_heir = {
+					any_close_or_extended_family_member = {
+						OR = {
+							location ?= scope:crown_theft_king_legit_heir.location
+							is_courtier_of = scope:crown_theft_king_legit_heir
+						}
+					}
+				}
+			}
+		}
+		#Check for family members - Usurper
+		if = {
+			limit = {
+				scope:crown_thief = {
+					any_close_or_extended_family_member = {
+						NOT = { this = scope:crown_thief }
+						NOT = { this = scope:crown_theft_king_legit_heir }
+						OR = {
+							location ?= scope:crown_thief.location
+							location ?= scope:crown_theft_king_legit_heir.location
+							is_courtier_of = scope:crown_thief
+							is_courtier_of = scope:crown_theft_king_legit_heir
+						}
+						NOT = { has_trait = kingsguard }
+						NOT = { is_playable_character = yes }
+						NOT = { has_relation_ward = scope:crown_thief }
+					}
+				}
+			}
+			scope:crown_thief = {
+				every_close_or_extended_family_member = {
+					limit = {
+						NOT = { this = scope:crown_thief }
+						NOT = { this = scope:crown_theft_king_legit_heir }
+						OR = {
+							location ?= scope:crown_thief.location
+							location ?= scope:crown_theft_king_legit_heir.location
+							is_courtier_of = scope:crown_thief
+							is_courtier_of = scope:crown_theft_king_legit_heir
+						}
+						NOT = { has_trait = kingsguard }
+						NOT = { is_playable_character = yes }
+						NOT = { has_relation_ward = scope:crown_thief }
+					}
+					add_to_list = conflict_participants
+				}
+			}
+		}
+		#Check for family members - Legitimate Heir
+		if = {
+			limit = {
+				scope:crown_theft_king_legit_heir = {
+					any_close_or_extended_family_member = {
+						NOT = { this = scope:crown_thief }
+						NOT = { this = scope:crown_theft_king_legit_heir }
+						OR = {
+							location ?= scope:crown_thief.location
+							location ?= scope:crown_theft_king_legit_heir.location
+							is_courtier_of = scope:crown_thief
+							is_courtier_of = scope:crown_theft_king_legit_heir
+						}
+						NOT = { has_trait = kingsguard }
+						NOT = { is_playable_character = yes }
+						NOT = { has_relation_ward = scope:crown_thief }
+					}
+				}
+			}
+			scope:crown_theft_king_legit_heir = {
+				every_close_or_extended_family_member = {
+					limit = {
+						NOT = { this = scope:crown_thief }
+						NOT = { this = scope:crown_theft_king_legit_heir }
+						OR = {
+							location ?= scope:crown_thief.location
+							location ?= scope:crown_theft_king_legit_heir.location
+							is_courtier_of = scope:crown_thief
+							is_courtier_of = scope:crown_theft_king_legit_heir
+						}
+						NOT = { has_trait = kingsguard }
+						NOT = { is_playable_character = yes }
+						NOT = { has_relation_ward = scope:crown_thief }
+					}
+					add_to_list = conflict_participants
+				}
+			}
+		}
+		#Check for spouses - Usurper
+		if = {
+			limit = {
+				exists = scope:crown_thief.primary_spouse
+				scope:crown_thief.primary_spouse = {
+					NOT = { is_playable_character = yes }
+				}
+			}
+			scope:crown_thief.primary_spouse = {
+				add_to_list = conflict_participants
+			}
+		}
+		#Check for spouses - Legitimate Heir
+		if = {
+			limit = {
+				exists = scope:crown_theft_king_legit_heir.primary_spouse
+				NOT = { exists = scope:rightful_heir_fled }
+				scope:crown_theft_king_legit_heir.primary_spouse = {
+					NOT = { is_playable_character = yes }
+				}
+			}
+			scope:crown_theft_king_legit_heir.primary_spouse = {
+				add_to_list = conflict_participants
+			}
+		}
+		#Check for other courtiers - Usurper
+		if = {
+			limit = {
+				scope:crown_thief = {
+					is_playable_character = yes
+					any_courtier_or_guest = {
+						is_physically_able = yes
+						NOT = { is_close_or_extended_family_of = scope:crown_thief }
+						NOT = {	is_close_or_extended_family_of = scope:crown_theft_king_legit_heir }
+						NOT = {	is_spouse_of = scope:crown_thief }
+						NOT = {	is_spouse_of = scope:crown_theft_king_legit_heir }
+						NOT = { has_trait = kingsguard }
+						NOT = { is_playable_character = yes }
+						#Add Lowborns only if they are important characters
+						agot_eligible_succession_war_faction_members = yes
+						NOT = { has_relation_ward = scope:crown_thief }
+					}
+				}
+			}
+			scope:crown_thief = {
+				every_courtier_or_guest = {
+					limit = {
+						is_physically_able = yes
+						NOT = { is_close_or_extended_family_of = scope:crown_thief }
+						NOT = {	is_close_or_extended_family_of = scope:crown_theft_king_legit_heir }
+						NOT = {	is_spouse_of = scope:crown_thief }
+						NOT = {	is_spouse_of = scope:crown_theft_king_legit_heir }
+						NOT = { has_trait = kingsguard }
+						NOT = { is_playable_character = yes }
+						#Add Lowborns only if they are important characters
+						agot_eligible_succession_war_faction_members = yes
+						NOT = { has_relation_ward = scope:crown_thief }
+					}
+					add_to_list = conflict_participants
+				}
+			}
+		}
+		#Check for other courtiers - Legitimate Heir
+		if = {
+			limit = {
+				scope:crown_theft_king_legit_heir = {
+					is_playable_character = yes
+					any_courtier_or_guest = {
+						is_physically_able = yes
+						NOT = { is_close_or_extended_family_of = scope:crown_thief }
+						NOT = {	is_close_or_extended_family_of = scope:crown_theft_king_legit_heir }
+						NOT = {	is_spouse_of = scope:crown_thief }
+						NOT = {	is_spouse_of = scope:crown_theft_king_legit_heir }
+						NOT = { has_trait = kingsguard }
+						NOT = { is_playable_character = yes }
+						#Add Lowborns only if they are important characters
+						agot_eligible_succession_war_faction_members = yes
+						NOT = { has_relation_ward = scope:crown_thief }
+					}
+				}
+			}
+			scope:crown_theft_king_legit_heir = {
+				every_courtier_or_guest = {
+					limit = {
+						is_physically_able = yes
+						NOT = { is_close_or_extended_family_of = scope:crown_thief }
+						NOT = {	is_close_or_extended_family_of = scope:crown_theft_king_legit_heir }
+						NOT = {	is_spouse_of = scope:crown_thief }
+						NOT = {	is_spouse_of = scope:crown_theft_king_legit_heir }
+						NOT = { has_trait = kingsguard }
+						NOT = { is_playable_character = yes }
+						#Add Lowborns only if they are important characters
+						agot_eligible_succession_war_faction_members = yes
+						NOT = { has_relation_ward = scope:crown_thief }
+					}
+					add_to_list = conflict_participants
+				}
+			}
+		}
+		#FACTION A
+		every_in_list = {
+			list = conflict_participants
+			limit = {
+				save_temporary_opinion_value_as = {
+					name = opinion_of_faction_a
+					target = scope:crown_thief
+				}
+				save_temporary_opinion_value_as = {
+					name = opinion_of_faction_b
+					target = scope:crown_theft_king_legit_heir
+				}
+				NOT = { is_courtier_of = scope:crown_thief }
+				NOT = { has_relation_ward = scope:crown_thief }
+				scope:opinion_of_faction_a > scope:opinion_of_faction_b
+			}
+			save_scope_as = faction_a_member
+			add_to_list = faction_a_member_list
+
+			scope:crown_thief = {
+				agot_wos_move_courtiers_to_faction_effect = {
+					COURTIER = scope:faction_a_member
+					DESTINATION = scope:crown_thief
+				}
+			}
+		}
+		#FACTION B
+		every_in_list = {
+			list = conflict_participants
+			limit = {
+				save_temporary_opinion_value_as = {
+					name = opinion_of_faction_a
+					target = scope:crown_thief
+				}
+				save_temporary_opinion_value_as = {
+					name = opinion_of_faction_b
+					target = scope:crown_theft_king_legit_heir
+				}
+				NOT = { is_courtier_of = scope:crown_theft_king_legit_heir }
+				scope:opinion_of_faction_a < scope:opinion_of_faction_b
+			}
+			save_scope_as = faction_b_member
+			add_to_list = faction_b_member_list
+
+			scope:crown_theft_king_legit_heir = {
+				agot_wos_move_courtiers_to_faction_effect = {
+					COURTIER = scope:faction_b_member
+					DESTINATION = scope:crown_theft_king_legit_heir
+				}
+			}
+		}
+		#Fixing weird pairings - Spouses - Faction A
+		every_in_list = {
+			list = faction_a_member_list
+			limit = {
+				NOT = { this = scope:crown_thief }
+				NOT = { this = scope:crown_theft_king_legit_heir }
+				exists = primary_spouse
+				primary_spouse = {
+					OR = {
+						is_courtier_of = scope:crown_theft_king_legit_heir
+						is_courtier_of = scope:crown_theft_king_legit_heir.liege
+					}
+				}
+				save_temporary_opinion_value_as = {
+					name = opinion_of_spouse
+					target = primary_spouse
+				}
+				save_temporary_opinion_value_as = {
+					name = opinion_of_my_ruler
+					target = scope:crown_thief
+				}
+				scope:opinion_of_spouse > scope:opinion_of_my_ruler
+			}
+			save_scope_as = moves_to_faction_b
+
+			scope:crown_theft_king_legit_heir = {
+				agot_wos_move_courtiers_to_faction_effect = {
+					COURTIER = scope:moves_to_faction_b
+					DESTINATION = scope:crown_theft_king_legit_heir
+				}
+			}
+		}
+		#Fixing weird pairings - Spouses - Faction B
+		every_in_list = {
+			list = faction_a_member_list
+			limit = {
+				NOT = { this = scope:crown_thief }
+				NOT = { this = scope:crown_theft_king_legit_heir }
+				exists = primary_spouse
+				primary_spouse = {
+					OR = {
+						is_courtier_of = scope:crown_thief
+						is_courtier_of = scope:crown_thief.liege
+					}
+				}
+				save_temporary_opinion_value_as = {
+					name = opinion_of_spouse
+					target = primary_spouse
+				}
+				save_temporary_opinion_value_as = {
+					name = opinion_of_my_ruler
+					target = scope:crown_thief
+				}
+				scope:opinion_of_spouse > scope:opinion_of_my_ruler
+			}
+			save_scope_as = moves_to_faction_b
+
+			scope:crown_thief = {
+				agot_wos_move_courtiers_to_faction_effect = {
+					COURTIER = scope:moves_to_faction_b
+					DESTINATION = scope:crown_thief
+				}
+			}
+		}
+		#Fixing weird pairings - Kids and Wards - Faction A
+		every_in_list = {
+			list = faction_a_member_list
+			limit = {
+				NOT = { this = scope:crown_thief }
+				NOT = { this = scope:crown_theft_king_legit_heir }
+				agot_wos_faction_selection_for_kids_trigger = { ENEMY_LEADER = scope:crown_theft_king_legit_heir }
+			}
+			save_scope_as = moves_to_faction_b
+
+			scope:crown_theft_king_legit_heir = {
+				agot_wos_move_courtiers_to_faction_effect = {
+					COURTIER = scope:moves_to_faction_b
+					DESTINATION = scope:crown_theft_king_legit_heir
+				}
+			}
+		}
+		#Fixing weird pairings - Kids and Wards - Faction B
+		every_in_list = {
+			list = faction_b_member_list
+			limit = {
+				NOT = { this = scope:crown_thief }
+				NOT = { this = scope:crown_theft_king_legit_heir }
+				agot_wos_faction_selection_for_kids_trigger = { ENEMY_LEADER = scope:crown_thief }
+			}
+			save_scope_as = moves_to_faction_a
+
+			scope:crown_thief = {
+				agot_wos_move_courtiers_to_faction_effect = {
+					COURTIER = scope:moves_to_faction_a
+					DESTINATION = scope:crown_thief
+				}
+			}
+		}
+	}
+	#FACTION COAS
+	hidden_effect = {
+		if = {
+			limit = {
+				scope:crown_thief = { NOT = { has_character_flag = has_personal_coa } }
+			}
+			scope:crown_thief = { add_character_flag = selecting_faction_coa }
+		}
+		if = {
+			limit = {
+				scope:crown_theft_king_legit_heir = { NOT = { has_character_flag = has_personal_coa } }
+			}
+			scope:crown_theft_king_legit_heir = { add_character_flag = selecting_faction_coa }
+		}
+		if = {
+			limit = {
+				scope:crown_theft_king_legit_heir.house = scope:crown_thief.house
+				scope:crown_theft_king_legit_heir = { is_playable_character = yes }
+			}
+			scope:crown_theft_king_legit_heir = {
+				if = {
+					limit = {
+						OR = {
+							has_nickname_for_personal_coa_trigger = yes
+							any_sibling = {
+								count = 3
+								AND = {
+									sex_same_as = scope:crown_theft_king_legit_heir
+									age > scope:crown_theft_king_legit_heir.age
+								}
+							}
+							AND = {
+								OR = {
+									faith = faith:rhllor_asshai
+									faith = faith:rhllor_fc
+									faith = faith:rhllor_fots
+								}
+								has_rhllor_personal_coa_trigger = yes
+							}
+							AND = {
+								OR = {
+									faith = faith:rhllor_asshai
+									faith = faith:rhllor_fc
+									faith = faith:rhllor_fots
+								}
+								has_specific_rhllor_personal_coa_trigger = yes
+							}
+							has_character_flag = selecting_faction_coa
+						}
+						NOT = { has_character_flag = has_personal_coa }
+					}
+					save_scope_as = attacker
+					agot_create_personal_coa = yes
+				}
+			}
+			scope:crown_thief = {
+				if = {
+					limit = {
+						OR = {
+							has_nickname_for_personal_coa_trigger = yes
+							any_sibling = {
+								count = 3
+								AND = {
+									sex_same_as = scope:crown_thief
+									age > scope:crown_thief.age
+								}
+							}
+							AND = {
+								OR = {
+									faith = faith:rhllor_asshai
+									faith = faith:rhllor_fc
+									faith = faith:rhllor_fots
+								}
+								has_rhllor_personal_coa_trigger = yes
+							}
+							AND = {
+								OR = {
+									faith = faith:rhllor_asshai
+									faith = faith:rhllor_fc
+									faith = faith:rhllor_fots
+								}
+								has_specific_rhllor_personal_coa_trigger = yes
+							}
+							has_character_flag = selecting_faction_coa
+						}
+						NOT = { has_character_flag = has_personal_coa }
+					}
+					save_scope_as = defender
+					agot_create_personal_coa = yes
+					trigger_event = {
+						id = agot_coa_events.0002
+						days = 1
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_wos_move_courtiers_to_faction_effect = {
+	$COURTIER$ = { save_scope_as = this_courtier }
+	$DESTINATION$ = { save_scope_as = faction_destination }
+	#Add to court
+	if = {
+		limit = { is_playable_character = yes }
+		#Characters
+		if = {
+			limit = {
+				scope:this_courtier = {
+					NOT = { is_courtier_of = scope:faction_destination }
+				}
+			}
+			add_courtier = scope:this_courtier
+		}
+		#Dragons
+		if = {
+			limit = {
+				scope:this_courtier = {
+					has_trait = dragonrider
+					any_relation = { type = agot_dragon is_alive = yes NOT = { is_courtier_of = scope:faction_destination } }
+				}
+			}
+			scope:this_courtier = {
+				every_relation = {
+					type = agot_dragon
+					limit = {
+						has_trait = dragon
+						is_alive = yes
+						NOT = { is_courtier_of = scope:faction_destination }
+					}
+					save_scope_as = faction_dragons
+					scope:faction_destination = {
+						add_courtier = scope:faction_dragons
+					}
+				}
+			}
+		}
+	}
+	#Add to liege's court if this character is not landed
+	else_if = {
+		#Characters
+		limit = { scope:faction_destination.liege = { is_playable_character = yes } }
+		#Characters
+		if = {
+			limit = {
+				scope:this_courtier = {
+					NOT = { is_courtier_of = scope:faction_destination.liege }
+				}
+			}
+			scope:faction_destination.liege = {
+				add_courtier = scope:this_courtier
+			}
+		}
+		#Dragons
+		if = {
+			limit = {
+				scope:this_courtier = {
+					has_trait = dragonrider
+					any_relation = { type = agot_dragon is_alive = yes NOT = { is_courtier_of = scope:faction_destination.liege } }
+				}
+			}
+			scope:this_courtier = {
+				every_relation = {
+					type = agot_dragon
+					limit = {
+						has_trait = dragon
+						is_alive = yes
+						NOT = { is_courtier_of = scope:faction_destination.liege }
+					}
+					save_scope_as = faction_dragons
+					scope:faction_destination.liege = {
+						add_courtier = scope:faction_dragons
+					}
+				}
+			}
+		}
+		#Main Character's Dragons
+		if = {
+			limit = {
+				scope:faction_destination = {
+					has_trait = dragonrider
+					any_relation = { type = agot_dragon is_alive = yes NOT = { is_courtier_of = scope:faction_destination.liege } }
+				}
+			}
+			scope:faction_destination = {
+				every_relation = {
+					type = agot_dragon
+					limit = {
+						has_trait = dragon
+						is_alive = yes
+						NOT = { is_courtier_of = scope:faction_destination.liege }
+					}
+					save_scope_as = mc_dragon
+					scope:faction_destination.liege = {
+						add_courtier = scope:mc_dragon
+					}
+				}
+			}
+		}
+	}
+}
+
+war_of_succession_number_effect = {
+	if = {
+		limit = {
+			dynasty = { exists = var:war_of_succession_number }
+		}
+		dynasty = {
+			change_variable = {
+				name = war_of_succession_number
+				add = 1
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			dynasty = { NOT = { exists = var:war_of_succession_number } }
+		}
+		dynasty = {
+			set_variable = {
+				name = war_of_succession_number
+				value = 1
+			}
+		}
+	}
+}
+
+assign_dragon_color_for_coa = {
+	#WHITE
+	if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:white }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_white
+			days = 100
+		}
+	}
+	#GREY
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:grey }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_grey
+			days = 100
+		}
+	}
+	#BLACK
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:black }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_black
+			days = 100
+		}
+	}
+	#RED
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:red }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_red
+			days = 100
+		}
+	}
+	#ORANGE
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:orange }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_orange
+			days = 100
+		}
+	}
+	#YELLOW
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:yellow }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_yellow
+			days = 100
+		}
+	}
+	#GREEN
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:green }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_green
+			days = 100
+		}
+	}
+	#LIGHT BLUE
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:teal }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_light_blue
+			days = 100
+		}
+	}
+	#BLUE
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:blue }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_blue
+			days = 100
+		}
+	}
+	#PURPLE
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:purple }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_purple
+			days = 100
+		}
+	}
+	#PINK
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:pink }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_pink
+			days = 100
+		}
+	}
+	#FUSCHIA
+	else_if = {
+		limit = {
+			scope:actor = {
+				has_trait = dragonrider
+				any_relation = { type = agot_dragon is_alive = yes var:primary_color ?= flag:fuschia }
+			}
+		}
+		add_character_flag = {
+			flag = dragon_color_fuschia
+			days = 100
+		}
+	}
+}

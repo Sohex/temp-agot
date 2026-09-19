@@ -1,0 +1,98 @@
+﻿
+#Effects used in Petitions
+
+### Title Liege
+agot_petition_liege_0101_paramount_effect = {
+	scope:petition_liege = {
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+		}
+	}
+	create_title_and_vassal_change = {
+		type = granted
+		save_scope_as = change
+		add_claim_on_loss = no
+	}
+	scope:petition_paramount = {
+		change_title_holder = {
+			holder = scope:petition_vassal
+			change = scope:change
+		}
+	}
+	scope:petition_paramount = {
+		every_in_de_jure_hierarchy = {
+			limit = {
+				exists = holder
+				NOT = { holder = scope:petition_vassal }
+				NOT = { holder = scope:petition_liege }
+				holder = { liege = scope:petition_liege }
+			}
+			holder = { add_to_temporary_list = vassals_taken }
+		}
+	}
+	every_in_list = {
+		list = vassals_taken
+		change_liege = {
+			liege = scope:petition_vassal
+			change = scope:change
+		}
+	}
+	resolve_title_and_vassal_change = scope:change
+	scope:petition_vassal = {
+		hidden_effect = {
+			send_interface_toast = {
+				title = petition_liege.0101.t.title_liege
+				left_icon = scope:petition_liege
+				show_as_tooltip = {
+					scope:petition_vassal = { get_title = scope:petition_paramount }
+				}
+			}
+		}
+	}
+	scope:petition_liege = {
+		hidden_effect = {
+			send_interface_toast = {
+				title = petition_liege.0101.t.title_liege
+				left_icon = scope:petition_vassal
+				show_as_tooltip = {
+					scope:petition_vassal = { get_title = scope:petition_paramount }
+				}
+			}
+		}
+	}
+}
+
+agot_petition_liege_0101_legitimate_house_boost_effect = {
+	scope:petition_liege = {
+		stress_impact = {
+			just = medium_stress_impact_gain
+		}
+		add_prestige = medium_prestige_loss
+	}
+	scope:petition_vassal = {
+		add_character_flag = petition_liege_legitimate_house_boost_flag
+		add_opinion = {
+			modifier = agot_supported_legitimate_house_claim
+			target = scope:petition_liege
+		}
+		agot_add_new_house_progress = {
+			TITLE = scope:petition_legitimate_house_boost_title
+			CHANGE = 20
+		}
+		scope:petition_legitimate_house_boost_title = {
+			var:legitimate_house = {
+				if = {
+					limit = {
+						exists = house_head
+					}
+					house_head = {
+						add_opinion = {
+							modifier = agot_supported_enemy_legitimate_house_claim
+							target = scope:petition_liege
+						}
+					}
+				}
+			}
+		}
+	}
+}

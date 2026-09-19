@@ -1,0 +1,969 @@
+﻿namespace = coronation_decision
+
+#CHOOSING A THE OFFICIANT
+coronation_decision.0001 = {
+	type = character_event
+	title = coronation_decision.0001.t
+
+	desc = coronation_decision.0001.desc
+	theme = coronation_ceremony_activity
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	orphan = yes
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_three_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		save_scope_as = coronation_target
+		scope:coronation_target = {
+			every_councillor = {
+				limit = {
+					is_adult = yes
+					is_alive = yes
+					is_incapable = no
+					exists = cp:councillor_court_chaplain
+					this = cp:councillor_court_chaplain
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+			every_vassal_or_below = {
+				limit = {
+					is_adult = yes
+					is_alive = yes
+					is_incapable = no
+					highest_held_title_tier = tier_empire
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+			every_vassal_or_below = {
+				limit = {
+					is_adult = yes
+					is_alive = yes
+					is_incapable = no
+					highest_held_title_tier = tier_kingdom
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+			every_vassal_or_below = {
+				limit = {
+					is_adult = yes
+					is_alive = yes
+					is_incapable = no
+					highest_held_title_tier = tier_duchy
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+
+		ordered_in_list = {
+			variable = possible_characters
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = officiant
+		}
+	}
+
+	option = {
+		name = coronation_decision.0001.a
+
+		trigger = { exists = scope:officiant }
+
+		var:si_selected_character = {
+			save_scope_as = officiant
+			remove_variable = si_selecting_character
+		}
+		custom_tooltip = coronation_decision.0001.a.tt
+		if = {
+			limit = {
+				scope:officiant = {
+					this = scope:coronation_target.faith.religious_head
+				}
+			}
+			custom_tooltip = coronation_decision.0001.a.tt_hof
+		}
+		if = {
+			limit = {
+				scope:officiant = {
+					is_powerful_vassal_of = scope:coronation_target
+				}
+			}
+			custom_tooltip = coronation_decision.0001.a.tt_pv
+		}
+		if = {
+			limit = {
+				scope:officiant = {
+					dynasty = scope:coronation_target.dynasty
+				}
+			}
+			custom_tooltip = coronation_decision.0001.a.tt_dynn
+		}
+		scope:officiant = {
+			add_opinion = {
+				target = scope:coronation_target
+				modifier = chose_me_to_crown_opinion
+			}
+		}
+
+		# AI usually chooses someone
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	# I will crown myself
+	option = {
+		name = coronation_decision.0001.b
+		custom_tooltip = coronation_decision.0001.b.tt
+		add_legitimacy = major_legitimacy_loss
+		add_character_flag = crowning_self
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				has_trait = arrogant
+			}
+			modifier = {
+				add = -1000
+				has_trait = just
+			}
+			modifier = {
+				add = 10
+				has_trait = ambitious
+			}
+			modifier = {
+				add = 50
+				has_trait = brave
+			}
+			modifier = {
+				add = -1000
+				has_trait = shy
+			}
+			modifier = {
+				add = -1000
+				has_trait = craven
+			}
+		}
+	}
+
+	after = {
+		scope:officiant = {
+			add_character_flag = officiant
+			if = {
+				limit = {
+					has_variable = si_selected_character
+				}
+				remove_variable = si_selected_character
+			}
+		}
+		scope:coronation_target = {
+			trigger_event = coronation_decision.0002
+		}
+		clear_variable_list = possible_characters
+	}
+}
+
+# Crown Selection
+coronation_decision.0002 = {
+	type = character_event
+	title = coronation.0002.t
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:officiant = {
+						agot_is_high_septon = yes
+					}
+				}
+				desc = coronation_decision.0002.desc_high_septon
+			}
+			triggered_desc = {
+				trigger = {
+					scope:coronation_target = {
+						has_character_flag = crowning_self
+					}
+				}
+				desc = coronation_decision.0002.desc_crowning_self
+			}
+			desc = coronation_decision.0002.desc
+		}
+	}
+	theme = family
+	left_portrait = {
+		character = scope:coronation_target
+		animation = throne_room_conversation_3
+	}
+	right_portrait = {
+		character = scope:officiant
+		animation = personality_content
+		camera = camera_event_right
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_artifact_selection"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				scope:coronation_target = {
+					any_character_artifact = {
+						artifact_slot_type = helmet
+					}
+					is_ai = no
+				}
+			}
+			scope:coronation_target = {
+				every_character_artifact = {
+					limit = {
+						artifact_slot_type = helmet
+					}
+					root = {
+						add_to_variable_list = {
+							name = possible_artifacts
+							target = prev
+						}
+						if = {
+							limit = {
+								NOT = { has_variable = selected_artifact }
+							}
+							set_variable = { name = selected_artifact value = prev }
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:coronation_target = {
+					is_ai = yes
+				}
+			}
+			ai_choose_crown_effect = {
+				SELECTOR = scope:coronation_target
+			}
+		}
+	}
+
+	option = {
+		name = coronation_decision.0002.a
+		trigger = {
+			is_ai = no
+		}
+
+		var:selected_artifact = {
+			save_scope_as = selected_crown_for_coronation
+		}
+		custom_tooltip = coronation_decision.0002.a.tt
+		scope:selected_crown_for_coronation = {
+			set_variable = coronation_crown
+		}
+
+		# AI usually chooses someone
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = {
+		name = coronation_decision.0002.a
+		trigger = {
+			is_ai = yes
+		}
+		scope:selected_crown_for_coronation = {
+			set_variable = coronation_crown
+		}
+		custom_tooltip = coronation_decision.0002.a.tt
+
+		# AI usually chooses someone
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	after = {
+		clear_variable_list = possible_artifacts
+		remove_variable = selected_artifact
+		random_character_artifact = {
+			limit = {
+				exists = var:selected_artifact
+				artifact_slot_type = helmet
+			}
+			remove_variable = selected_artifact
+		}
+		scope:coronation_target = {
+			trigger_event = coronation_decision.0003
+		}
+	}
+}
+
+#Crowning
+coronation_decision.0003 = {
+	type = character_event
+	title = coronation.0150.t
+	desc = {
+		first_valid = {
+			triggered_desc = { #Ruler, with crown
+				trigger = {
+					root = scope:coronation_target
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						NOT = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_ct_intro
+			}
+			triggered_desc = { #Ruler, no crown
+				trigger = {
+					root = scope:coronation_target
+					NOT = {
+						scope:coronation_target = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_ct_no_crown_intro
+			}
+			triggered_desc = { #Self Crowner, with crown
+				trigger = {
+					root = scope:coronation_target
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						has_character_flag = crowning_self
+					}
+				}
+				desc = coronation.0150.desc_self_crowner_intro
+			}
+			triggered_desc = { #Self Crowner, with crown
+				trigger = {
+					root = scope:coronation_target
+					scope:coronation_target = {
+						NOT = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+						}
+						has_character_flag = crowning_self
+					}
+				}
+				desc = coronation.0150.desc_self_crowner_no_crown_intro
+			}
+			triggered_desc = { #Officiant
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					root = scope:officiant
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						NOT = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_officiant_intro
+			}
+			triggered_desc = { #Officiant
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					root = scope:officiant
+					scope:coronation_target = {
+						NOT = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_officiant_no_crown_intro
+			}
+			triggered_desc = { #Guests
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						NOT = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_guests_intro
+			}
+			triggered_desc = { #Guests, no crown
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					scope:coronation_target = {
+						NOT = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_guests_no_crown_intro
+			}
+			triggered_desc = { #Guests
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						scope:coronation_target = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_guests_self_crowner_intro
+			}
+			triggered_desc = { #Guests
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					scope:coronation_target = {
+						NOT = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+						}
+						scope:coronation_target = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_guests_self_crowner_no_crown_intro
+			}
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:coronation_target.primary_title = title:h_the_iron_throne
+					NOT = {
+						scope:coronation_target = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_proclamation_seven_kingdoms
+			}
+			triggered_desc = {
+				trigger = {
+					scope:coronation_target.primary_title = title:h_the_iron_throne
+					scope:coronation_target = {
+						has_character_flag = crowning_self
+					}
+				}
+				desc = coronation.0150.desc_proclamation_seven_kingdoms_self
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { scope:coronation_target.primary_title = title:h_the_iron_throne }
+					NOT = {
+						scope:coronation_target = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_proclamation_other
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { scope:coronation_target.primary_title = title:h_the_iron_throne }
+					scope:coronation_target = {
+						has_character_flag = crowning_self
+					}
+				}
+				desc = coronation.0150.desc_proclamation_other_self
+			}
+		}
+		first_valid = {
+			triggered_desc = { #Ruler, with crown
+				trigger = {
+					root = scope:coronation_target
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						NOT = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_ct_outro
+			}
+			triggered_desc = { #Ruler, no crown
+				trigger = {
+					root = scope:coronation_target
+					NOT = {
+						scope:coronation_target = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_ct_no_crown_outro
+			}
+			triggered_desc = { #Self Crowner, with crown
+				trigger = {
+					root = scope:coronation_target
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						has_character_flag = crowning_self
+					}
+				}
+				desc = coronation.0150.desc_self_crowner_outro
+			}
+			triggered_desc = { #Self Crowner, with crown
+				trigger = {
+					root = scope:coronation_target
+					scope:coronation_target = {
+						NOT = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+						}
+						has_character_flag = crowning_self
+					}
+				}
+				desc = coronation.0150.desc_self_crowner_no_crown_outro
+			}
+			triggered_desc = { #Officiant
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					root = scope:officiant
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						NOT = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_officiant_outro
+			}
+			triggered_desc = { #Officiant
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					root = scope:officiant
+					scope:coronation_target = {
+						NOT = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_officiant_no_crown_outro
+			}
+			triggered_desc = { #Guests
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						NOT = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_guests_outro
+			}
+			triggered_desc = { #Guests, no crown
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					scope:coronation_target = {
+						NOT = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_guests_no_crown_outro
+			}
+			triggered_desc = { #Guests
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					scope:coronation_target = {
+						any_character_artifact = {
+							artifact_slot_type = helmet
+							has_variable = coronation_crown
+						}
+						scope:coronation_target = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_guests_self_crowner_outro
+			}
+			triggered_desc = { #Guests
+				trigger = {
+					NOT = { root = scope:coronation_target }
+					scope:coronation_target = {
+						NOT = {
+							any_character_artifact = {
+								artifact_slot_type = helmet
+								has_variable = coronation_crown
+							}
+						}
+						scope:coronation_target = {
+							has_character_flag = crowning_self
+						}
+					}
+				}
+				desc = coronation.0150.desc_guests_self_crowner_no_crown_outro
+			}
+		}
+	}
+	theme = coronation_ceremony_activity
+	left_portrait = {
+		character = scope:coronation_target
+		triggered_animation = {
+			trigger = {
+				exists = scope:officiant
+			}
+			animation = throne_room_bow_1
+		}
+		animation = personality_bold
+		camera = camera_event_right_wedding
+	}
+	right_portrait = {
+		character = scope:officiant
+		animation = wedding_priest
+	}
+
+	immediate = {
+		play_music_cue = mx_cue_positive_effect
+	}
+
+	option = {
+		name = coronation.0150.a
+		trigger = {
+			scope:coronation_target = { is_male = yes }
+			NOT = { root = scope:coronation_target }
+		}
+		show_as_tooltip = {
+			scope:coronation_target = {
+				if = {
+					limit = {
+						scope:officiant = {
+							this ?= scope:coronation_target.faith.religious_head
+						}
+					}
+					add_piety = major_piety_gain
+					add_legitimacy = major_legitimacy_gain
+				}
+				else_if = {
+					limit = {
+						scope:officiant = {
+							dynasty ?= scope:coronation_target.dynasty
+						}
+					}
+					dynasty = { add_dynasty_prestige = major_dynasty_prestige_gain }
+					add_legitimacy = major_legitimacy_gain
+				}
+				else_if = {
+					limit = {
+						scope:officiant = {
+							is_powerful_vassal_of = scope:coronation_target
+						}
+					}
+					add_legitimacy = 750
+				}
+				else = {
+					add_prestige = major_prestige_gain
+					add_legitimacy = major_legitimacy_gain
+				}
+			}
+
+			scope:officiant = {
+				if = {
+					limit = {
+						scope:officiant = {
+							this ?= scope:coronation_target.faith.religious_head
+						}
+					}
+					add_piety = major_piety_gain
+					add_legitimacy = major_legitimacy_gain
+				}
+				add_prestige = major_prestige_gain
+				if = {
+					limit = {
+						agot_is_high_septon = no
+					}
+					if = {
+						limit = {
+							scope:coronation_target = { is_male = yes }
+						}
+						scope:officiant = {
+							give_nickname = nick_agot_the_kingmaker
+						}
+					}
+					else_if = {
+						limit = {
+							scope:coronation_target = { is_female = yes }
+						}
+						scope:officiant = {
+							give_nickname = nick_agot_the_queenmaker
+						}
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = {
+		name = coronation.0150.b
+		trigger = {
+			scope:coronation_target = { is_female = yes }
+			NOT = { root = scope:coronation_target }
+		}
+		show_as_tooltip = {
+			scope:coronation_target = {
+				if = {
+					limit = {
+						scope:officiant = {
+							this ?= scope:coronation_target.faith.religious_head
+						}
+					}
+					add_piety = major_piety_gain
+					add_legitimacy = major_legitimacy_gain
+				}
+				else_if = {
+					limit = {
+						scope:officiant = {
+							dynasty ?= scope:coronation_target.dynasty
+						}
+					}
+					dynasty = { add_dynasty_prestige = major_dynasty_prestige_gain }
+					add_legitimacy = major_legitimacy_gain
+				}
+				else_if = {
+					limit = {
+						scope:officiant = {
+							is_powerful_vassal_of = scope:coronation_target
+						}
+					}
+					add_legitimacy = 750
+				}
+				else = {
+					add_prestige = major_prestige_gain
+					add_legitimacy = major_legitimacy_gain
+				}
+			}
+
+			scope:officiant = {
+				if = {
+					limit = {
+						scope:officiant = {
+							this ?= scope:coronation_target.faith.religious_head
+						}
+					}
+					add_piety = major_piety_gain
+					add_legitimacy = major_legitimacy_gain
+				}
+				add_prestige = major_prestige_gain
+				if = {
+					limit = {
+						agot_is_high_septon = no
+					}
+					if = {
+						limit = {
+							scope:coronation_target = { is_male = yes }
+						}
+						scope:officiant = {
+							give_nickname = nick_agot_the_kingmaker
+						}
+					}
+					else_if = {
+						limit = {
+							scope:coronation_target = { is_female = yes }
+						}
+						scope:officiant = {
+							give_nickname = nick_agot_the_queenmaker
+						}
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = {
+		name = coronation.0150.c
+		trigger = {
+			root = scope:coronation_target
+		}
+		scope:coronation_target = {
+			if = {
+				limit = {
+					scope:officiant = {
+						this ?= scope:coronation_target.faith.religious_head
+					}
+				}
+				add_piety = major_piety_gain
+				add_legitimacy = major_legitimacy_gain
+			}
+			else_if = {
+				limit = {
+					scope:officiant = {
+						dynasty ?= scope:coronation_target.dynasty
+					}
+				}
+				dynasty = { add_dynasty_prestige = major_dynasty_prestige_gain }
+				add_legitimacy = major_legitimacy_gain
+			}
+			else_if = {
+				limit = {
+					scope:officiant = {
+						is_powerful_vassal_of = scope:coronation_target
+					}
+				}
+				add_legitimacy = 750
+			}
+			else = {
+				add_prestige = major_prestige_gain
+				add_legitimacy = major_legitimacy_gain
+			}
+		}
+
+		scope:officiant = {
+			if = {
+				limit = {
+					scope:officiant = {
+						this ?= scope:coronation_target.faith.religious_head
+					}
+				}
+				add_piety = major_piety_gain
+				add_legitimacy = major_legitimacy_gain
+			}
+			add_prestige = major_prestige_gain
+			if = {
+				limit = {
+					agot_is_high_septon = no
+				}
+				if = {
+					limit = {
+						scope:coronation_target = { is_male = yes }
+					}
+					scope:officiant = {
+						give_nickname = nick_agot_the_kingmaker
+					}
+				}
+				else_if = {
+					limit = {
+						scope:coronation_target = { is_female = yes }
+					}
+					scope:officiant = {
+						give_nickname = nick_agot_the_queenmaker
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	after = {
+		if = {
+			limit = {
+				scope:coronation_target = {
+					has_character_modifier = uncoronated_modifier
+				}
+			}
+			scope:coronation_target = { remove_character_modifier = uncoronated_modifier }
+		}
+		hidden_effect = {
+			if = {
+				limit = {
+					root = scope:coronation_target
+					exists = scope:selected_crown_for_coronation
+				}
+				root = {
+					scope:selected_crown_for_coronation = {
+						equip_artifact_to_owner_replace = yes
+						remove_variable = coronation_crown
+					}
+				}
+			}
+			scope:officiant = {
+				remove_character_flag = officiant
+			}
+		}
+	}
+}

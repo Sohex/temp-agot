@@ -1,0 +1,521 @@
+﻿agot_canon_children_enabled_trigger = {
+	OR = {
+		has_game_rule = agot_canon_children_enabled
+		has_game_rule = agot_canon_children_enabled_strict
+	}
+}
+
+agot_canon_children_traits_enabled_trigger = {
+	OR = {
+		has_game_rule = agot_canon_children_traits
+		has_game_rule = agot_canon_children_traits_and_edu
+	}
+}
+
+agot_canon_children_start_pregnancy_basic_trigger = {
+	$MOTHER$ = { save_temporary_scope_as = mother }
+	$FATHER$ = { save_temporary_scope_as = father }
+
+	scope:mother = {
+		OR = {
+			is_spouse_of = scope:father
+			has_relation_lover = scope:father
+		}
+	}
+}
+
+agot_canon_children_start_pregnancy_strong_boys_trigger  = {
+	$MOTHER$ = { save_temporary_scope_as = mother }
+	$FATHER$ = { save_temporary_scope_as = father }
+
+	scope:mother = {
+		OR = {
+			is_spouse_of = scope:father
+			has_relation_lover = scope:father
+			AND = {
+				#is_ai = yes
+				primary_spouse ?= { has_character_flag = is_Velaryon_35 }
+				scope:father = {
+					is_ai = yes
+					agot_valid_to_have_canon_bastard_canon_unmarried_trigger = { PARTNER = scope:mother }
+				}
+			}
+		}
+	}
+}
+
+agot_valid_to_have_canon_bastard_canon_married_trigger = {
+	$PARTNER$ = { save_temporary_scope_as = partner }
+	trigger_if = {
+		limit = {
+			OR = {
+				is_spouse_of = scope:partner
+				has_relation_lover = scope:partner
+				betrothed ?= scope:partner
+			}
+		}
+		always = yes
+	}
+	trigger_else_if = {
+		limit = {
+			is_married = yes
+		}
+		NOT = {
+			any_spouse = {
+				has_relation_soulmate = prev
+			}
+		}
+	}
+	trigger_else_if = {
+		limit = {
+			is_betrothed = yes
+		}
+		NOT = {
+			has_relation_soulmate = betrothed
+		}
+	}
+	trigger_else = {
+		always = yes
+	}
+}
+
+agot_valid_to_have_canon_bastard_canon_unmarried_trigger = {
+	$PARTNER$ = { save_temporary_scope_as = partner }
+	trigger_if = {
+		limit = {
+			OR = {
+				is_spouse_of = scope:partner
+				has_relation_lover = scope:partner
+				betrothed ?= scope:partner
+			}
+		}
+		always = yes
+	}
+	trigger_else_if = {
+		limit = {
+			OR = {
+				is_married = yes
+				is_betrothed = yes
+			}
+		}
+		always = no
+	}
+	trigger_else = {
+		always = yes
+	}
+}
+
+agot_canon_children_start_pregnancy_canon_bastard_trigger = {
+	$MOTHER$ = { save_temporary_scope_as = mother }
+	$FATHER$ = { save_temporary_scope_as = father }
+	save_temporary_scope_value_as = {
+		name = canon_parent_flag_status
+		value = flag:$CANON_PARENT_STATUS_FLAG$
+	}
+
+	# More strict conditions for players to avoid getting children with strangers (until custom events are added)
+	trigger_if = {
+		limit = {
+			OR = {
+				scope:mother = { is_ai = no }
+				scope:father = { is_ai = no }
+			}
+		}
+		scope:mother = {
+			OR = {
+				is_spouse_of = scope:father
+				has_relation_lover = scope:father
+			}
+		}
+	}
+	trigger_else_if = {
+		limit = {
+			scope:canon_parent_flag_status = flag:unmarried_father_unmarried_mother
+		}
+		scope:father = {
+			agot_valid_to_have_canon_bastard_canon_married_trigger = { PARTNER = scope:mother }
+		}
+		scope:mother = {
+			agot_valid_to_have_canon_bastard_canon_unmarried_trigger = { PARTNER = scope:father }
+		}
+	}
+	trigger_else = {
+		#Father Valid
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:canon_parent_flag_status = flag:married_father_married_mother
+					scope:canon_parent_flag_status = flag:married_father_unmarried_mother
+				}
+			}
+			scope:father = {
+				agot_valid_to_have_canon_bastard_canon_married_trigger = { PARTNER = scope:mother }
+			}
+		}
+		trigger_else = {
+			scope:father = {
+				agot_valid_to_have_canon_bastard_canon_unmarried_trigger = { PARTNER = scope:mother }
+			}
+		}
+		#Mother Valid
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:canon_parent_flag_status= flag:married_father_married_mother
+					scope:canon_parent_flag_status = flag:unmarried_father_married_mother
+				}
+			}
+			scope:mother = {
+				agot_valid_to_have_canon_bastard_canon_married_trigger = { PARTNER = scope:father }
+			}
+		}
+		trigger_else = {
+			scope:mother = {
+				agot_valid_to_have_canon_bastard_canon_unmarried_trigger = { PARTNER = scope:father }
+			}
+		}
+	}
+}
+
+agot_canon_children_birth_year_trigger = {
+	OR = {
+		AND = {
+			current_year >= $BIRTH_YEAR_MIN$
+			current_month >= 4
+		}
+		current_year >= $BIRTH_YEAR$
+	}
+}
+
+agot_canon_children_had_child_trigger = {
+	OR = {
+		exists = character:$ID$
+		$MOTHER$ = {
+			any_child = {
+				even_if_dead = yes
+				has_character_flag = is_$ID$
+			}
+		}
+		is_target_in_global_variable_list = {
+			name = agot_triggered_canon_children
+			target = flag:$ID$
+		}
+	}
+}
+
+agot_canon_children_should_block_pregnancy_trigger = {
+	OR = {
+		# Block pregnancies if flags preventing pregnancy are set
+		AND = {
+			OR = {
+				has_character_flag = canon_children_prevent_pregnancy
+				any_in_list = {
+					variable = blocked_canon_fathers
+					this = scope:real_father
+				}
+			}
+			NOT = { has_character_flag = agot_is_pregnant }
+			trigger_if = { # Allow players to make bastards with canon mothers
+				limit = {
+					scope:real_father ?= {
+						is_ai = no
+						NOT = {
+							any_in_list = {
+								variable = canon_mothers
+								this = root
+							}
+						}
+					}
+				}
+				always = no
+			}
+		}
+
+		#Special Canon Cases
+		trigger_if = {
+			limit = {
+				has_character_flag = is_Targaryen_63
+				primary_spouse ?= { has_character_flag = is_Velaryon_35 }
+			}
+			primary_spouse = scope:real_father
+		}
+		trigger_if = {
+			limit = {
+				has_character_flag = is_Lannister_6
+				primary_spouse ?= { has_character_flag = is_Baratheon_2 }
+				NOT = { has_relation_lover = primary_spouse }
+			}
+			primary_spouse = scope:real_father
+		}
+	}
+}
+
+agot_canon_children_should_use_liege_as_guardian_for_heir_trigger = {
+	exists = scope:use_liege_for_heir
+	scope:ward = {
+		NOT = { this = scope:ward_liege }
+		is_player_heir_of = scope:ward_liege
+	}
+	scope:ward_liege = {
+		agot_canon_children_can_become_guardian = {
+			WARD = scope:ward
+			WARD_LIEGE = scope:ward_liege
+			GUARDIAN_LIEGE = scope:guardian_liege
+		}
+	}
+}
+
+#Used in 00_education_interactions to determine whether automatic guardian assignation should be allowed
+# secondary_actor = ward OR guardian
+# secondary_recipient = ward OR guardian
+agot_canon_children_should_allow_guardian_trigger = {
+	OR = {
+		# Players can assign a guardian whenever they want
+		scope:actor = { is_ai = no }
+
+		# AI can assign a guardian for children without canon guardian
+		NOT = {
+			trigger_if = {
+				limit = { exists = scope:secondary_recipient }
+				scope:secondary_recipient = { has_variable = canon_guardian }
+			}
+			trigger_else = {
+				scope:recipient = { has_variable = canon_guardian }
+			}
+
+			trigger_if = {
+				limit = { exists = scope:secondary_actor }
+				scope:secondary_actor = { has_variable = canon_guardian }
+			}
+			trigger_else = {
+				scope:actor = { has_variable = canon_guardian }
+			}
+		}
+
+		# AI can assign a guardian if the canon guardian is unavailable
+		NOT = {
+
+			trigger_if = {
+				limit = { exists = scope:secondary_recipient }
+
+				trigger_if = {
+					limit = { scope:secondary_recipient = { has_variable = canon_guardian } }
+					scope:secondary_recipient = {
+						var:canon_guardian = {
+							agot_canon_children_can_become_guardian = {
+								WARD = scope:secondary_recipient
+								WARD_LIEGE = scope:recipient
+								GUARDIAN_LIEGE = scope:actor
+							}
+						}
+					}
+				}
+				trigger_else_if = {
+					limit = { scope:recipient = { has_variable = canon_guardian } }
+					scope:recipient = {
+						var:canon_guardian = {
+							agot_canon_children_can_become_guardian = {
+								WARD = scope:recipient
+								WARD_LIEGE = scope:recipient
+								GUARDIAN_LIEGE = scope:actor
+							}
+						}
+					}
+				}
+				trigger_else = {
+					#do nothing
+				}
+			}
+
+			trigger_if = {
+				limit = { exists = scope:secondary_actor }
+
+				trigger_if = {
+					limit = { scope:secondary_actor = { has_variable = canon_guardian } }
+					scope:secondary_actor = {
+						var:canon_guardian = {
+							agot_canon_children_can_become_guardian = {
+								WARD = scope:secondary_actor
+								WARD_LIEGE = scope:actor
+								GUARDIAN_LIEGE = scope:recipient
+							}
+						}
+					}
+				}
+				trigger_else_if = {
+					limit = { scope:actor = { has_variable = canon_guardian } }
+					scope:actor = {
+						var:canon_guardian = {
+							agot_canon_children_can_become_guardian = {
+								WARD = scope:actor
+								WARD_LIEGE = scope:actor
+								GUARDIAN_LIEGE = scope:recipient
+							}
+						}
+					}
+				}
+				trigger_else = {
+					#do nothing
+				}
+			}
+		}
+	}
+}
+
+agot_canon_children_can_get_guardian_trigger = {
+	is_available_child = yes
+	num_of_relation_guardian = 0
+	is_imprisoned = no
+	NOT = { has_trait = incapable }
+	trigger_if = { # If a hostage then only if scope:guardian is the hostage taker
+		limit = { is_hostage = yes }
+		is_hostage_of = scope:guardian
+	}
+}
+
+agot_canon_children_can_become_guardian = {
+	is_alive = yes
+	is_physically_able_adult = yes
+	is_imprisoned = no
+	NOT = { has_trait = incapable }
+
+	# Check guardian's status to prevent setting fired/disinherited/whatever guardians
+	OR = {
+		$WARD_LIEGE$ = $GUARDIAN_LIEGE$
+		is_courtier_of = $WARD_LIEGE$
+		is_vassal_of = $WARD_LIEGE$
+		is_close_family_of = $WARD$
+		is_landed = yes
+	}
+}
+
+agot_canon_children_can_add_trait_trigger = {
+	is_alive = yes
+	is_adult = no
+	number_of_personality_traits < personality_trait_limit
+}
+
+agot_canon_children_can_add_personality_trigger = {
+	is_alive = yes
+	is_adult = no
+	any_character_trait = {
+		has_trait_category = childhood
+		count = 0
+	}
+}
+
+agot_canon_children_has_base_education_flag = {
+	OR = {
+		agot_canon_children_has_diplomacy_education_flag = yes
+		agot_canon_children_has_martial_education_flag = yes
+		agot_canon_children_has_stewardship_education_flag = yes
+		agot_canon_children_has_learning_education_flag = yes
+		agot_canon_children_has_intrigue_education_flag = yes
+	}
+}
+
+agot_canon_children_has_diplomacy_education_flag = {
+	OR = {
+		has_character_flag = agot_canon_children_education_education_diplomacy_1
+		has_character_flag = agot_canon_children_education_education_diplomacy_2
+		has_character_flag = agot_canon_children_education_education_diplomacy_3
+		has_character_flag = agot_canon_children_education_education_diplomacy_4
+		has_character_flag = agot_canon_children_education_education_diplomacy_5
+	}
+}
+
+agot_canon_children_has_martial_education_flag = {
+	OR = {
+		has_character_flag = agot_canon_children_education_education_martial_1
+		has_character_flag = agot_canon_children_education_education_martial_2
+		has_character_flag = agot_canon_children_education_education_martial_3
+		has_character_flag = agot_canon_children_education_education_martial_4
+		has_character_flag = agot_canon_children_education_education_martial_5
+	}
+}
+
+agot_canon_children_has_stewardship_education_flag = {
+	OR = {
+		has_character_flag = agot_canon_children_education_education_stewardship_1
+		has_character_flag = agot_canon_children_education_education_stewardship_2
+		has_character_flag = agot_canon_children_education_education_stewardship_3
+		has_character_flag = agot_canon_children_education_education_stewardship_4
+		has_character_flag = agot_canon_children_education_education_stewardship_5
+	}
+}
+
+agot_canon_children_has_learning_education_flag = {
+	OR = {
+		has_character_flag = agot_canon_children_education_education_learning_1
+		has_character_flag = agot_canon_children_education_education_learning_2
+		has_character_flag = agot_canon_children_education_education_learning_3
+		has_character_flag = agot_canon_children_education_education_learning_4
+		has_character_flag = agot_canon_children_education_education_learning_5
+	}
+}
+
+agot_canon_children_has_intrigue_education_flag = {
+	OR = {
+		has_character_flag = agot_canon_children_education_education_intrigue_1
+		has_character_flag = agot_canon_children_education_education_intrigue_2
+		has_character_flag = agot_canon_children_education_education_intrigue_3
+		has_character_flag = agot_canon_children_education_education_intrigue_4
+		has_character_flag = agot_canon_children_education_education_intrigue_5
+	}
+}
+
+agot_canon_children_has_prowess_education_flag = {
+	OR = {
+		has_character_flag = agot_canon_children_education_education_martial_prowess_1
+		has_character_flag = agot_canon_children_education_education_martial_prowess_2
+		has_character_flag = agot_canon_children_education_education_martial_prowess_3
+		has_character_flag = agot_canon_children_education_education_martial_prowess_4
+		has_character_flag = agot_canon_children_education_education_martial_prowess_5
+	}
+}
+
+agot_canon_children_has_republican_education_flag = {
+	OR = {
+		has_character_flag = agot_canon_children_education_education_republican_knowledge_1
+		has_character_flag = agot_canon_children_education_education_republican_knowledge_2
+		has_character_flag = agot_canon_children_education_education_republican_knowledge_3
+		has_character_flag = agot_canon_children_education_education_republican_knowledge_4
+		has_character_flag = agot_canon_children_education_education_republican_knowledge_5
+	}
+}
+
+agot_canon_children_child_pregnancy_trigger = {
+	save_temporary_scope_as = mother
+	NOT = { has_character_flag = agot_story_cycle_blocking_canon_children }
+	NOT = {
+		agot_canon_children_had_child_trigger = {
+			ID = $ID$
+			MOTHER = scope:mother
+		}
+	}
+	agot_canon_children_birth_year_trigger = {
+		BIRTH_YEAR = $BIRTH_YEAR$
+		BIRTH_YEAR_MIN = $BIRTH_YEAR_MIN$
+	}
+	is_adult = yes
+	age >= 16
+	is_alive = yes
+	is_pregnant = no
+	can_have_children = yes
+	is_imprisoned = no
+
+	scope:canon_father = {
+		is_adult = yes
+		age >= 16
+		can_have_children = yes
+		is_imprisoned = no
+		# No booty calls at the wall
+		NOT = { has_trait = nightswatch }
+	}
+}
+
+agot_canon_children_check_pregnancy_child_trigger = {
+	scope:mother = {
+		var:agot_pregnancy_child = flag:$FLAG$
+	}
+}

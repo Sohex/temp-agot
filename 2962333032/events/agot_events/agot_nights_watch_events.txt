@@ -1,0 +1,3756 @@
+﻿namespace = agot_nights_watch
+
+agot_nights_watch.0100 = { # Notify Lord Commander that new recruit has arrived
+	hidden = yes
+
+	immediate = {
+		send_interface_message = {
+			type = event_martial_text_good
+			left_icon = scope:nightswatch_candidate
+			title = nightswatch_arrived.title
+			desc = nightswatch_arrived.desc
+		}
+	}
+}
+
+#new recruits should become Brothers
+agot_nights_watch.0001 = {
+	hidden = yes
+
+	trigger = {
+		is_human = yes
+		scope:new_employer = {
+			has_trait = nightswatch
+			trigger_if = {
+				limit = { is_from_ruler_designer = yes }
+				OR = {
+					has_title = title:k_the_wall
+					any_liege_or_above = {
+						has_title = title:k_the_wall
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { has_trait = nightswatch }
+			if = {
+				limit = {
+					is_married = yes
+				}
+				every_spouse = {
+					divorce = root
+				}
+			}
+			if = {
+				limit = {
+					exists = betrothed
+				}
+				if = {
+					limit = {
+						has_been_promised_grand_wedding = yes
+					}
+					break_grand_wedding_betrothal_effect = yes
+				}
+				else = {
+					break_betrothal = betrothed
+				}
+			}
+			if = {
+				limit = {
+					is_concubine = yes
+				}
+				root.concubinist = {
+					remove_concubine = root
+				}
+			}
+			if = {
+				limit = {
+					number_of_concubines > 0
+				}
+				every_concubine = {
+					root = {
+						remove_concubine = prev
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					agot_valid_potential_nw_member = no
+					is_close_family_of = scope:new_employer
+				}
+			}
+			if = {
+				limit = {
+					exists = scope:old_employer
+					scope:old_employer = {
+						NOT = { has_trait = nightswatch }
+					}
+				}
+				scope:old_employer = {
+					add_courtier ?= root
+				}
+			}
+			else = {
+				move_to_pool_at = title:c_winterfell.holder.capital_province
+			}
+		}
+		else = {
+			agot_add_to_nightswatch_effect = yes
+		}
+	}
+}
+
+#Debug event
+agot_nights_watch.0003 = {
+	hidden = yes
+	type = character_event
+
+	trigger = {
+		is_ruler = yes
+		primary_title ?= { agot_is_de_jure_nights_watch_title = yes }
+		agot_is_landless_nw_character = no
+	}
+
+	immediate = {
+		agot_debug_log_effect = { MSG = agot_debug_msg_nights_watch_0003 }
+
+		change_government = nights_watch_government
+		if = {
+			limit = {
+				NOT = { has_realm_law = nights_watch_realm_succession_law }
+			}
+			add_realm_law_skip_effects = nights_watch_realm_succession_law
+		}
+		if = {
+			limit = {
+				title:c_castle_black = {
+					county.holder = root
+				}
+			}
+			set_realm_capital = title:b_castle_black
+		}
+		every_held_title = {
+			set_coa = c_castle_black
+		}
+	}
+
+}
+
+agot_nights_watch.0004 = {
+	title = agot_nights_watch.0004.t
+	desc = agot_nights_watch.0004.desc
+	scope = character
+	theme = diplomacy
+	override_background = {
+		reference = throne_room
+	}
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:wildling_breacher
+		animation = anger
+	}
+
+	option = {
+		name = agot_nights_watch.0004.a
+	}
+}
+
+agot_nights_watch.0005 = {
+	hidden = yes
+
+	trigger = {
+		NOT = { is_at_war_with = title:k_the_wall.holder }
+	}
+
+	immediate = {
+		start_war = {
+			cb = wildling_raid_cb
+			target = title:k_the_wall.holder
+		}
+		spawn_army = {
+			name = WILDLINGS
+			levies = 1000
+			# men_at_arms = {
+			# 	type = regiment_giants
+			# 	stacks = 2
+			# }
+			# men_at_arms = {
+			# 	type = regiment_wildling_raiders
+			# 	stacks = 7
+			# }
+			# men_at_arms = {
+			# 	type = regiment_wildling_archers
+			# 	stacks = 5
+			# }
+			location = scope:province_breached
+		}
+		title:k_the_wall.holder = {
+			trigger_event = agot_nights_watch.0004
+		}
+	}
+}
+
+#CLEANUP EVENT
+
+agot_nights_watch.0006 = {
+	hidden = yes
+
+	immediate = {
+		title:c_eastwatch.holder = {
+			save_scope_as = eastwatchholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:c_eastwatch = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:c_eastwatch
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:eastwatchholder
+					exists = scope:eastwatchholder.employer
+					scope:eastwatchholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:eastwatchholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#shadowtower
+agot_nights_watch.0007 = {
+	hidden = yes
+
+	immediate = {
+		title:c_the_shadow_tower.holder = {
+			save_scope_as = shadowtowerholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:c_the_shadow_tower = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:c_the_shadow_tower
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:shadowtowerholder
+					exists = scope:shadowtowerholder.employer
+					scope:shadowtowerholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:shadowtowerholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#nightfort
+agot_nights_watch.0008 = {
+	hidden = yes
+
+	immediate = {
+		title:c_the_nightfort.holder = {
+			save_scope_as = nightfortholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:c_the_nightfort = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:c_the_nightfort
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:nightfortholder
+					exists = scope:nightfortholder.employer
+					scope:nightfortholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:nightfortholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#icemark
+agot_nights_watch.0009 = {
+	hidden = yes
+
+	immediate = {
+		title:b_icemark.holder = {
+			save_scope_as = icemarkholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_icemark = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_icemark
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:icemarkholder
+					exists = scope:icemarkholder.employer
+					scope:icemarkholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:icemarkholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#deep lake
+agot_nights_watch.0010 = {
+	hidden = yes
+
+	immediate = {
+		title:b_deep_lake.holder = {
+			save_scope_as = deeplakeholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_deep_lake = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_deep_lake
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:deeplakeholder
+					exists = scope:deeplakeholder.employer
+					scope:deeplakeholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:deeplakeholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#queen gate
+agot_nights_watch.0011 = {
+	hidden = yes
+
+	immediate = {
+		title:b_queensgate.holder = {
+			save_scope_as = queensgateholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_queensgate = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_queensgate
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:queensgateholder
+					exists = scope:queensgateholder.employer
+					scope:queensgateholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:queensgateholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#oakenshield
+agot_nights_watch.0012 = {
+	hidden = yes
+
+	immediate = {
+		title:b_oakenshield.holder = {
+			save_scope_as = oakenshieldholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_oakenshield = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_oakenshield
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:oakenshieldholder
+					exists = scope:oakenshieldholder.employer
+					scope:oakenshieldholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:oakenshieldholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#woodwatch
+agot_nights_watch.0013 = {
+	hidden = yes
+
+	immediate = {
+		title:b_woodswatch_by_the_pool.holder = {
+			save_scope_as = woodswatchholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_woodswatch_by_the_pool = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_woodswatch_by_the_pool
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:woodswatchholder
+					exists = scope:woodswatchholder.employer
+					scope:woodswatchholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:woodswatchholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#westwatch by the bridge
+agot_nights_watch.0014 = {
+	hidden = yes
+
+	immediate = {
+		title:b_westwatch_by_the_bridge.holder = {
+			save_scope_as = westwatchholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_westwatch_by_the_bridge = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_westwatch_by_the_bridge
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:westwatchholder
+					exists = scope:westwatchholder.employer
+					scope:westwatchholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:westwatchholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#sentinel_stand
+agot_nights_watch.0015 = {
+	hidden = yes
+
+	immediate = {
+		title:b_sentinel_stand.holder = {
+			save_scope_as = standholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_sentinel_stand = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_sentinel_stand
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:standholder
+					exists = scope:standholder.employer
+					scope:standholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:standholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#b_greyguard
+agot_nights_watch.0016 = {
+	hidden = yes
+
+	immediate = {
+		title:b_greyguard.holder = {
+			save_scope_as = greyguardholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_greyguard = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_greyguard
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:greyguardholder
+					exists = scope:greyguardholder.employer
+					scope:greyguardholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:greyguardholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#Stonedoor
+agot_nights_watch.0017 = {
+	hidden = yes
+
+	immediate = {
+		title:b_stonedoor.holder = {
+			save_scope_as = stonedoorholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_stonedoor = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_stonedoor
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:stonedoorholder
+					exists = scope:stonedoorholder.employer
+					scope:stonedoorholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:stonedoorholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#b_hoarfrost_hill
+agot_nights_watch.0018 = {
+	hidden = yes
+
+	immediate = {
+		title:b_hoarfrost_hill.holder = {
+			save_scope_as = hillholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_hoarfrost_hill = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_hoarfrost_hill
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:hillholder
+					exists = scope:hillholder.employer
+					scope:hillholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:hillholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#b_sable_hall
+agot_nights_watch.0019 = {
+	hidden = yes
+
+	immediate = {
+		title:b_sable_hall.holder = {
+			save_scope_as = hallholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_sable_hall = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_sable_hall
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:hallholder
+					exists = scope:hallholder.employer
+					scope:hallholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:hallholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#Rimegate
+agot_nights_watch.0020 = {
+	hidden = yes
+
+	immediate = {
+		title:b_rimegate.holder = {
+			save_scope_as = rimeholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_rimegate = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_rimegate
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:rimeholder
+					exists = scope:rimeholder.employer
+					scope:rimeholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:rimeholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#long_barrow
+agot_nights_watch.0021 = {
+	hidden = yes
+
+	immediate = {
+		title:b_long_barrow.holder = {
+			save_scope_as = barrowholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_long_barrow = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_long_barrow
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:barrowholder
+					exists = scope:barrowholder.employer
+					scope:barrowholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:barrowholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#torches
+agot_nights_watch.0022 = {
+	hidden = yes
+
+	immediate = {
+		title:b_the_torches.holder = {
+			save_scope_as = torchholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_the_torches = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_the_torches
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:torchholder
+					exists = scope:torchholder.employer
+					scope:torchholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:torchholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+#greenguard
+agot_nights_watch.0023 = {
+	hidden = yes
+
+	immediate = {
+		title:b_greenguard.holder = {
+			save_scope_as = greenholder
+		}
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = title_change
+			add_claim_on_loss = no
+		}
+		title:b_greenguard = {
+			change_title_holder_include_vassals = {
+				holder = title:k_the_wall.holder
+				change = scope:title_change
+			}
+			random_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_county
+					holder.highest_held_title_tier >= tier_duchy
+					OR = {
+						holder = {
+							has_title = title:b_greenguard
+						}
+						holder = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				change_title_holder_include_vassals = {
+					holder = title:k_the_wall.holder
+					change = scope:title_change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:title_change
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:greenholder
+					exists = scope:greenholder.employer
+					scope:greenholder.employer = { has_trait = nightswatch}
+				}
+			}
+			title:k_the_wall.holder = {
+				add_courtier = scope:greenholder
+			}
+		}
+	}
+	option = {
+
+	}
+}
+
+agot_nights_watch.0024 = {
+	title = agot_nights_watch.0024.t
+	desc = agot_nights_watch.0024.desc
+	scope = character
+	theme = martial
+	override_background = {
+		reference = throne_room
+	}
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+	right_portrait = {
+		character = scope:new_lc
+		animation = personality_honorable
+	}
+	immediate = {
+		create_character = {
+			template = agot_black_brother_character
+			save_scope_as = new_lc
+			location = root.capital_province
+		}
+		every_county_in_region = {
+			region = world_westeros_the_wall_only
+			scope:new_lc = {
+				get_title = PREV
+			}
+			hidden_effect = {
+				duchy = {
+					set_de_jure_liege_title = title:k_the_wall
+				}
+			}
+		}
+		scope:new_lc = {
+			get_title = title:k_the_wall
+			get_title = title:d_the_wall
+			get_title = title:d_nw_landless_first_ranger
+			change_government = nights_watch_government
+			create_title_and_vassal_change = {
+				type = independency
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+			becomes_independent = { change = scope:change }
+			resolve_title_and_vassal_change = scope:change
+
+			hidden_effect = { title:d_nw_landless_first_ranger = { copy_title_history = title:d_dummy_nw_landless } }
+			every_held_title = { set_coa = c_castle_black }
+			every_vassal_or_below = { every_held_title = { set_coa = c_castle_black } }
+		}
+	}
+	option = {
+		name = agot_nights_watch.0024.a
+	}
+	option = {
+		name = agot_nights_watch.0024.b
+		trigger = {
+			AND = {
+				completely_controls = title:c_weatherback_ridge
+				completely_controls = title:c_moles_town
+				completely_controls = title:c_hoarburn
+			}
+		}
+		scope:new_lc = {
+			get_title = title:c_weatherback_ridge
+			get_title = title:c_moles_town
+			get_title = title:c_hoarburn
+			every_held_title = { set_coa = c_castle_black }
+			every_vassal_or_below = { every_held_title = { set_coa = c_castle_black } }
+		}
+		hidden_effect = {
+			title:d_brandons_gift = {
+				set_de_jure_liege_title = title:k_the_wall
+			}
+		}
+		add_prestige = 100
+	}
+	option = {
+		name = agot_nights_watch.0024.c
+		trigger = {
+			AND = {
+				completely_controls = title:c_weatherback_ridge
+				completely_controls = title:c_moles_town
+				completely_controls = title:c_hoarburn
+				completely_controls = title:c_norlinton
+				completely_controls = title:c_boreharrow
+				completely_controls = title:c_whitecross
+				completely_controls = title:c_giantsbeard
+			}
+		}
+		every_county_in_region = {
+			region = world_westeros_the_wall
+			limit = {
+				holder.top_liege = root
+			}
+			scope:new_lc = {
+				get_title = PREV
+				every_held_title = { set_coa = c_castle_black }
+				every_vassal_or_below = { every_held_title = { set_coa = c_castle_black } }
+			}
+			hidden_effect = {
+				duchy = {
+					set_de_jure_liege_title = title:k_the_wall
+				}
+			}
+		}
+		add_prestige = 250
+	}
+}
+
+agot_nights_watch.0025 = {
+	title = agot_nights_watch.0025.t
+	desc = agot_nights_watch.0025.desc
+	scope = character
+	theme = martial
+	override_background = {
+		reference = throne_room
+	}
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+	option = {
+		name = agot_nights_watch.0025.a
+		if = {
+			limit = {
+				OR = {
+					title:k_the_wall = {
+						is_title_created = yes
+					}
+					title:d_the_wall = {
+						is_title_created = yes
+					}
+				}
+			}
+			destroy_title = title:k_the_wall
+			hidden_effect = {
+				destroy_title = title:d_the_wall #weird to have 2 walls destroyed in the effect
+			}
+		}
+		dynasty = {
+			add_dynasty_prestige = 1000
+			add_dynasty_modifier = {
+				modifier = walled_off_no_more_modifier
+				years = 50
+			}
+		}
+		hidden_effect = {
+			title:e_beyond_the_wall = {
+				every_de_jure_county_holder = {
+					limit = {
+						is_dynast = yes
+						culture = { agot_is_wildling_culture = yes }
+					}
+					dynasty = {
+						add_dynasty_modifier = {
+							modifier = walled_off_no_more_modifier
+							years = 50
+						}
+					}
+				}
+			}
+		}
+		add_prestige = 1500
+		add_gold = 200
+		title:k_the_wall = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					tier = tier_duchy
+				}
+				set_de_jure_liege_title = title:k_last_lands
+			}
+		}
+	}
+}
+
+#Decide whether to reset the nightswatch command positions
+agot_nights_watch.0026 = {
+	type = character_event
+	title = agot_nights_watch.0026.t
+	desc = agot_nights_watch.0026.desc
+	theme = stewardship_domain_focus
+
+	left_portrait = root
+
+	trigger = { is_alive = yes }
+
+	immediate = {
+		#Immediately handle First Ranger if not handled by previous LC
+		if = {
+			limit = {
+				exists = title:d_nw_landless_first_ranger.holder
+				title:k_the_wall.holder = title:d_nw_landless_first_ranger.holder
+			}
+			trigger_event = agot_nw_ranger_events.0001
+		}
+		else_if = {
+			limit = {
+				exists = title:d_nw_landless_first_ranger.holder
+				NOT = { title:k_the_wall.holder = title:d_nw_landless_first_ranger.holder }
+				NOT = { exists = cp:councillor_marshal }
+				NOT = { has_character_flag = fr_assign_block }
+			}
+			add_character_flag = fr_assign_block
+		}
+		hidden_effect = {
+			if = {
+				limit = {
+					has_title = title:c_castle_black
+				}
+				set_realm_capital = title:c_castle_black
+			}
+			if = {
+				limit = { has_trait = nightswatch_temp }
+				remove_trait = nightswatch_temp
+				add_trait = nightswatch
+				add_trait_xp = {
+					trait = nightswatch
+					value = 100
+				}
+			}
+			if = {
+				limit = { has_variable = is_disinherited }
+				add_trait = disinherited
+			}
+			if = {
+				limit = { has_variable = is_eunuch }
+				add_trait = eunuch_1
+			}
+			if = {
+				limit = { has_variable = is_beardless_eunuch }
+				add_trait = beardless_eunuch
+			}
+			if = {
+				limit = { has_variable = is_devoted }
+				add_trait = devoted
+			}
+			if = {
+				limit = { has_variable = is_order_member }
+				add_trait = order_member
+			}
+			if = {
+				limit = { has_variable = is_bastard }
+				add_trait = bastard
+			}
+			if = {
+				limit = { has_variable = is_bastard_founder }
+				add_trait = bastard_founder
+			}
+			if = {
+				limit = { has_variable = is_maester }
+				add_trait = maester
+				add_trait_xp = {
+					trait = maester
+					value = 100
+				}
+			}
+		}
+	}
+
+	#No, leave them all in their current positions
+	option = {
+		name = agot_nights_watch.0026.a
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	#Reset all
+	option = {
+		name = agot_nights_watch.0026.b
+
+		every_sub_realm_title = {
+			limit = {
+				tier > tier_barony
+				NOT = { holder = { government_has_flag = government_is_republic } }
+				NOT = { holder = title:d_nw_landless_first_ranger.holder }
+			}
+
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change_sub
+				add_claim_on_loss = no
+			}
+
+			change_title_holder_include_vassals = {
+				holder = root
+				change = scope:change_sub
+				take_baronies = no
+			}
+
+			resolve_title_and_vassal_change = scope:change_sub
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+
+	after = {
+		if = {
+			limit = {
+				exists = title:d_nw_landless_first_ranger.holder
+				NOT = { title:k_the_wall.holder = title:d_nw_landless_first_ranger.holder }
+				NOT = { exists = cp:councillor_marshal }
+			}
+			remove_character_flag = fr_assign_block
+			hidden_effect = {
+				assign_councillor_type = {
+					type = councillor_marshal
+					target = title:d_nw_landless_first_ranger.holder
+				}
+			}
+		}
+		trigger_event = agot_nightswatch_maintenance.0002
+	}
+}
+
+# Rival Takes the Black
+
+agot_nights_watch.0027 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:nightswatch_candidate = { is_lowborn = no } }
+				desc = agot_nights_watch.0027.t
+			}
+			triggered_desc = {
+				trigger = { always = yes }
+				desc = agot_nights_watch.0027.t.lowborn
+			}
+		}
+	}
+	desc = {
+		desc = agot_nights_watch.0027.intro
+		first_valid = {
+			triggered_desc = {
+				trigger= { has_trait = trusting }
+				desc = agot_nights_watch.0027.mid.trusting
+			}
+			triggered_desc = {
+				trigger= { ai_compassion <= low_positive_ai_value }
+				desc = agot_nights_watch.0027.mid.nocompassion
+			}
+			triggered_desc = {
+				trigger= { always = yes }
+				desc = agot_nights_watch.0027.mid
+			}
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger= { NOT = { exists = scope:actor } }
+				desc = agot_nights_watch.0027.mid2.blamemw
+			}
+			triggered_desc = {
+				trigger= { scope:actor ?= root }
+				desc = agot_nights_watch.0027.mid2.sender
+			}
+			triggered_desc = {
+				trigger= { always = yes }
+				desc = agot_nights_watch.0027.mid2
+			}
+		}
+		desc = agot_nights_watch.0027.outro
+	}
+	theme = nightswatch
+	override_background = { reference = agot_the_wall }
+	left_portrait = {
+		character = scope:nightswatch_candidate
+		animation = sadness
+	}
+	right_portrait = {
+		trigger = { exists = title:k_the_wall.holder }
+		character = title:k_the_wall.holder
+		animation = dismissal
+	}
+	option = {
+		name = agot_nights_watch.0027.a
+		add_piety = 20
+		stress_impact = {
+			base = -10
+			vengeful = minor_stress_impact_gain
+			wrathful = minor_stress_impact_gain
+			just = minor_stress_impact_loss
+			forgiving = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = low_chance_impact_negative_ai_value
+				ai_honor = low_chance_impact_positive_ai_value
+			}
+		}
+	}
+	option = {
+		name = agot_nights_watch.0027.b
+		add_prestige = 20
+		stress_impact = {
+			base = -10
+			vengeful = minor_stress_impact_loss
+			wrathful = minor_stress_impact_loss
+			just = minor_stress_impact_gain
+			forgiving = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = low_chance_impact_positive_ai_value
+				ai_honor = low_chance_impact_negative_ai_value
+			}
+		}
+	}
+	option = {
+		name = agot_nights_watch.0027.c
+		add_piety = 150
+		if = {
+			limit = {
+				has_relation_rival = scope:nightswatch_candidate
+				NOT = { has_relation_nemesis = scope:nightswatch_candidate }
+			}
+			remove_relation_rival = scope:nightswatch_candidate
+			scope:nightswatch_candidate = {
+				set_relation_grudge = {
+					reason = grudge_rivalrystop_desc
+					target = root
+				}
+			}
+		}
+		if = {
+			limit = { has_relation_nemesis = scope:nightswatch_candidate }
+			remove_relation_nemesis = scope:nightswatch_candidate
+			scope:nightswatch_candidate = {
+				set_relation_grudge = {
+					reason = grudge_rivalrystop_desc
+					target = root
+				}
+			}
+		}
+		stress_impact = {
+			base = -20
+			vengeful = major_stress_impact_gain
+			wrathful = major_stress_impact_gain
+			just = major_stress_impact_loss
+			forgiving = major_stress_impact_loss
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = low_chance_impact_positive_ai_value
+				ai_honor = low_chance_impact_negative_ai_value
+			}
+		}
+	}
+	option = {
+		name = {
+			trigger = { scope:actor ?= root }
+			text = agot_nights_watch.0027.d1
+		}
+		name = {
+			trigger = {
+				OR = {
+					AND = {
+						exists = scope:actor
+						NOT = { scope:actor ?= root }
+					}
+					NOT = { exists = scope:actor }
+				}
+			}
+			text = agot_nights_watch.0027.d2
+		}
+		trigger = {
+			is_ai = no #We don't need millions of plots because of AI
+			can_start_scheme = {
+				type = murder
+				target_character = scope:nightswatch_candidate
+			}
+		}
+		add_dread = minor_dread_gain
+		add_prestige = 100
+		start_scheme = {
+			type = murder
+			target_character = scope:nightswatch_candidate
+		}
+
+		stress_impact = {
+			base = -20
+			vengeful = major_stress_impact_loss
+			wrathful = major_stress_impact_loss
+			just = major_stress_impact_gain
+			forgiving = major_stress_impact_gain
+		}
+	}
+}
+
+agot_nights_watch.0028 = {
+	hidden = yes
+
+	immediate = {
+		if = {
+			limit = { has_trait = nightswatch_temp }
+			remove_trait = nightswatch_temp
+			add_trait = nightswatch
+			add_trait_xp = {
+				trait = nightswatch
+				value = 100
+			}
+		}
+	}
+}
+
+agot_nights_watch.0030 = {
+	hidden = yes
+
+	immediate = {
+		title:k_the_wall.holder = { save_scope_as = lc }
+
+		create_title_and_vassal_change = {
+			type = revoked
+			save_scope_as = change
+		}
+		root = {
+			every_held_title = {
+				change_title_holder_include_vassals = {
+					holder = scope:lc
+					change = scope:change
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+	}
+}
+
+### Rebuild NW Castles ###
+# AI Desitnation selection event
+# Reenable this in rebuild_nights_watch_fort once it is reenabled here
+# agot_nights_watch.1000 = {
+# 	hidden = yes
+
+# 	immediate = {
+# 		agot_set_up_abandoned_castles_for_selection_effect = yes
+# 		random_list = {
+# 			100 = {
+# 				holy_site_selection_event_option_effect = {
+# 					HOLY_SITE = scope:holy_site_1
+# 				}
+# 			}
+# 			100 = {
+# 				trigger = { exists = scope:holy_site_2 }
+# 				holy_site_selection_event_option_effect = {
+# 					HOLY_SITE = scope:holy_site_2
+# 				}
+# 			}
+# 			100 = {
+# 				trigger = { exists = scope:holy_site_3 }
+# 				holy_site_selection_event_option_effect = {
+# 					HOLY_SITE = scope:holy_site_3
+# 				}
+# 			}
+# 			100 = {
+# 				trigger = { exists = scope:holy_site_4 }
+# 				holy_site_selection_event_option_effect = {
+# 					HOLY_SITE = scope:holy_site_4
+# 				}
+# 			}
+# 			100 = {
+# 				trigger = { exists = scope:holy_site_5 }
+# 				holy_site_selection_event_option_effect = {
+# 					HOLY_SITE = scope:holy_site_5
+# 				}
+# 			}
+# 			100 = {
+# 				trigger = { exists = scope:holy_site_6 }
+# 				holy_site_selection_event_option_effect = {
+# 					HOLY_SITE = scope:holy_site_6
+# 				}
+# 			}
+# 			100 = {
+# 				trigger = { exists = scope:holy_site_7 }
+# 				holy_site_selection_event_option_effect = {
+# 					HOLY_SITE = scope:holy_site_7
+# 				}
+# 			}
+# 			100 = {
+# 				trigger = { exists = scope:holy_site_8 }
+# 				holy_site_selection_event_option_effect = {
+# 					HOLY_SITE = scope:holy_site_8
+# 				}
+# 			}
+# 			100 = {
+# 				trigger = { exists = scope:holy_site_9 }
+# 				holy_site_selection_event_option_effect = {
+# 					HOLY_SITE = scope:holy_site_9
+# 				}
+# 			}
+# 		}
+# 	}
+# }
+
+#NW Rebuilding, mothballed
+# agot_nights_watch.1001 = {
+# 	type = character_event
+# 	title = agot_nights_watch.1001.t
+# 	desc = agot_nights_watch.1001.desc
+# 	theme = stewardship_domain_focus
+
+# 	left_portrait = root
+# 	right_portrait = cp:councillor_steward
+
+# 	immediate = {
+# 		agot_set_up_abandoned_castles_for_selection_effect = yes
+# 		root = { save_scope_as = first_builder }
+# 		# if = {
+# 		# 	limit = {
+# 		# 		exists = cp:councillor_steward
+# 		# 	}
+# 		# 	AGOT TODO Gaytriarch - When Badger's GUI supports being a participant, make this the First Builder's event
+# 		# 	cp:councillor_steward = { save_scope_as = first_builder }
+# 		# }
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1001.a
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_1
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+# 	option = {
+# 		name = agot_nights_watch.1001.b
+# 		trigger = { exists = scope:nw_wall_castle_2 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_2
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1001.c
+# 		trigger = { exists = scope:nw_wall_castle_3 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_3
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1001.d
+# 		trigger = { exists = scope:nw_wall_castle_4 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_4
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1001.e
+# 		trigger = { exists = scope:nw_wall_castle_5 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_5
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = { # Switch to the next page
+# 		name = agot_nights_watch.1001.f
+# 		trigger = {
+# 			exists = scope:nw_wall_castle_6
+# 		}
+# 		custom_tooltip = nw_wall_castle_rebuilding_other_selections_available_tt
+# 		trigger_event = agot_nights_watch.1002
+# 	}
+
+# 	option = { # Decide against rebuilding
+# 		name = agot_nights_watch.1001.g
+# 		trigger = {
+# 			NOT = { exists = scope:nw_wall_castle_6 }
+# 		}
+# 	}
+# }
+
+# agot_nights_watch.1002 = {
+# 	type = character_event
+# 	title = agot_nights_watch.1001.t
+# 	desc = agot_nights_watch.1001.desc
+# 	theme = stewardship_domain_focus
+
+# 	left_portrait = root
+# 	right_portrait = cp:councillor_steward
+
+# 	immediate = {
+# 		agot_set_up_abandoned_castles_for_selection_effect = yes
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1002.a
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_6
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1002.b
+# 		trigger = { exists = scope:nw_wall_castle_7 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_7
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1002.c
+# 		trigger = { exists = scope:nw_wall_castle_8 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_8
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1002.d
+# 		trigger = { exists = scope:nw_wall_castle_9 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_9
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1002.e
+# 		trigger = { exists = scope:nw_wall_castle_10 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_10
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = { # Switch to the next page
+# 		name = agot_nights_watch.1001.f
+# 		trigger = {
+# 			exists = scope:nw_wall_castle_11
+# 		}
+# 		custom_tooltip = nw_wall_castle_rebuilding_other_selections_available_tt
+# 		trigger_event = agot_nights_watch.1003
+# 	}
+
+# 	option = { # Decide against rebuilding
+# 		name = agot_nights_watch.1001.g
+# 		trigger = {
+# 			NOT = { exists = scope:nw_wall_castle_11 }
+# 		}
+# 	}
+# }
+
+# agot_nights_watch.1003 = {
+# 	type = character_event
+# 	title = agot_nights_watch.1001.t
+# 	desc = agot_nights_watch.1001.desc
+# 	theme = stewardship_domain_focus
+
+# 	left_portrait = root
+# 	right_portrait = cp:councillor_steward
+
+# 	immediate = {
+# 		agot_set_up_abandoned_castles_for_selection_effect = yes
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1003.a
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_11
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1003.b
+# 		trigger = { exists = scope:nw_wall_castle_12 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_12
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1003.c
+# 		trigger = { exists = scope:nw_wall_castle_13 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_13
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1003.d
+# 		trigger = { exists = scope:nw_wall_castle_14 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_14
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1003.e
+# 		trigger = { exists = scope:nw_wall_castle_15 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_15
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = { # Switch to the next page
+# 		name = agot_nights_watch.1001.f
+# 		trigger = {
+# 			exists = scope:nw_wall_castle_16
+# 		}
+# 		custom_tooltip = nw_wall_castle_rebuilding_other_selections_available_tt
+# 		trigger_event = agot_nights_watch.1004
+# 	}
+
+# 	option = { # Decide against rebuilding
+# 		name = agot_nights_watch.1001.g
+# 		trigger = {
+# 			NOT = { exists = scope:nw_wall_castle_16 }
+# 		}
+# 	}
+# }
+
+# agot_nights_watch.1004 = {
+# 	type = character_event
+# 	title = agot_nights_watch.1001.t
+# 	desc = agot_nights_watch.1001.desc
+# 	theme = stewardship_domain_focus
+
+# 	left_portrait = root
+# 	right_portrait = cp:councillor_steward
+
+# 	immediate = {
+# 		agot_set_up_abandoned_castles_for_selection_effect = yes
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1004.a
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_16
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1004.b
+# 		trigger = { exists = scope:nw_wall_castle_17 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_17
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1004.c
+# 		trigger = { exists = scope:nw_wall_castle_18 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_18
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = {
+# 		name = agot_nights_watch.1004.d
+# 		trigger = { exists = scope:nw_wall_castle_19 }
+# 		agot_nw_castle_rebuild_effect = {
+# 			CASTLE = scope:nw_wall_castle_19
+# 			BUILDER = scope:first_builder
+# 		}
+# 	}
+
+# 	option = { # Switch to the next page
+# 		name = agot_nights_watch.1001.f
+# 		trigger = {
+# 			exists = scope:nw_wall_castle_1
+# 		}
+# 		custom_tooltip = nw_wall_castle_rebuilding_other_selections_available_tt
+# 		trigger_event = agot_nights_watch.1001
+# 	}
+
+# 	option = { # Decide against rebuilding
+# 		name = agot_nights_watch.1001.g
+# 	}
+# }
+
+################################
+# Nightwatch Flavour Events
+# 2000 - 2999
+################################
+
+
+##########
+# Child wishes to join Night's Watch
+# Badger
+#########
+scripted_trigger nightswatch_2001_candidate_trigger = {
+	agot_valid_potential_nw_member = yes
+	is_available_ai_adult = yes
+	is_ruler = no
+	age <= 30 #Stop random old dudes asking
+	#Not very likely to inherit a lot
+	NOT = {
+		any_heir_title = {} #Not the Heir
+		any_pretender_title = { #Or the Spare
+			place_in_line_of_succession = {
+				target = prev
+				value <= 2
+			}
+		}
+	}
+	is_courtier_of = root
+	is_married = no
+	NOT = {
+		has_relation_rival = title:k_the_wall.holder
+	}
+	culture = { agot_is_wildling_culture = no }
+	NOR = {
+		has_trait = nightswatch
+		has_trait = kingsguard
+		has_trait = maester
+		has_trait = devoted
+		has_trait = septon
+		has_trait = dragonrider
+		any_scheme = { type = bond_with_dragon_scheme }
+	}
+	NOT = { has_character_modifier = training_for_kingsguard }
+}
+
+agot_nights_watch.2001 = {
+	type = character_event
+	title = agot_nights_watch.2001.t
+	desc = agot_nights_watch.2001.desc
+
+	left_portrait = root
+	right_portrait = scope:child
+	lower_right_portrait = scope:commander
+
+	theme = nightswatch
+	override_background = {
+		reference = sitting_room
+	}
+
+	trigger = {
+		NOT = { has_character_flag = had_event_nightswatch_2001 }
+		exists = title:k_the_wall.holder #cant go where there ain't
+		OR = {
+			AND = {
+				is_landed = yes
+				capital_province = {
+					geographical_region = world_westeros_seven_kingdoms
+				}
+			}
+			AND = {
+				exists = liege_or_court_owner
+				liege_or_court_owner.capital_province = {
+					geographical_region = world_westeros_seven_kingdoms
+				}
+			}
+		}
+		any_child = {
+			nightswatch_2001_candidate_trigger = yes
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = {
+			add = 0.5
+			any_child = {
+				nightswatch_2001_candidate_trigger = yes
+				OR = {
+					NOT = { is_heir_of = root }
+					root.primary_title = {
+						place_in_line_of_succession = {
+							target = prev
+							value > 4
+						}
+					}
+				}
+			}
+		}
+		modifier = {
+			add = -0.5
+			any_child = {
+				count < 4
+			}
+		}
+		modifier = {
+			add = 0.5
+			is_landed = yes
+			culture = {
+				has_cultural_pillar = heritage_first_man
+			}
+			any_child = {
+				nightswatch_2001_candidate_trigger = yes
+			}
+		}
+		modifier = {
+			add = -0.5
+			is_landed = yes
+			NOT = {
+				culture = {
+					has_cultural_pillar = heritage_first_man
+				}
+			}
+			any_child = {
+				nightswatch_2001_candidate_trigger = yes
+			}
+		}
+	}
+
+	immediate = {
+		add_character_flag = {
+			flag = had_event_nightswatch_2001
+			years = 10
+		}
+		title:k_the_wall.holder = {
+			save_scope_as = commander
+		}
+		random_child = {
+			limit = {
+				nightswatch_2001_candidate_trigger = yes
+			}
+			weight = {
+				base = 1
+				modifier = {
+					add = 1
+					OR = {
+						NOT = { is_heir_of = root }
+						root.primary_title = {
+							place_in_line_of_succession = {
+								target = prev
+								value >= 4
+							}
+						}
+					}
+				}
+				modifier = {
+					add = 0.5
+					OR = {
+						NOT = { is_heir_of = root }
+						root.primary_title = {
+							place_in_line_of_succession = {
+								target = prev
+								value >= 5
+							}
+						}
+					}
+				}
+				modifier = {
+					add = 1
+					faith = faith:old_gods_wnw
+				}
+				modifier = {
+					add = 0.25
+					has_trait = education_martial
+				}
+				modifier = { #More likely for a humble/content
+					add = 1
+					ai_greed < 0
+				}
+			}
+			save_scope_as = child
+		}
+		scope:child = {
+			assign_quirk_effect = yes
+		}
+	}
+
+	#Yes, go
+	option = {
+		name = agot_nights_watch.2001.a
+		scope:child = {
+			agot_send_to_nightswatch_effect = { ACTOR = root NIGHTSWATCH_CANDIDATE = scope:child }
+			add_piety_level = 1
+		}
+		add_piety = medium_piety_gain
+		dynasty = {
+			add_dynasty_prestige = medium_dynasty_prestige_gain
+		}
+		ai_chance = {
+			base = 70
+			modifier = {
+				add = 50
+				culture = {
+					has_cultural_pillar = heritage_first_man
+				}
+			}
+		}
+	}
+
+	#I have other plans for you
+	option = {
+		name = agot_nights_watch.2001.b
+		scope:child = {
+			add_opinion = {
+				target = root
+				modifier = refusal_opinion
+				opinion = -20
+			}
+		}
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 50
+				NOT = {
+					culture = {
+						has_cultural_pillar = heritage_first_man
+					}
+				}
+			}
+		}
+	}
+}
+
+
+#######
+# Kinsman wants to join the NW
+# Badger
+#######
+
+agot_nights_watch.2002 = {
+	type = character_event
+	title = agot_nights_watch.2002.t
+	desc = agot_nights_watch.2002.desc
+	right_portrait = scope:sibling
+	left_portrait = root
+	lower_right_portrait = scope:commander
+	theme = nightswatch
+	override_background = {
+		reference = sitting_room
+	}
+
+	trigger = {
+		NOR = {
+			has_character_flag = had_event_nightswatch_2002
+		}
+		exists = title:k_the_wall.holder #cant go where there ain't
+		exists = liege_or_court_owner
+		liege_or_court_owner.capital_province = {
+			geographical_region = world_westeros_seven_kingdoms
+		}
+		dynasty ?= {
+			any_dynasty_member = {
+				nightswatch_2001_candidate_trigger = yes
+				NOT = { is_child_of = root }
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = {
+			add = 0.5
+			liege_or_court_owner.capital_province = { geographical_region = world_westeros_the_north }
+			any_sibling = {
+				nightswatch_2001_candidate_trigger = yes
+			}
+		}
+		modifier = {
+			add = -0.5
+			NOT = {
+				liege_or_court_owner.capital_province = { geographical_region = world_westeros_the_north }
+			}
+			any_sibling = {
+				nightswatch_2001_candidate_trigger = yes
+			}
+		}
+	}
+
+	immediate = {
+		add_character_flag = {
+			flag = had_event_nightswatch_2002
+			years = 20
+		}
+		title:k_the_wall.holder = {
+			save_scope_as = commander
+		}
+		dynasty = {
+			random_dynasty_member = {
+				limit = {
+					nightswatch_2001_candidate_trigger = yes
+					NOT = { is_child_of = root }
+				}
+				weight = {
+					base = 1
+					modifier = {
+						add = 1
+						OR = {
+							NOT = { is_heir_of = root }
+							root.primary_title = {
+								place_in_line_of_succession = {
+									target = prev
+									value >= 4
+								}
+							}
+						}
+					}
+					modifier = {
+						add = 0.5
+						OR = {
+							NOT = { is_heir_of = root }
+							root.primary_title = {
+								place_in_line_of_succession = {
+									target = prev
+									value >= 5
+								}
+							}
+						}
+					}
+					modifier = {
+						add = 1
+						faith = faith:old_gods_wnw
+					}
+					modifier = {
+						add = 0.25
+						has_trait = education_martial
+					}
+					modifier = { #More likely for a humble/content
+						add = 1
+						ai_greed < 0
+					}
+				}
+				save_scope_as = sibling
+			}
+		}
+		scope:sibling = {
+			assign_quirk_effect = yes
+		}
+	}
+
+	#Yes, go
+	option = {
+		name = agot_nights_watch.2002.a
+		scope:sibling = {
+			agot_send_to_nightswatch_effect = { ACTOR = root NIGHTSWATCH_CANDIDATE = scope:sibling }
+			add_piety_level = 1
+		}
+		add_piety = medium_piety_gain
+		dynasty = {
+			add_dynasty_prestige = medium_dynasty_prestige_gain
+		}
+		ai_chance = {
+			base = 70
+			modifier = {
+				add = 50
+				culture = {
+					has_cultural_pillar = heritage_first_man
+				}
+			}
+		}
+	}
+
+	#I have other plans for you
+	option = {
+		name = agot_nights_watch.2002.b
+		scope:sibling = {
+			add_opinion = {
+				target = root
+				modifier = refusal_opinion
+				opinion = -20
+			}
+		}
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 50
+				NOT = {
+					culture = {
+						has_cultural_pillar = heritage_first_man
+					}
+				}
+			}
+		}
+	}
+}
+
+
+#######
+# Abdicate to Join Nightswatch
+# Badger
+#######
+
+agot_nights_watch.2003 = {
+	type = character_event
+	title = agot_nights_watch.2003.t
+	desc = agot_nights_watch.2003.desc
+	left_portrait = root
+	right_portrait = {
+		character = scope:heir
+		animation = personality_bold
+	}
+
+	theme = nightswatch
+	override_background = {
+		reference = sitting_room
+	}
+
+	trigger = {
+		agot_valid_potential_nw_member = yes
+		NOT = {
+			has_character_flag = had_event_nightswatch_2003
+		}
+		NOT = {
+			has_trait = nightswatch
+		}
+		ai_greed <= 0 #Block out ambitious/lustful/greedy whatever
+		age >= 50
+		exists = title:k_the_wall.holder #cant go where there ain't
+		exists = liege_or_court_owner
+		liege_or_court_owner.capital_province = {
+			geographical_region = world_westeros_seven_kingdoms
+		}
+		culture = { has_cultural_pillar = heritage_first_man }
+		any_child = {
+			is_available_ai_adult = yes
+			is_primary_heir_of = root
+			OR = { #Why isn't there a highest skill comparison?
+				martial >= 15
+				diplomacy >= 15
+				stewardship >= 15
+				intrigue >= 15
+				learning >= 15
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = {
+			add = 0.5
+			liege_or_court_owner.capital_province = { geographical_region = world_westeros_the_north }
+		}
+		modifier = {
+			add = -0.5
+			NOT = {
+				liege_or_court_owner.capital_province = { geographical_region = world_westeros_the_north }
+			}
+		}
+	}
+
+	immediate = {
+		add_character_flag = {
+			flag = had_event_nightswatch_2003
+		}
+		title:k_the_wall = {
+			save_scope_as = nightswatch
+		}
+		title:k_the_wall.holder = {
+			save_scope_as = commander
+		}
+		random_child = {
+			limit = {
+				is_primary_heir_of = root
+			}
+			save_scope_as = heir
+		}
+	}
+
+	#Yes, it is time to go
+	option = {
+		name = agot_nights_watch.2003.a
+		custom_tooltip = agot_nights_watch.2003.a.tt
+
+		add_trait_force_tooltip = nightswatch
+
+		hidden_effect = {
+			agot_send_to_nightswatch_effect = {
+				ACTOR = root
+				NIGHTSWATCH_CANDIDATE = root
+			}
+		}
+
+	}
+
+	#There's life in me yet
+	option = {
+		name = agot_nights_watch.2003.b
+		add_prestige = minor_prestige_gain
+	}
+}
+
+#######
+# Heir is unsuitable - Randyll Tarly
+# 2004-2009
+# Badger
+#######
+
+scripted_trigger nights_watch_2004_heir_trigger = {
+	agot_valid_potential_nw_member = yes
+	is_available_ai_adult = yes
+	is_primary_heir_of = root
+	age <= 22
+	is_landed = no
+	is_courtier_of = root
+	is_married = no
+	NOR = {
+		martial >= 15
+		prowess >= 15
+	}
+	#Unsuitable Heir
+	OR = {
+		has_trait = craven
+		has_trait = lazy
+		has_trait = dwarf
+		has_trait = intellect_bad
+		has_trait = physique_bad
+	}
+}
+
+scripted_trigger nights_watch_2004_good_heir_trigger = {
+	is_available_ai_adult = yes
+	is_landed = no
+	is_courtier_of = root
+	#None of the Bad Heir
+	NOR = {
+		has_trait = craven
+		has_trait = lazy
+		has_trait = dwarf
+		has_trait = intellect_bad
+		has_trait = physique_bad
+	}
+}
+
+
+agot_nights_watch.2004 = {
+	type = character_event
+	title = agot_nights_watch.2004.t
+	desc = agot_nights_watch.2004.desc
+	left_portrait = {
+		character = root
+		animation = map_worry
+	}
+	right_portrait = {
+		character = scope:craven_heir
+		animation = personality_coward
+	}
+	lower_center_portrait = scope:good_heir
+
+	theme = nightswatch
+	override_background = {
+		reference = sitting_room
+	}
+
+	trigger = {
+		NOT = {
+			has_character_flag = had_event_nightswatch_2004
+		}
+		exists = title:k_the_wall.holder #cant go where there ain't
+		exists = liege_or_court_owner
+		liege_or_court_owner.capital_province = {
+			geographical_region = world_westeros_seven_kingdoms
+		}
+		NOT = {
+			has_trait = nightswatch
+		}
+		any_child = { #Current Heir is weak
+			nights_watch_2004_heir_trigger = yes
+			save_temporary_scope_as = craven_heir_temp
+		}
+		any_child = { #Find an heir worth having
+			NOT = {
+				this = scope:craven_heir_temp
+			}
+			nights_watch_2004_good_heir_trigger = yes
+			root.primary_title = {
+				place_in_line_of_succession = {
+					target = prev
+					value == 2
+				}
+			}
+		}
+		ai_compassion <= high_negative_compassion #Callous
+		NOT = { # Same gate on AI murder schemes
+			ai_honor >= high_positive_ai_value
+		}
+	}
+
+	immediate = {
+		add_character_flag = {
+			flag = had_event_nightswatch_2004
+		}
+		title:k_the_wall = {
+			save_scope_as = nightswatch
+		}
+		title:k_the_wall.holder = {
+			save_scope_as = commander
+		}
+		random_child = {
+			limit = {
+				is_primary_heir_of = root
+				nights_watch_2004_heir_trigger = yes
+			}
+			save_scope_as = craven_heir
+		}
+		random_child = {
+			limit = {
+				root.primary_title = {
+					place_in_line_of_succession = {
+						target = prev
+						value == 2
+					}
+				}
+				nights_watch_2004_good_heir_trigger = yes
+			}
+			save_scope_as = good_heir
+		}
+		primary_title = {
+			save_scope_as = primary_title
+		}
+	}
+
+	#Yes, I'll take him out hunting (muwhaahah)
+	option = {
+		name = agot_nights_watch.2004.a
+		custom_tooltip = agot_nights_watch.2004.a.tt
+
+		#Heir decides what they're gonna do
+		hidden_effect = {
+			random_list = {
+				10 = {
+					#Take the Black
+					modifier = {
+						add = 100
+						scope:craven_heir = {
+							ai_boldness <= medium_negative_boldness  #craven/shy/content
+						}
+					}
+					trigger_event = {
+						id = agot_nights_watch.2005
+						days = 1
+					}
+				}
+				10 = {
+					#Flee!
+					modifier = {
+						add = 50
+						scope:craven_heir = {
+							ai_energy >= high_positive_energy
+						}
+					}
+					modifier = {
+						add = 50
+						scope:craven_heir = {
+							ai_rationality >= high_positive_rationality
+						}
+					}
+					trigger_event = {
+						id = agot_nights_watch.2006
+						days = 1
+					}
+				}
+				10 = {
+					#Refuse!
+					modifier = {
+						add = 100
+						scope:craven_heir = {
+							has_trait = brave
+						}
+					}
+					modifier = {
+						add = 50
+						scope:craven_heir = {
+							has_trait = stubborn
+						}
+					}
+					trigger_event = {
+						id = agot_nights_watch.2007
+						days = 1
+					}
+				}
+			}
+		}
+	}
+
+	#No, perhaps he'll be a good ruler yet
+	option = {
+		name = agot_nights_watch.2004.b
+
+		add_prestige = {
+			value = medium_prestige_loss
+		}
+
+		ai_chance = 0 #If you're getting this event you're already a dickhead
+	}
+}
+
+#Heir agrees to take the black
+agot_nights_watch.2005 = {
+	type = character_event
+	title = agot_nights_watch.2005.t
+	desc = agot_nights_watch.2005.desc
+	left_portrait = {
+		character = root
+		animation = scheme
+	}
+	right_portrait = {
+		character = scope:craven_heir
+		animation = personality_coward
+	}
+
+	theme = nightswatch
+	override_background = {
+		reference = wilderness_forest
+	}
+
+	#Excellent
+	option = {
+		name = agot_nights_watch.2005.a
+		custom_tooltip = agot_nights_watch.2005.a.tt
+		show_as_tooltip = {
+			scope:craven_heir = {
+				add_trait = nightswatch
+			}
+		}
+		hidden_effect = {
+			agot_send_to_nightswatch_effect = { ACTOR = root NIGHTSWATCH_CANDIDATE = scope:craven_heir }
+		}
+
+		reverse_add_opinion = {
+			target = scope:craven_heir
+			modifier = forced_to_nightswatch_opinion
+		}
+	}
+}
+
+#Your heir has fled!
+agot_nights_watch.2006 = {
+	type = character_event
+	title = agot_nights_watch.2006.t
+	desc = agot_nights_watch.2006.desc
+	left_portrait = {
+		character = root
+		animation = rage
+	}
+	right_portrait = {
+		character = scope:craven_heir
+		animation = fear
+	}
+
+	theme = nightswatch
+	override_background = {
+		reference = wilderness
+	}
+
+	immediate = {
+		reverse_add_opinion = {
+			target = scope:craven_heir
+			modifier = banished_me
+			opinion = -50
+		}
+	}
+
+	#Excellent
+	option = {
+		name = agot_nights_watch.2006.a
+
+		add_prestige = massive_prestige_loss
+		add_piety = major_piety_loss
+
+		scope:craven_heir = {
+			move_to_pool = yes
+			add_trait = disinherited
+			set_relation_potential_rival = {
+				target = root
+				reason = rival_parent_rivalry
+			}
+		}
+	}
+}
+
+#Heir confronts you, unexpected!
+agot_nights_watch.2007 = {
+	type = character_event
+	title = agot_nights_watch.2007.t
+	desc = agot_nights_watch.2007.desc
+	left_portrait = {
+		character = root
+		animation = dismissal
+	}
+	right_portrait = {
+		character = scope:craven_heir
+		animation = rage
+	}
+
+	theme = nightswatch
+	override_background = {
+		reference = wilderness
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_stress"
+		scope:craven_heir = {
+			if = {
+				limit = {
+					has_trait = craven
+				}
+				remove_trait = craven
+			}
+			if = {
+				limit = {
+					number_of_personality_traits < personality_trait_limit
+				}
+				add_trait = brave
+			}
+		}
+	}
+
+	#Kill time
+	option = {
+		name = agot_nights_watch.2007.a
+
+		duel = {
+			skill = intrigue
+			target = scope:craven_heir
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				send_interface_toast = {
+					title = ep2_wedding.3040.d.failure
+					left_icon = scope:craven_heir
+					custom_tooltip = agot_nights_watch.2007.a.success
+					unknown_murder_effect = {
+						VICTIM = scope:craven_heir
+						MURDERER = root
+						REASON = death_hunting_mysterious
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				send_interface_toast = { #but they know
+					title = agot_nights_watch.2007.a.failure
+					left_icon = scope:craven_heir
+					attempted_murder_opinion_effect = {
+						VICTIM = scope:craven_heir
+						MURDERER = root
+					}
+					add_secret = {
+						type = secret_murder_attempt
+						target = scope:craven_heir
+					}
+				}
+			}
+		}
+	}
+
+	#I didn't expect this spine, impressive!
+	option = {
+		name = agot_nights_watch.2007.b
+	}
+}
+
+####################
+# Reclaim New Gift #
+####################
+
+agot_nights_watch.3000 = {
+	type = character_event
+	title = agot_nights_watch.3000.t
+	desc = agot_nights_watch.3000.desc
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:winterfell_petitioner
+		animation = pondering
+	}
+
+	theme = nightswatch
+	override_background = { reference = wilderness }
+
+	immediate = {
+		save_scope_as = nw_lc
+		title:c_winterfell.holder = {
+			save_scope_as = winterfell_petitioner
+		}
+	}
+
+	option = {
+		name = agot_nights_watch.3000.a
+		scope:winterfell_petitioner = {
+			trigger_event = agot_nights_watch.3001
+			pay_short_term_gold = {
+				target = scope:nw_lc
+				gold = 3000
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:reclaim_brandons_gift
+			}
+			set_global_variable = old_gift_reclaimed
+		}
+		else = {
+			set_global_variable = new_gift_reclaimed
+		}
+		ai_chance = {
+			base = 25
+			opinion_modifier = {
+				opinion_target = scope:winterfell_petitioner
+				multiplier = 1.05
+			}
+		}
+	}
+	option = {
+		name = agot_nights_watch.3000.b
+		scope:winterfell_petitioner = {
+			send_interface_toast = {
+				type = event_toast_effect_bad
+				title = nw_proposal_rejected
+				left_icon = scope:winterfell_petitioner
+				right_icon = scope:nw_lc
+			}
+		}
+		ai_chance = {
+			base = 5
+			modifier = {
+				add = 33
+				scope:nw_lc = {
+					any_character_struggle = {
+						is_struggle_type = btw_struggle
+						involvement = involved
+						is_struggle_phase = struggle_btw_phase_hostility
+					}
+				}
+			}
+		}
+	}
+}
+
+scripted_effect new_gift_title_swap_set_up_effect = {
+	ordered_in_list = {
+		variable = new_gift_counties_list
+		position = 0
+		save_scope_as = new_gift_county_to_give_away
+	}
+	scope:new_gift_county_to_give_away.duchy = {
+		set_de_jure_liege_title = title:k_last_lands
+	}
+}
+
+scripted_trigger potential_lord_pool_trigger = {
+	save_temporary_scope_as = potential
+	trigger_if = {
+		limit = {
+			any_pretender_title = {}
+		}
+		any_pretender_title = {
+			exists = holder
+			"place_in_line_of_succession(scope:potential)" > 3
+		}
+	}
+	NOT = {
+		any_heir_title = {}
+	}
+	can_be_granted_titles_by = { RULER = root }
+	agot_can_be_ruler = yes
+	NAND = {
+		has_trait = eunuch
+		any_child = { count = 0 }
+	}
+	is_available = yes
+	is_human = yes
+	can_have_children = yes
+}
+
+scripted_effect convert_title_province_to_castle_effect = {
+	custom_tooltip = agot_nights_watch.holding_conversion_tt
+	hidden_effect = {
+		title_province = {
+			set_holding_type = castle_holding
+		}
+	}
+}
+
+scripted_effect distribute_title_to_gift_lord_effect = {
+	scope:new_gift_county_to_give_away = {
+		switch = {
+			trigger = this
+			title:c_norlinton = {
+				if = {
+					limit = {
+						province:47 = {
+							has_holding_type = castle_holding
+						}
+					}
+					province:47.barony = {
+						save_scope_as = new_capital
+						custom_tooltip = agot_nights_watch.new_capital_tt
+						set_capital_barony = yes
+					}
+				}
+				else = {
+					convert_title_province_to_castle_effect = yes
+				}
+			}
+			title:c_boreharrow = {
+				if = {
+					limit = {
+						province:61 = {
+							has_holding_type = castle_holding
+						}
+					}
+					province:61.barony = {
+						save_scope_as = new_capital
+						custom_tooltip = agot_nights_watch.new_capital_tt
+						set_capital_barony = yes
+					}
+				}
+				else = {
+					convert_title_province_to_castle_effect = yes
+				}
+			}
+			title:c_whitecross = {
+				if = {
+					limit = {
+						province:57 = {
+							has_holding_type = castle_holding
+						}
+					}
+					province:57.barony = {
+						save_scope_as = new_capital
+						custom_tooltip = agot_nights_watch.new_capital_tt
+						set_capital_barony = yes
+					}
+				}
+				else = {
+					convert_title_province_to_castle_effect = yes
+				}
+			}
+			title:c_giantsbeard = {
+				if = {
+					limit = {
+						province:72 = {
+							has_holding_type = castle_holding
+						}
+					}
+					province:72.barony = {
+						save_scope_as = new_capital
+						custom_tooltip = agot_nights_watch.new_capital_tt
+						set_capital_barony = yes
+					}
+				}
+				else = {
+					convert_title_province_to_castle_effect = yes
+				}
+			}
+			title:c_weatherback_ridge = {
+				if = {
+					limit = {
+						province:20 = {
+							has_holding_type = castle_holding
+						}
+					}
+					province:20.barony = {
+						save_scope_as = new_capital
+						custom_tooltip = agot_nights_watch.new_capital_tt
+						set_capital_barony = yes
+					}
+				}
+				else_if = {
+					limit = {
+						province:24 = {
+							has_holding_type = castle_holding
+						}
+					}
+					province:24.barony = {
+						save_scope_as = new_capital
+						custom_tooltip = agot_nights_watch.new_capital_tt
+						set_capital_barony = yes
+					}
+				}
+				else = {
+					convert_title_province_to_castle_effect = yes
+				}
+			}
+			title:c_moles_town = {
+				convert_title_province_to_castle_effect = yes
+			}
+			title:c_hoarburn = {
+				if = {
+					limit = {
+						province:38 = {
+							has_holding_type = castle_holding
+						}
+					}
+					province:38.barony = {
+						save_scope_as = new_capital
+						custom_tooltip = agot_nights_watch.new_capital_tt
+						set_capital_barony = yes
+					}
+				}
+				else_if = {
+					limit = {
+						province:44 = {
+							has_holding_type = castle_holding
+						}
+					}
+					province:44.barony = {
+						save_scope_as = new_capital
+						custom_tooltip = agot_nights_watch.new_capital_tt
+						set_capital_barony = yes
+					}
+				}
+				else = {
+					convert_title_province_to_castle_effect = yes
+				}
+			}
+		}
+	}
+	create_title_and_vassal_change = {
+		type = granted
+		save_scope_as = change
+	}
+	scope:new_gift_county_to_give_away = {
+		change_title_holder_include_vassals = {
+			holder = scope:chosen_lord
+			change = scope:change
+		}
+	}
+	scope:chosen_lord = {
+		change_liege = {
+			liege = root
+			change = scope:change
+		}
+	}
+
+	resolve_title_and_vassal_change = scope:change
+	root = {
+		remove_list_variable = {
+			name = new_gift_counties_list
+			target = scope:new_gift_county_to_give_away
+		}
+	}
+}
+
+scripted_effect generate_new_lord = {
+	create_character = {
+		employer = root
+		age = { 16 35 }
+		gender_female_chance = 0
+		culture = root.culture
+		dynasty = generate
+		faith = root.faith
+		save_scope_as = chosen_lord
+		after_creation = {
+			scope:chosen_lord = {
+				distribute_title_to_gift_lord_effect = yes
+			}
+		}
+	}
+}
+
+agot_nights_watch.3001 = {
+	type = character_event
+	title = agot_nights_watch.3001.t
+	desc = agot_nights_watch.3001.desc
+	left_portrait = {
+		character = scope:nw_lc
+		animation = thinking
+	}
+	right_portrait = {
+		character = root
+		animation = pondering
+	}
+
+	theme = nightswatch
+	override_background = { reference = wilderness }
+
+	immediate = {
+		show_as_tooltip = {
+			pay_short_term_gold = {
+				target = scope:nw_lc
+				gold = 3000
+			}
+		}
+		if = {
+			limit = {
+				NOT = { exists = scope:reclaim_brandons_gift }
+			}
+			add_to_variable_list = {
+				name = new_gift_counties_list
+				target = title:c_norlinton
+			}
+			add_to_variable_list = {
+				name = new_gift_counties_list
+				target = title:c_boreharrow
+			}
+			add_to_variable_list = {
+				name = new_gift_counties_list
+				target = title:c_whitecross
+			}
+			add_to_variable_list = {
+				name = new_gift_counties_list
+				target = title:c_giantsbeard
+			}
+		}
+		else = {
+			add_to_variable_list = {
+				name = new_gift_counties_list
+				target = title:c_weatherback_ridge
+			}
+			add_to_variable_list = {
+				name = new_gift_counties_list
+				target = title:c_moles_town
+			}
+			add_to_variable_list = {
+				name = new_gift_counties_list
+				target = title:c_hoarburn
+			}
+		}
+	}
+
+	# Okay great, I'll handpick the four new lords
+	option = {
+		name = agot_nights_watch.3001.a
+		trigger_event = agot_nights_watch.3003
+		ai_chance = {
+			base = 100
+		}
+	}
+	# Okay great, please give them to randoms (create characters)
+	option = {
+		name = agot_nights_watch.3001.b
+		hidden_effect = {
+			if = {
+				limit = {
+					exists = scope:reclaim_brandons_gift
+				}
+				new_gift_title_swap_set_up_effect = yes
+				generate_new_lord = yes
+				new_gift_title_swap_set_up_effect = yes
+				generate_new_lord = yes
+				new_gift_title_swap_set_up_effect = yes
+				generate_new_lord = yes
+			}
+			else = {
+				new_gift_title_swap_set_up_effect = yes
+				generate_new_lord = yes
+				new_gift_title_swap_set_up_effect = yes
+				generate_new_lord = yes
+				new_gift_title_swap_set_up_effect = yes
+				generate_new_lord = yes
+				new_gift_title_swap_set_up_effect = yes
+				generate_new_lord = yes
+			}
+		}
+		trigger_event = agot_nights_watch.3004
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+agot_nights_watch.3003 = {
+	type = character_event
+	title = agot_nights_watch.3003.t
+	desc = agot_nights_watch.3003.desc
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		AND = {
+			has_variable_list = new_gift_counties_list
+			variable_list_size = {
+				name = new_gift_counties_list
+				value > 0
+			}
+		}
+	}
+	on_trigger_fail = {
+		trigger_event = agot_nights_watch.3004
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+			OR = {
+				any_courtier = {
+					potential_lord_pool_trigger = yes
+				}
+				any_powerful_vassal = {
+					any_courtier = {
+						potential_lord_pool_trigger = yes
+					}
+				}
+			}
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	theme = nightswatch
+	override_background = { reference = wilderness }
+
+	immediate = {
+		new_gift_title_swap_set_up_effect = yes
+		if = {
+			limit = {
+				is_ai = no
+			}
+			if = {
+				limit = {
+					OR = {
+						any_courtier = {
+							potential_lord_pool_trigger = yes
+						}
+						any_powerful_vassal = {
+							any_courtier = {
+								potential_lord_pool_trigger = yes
+							}
+						}
+					}
+				}
+				every_courtier = {
+					limit = {
+						potential_lord_pool_trigger = yes
+					}
+					root = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+				every_powerful_vassal = {
+					every_courtier = {
+						limit = {
+							potential_lord_pool_trigger = yes
+						}
+						save_temporary_scope_as = potential_lord
+						root = {
+							add_to_variable_list = {
+								name = possible_characters
+								target = scope:potential_lord
+							}
+						}
+					}
+				}
+				ordered_in_list = {
+					variable = possible_characters
+					order_by = age
+					root = { set_variable = { name = si_selected_character value = prev } }
+					save_scope_as = chosen_lord
+				}
+			}
+			else = {
+				set_variable = no_lords_to_pick
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					OR = {
+						any_courtier = {
+							potential_lord_pool_trigger = yes
+						}
+						any_powerful_vassal = {
+							any_courtier = {
+								potential_lord_pool_trigger = yes
+							}
+						}
+					}
+				}
+				random_list = {
+					1 = {
+						trigger = {
+							any_courtier = {
+								potential_lord_pool_trigger = yes
+							}
+						}
+						random_courtier = {
+							limit = {
+								potential_lord_pool_trigger = yes
+							}
+							save_scope_as = chosen_lord
+						}
+					}
+					1 = {
+						trigger = {
+							any_powerful_vassal = {
+								any_courtier = {
+									potential_lord_pool_trigger = yes
+								}
+							}
+						}
+						random_powerful_vassal = {
+							random_courtier = {
+								limit = {
+									potential_lord_pool_trigger = yes
+								}
+								save_scope_as = chosen_lord
+							}
+						}
+					}
+				}
+			}
+			else = {
+				set_variable = no_lords_to_pick
+			}
+		}
+	}
+
+	option = {
+		name = agot_nights_watch.3003.a
+		trigger = {
+			NOT = {
+				has_variable = no_lords_to_pick
+			}
+		}
+		if = {
+			limit = {
+				has_variable = si_selected_character
+			}
+			var:si_selected_character = {
+				save_scope_as = chosen_lord
+			}
+		}
+		scope:chosen_lord = {
+			distribute_title_to_gift_lord_effect = yes
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+	# Grant it to a random
+	option = {
+		name = agot_nights_watch.3003.b
+		generate_new_lord = yes
+		ai_chance = {
+			base = 0
+		}
+	}
+	after = {
+		if = {
+			limit = {
+				has_variable = si_selected_character
+			}
+			var:si_selected_character = {
+				remove_variable = si_selecting_character
+			}
+			remove_variable = si_selected_character
+		}
+		if = {
+			limit = {
+				has_variable = no_lords_to_pick
+			}
+			remove_variable = no_lords_to_pick
+		}
+		if = {
+			limit = {
+				has_variable_list = possible_characters
+			}
+			clear_variable_list = possible_characters
+		}
+		trigger_event = agot_nights_watch.3003
+	}
+}
+agot_nights_watch.3004 = {
+	type = character_event
+	title = agot_nights_watch.3004.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:reclaim_brandons_gift
+				}
+				desc = agot_nights_watch.3004.desc_brandons_gift
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { exists = scope:reclaim_brandons_gift }
+				}
+				desc = agot_nights_watch.3004.desc
+			}
+		}
+	}
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = scope:norlinton_holder
+	lower_right_portrait = scope:giantsbeard_holder
+	lower_left_portrait = scope:boreharrow_holder
+	lower_center_portrait = scope:whitecross_holder
+
+	theme = nightswatch
+	override_background = { reference = wilderness }
+
+	immediate = {
+		if = {
+			limit = {
+				NOT = { exists = scope:reclaim_brandons_gift }
+			}
+			title:c_norlinton.holder = {
+				save_scope_as = norlinton_holder
+			}
+			title:c_boreharrow.holder = {
+				save_scope_as = boreharrow_holder
+			}
+			title:c_whitecross.holder = {
+				save_scope_as = whitecross_holder
+			}
+			title:c_giantsbeard.holder = {
+				save_scope_as = giantsbeard_holder
+			}
+		}
+		else = {
+			title:c_weatherback_ridge.holder = {
+				save_scope_as = weatherback_ridge_holder
+			}
+			title:c_moles_town.holder = {
+				save_scope_as = moles_town_holder
+			}
+			title:c_hoarburn.holder = {
+				save_scope_as = hoarburn_holder
+			}
+		}
+	}
+
+	option = {
+		name = agot_nights_watch.3004.a
+		add_prestige = 1000
+	}
+}
+
+agot_nights_watch.3005 = {
+	type = character_event
+	title = agot_nights_watch.3005.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:reclaim_brandons_gift
+				}
+				desc = agot_nights_watch.3005.desc_brandons_gift
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { exists = scope:reclaim_brandons_gift }
+				}
+				desc = agot_nights_watch.3005.desc
+			}
+		}
+	}
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	theme = nightswatch
+	override_background = { reference = wilderness }
+
+	immediate = {}
+
+	option = {
+		name = agot_nights_watch.3005.a
+	}
+}
+
+
+##############################
+# Night's Watch Alert Events #
+# 9900 - 9999                #
+##############################
+
+#on_title_gain hidden event to inform relevant players about new LC
+agot_nights_watch.9900 = {
+	hidden = yes
+
+	trigger = {
+		OR = {
+			has_trait = nightswatch
+			has_trait = nightswatch_temp
+		}
+		OR = {
+			scope:title = title:k_the_wall
+			scope:title = title:c_moles_town
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { scope:title = title:k_the_wall }
+			every_player = {
+				limit = {
+					NOT = { scope:new_holder = this }
+				}
+				send_interface_message = {
+					type = msg_nw_inheritance
+					title = msg_nw_inheritance_title
+					desc = msg_nw_inheritance_desc
+					left_icon = scope:new_holder
+					right_icon = scope:previous_holder
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_title = title:k_the_wall
+				scope:title = title:c_moles_town
+				NOT = { capital_county = title:c_moles_town }
+				is_ai = yes
+			}
+			create_character = {
+				location = title:k_the_wall.holder.capital_province
+				template = agot_northman_character
+				dynasty = no
+				gender = male
+				save_scope_as = new_mayor
+			}
+
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+
+			title:c_moles_town = {
+				change_title_holder_include_vassals = {
+					holder = scope:new_mayor
+					change = scope:change
+				}
+			}
+
+			resolve_title_and_vassal_change = scope:change
+		}
+	}
+}

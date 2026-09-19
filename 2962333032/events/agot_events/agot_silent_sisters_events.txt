@@ -1,0 +1,774 @@
+﻿namespace = agot_silent_sisters
+
+#new recruits should become sisters
+agot_silent_sisters.0001 = {
+	hidden = yes
+
+	trigger = {
+		is_human = yes
+		scope:new_employer = {
+			has_trait = silent_sister
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { has_trait = silent_sister }
+			if = {
+				limit = {
+					is_married = yes
+				}
+				every_spouse = {
+					divorce = root
+				}
+			}
+			if = {
+				limit = {
+					exists = betrothed
+				}
+				break_betrothal = betrothed
+			}
+			if = {
+				limit = {
+					is_concubine = yes
+				}
+				root.concubinist = {
+					remove_concubine = root
+				}
+			}
+			if = {
+				limit = {
+					number_of_concubines > 0
+				}
+				every_concubine = {
+					root = {
+						remove_concubine = prev
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = { is_female = no }
+			move_to_pool_at = title:c_oldtown.holder.capital_province
+		}
+		else = {
+			agot_send_to_silent_sisters_effect = {
+				ACTOR = scope:new_employer
+				SILENT_SISTER_CANDIDATE = this
+			}
+		}
+	}
+}
+
+#if somehow a silent mother is not a silent sister, make it so
+agot_silent_sisters.0002 = {
+	hidden = yes
+	trigger = {
+		NOT = { has_trait = silent_sister }
+		primary_title = title:d_the_silent_sisterhood
+	}
+
+	immediate = {
+		if = {
+			limit = { is_female = no }
+			move_to_pool = yes
+		}
+		else = {
+			add_trait = silent_sister
+			create_character_memory = {
+				type = agot_joined_silent_sisters
+				participants = {
+					silent_mother = title:d_the_silent_sisterhood.holder
+				}
+			}
+			every_claim = {
+				prev = {
+					remove_claim = prev
+				}
+			}
+		}
+	}
+
+}
+
+# Event for child with right traits to request / be suggested to become SS
+agot_silent_sisters.0003 = {
+	type = character_event
+	title = agot_silent_sisters.0003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:sister_candidate = {
+						has_character_flag = volunteering_for_silent_sisters
+					}
+				}
+				desc = agot_silent_sisters.0003.desc.volunteering
+			}
+			desc = agot_silent_sisters.0003.desc.suggesting
+		}
+	}
+
+	trigger = {
+		religion = religion:the_seven_religion
+		any_child = {
+			religion = religion:the_seven_religion
+			is_ruler = no
+			age >= 12
+			age <= 21
+			is_ai = yes
+			is_female = yes
+			is_married = no
+			employer = root
+			OR = { # Personality aligns
+				has_trait = shy
+				has_trait = chaste
+				has_trait = zealous
+				has_trait = humble
+				has_trait = reclusive
+			}
+			NOR = { # Personality doesn't NOT align
+				has_trait = rowdy
+				has_trait = gregarious
+				has_trait = lustful
+				has_trait = cynical
+				has_trait = ambitious
+			}
+			#Prevent from triggering during grand weddings/prison
+			is_available = yes
+		}
+	}
+
+	immediate = {
+		every_child = {
+			limit = {
+				religion = religion:the_seven_religion
+				is_ruler = no
+				age >= 12
+				age < 22
+				is_ai = yes
+				is_female = yes
+				is_married = no
+				employer = root
+				OR = { # Personality aligns
+					has_trait = shy
+					has_trait = chaste
+					has_trait = zealous
+					has_trait = humble
+					has_trait = reclusive
+				}
+				NOR = { # Personality doesn't NOT align
+					has_trait = rowdy
+					has_trait = gregarious
+					has_trait = lustful
+					has_trait = cynical
+					has_trait = ambitious
+				}
+				is_available = yes
+			}
+			save_scope_as = sister_candidate
+		}
+		random_list = {
+			50 = {
+				scope:sister_candidate = {
+					add_character_flag = volunteering_for_silent_sisters
+				}
+			}
+			50 = {}
+		}
+	}
+
+	theme = faith
+	override_background = {
+		reference = study
+	}
+	left_portrait = {
+		character = scope:sister_candidate
+		animation = chaplain
+	}
+	right_portrait = {
+		character = root
+		animation = stress
+	}
+
+	option = { # They go
+		name = agot_silent_sisters.0003.a
+		flavor = agot_silent_sisters.sent_to_silent_sisters
+		add_piety = medium_piety_gain
+		dynasty = {
+			add_dynasty_prestige = medium_dynasty_prestige_gain
+		}
+		scope:sister_candidate = {
+			agot_send_to_silent_sisters_effect = {
+				ACTOR = root
+				SILENT_SISTER_CANDIDATE = this
+			}
+			if = {
+				limit = { has_character_flag = volunteering_for_silent_sisters }
+				add_opinion = {
+					target = root
+					modifier = grateful_opinion
+					opinion = 20
+				}
+				remove_character_flag = volunteering_for_silent_sisters
+			}
+		}
+		ai_chance = {
+			base = 80
+			modifier = {
+				factor = 0
+				primary_heir = scope:sister_candidate
+			}
+		}
+	}
+
+	option = { # They don't go
+		name = agot_silent_sisters.0003.b
+		scope:sister_candidate = {
+			if = {
+				limit = { has_character_flag = volunteering_for_silent_sisters }
+				add_opinion = {
+					target = root
+					modifier = refusal_opinion
+					opinion = -20
+				}
+				remove_character_flag = volunteering_for_silent_sisters
+			}
+		}
+		ai_chance = {
+			base = 20
+			modifier = {
+				factor = 0.1
+				scope:sister_candidate = {
+					has_character_flag = volunteering_for_silent_sisters
+				}
+			}
+		}
+	}
+}
+
+# Widowed women consider joining the SS
+agot_silent_sisters.0004 = {
+	type = character_event
+	title = agot_silent_sisters.0004.t
+	desc = agot_silent_sisters.0004.desc
+
+	trigger = {
+		has_trait = widowed
+		is_female = yes
+		religion = religion:the_seven_religion
+		is_married = no
+		trigger_if = { # Only give up title if child or sibling is heir
+			limit = { is_ruler = yes }
+			OR = {
+				any_child = {
+					is_primary_heir_of = root
+				}
+				any_sibling = {
+					NOT = { has_relation_rival = root }
+					is_primary_heir_of = root
+				}
+			}
+		}
+	}
+
+	immediate = {
+		save_scope_as = sister_candidate
+		title:d_the_silent_sisterhood.holder = {
+			save_scope_as = silent_sisterhood_holder
+		}
+	}
+
+	theme = faith
+	right_portrait = {
+		character = root
+		animation = stress
+	}
+
+	option = { # I shall join
+		name = agot_silent_sisters.0004.a
+		flavor = agot_silent_sisters.sent_to_silent_sisters
+		agot_send_to_silent_sisters_effect = {
+			ACTOR = root
+			SILENT_SISTER_CANDIDATE = root
+		}
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 30
+				has_trait = zealous
+			}
+			modifier = {
+				add = 30
+				has_trait = shy
+			}
+			modifier = {
+				add = 30
+				has_trait = chaste
+			}
+			modifier = {
+				add = 30
+				has_trait = zealous
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					has_trait = ambitious
+					has_trait = lustful
+					has_trait = gregarious
+					has_trait = cynical
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_silent_sisters.0004.b
+
+		ai_chance = {
+			base = 80
+		}
+	}
+}
+
+# Fall in love with SS after relative death - first
+agot_silent_sisters.0005 = {
+	type = character_event
+	title = agot_silent_sisters.0005.t
+	desc = agot_silent_sisters.0005.desc
+
+	trigger = {
+		is_ruler = yes # To reduce occurances
+		is_male = yes
+		num_of_relation_lover = 0
+		num_of_relation_soulmate = 0
+		OR = {
+			has_sexuality = bisexual
+			has_sexuality = heterosexual
+		}
+		age >= 16
+		age < 45
+		religion = religion:the_seven_religion
+		NOR = {
+			has_trait = celibate
+			has_trait = chaste
+			has_trait = eunuch
+		}
+		title:d_the_silent_sisterhood.holder = {
+			any_courtier = {
+				has_trait = silent_sister
+				num_of_relation_lover = 0
+				num_of_relation_soulmate = 0
+				age >= 16
+				age < 45
+				OR = {
+					has_sexuality = bisexual
+					has_sexuality = heterosexual
+				}
+				OR = {
+					has_trait = beauty_good_1
+					has_trait = beauty_good_2
+					has_trait = beauty_good_3
+				}
+				NOT = {
+					any_close_family_member = {
+						this = root
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		title:d_the_silent_sisterhood.holder = {
+			every_courtier = {
+				limit = {
+					has_trait = silent_sister
+					num_of_relation_lover = 0
+					num_of_relation_soulmate = 0
+					age >= 16
+					age < 45
+					OR = {
+						has_sexuality = bisexual
+						has_sexuality = heterosexual
+					}
+					OR = {
+						has_trait = beauty_good_1
+						has_trait = beauty_good_2
+						has_trait = beauty_good_3
+					}
+					NOT = {
+						any_close_family_member = {
+							this = root
+						}
+					}
+				}
+				save_scope_as = attractive_silent_sister
+			}
+		}
+	}
+
+	theme = romance_scheme
+	override_background = {
+		reference = study
+	}
+	left_portrait = {
+		character = scope:attractive_silent_sister
+		animation = flirtation
+	}
+	right_portrait = {
+		character = root
+		animation = flirtation
+	}
+
+	option = { # I must visit them!
+		name = agot_silent_sisters.0005.a
+		flavor = agot_silent_sisters.0005.a.flavor
+
+		stress_impact = {
+			zealous = medium_stress_gain
+			shy = minor_stress_gain
+		}
+
+		trigger_event = {
+			id = agot_silent_sisters.0006
+			days = 1
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 50
+				has_trait = lustful
+			}
+		}
+	}
+
+	option = { # No! I can't violate a sister in such a way!
+		name = agot_silent_sisters.0005.b
+		flavor = agot_silent_sisters.0005.b.flavor
+		stress_impact = {
+			lustful = medium_stress_gain
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 30
+				has_trait = chaste
+			}
+			modifier = {
+				add = 20
+				has_trait = zealous
+			}
+			modifier = {
+				add = 10
+				has_trait = shy
+			}
+		}
+	}
+}
+
+# Fall in love with SS after relative death - second
+agot_silent_sisters.0006 = {
+	type = character_event
+	title = agot_silent_sisters.0006.t
+	desc = agot_silent_sisters.0006.desc
+
+	theme = romance_scheme
+	override_background = {
+		reference = bedchamber
+	}
+	left_portrait = {
+		character = scope:attractive_silent_sister
+		animation = ecstasy
+	}
+	right_portrait = {
+		character = root
+		animation = ecstasy
+	}
+
+	immediate = {
+		stress_impact = {
+			base = -20
+			lustful = -50
+		}
+		had_sex_with_effect = {
+			CHARACTER = scope:attractive_silent_sister
+			PREGNANCY_CHANCE = 0.3 # Oopsy
+		}
+	}
+
+	option = { # My soulmate
+		name = agot_silent_sisters.0006.a
+		set_relation_soulmate = scope:attractive_silent_sister
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 30
+				has_trait = compassionate
+			}
+			modifier = {
+				add = 20
+				has_trait = lustful
+			}
+		}
+	}
+
+	option = { # My lover
+		name = agot_silent_sisters.0006.b
+		set_relation_lover = scope:attractive_silent_sister
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 30
+				has_trait = callous
+			}
+			modifier = {
+				add = 20
+				has_trait = lustful
+			}
+		}
+	}
+
+	option = { # This was a mistake
+		name = agot_silent_sisters.0006.c
+		flavor = agot_silent_sisters.0006.c.flavor
+		scope:attractive_silent_sister = {
+			add_opinion = {
+				target = root
+				modifier = how_could_you_opinion
+			}
+		}
+		ai_chance = {
+			base = 30
+			modifier = {
+				add = 30
+				has_trait = chaste
+			}
+			modifier = {
+				add = 20
+				has_trait = zealous
+			}
+			modifier = {
+				add = 10
+				has_trait = shy
+			}
+		}
+	}
+}
+
+# Silent Sister defiles corpse
+agot_silent_sisters.0007 = {
+	type = character_event
+	title = agot_silent_sisters.0007.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:defilement = {
+						secret_type = secret_deviant
+					}
+				}
+				desc = agot_silent_sisters.0007.desc.deviant
+			}
+			desc = agot_silent_sisters.0007.desc.cannibal
+		}
+	}
+	theme = skull
+	override_background = {
+		reference = temple
+	}
+	left_portrait = {
+		character = scope:defiler
+		animation = ecstasy
+	}
+	right_portrait = {
+		character = root
+		animation = disgust
+		triggered_animation = {
+			trigger = {
+				any_secret = {
+					same_secret_type_as = scope:defilement
+				}
+			}
+			animation = admiration
+		}
+	}
+
+	trigger = {
+		religion = religion:the_seven_religion
+		title:d_the_silent_sisterhood.holder = {
+			any_courtier = {
+				has_trait = silent_sister
+				any_secret = {
+					OR = {
+						AND = {
+							secret_type = secret_deviant
+							scope:dead_relative = { is_adult = yes } # (O_O;) let's not go there
+						}
+						secret_type = secret_cannibal
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		title:d_the_silent_sisterhood.holder = {
+			every_courtier = {
+				limit = {
+					has_trait = silent_sister
+					any_secret = {
+						OR = {
+							AND = {
+								secret_type = secret_deviant
+								scope:dead_relative = { is_adult = yes }
+							}
+							secret_type = secret_cannibal
+						}
+					}
+				}
+				save_scope_as = defiler
+			}
+		}
+		scope:defiler = {
+			every_secret = {
+				limit = {
+					OR = {
+						AND = {
+							secret_type = secret_deviant
+							scope:dead_relative = { is_adult = yes }
+						}
+						secret_type = secret_cannibal
+					}
+				}
+				save_scope_as = defilement
+			}
+		}
+		if = { # Reveal if you don't already know
+			limit = { NOT = { any_known_secret = { this = scope:defilement } } }
+			scope:defilement = {
+				reveal_to = root
+			}
+		}
+	}
+
+	option = { # Imprison them!
+		name = agot_silent_sisters.0007.a
+
+		ai_chance = {
+			base = 40
+			modifier = {
+				add = 50
+				has_trait = just
+			}
+			modifier = {
+				add = 25
+				has_trait = wrathful
+			}
+		}
+		scope:defilement = {
+			expose_secret = root
+		}
+		imprison = {
+			target = scope:defiler
+			type = dungeon
+		}
+	}
+
+	option = { # Keep the secret
+		name = agot_silent_sisters.0007.b
+
+		ai_chance = {
+			base = 40
+			modifier = {
+				add = 50
+				has_trait = deceitful
+			}
+		}
+	}
+
+	option = { # Join in
+		name = agot_silent_sisters.0007.c
+
+		trigger = {
+			NOR = {
+				any_secret = {
+					same_secret_type_as = scope:defilement
+				}
+				trigger_if = {
+					limit = {
+						scope:defilement = {
+							secret_type = secret_deviant
+						}
+					}
+					has_trait = deviant
+				}
+				trigger_else = {
+					has_trait = cannibal
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 50
+				OR = {
+					has_trait = lunatic_1
+					has_trait = lunatic_genetic
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:defilement = {
+					secret_type = secret_deviant
+				}
+			}
+			add_secret = {
+				type = secret_deviant
+				target = root
+			}
+		}
+		else = {
+			add_secret = {
+				type = secret_cannibal
+				target = root
+			}
+		}
+
+		set_relation_friend = scope:defiler
+		add_stress = -50
+	}
+
+	option = { # Experienced join in
+		name = agot_silent_sisters.0007.d
+
+		trigger = {
+			OR = {
+				any_secret = {
+					same_secret_type_as = scope:defilement
+				}
+				trigger_if = {
+					limit = {
+						scope:defilement = {
+							secret_type = secret_deviant
+						}
+					}
+					has_trait = deviant
+				}
+				trigger_else = {
+					has_trait = cannibal
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 2000 # Almost certainly do this if possible
+		}
+
+		set_relation_friend = scope:defiler
+		add_stress = -100
+	}
+}

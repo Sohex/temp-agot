@@ -1,0 +1,354 @@
+﻿agot_ai_get_artifact_to_sell_effect = {
+	# Save actor, buyer, and seller
+	save_temporary_scope_as = actor
+	save_temporary_scope_as = seller
+	global_var:agot_artifact_keeper = { save_temporary_scope_as = buyer }
+
+	# Save seller opinion of buyer, hardcoded to 100 for max chance
+	save_temporary_scope_value_as = {
+		name = opinion_of_buyer
+		value = 100
+	}
+
+	# Choose a random artifact with a sell artifact ai_will_do value above a certain threshold
+	# Performance: Alternate between whimsical and informed sales
+	random_list = {
+		50 = { # "whimsical" sale, check a single sellable artifact of higher rarity with a reduced threshold
+			random_in_list = {
+				variable = agot_owned_artifacts
+				limit = {
+					at_ai_artifact_could_be_traded_trigger = yes
+					OR = {
+						rarity = famed
+						rarity = illustrious
+					}
+					save_temporary_scope_as = artifact
+					scope:seller = {
+						at_ai_could_sell_artifact_trigger = { ARTIFACT = scope:artifact }
+					}
+					scope:buyer.gold >= scope:artifact.at_artifact_bid_price_value
+				}
+				save_scope_as = selected_artifact
+				if = {
+					limit = {
+						save_temporary_scope_as = artifact
+						scope:seller.at_sell_artifact_ai_will_do_value > -25
+					}
+					save_temporary_scope_as = $ARTIFACT$
+				}
+			}
+		}
+		50 = { # "informed" sale, check all sellable artifacts of lower rarity
+			random_in_list = {
+				variable = agot_owned_artifacts
+				limit = {
+					at_ai_artifact_could_be_traded_trigger = yes
+					OR = {
+						rarity = common
+						rarity = masterwork
+					}
+					save_temporary_scope_as = artifact
+					scope:seller = {
+						at_ai_could_sell_artifact_trigger = { ARTIFACT = scope:artifact }
+					}
+					scope:buyer.gold >= scope:artifact.at_artifact_bid_price_value
+					scope:seller.at_sell_artifact_ai_will_do_value > 0
+				}
+				save_temporary_scope_as = $ARTIFACT$
+			}
+		}
+	}
+}
+
+agot_ai_get_artifact_to_buy_effect = {
+	# Save actor, buyer, and seller
+	save_temporary_scope_as = actor
+	save_temporary_scope_as = buyer
+	global_var:agot_artifact_keeper = { save_temporary_scope_as = seller }
+
+	# Save buyer opinion of seller (hardcoded to 100 instead of the actual opinion)
+	save_temporary_scope_value_as = {
+		name = opinion_of_seller
+		value = 100
+	}
+
+	# Choose a random artifact with a buy artifact ai_will_do value above a certain threshold
+	# Performance: Alternate between whimsical and informed purchases
+	random_list = {
+		50 = { # "whimsical" purchase, check a single buyable artifact of lower rarity with a reduced threshold
+			random_in_global_list = {
+				variable = agot_market_artifacts
+				limit = {
+					at_ai_artifact_could_be_traded_trigger = yes
+					OR = {
+						rarity = common
+						rarity = masterwork
+					}
+					save_temporary_scope_as = artifact
+					scope:buyer = {
+						at_ai_could_buy_artifact_trigger = { ARTIFACT = scope:artifact }
+					}
+					scope:buyer.short_term_gold >= scope:artifact.at_artifact_ask_price_value
+				}
+				save_scope_as = selected_artifact
+				if = {
+					limit = {
+						save_temporary_scope_as = artifact
+						scope:buyer.at_buy_artifact_ai_will_do_value > -25
+					}
+					save_temporary_scope_as = $ARTIFACT$
+				}
+			}
+		}
+		50 = { # "informed" purchase, check all buyable artifacts of higher rarity
+			random_in_global_list = {
+				variable = agot_market_artifacts
+				limit = {
+					at_ai_artifact_could_be_traded_trigger = yes
+					OR = {
+						rarity = famed
+						rarity = illustrious
+					}
+					save_temporary_scope_as = artifact
+					scope:buyer = {
+						at_ai_could_buy_artifact_trigger = { ARTIFACT = scope:artifact }
+					}
+					scope:buyer.short_term_gold >= scope:artifact.at_artifact_ask_price_value
+					scope:buyer.at_buy_artifact_ai_will_do_value > 0
+				}
+				save_temporary_scope_as = $ARTIFACT$
+			}
+		}
+	}
+}
+
+agot_sell_artifact_effect = {
+	# Save actor, buyer, and seller
+	save_scope_as = actor
+	save_scope_as = seller
+	global_var:agot_artifact_keeper = { save_scope_as = buyer }
+	$ARTIFACT$ = { save_scope_as = artifact }
+
+	# Actually sell the artifact
+	at_buy_artifact_interaction_effect = {
+		ARTIFACT_PRICE = scope:artifact.at_artifact_bid_price_value
+	}
+
+	#AGOT speicific effects
+	$ARTIFACT$ = {
+		set_variable = {
+			name = agot_seller
+			value = scope:seller
+		}
+	}
+	add_character_flag = {
+		flag = agot_sold_artifact_recently
+		years = 1
+	}
+
+	# Refersh artifact lists
+	agot_get_owned_artifacts_effect = yes
+	agot_get_market_artifacts_effect = yes
+}
+
+agot_buy_artifact_effect = {
+	# Save actor, buyer, and seller
+	save_scope_as = actor
+	save_scope_as = buyer
+	global_var:agot_artifact_keeper = { save_scope_as = seller }
+	$ARTIFACT$ = { save_scope_as = artifact }
+
+	# Actually buy the artifact
+	at_buy_artifact_interaction_effect = {
+		ARTIFACT_PRICE = scope:artifact.at_artifact_ask_price_value
+	}
+
+	#AGOT speicific effects
+	$ARTIFACT$ = {
+		remove_variable = agot_seller
+	}
+
+	# Refersh artifact lists
+	agot_get_owned_artifacts_effect = yes
+	agot_get_market_artifacts_effect = yes
+}
+
+agot_merchant_create_artifacts_effect = {
+	random_ruler = {
+		limit = {
+			is_ai = yes
+			exists = this.house
+		}
+		save_scope_as = smith
+	}
+	random_ruler = {
+		limit = {
+			is_ai = yes
+			exists = this.house
+		}
+		save_scope_as = owner
+	}
+
+	# Create 2 new artifacts, then continue creating
+	# until their number is at least 12
+	set_local_variable = { name = count value = 0 }
+	while = {
+		limit = {
+			OR = {
+				local_var:count < 2
+				any_character_artifact = {
+					agot_artifact_can_be_destroyed_trigger = yes
+					count < 12
+				}
+			}
+		}
+
+		# Create a random artifact
+		random_list = {
+			750 = { # higher demand for inventory artifacts
+				agot_create_random_character_artifact = yes
+			}
+			250 = {
+				if = {
+					limit = { has_dlc_feature = royal_court }
+					agot_create_random_court_artifact = yes
+				}
+				else = {
+					agot_create_random_character_artifact = yes
+				}
+			}
+			1 = {
+				agot_create_random_valyrian_steel_artifact = yes
+			}
+			1 = {
+				trigger = {
+					NOT = { has_dlc_feature = royal_court }
+				}
+				agot_create_random_dragon_egg_artifact = { OWNER = scope:owner }
+			}
+		}
+
+		# Pay its price
+		save_scope_value_as = {
+			name = artifact_price
+			value = scope:newly_created_artifact.at_artifact_base_price_value
+		}
+		remove_short_term_gold = scope:artifact_price
+
+		# Trigger on_action
+		scope:newly_created_artifact = {
+			trigger_event = {
+				on_action = agot_on_artifact_created_by_merchant
+			}
+		}
+
+		change_local_variable = { name = count add = 1 }
+	}
+	remove_local_variable = count
+
+	agot_get_market_artifacts_effect = yes
+}
+
+agot_merchant_destroy_artifacts_effect = {
+	# Destroy 2 existing artifacts, then continue destroying
+	# until their number is at most 12
+	set_local_variable = { name = count value = 0 }
+	while = {
+		limit = {
+			OR = {
+				local_var:count < 2
+				any_character_artifact = {
+					agot_artifact_can_be_destroyed_trigger = yes
+					count > 12
+				}
+			}
+		}
+
+		# Select a random artifact to destroy
+		random_character_artifact = {
+			limit = { agot_artifact_can_be_destroyed_trigger = yes }
+			weight = {
+				base = 1
+				# More reluctant to destroy higher rarity artifacts
+				modifier = {
+					add = {
+						value = 5
+						subtract = artifact_rarity
+					}
+				}
+				# More eager to destroy certain artifact types
+				modifier = {
+					OR = {
+						artifact_type = animal_hide
+						artifact_type = animal_hide_big
+						artifact_type = miscellaneous
+					}
+					add = 1
+				}
+				# More relucant to destroy unique artifacts
+				modifier = {
+					is_unique = yes
+					factor = 0.5
+				}
+				# More eager to destroy lower durability artifacts
+				modifier = {
+					factor = {
+						value = 1
+						divide = at_artifact_durability_multiplier
+					}
+				}
+			}
+			save_scope_as = destroyed_artifact
+		}
+
+		if = {
+			limit = {
+				exists = scope:destroyed_artifact
+			}
+
+			# Redeem its price
+			save_scope_value_as = {
+				name = artifact_price
+				value = scope:destroyed_artifact.at_artifact_base_price_value
+			}
+			add_gold = scope:artifact_price
+
+			# Trigger on_action
+			scope:destroyed_artifact = {
+				trigger_event = {
+					on_action = agot_on_artifact_destroyed_by_merchant
+				}
+			}
+
+			# Actually destroy the artifact
+			destroy_artifact = scope:destroyed_artifact
+
+			change_local_variable = { name = count add = 1 }
+		}
+
+	}
+	remove_local_variable = count
+
+	agot_get_market_artifacts_effect = yes
+}
+
+agot_merchant_ensure_gold_effect = {
+	if = {
+		limit = { gold < 2000 }
+
+		save_scope_value_as = {
+			name = added_gold
+			value = {
+				integer_range = { min = 2000 max = 2500 }
+				subtract = gold
+				round = yes
+			}
+		}
+
+		add_gold = scope:added_gold
+
+		trigger_event = {
+			on_action = agot_on_merchant_added_gold
+		}
+	}
+}

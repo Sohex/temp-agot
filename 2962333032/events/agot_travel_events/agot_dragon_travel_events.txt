@@ -1,0 +1,2636 @@
+﻿namespace = agot_travel_events_dragon
+
+###############################################################################
+# DO A FLIP! (0001-0004)
+#   agot_travel_events_dragon.0001 - 0004: While flying, you think, "Why not try a flip?"
+#     - chance to fall and die
+#     - chance to chicken out
+#     - if successful, increase bond
+#
+# BEAUTIFUL UP HERE (0005)
+#   agot_travel_events_dragon.0005: While flying, you notice how beautiful/peacefully
+#                                   it is up in the sky (very small chance so not repetitive).
+#
+# ANTSY DRAGON (0006-0010) (OUTDATED VERSION)
+#   agot_travel_events_dragon.0006: While flying, your dragon gets spooked by something
+#                                   in the trees below. Keep going or check it out?
+#     Depending on:
+#       - if there is something down there
+#       - your bond level
+#       - dragons stats
+#     Dragon will either respect your decision or not
+#       - if dragon respects your decision
+#          - they listen to your command
+#          - boost bond
+#       - if dragon does not respect your decision
+#          - they may or may not listen to your command
+#          - lowers bond
+#     Keep flying:
+#       agot_travel_events_dragon.0007: Dragon respects your decision
+#       agot_travel_events_dragon.0008: Dragon does not respect your decision
+#     Land to check it out:
+#       agot_travel_events_dragon.0009: Dragon respects your decision
+#       agot_travel_events_dragon.0010: Dragon does not respect your decision
+#
+# ANTSY DRAGON (0006-0010) (CURRENT VERSION)
+#   agot_travel_events_dragon.0006: While flying, your dragon gets spooked by something
+#                                   in the trees below. Keep going or check it out?
+#     agot_travel_events_dragon.0007: Check it out, land - nothing
+#     agot_travel_events_dragon.0008: Check it out, land - animal
+#     agot_travel_events_dragon.0009: Check it out, land - person
+#
+# STORM ENCOUNTER (0011-0012)
+#   agot_travel_events_dragon.0011: While flying, encounter a storm.
+#     - chance for delay
+#     - chance for major delay
+#     - chance to injure yourself/dragon
+#
+# DRAGON TAKES YOU OFF COURSE (0013-0014)
+#   agot_travel_events_dragon.0013: While flying, low-bond dragon takes you off course.
+#                                   (we can add random travel way points etc.)
+#
+# DRAGON DISTRACTED BY SMELL (0015-0020) (TODO)
+#   agot_travel_events_dragon.0015: While flying, dragon gets distracted by the smell
+#                                   of food.
+#     - can indulge for bond
+#     - can stop them if high bond
+#     - could possibly anger local (kill their livestock or something)
+#
+# PLAYFUL DRAGON (0021-0024)
+#   agot_travel_events_dragon.0021: While flying, dragon is feeling playful.
+#     Play:
+#       - increase bond
+#       - travel delay
+#     Don't play:
+#       - decrease bond
+#       - no travel delay
+#   agot_travel_events_dragon.0023: While camping for the night, dragon is feeling playful.
+#     Play:
+#       - increase bond
+#       - lose some sleep
+#     Don't play:
+#       - decrease bond
+#       - don't lose sleep
+#
+# DRAGON ATTACKED BY EXTREMISTS (0025-0030) (TODO)
+#   agot_travel_events_dragon.0025: While camping for the night, dragon is attacked by a
+#                                   local extremist FotS cult.
+#     Outcome A:
+#       - ...
+#     Outcome B:
+#       - ...
+#
+# TURBULENCE (0031-0032)
+#   agot_travel_events_dragon.0031: While flying, you have to navigate some turbulence.
+#
+# LOCALS RIDE YOUR DRAGON (0033-0040) (TODO)
+#   agot_travel_events_dragon.0033: While camping, locals want to ride your dragon.
+#     - say yes for money but take prestige hit
+#     - chance of injury to locals
+#
+# HIGHWAY ROBBERY (0041-0045) (TODO)
+#   agot_travel_events_dragon.0041: While flying, you see a cart being robbed on the road.
+#     - interviene for prestige
+#       - chance to get injured
+#     - don't interviene
+#       - stress impact
+#
+# HUNGRY DRAGON (0046-0055)
+#   agot_travel_events_dragon.0046: Driver event for hungry dragon events.
+#   agot_travel_events_dragon.0047: While flying, your dragon is hungry and tries to eat
+#                                   a flock of birds.
+#   agot_travel_events_dragon.0048: While flying over water, your dragon is hungry and tries
+#                                  to eat some fish.
+#   agot_travel_events_dragon.0049: While flying, your dragon is hungry and tries to eat
+#                                  some farm animals.
+#   agot_travel_events_dragon.0050: While flying, your dragon is hungry and tries to eat
+#                                  some game animals.
+#   agot_travel_events_dragon.0051: While flying, your dragon is hungry and tries to eat
+#                                  some predatory animals.
+#
+# BIRD ATTACKS YOU (0056-0057)
+#   agot_travel_events_dragon.0056: While flying, a falcon/owl divebombs you (not the dragon).
+#
+# ENCOUNTER WILD DRAGON (0058-0060) (TODO)
+#   agot_travel_events_dragon.0058: While flying, you encounter a wild dragon
+#                                   (Rare, only in low dev provinces).
+#
+# MAINTENANCE (9000-9999)
+#   agot_travel_events_dragon.9000: Sends none dragonriders home from the entourage.
+#   agot_travel_events_dragon.9001: (TODO) Decide if you want to go home after an injury.
+#
+###############################################################################
+
+
+#########################
+# Do A FLIP (0001-0004) #
+# by: Steelers          #
+#########################
+agot_travel_events_dragon.0001 = {
+	type = character_event
+	title = agot_travel_events_dragon.0001.t
+	desc = agot_travel_events_dragon.0001.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Try to do a flip!
+		name = agot_travel_events_dragon.0001.a
+
+		random_list = {
+			50 = { # Success - Give a decent prestige and dragonrider exp + potential modifier
+				desc = agot_travel_events_dragon.0001.success.flip_past
+				modifier = { # Dragon's temperament value
+					add = {
+						value = scope:pet_dragon.temperament
+						multiply = 0.5
+					}
+				}
+				modifier = { # Has lvl 1 rider training/bond
+					add = 10
+					OR = {
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_training
+							value >= 30 # Level 1
+						}
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_bond
+							value >= 30 # Level 1
+						}
+					}
+				}
+				modifier = { # Has lvl 2 rider training/bond
+					add = 10
+					OR = {
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_training
+							value >= 65 # Level 2
+						}
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_bond
+							value >= 65 # Level 2
+						}
+					}
+				}
+				modifier = { # Has lvl 3 rider training/bond
+					add = 10
+					OR = {
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_training
+							value >= 100 # Level 3
+						}
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_bond
+							value >= 100 # Level 3
+						}
+					}
+				}
+
+				add_prestige = major_prestige_gain
+				hidden_effect = {
+					send_interface_toast = {
+						title = agot_travel_events_dragon.0001.success
+						custom_tooltip = agot_travel_events_dragon.0001.success.flip
+						left_icon = root
+						right_icon = scope:pet_dragon
+					}
+				}
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_training
+					value = 10
+				}
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value = 10
+				}
+			}
+			50 = { # Failure - Loss a decent prestige and dragonrider exp + potential injury
+				desc = agot_travel_events_dragon.0001.failure.flip_past
+				modifier = { # Dragon's temperament value
+					add = {
+						value = 0
+						subtract = scope:pet_dragon.temperament
+						multiply = 0.5
+					}
+				}
+				modifier = { # Has lvl 1 rider training/bond
+					add = -10
+					OR = {
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_training
+							value >= 30 # Level 1
+						}
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_bond
+							value >= 30 # Level 1
+						}
+					}
+				}
+				modifier = { # Has lvl 2 rider training/bond
+					add = -10
+					OR = {
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_training
+							value >= 65 # Level 2
+						}
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_bond
+							value >= 65 # Level 2
+						}
+					}
+				}
+				modifier = { # Has lvl 3 rider training/bond
+					add = -10
+					OR = {
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_training
+							value >= 100 # Level 3
+						}
+						has_trait_xp = {
+							trait = dragonrider
+							track = dragon_bond
+							value >= 100 # Level 3
+						}
+					}
+				}
+
+				add_prestige = medium_prestige_loss
+				custom_tooltip = agot_travel_events_dragon.0001.injury_warning
+				hidden_effect = {
+					send_interface_toast = {
+						title = agot_travel_events_dragon.0001.failure
+						custom_tooltip = agot_travel_events_dragon.0001.failure.flip
+						left_icon = root
+						right_icon = scope:pet_dragon
+						random_list = { # Base 1/3 chance to get injured
+							200 = { modifier = { add = prowess } } # Nothing
+							1 = { add_trait = one_legged }
+							1 = { add_trait = maimed }
+							1 = { add_trait = disfigured }
+							7 = { add_trait = incapable }
+							10 = { add_trait = scarred }
+							20 = { add_trait = wounded_3 }
+							25 = { add_trait = wounded_2 }
+							35 = { add_trait = wounded_1 }
+						}
+					}
+				}
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_training
+					value = -2
+				}
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value = -2
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 15
+			modifier = { # The more irrational, the more likely to do this
+				add = {
+					value = 0
+					subtract = ai_rationality
+				}
+			}
+		}
+	}
+
+	option = { # No, it's not safe...
+		name = agot_travel_events_dragon.0001.b
+
+		send_interface_toast = {
+			title = agot_travel_events_dragon.0001.no_attempt
+			custom_tooltip = agot_travel_events_dragon.0001.no_attempt.flip
+			left_icon = root
+			right_icon = scope:pet_dragon
+		}
+
+		ai_chance = {
+			base = 85
+			modifier = { # The more rational, the less likely to do a flip
+				add = ai_rationality
+			}
+		}
+	}
+}
+
+
+############################
+# BEAUTIFUL UP HERE (0005) #
+# by: Steelers             #
+############################
+agot_travel_events_dragon.0005 = {
+	type = character_event
+	title = agot_travel_events_dragon.0005.t
+	desc = agot_travel_events_dragon.0005.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 100 }
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_flying
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # So peaceful - reduce stress
+		name = agot_travel_events_dragon.0005.a
+
+		add_stress = miniscule_stress_loss
+
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = 1000
+				stress_level >= 1
+			}
+			modifier = {
+				add = -33
+				stress <= 3
+			}
+		}
+	}
+
+	option = { # How glorious - gain prestige
+		name = agot_travel_events_dragon.0005.b
+
+		add_prestige = miniscule_prestige_gain
+
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = {
+					value = prestige
+					divide = 100
+				}
+			}
+		}
+	}
+
+	option = { # Closer to the gods - gain piety
+		name = agot_travel_events_dragon.0005.c
+
+		add_piety = miniscule_piety_gain
+
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = {
+					value = piety
+					divide = 100
+				}
+			}
+		}
+	}
+}
+
+
+############################
+# ANTSY DRAGON (0006-0010) #
+# by: Steelers             #
+############################
+
+# Determine if the a valid noble exists for the noble option
+scripted_trigger agot_travel_events_dragon_0006_valid_noble_trigger = {
+	root.location.province_owner ?= {
+		OR = {
+			AND = {  # The province owner
+				is_available_adult = yes
+				location = root.location
+			}
+			father ?= {
+				is_available_adult = yes
+				location = root.location
+			}
+			mother ?= {
+				is_available_adult = yes
+				location = root.location
+			}
+			primary_spouse ?= {
+				is_available_adult = yes
+				location = root.location
+			}
+			any_child = {
+				is_available_adult = yes
+				location = root.location
+			}
+			any_court_position_holder = {
+				is_available_adult = yes
+				location = root.location
+			}
+		}
+	}
+}
+
+# 0006 - Dragon gets antsy flying over some woods
+agot_travel_events_dragon.0006 = {
+	type = character_event
+	title = agot_travel_events_dragon.0006.t
+	desc = agot_travel_events_dragon.0006.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	trigger = {
+		root.location = { # Make sure a wooded area
+			OR = {
+				agot_is_forest_terrain = yes
+				agot_is_taiga_terrain = yes
+				agot_is_jungle_terrain = yes
+			}
+		}
+	}
+
+	cooldown = { years = 20 }
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+
+		random_list = {
+			20 = {
+				set_variable = nothing_in_woods
+			}
+			80 = {
+				random_list = {
+					20 = { set_variable = pred }
+					20 = { set_variable = prey }
+					20 = { set_variable = good }
+					20 = { set_variable = bad }
+					20 = {
+						trigger = { agot_travel_events_dragon_0006_valid_noble_trigger = yes }
+						set_variable = noble
+					}
+				}
+			}
+		}
+	}
+
+	option = { # Ignore it, keep flying
+		name = agot_travel_events_dragon.0006.a
+		custom_tooltip = agot_travel_events_dragon.0006.a.tt
+
+		# Dragon loses opinion/bond of you for ignoring them
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = -2
+		}
+
+		ai_chance = {
+			base = 100
+		}
+
+		remove_variable = nothing_in_woods
+		remove_variable = prey
+		remove_variable = pred
+		remove_variable = good
+		remove_variable = bad
+		remove_variable = noble
+	}
+
+	option = { # Check it out, land
+		name = agot_travel_events_dragon.0006.b
+		custom_tooltip = agot_travel_events_dragon.0006.b.tt
+
+		if = {
+			limit = {
+				exists = var:nothing_in_woods
+			}
+			trigger_event = agot_travel_events_dragon.0007
+		}
+		else_if = {
+			limit = {
+				OR = {
+					exists = var:pred
+					exists = var:prey
+				}
+			}
+			trigger_event = agot_travel_events_dragon.0008
+		}
+		else_if = {
+			limit = {
+				OR = {
+					exists = var:good
+					exists = var:bad
+					exists = var:noble
+				}
+			}
+			trigger_event = agot_travel_events_dragon.0009
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+
+# 0007 - Check it out, land - nothing
+agot_travel_events_dragon.0007 = {
+	type = character_event
+	title = agot_travel_events_dragon.0007.t
+	desc = agot_travel_events_dragon.0007.desc
+	theme = dragon
+	override_background = {
+		trigger = {
+			exists = scope:background_terrain_scope
+		}
+		reference = terrain_scope # wilderness_forest
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { has_trait = brave }
+			animation = personality_bold
+		}
+		triggered_animation = {
+			trigger = { has_trait = craven }
+			animation = personality_coward
+		}
+		triggered_animation = {
+			trigger = { ai_rationality <= -50 }
+			animation = personality_irrational
+		}
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = scope:pet_dragon
+		camera = camera_dragon_event_standing
+		animation = dragon_main
+	}
+
+	immediate = {
+		root.location = {
+			save_scope_as = background_terrain_scope
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Nothing - Forgive dragon
+		name = agot_travel_events_dragon.0007.a
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_training
+			value = -5
+		}
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = 5
+		}
+
+		stress_impact = {
+			patient = miniscule_stress_impact_loss
+			impatient = miniscule_stress_impact_gain
+			forgiving = miniscule_stress_impact_loss
+			vengeful = miniscule_stress_impact_gain
+			compassionate = miniscule_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = medium_chance_impact_negative_ai_value
+			}
+		}
+	}
+
+	option = { # Nothing - Mad at dragon
+		name = agot_travel_events_dragon.0007.b
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_training
+			value = -5
+		}
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = -5
+		}
+
+		stress_impact = {
+			impatient = miniscule_stress_impact_gain
+			forgiving = miniscule_stress_impact_gain
+			vengeful = miniscule_stress_impact_loss
+			compassionate = miniscule_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = medium_chance_impact_positive_ai_value
+			}
+		}
+	}
+
+	after = {
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+		remove_variable = nothing_in_woods
+	}
+}
+
+# 0008 - Check it out, land - animal
+agot_travel_events_dragon.0008 = {
+	type = character_event
+	title = agot_travel_events_dragon.0008.t
+	desc = {
+		desc = agot_travel_events_dragon.0008.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = var:pred }
+				desc = agot_travel_events_dragon.0008.desc.pred
+			}
+			triggered_desc = {
+				trigger = { exists = var:prey }
+				desc = agot_travel_events_dragon.0008.desc.prey
+			}
+		}
+	}
+	theme = dragon
+	override_background = {
+		trigger = {
+			exists = scope:background_terrain_scope
+		}
+		reference = terrain_scope # wilderness_forest
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { has_trait = brave }
+			animation = personality_bold
+		}
+		triggered_animation = {
+			trigger = { has_trait = craven }
+			animation = personality_coward
+		}
+		triggered_animation = {
+			trigger = { ai_rationality <= -50 }
+			animation = personality_irrational
+		}
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = scope:pet_dragon
+		camera = camera_dragon_event_standing
+		animation = dragon_main
+	}
+
+	immediate = {
+		root.location = {
+			save_scope_as = background_terrain_scope
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Something - Engage - Get it!
+		name = {
+			trigger = { knows_language = language_agot_valyrian }
+			text = agot_travel_events_dragon.0008.a.valyrian
+		}
+		name = {
+			trigger = { NOT = { knows_language = language_agot_valyrian } }
+			text = agot_travel_events_dragon.0008.a
+		}
+
+		var:pred ?= {
+			prev = {
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_training
+					value = 10
+				}
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value = 10
+				}
+			}
+		}
+		var:prey ?= {
+			prev = {
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_training
+					value = 5
+				}
+				add_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value = 5
+				}
+			}
+		}
+
+		stress_impact = {
+			craven = miniscule_stress_impact_gain
+			compassionate = miniscule_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 25
+				has_trait = lifestyle_hunter
+			}
+			ai_value_modifier = {
+				ai_boldness = low_chance_impact_positive_ai_value
+				ai_compassion = low_chance_impact_negative_ai_value
+			}
+		}
+	}
+
+	option = { # Something - Disengage - RUN!
+		name = agot_travel_events_dragon.0008.b
+		trigger = {
+			OR = {
+				exists = var:pred
+				AND = {
+					exists = var:prey
+					has_trait = craven
+				}
+			}
+		}
+
+		var:pred ?= {
+			# No prestige hit, since no one to see your cowardice
+			prev = {
+				add_trait_xp = { # Disappointed
+					trait = dragonrider
+					track = dragon_bond
+					value = -3
+				}
+			}
+		}
+		var:prey ?= {
+			# No prestige hit, since no one to see your cowardice
+			prev = {
+				add_trait_xp = { # Disappointed
+					trait = dragonrider
+					track = dragon_bond
+					value = -5
+				}
+				stress_impact = { # Even more
+					brave = miniscule_stress_impact_gain
+				}
+			}
+		}
+
+		stress_impact = {
+			brave = miniscule_stress_impact_gain
+			craven = miniscule_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_boldness = medium_chance_impact_negative_ai_value
+			}
+		}
+	}
+
+	option = { # Something - Disengage - Leave the poor thing alone...
+		name = agot_travel_events_dragon.0008.c
+		trigger = {
+			exists = var:prey
+		}
+
+		add_trait_xp = { # Disappointed
+			trait = dragonrider
+			track = dragon_bond
+			value = -5
+		}
+
+		stress_impact = {
+			sadistic = miniscule_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 25
+			ai_value_modifier = {
+				ai_compassion = low_chance_impact_positive_ai_value
+			}
+		}
+	}
+
+	after = {
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+		remove_variable = prey
+		remove_variable = pred
+	}
+}
+
+# 0009 - Check it out, land - person
+agot_travel_events_dragon.0009 = {
+	type = character_event
+	title = agot_travel_events_dragon.0009.t
+	desc = {
+		desc = agot_travel_events_dragon.0009.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = var:good }
+				desc = agot_travel_events_dragon.0009.desc.good
+			}
+			triggered_desc = {
+				trigger = { exists = var:bad }
+				desc = agot_travel_events_dragon.0009.desc.bad
+			}
+			triggered_desc = {
+				trigger = { exists = var:noble }
+				desc = agot_travel_events_dragon.0009.desc.noble
+			}
+		}
+	}
+	theme = dragon
+	override_background = {
+		trigger = {
+			exists = scope:background_terrain_scope
+		}
+		reference = terrain_scope # wilderness_forest
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { has_trait = brave }
+			animation = personality_bold
+		}
+		triggered_animation = {
+			trigger = { has_trait = craven }
+			animation = personality_coward
+		}
+		triggered_animation = {
+			trigger = { ai_rationality <= -50 }
+			animation = personality_irrational
+		}
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = scope:pet_dragon
+		camera = camera_dragon_event_standing
+		animation = dragon_main
+	}
+
+	immediate = {
+		root.location = {
+			save_scope_as = background_terrain_scope
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+		var:good ?= {
+			create_character = { # Should probably make this a template
+				age = { 25 60 }
+				location = root.location
+				culture = root.location.culture
+				faith = root.location.faith
+				dynasty = none
+				gender_female_chance = 50
+
+				random_traits = yes
+				random_traits_list = {
+					count = 1
+					education_martial_1 = {}
+					education_diplomacy_1 = {}
+					education_stewardship_1 = {}
+					education_intrigue_1 = {}
+				}
+
+				save_scope_as = good_commoner
+			}
+		}
+		var:bad ?= {
+			create_character = { # Should probably make this a template
+				age = { 25 60 }
+				location = root.location
+				culture = root.location.culture
+				faith = root.location.faith
+				dynasty = none
+				gender_female_chance = root_soldier_female_chance
+
+				random_traits = no
+				random_traits_list = {
+					count = 1
+					education_martial_1 = {
+						weight = { base = 20 }
+					}
+					education_martial_2 = {
+						weight = { base = 50 }
+					}
+					education_martial_3 = {
+						weight = { base = 20 }
+					}
+					education_martial_4 = {
+						weight = { base = 10 }
+					}
+				}
+				random_traits_list = {
+					count = 1
+					education_martial_prowess_1 = {
+						weight = { base = 50 }
+					}
+					education_martial_prowess_2 = {
+						weight = { base = 30 }
+					}
+					education_martial_prowess_3 = {
+						weight = { base = 5 }
+					}
+				}
+				trait = deceitful
+				random_traits_list = {
+					count = 2
+					fickle = {}
+					arbitrary = {}
+					lazy = {}
+					impatient = {}
+					arrogant = {}
+					craven = {}
+					content = {}
+					gregarious = {}
+					greedy = {}
+					brave = {}
+					sadistic = {}
+				}
+
+				save_scope_as = bad_commoner
+			}
+		}
+		var:noble ?= {
+			# random_close_family_member
+			random_list = {
+				25 = { # The province owner
+					trigger = {
+						root.location.province_owner ?= {
+							is_available_adult = yes
+							location = root.location
+						}
+					}
+					root.location.province_owner = {
+						save_scope_as = noble
+					}
+				}
+				20 = {
+					trigger = {
+						root.location.province_owner.father ?= {
+							is_available_adult = yes
+							location = root.location
+						}
+					}
+					root.location.province_owner.father = {
+						save_scope_as = noble
+					}
+				}
+				20 = {
+					trigger = {
+						root.location.province_owner.mother ?= {
+							is_available_adult = yes
+							location = root.location
+						}
+					}
+					root.location.province_owner.mother = {
+						save_scope_as = noble
+					}
+				}
+				20 = {
+					trigger = {
+						root.location.province_owner.primary_spouse ?= {
+							is_available_adult = yes
+							location = root.location
+						}
+					}
+					root.location.province_owner.primary_spouse = {
+						save_scope_as = noble
+					}
+				}
+				20 = {
+					trigger = {
+						root.location.province_owner ?= {
+							any_child = {
+								is_available_adult = yes
+								location = root.location
+							}
+						}
+					}
+					root.location.province_owner = {
+						random_child = {
+							save_scope_as = noble
+						}
+					}
+				}
+				20 = {
+					trigger = {
+						root.location.province_owner ?= {
+							any_court_position_holder = {
+								is_available_adult = yes
+								location = root.location
+							}
+						}
+					}
+					root.location.province_owner = {
+						random_court_position_holder = {
+							save_scope_as = noble
+						}
+					}
+				}
+			}
+		}
+	}
+
+	option = {  # Good - Have a conversation
+		name = agot_travel_events_dragon.0009.a
+		trigger = {
+			exists = var:good
+		}
+
+		root.location.county = {
+			add_county_modifier = {
+				modifier = entertained_peasants
+				months = 6
+			}
+		}
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+
+		stress_impact = {
+			shy = miniscule_stress_impact_gain
+			callous = miniscule_stress_impact_gain
+			compassionate = miniscule_stress_impact_loss
+			gregarious = minor_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 50
+				has_trait = gregarious
+			}
+			modifier = {
+				add = 50
+				has_trait = compassionate
+			}
+			modifier = {
+				add = -25
+				has_trait = shy
+			}
+			modifier = {
+				add = -25
+				has_trait = callous
+			}
+		}
+	}
+
+	option = { # Good - Leave
+		name = agot_travel_events_dragon.0007.b
+		trigger = {
+			exists = var:good
+		}
+
+		current_travel_plan = { delay_travel_plan = { days = 2 } }
+
+		stress_impact = {
+			shy = miniscule_stress_impact_loss
+			callous = miniscule_stress_impact_loss
+			compassionate = miniscule_stress_impact_gain
+			gregarious = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 50
+				has_trait = shy
+			}
+			modifier = {
+				add = 50
+				has_trait = callous
+			}
+			modifier = {
+				add = -25
+				has_trait = gregarious
+			}
+			modifier = {
+				add = -25
+				has_trait = compassionate
+			}
+		}
+	}
+
+	option = { # Bad - Kill!
+		name = agot_travel_events_dragon.0009.c
+		trigger = {
+			exists = var:bad
+		}
+
+		scope:bad_commoner = {
+			death = {
+				killer = root
+				death_reason = death_execution
+			}
+		}
+
+		stress_impact = {
+			sadistic = minor_stress_impact_loss
+			wrathful = minor_stress_impact_loss
+			vengeful = minor_stress_impact_loss
+			torturer = medium_stress_impact_loss
+			lunatic_1 = major_stress_impact_loss
+			lunatic_genetic = major_stress_impact_loss
+			just = miniscule_stress_impact_gain
+			calm = minor_stress_impact_gain
+			compassionate = major_stress_impact_gain
+			forgiving = major_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 50
+				ai_compassion < high_negative_ai_value
+				ai_honor < high_negative_ai_value
+			}
+		}
+	}
+
+	option = { # Bad - Imprison
+		name = agot_travel_events_dragon.0009.d
+		trigger = {
+			exists = var:bad
+		}
+
+		rightfully_imprison_character_effect = {
+			TARGET = scope:bad_commoner
+			IMPRISONER = root
+		}
+		current_travel_plan = { delay_travel_plan = { days = 3 } }
+
+		stress_impact = {
+			just = miniscule_stress_impact_loss
+			sadistic = minor_stress_impact_gain
+			wrathful = minor_stress_impact_gain
+			vengeful = minor_stress_impact_gain
+			torturer = medium_stress_impact_gain
+			lunatic_1 = major_stress_impact_gain
+			lunatic_genetic = major_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 50
+				ai_compassion < 0
+				ai_honor < 0
+			}
+		}
+	}
+
+	option = { # Bad - Leave
+		name = agot_travel_events_dragon.0009.e
+		trigger = {
+			exists = var:bad
+		}
+
+		stress_impact = {
+			compassionate = major_stress_impact_loss
+			forgiving = major_stress_impact_loss
+			sadistic = minor_stress_impact_gain
+			wrathful = minor_stress_impact_gain
+			vengeful = minor_stress_impact_gain
+			torturer = medium_stress_impact_gain
+			lunatic_1 = major_stress_impact_gain
+			lunatic_genetic = major_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 50
+		}
+	}
+
+	option = { # Noble - Provide escort
+		name = agot_travel_events_dragon.0009.f
+		trigger = {
+			exists = var:noble
+		}
+
+		# Make friend chance :thinking:
+		reverse_add_opinion = {
+			target = scope:noble
+			modifier = pleased_opinion
+			opinion = 50
+		}
+		root.location.county = {
+			add_county_modifier = {
+				modifier = agot_escorted_noble_county_modifier
+				years = 1
+			}
+		}
+		current_travel_plan = { delay_travel_plan = { days = 3 } }
+
+		stress_impact = {
+			brave = minor_stress_impact_loss
+			craven = minor_stress_impact_gain
+			diplomat = miniscule_stress_impact_loss
+			sadistic = miniscule_stress_impact_gain
+			compassionate = minor_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = 50
+				has_trait = brave
+			}
+			modifier = {
+				add = -25
+				has_trait = craven
+			}
+			modifier = {
+				add = 25
+				has_trait = diplomat
+			}
+			modifier = {
+				add = -25
+				has_trait = sadistic
+			}
+			modifier = {
+				add = 25
+				has_trait = compassionate
+			}
+		}
+	}
+
+	option = { # Noble - Have a conversation
+		name = agot_travel_events_dragon.0009.g
+		trigger = {
+			exists = var:noble
+		}
+
+		# Give opinion :thinking:
+		add_character_modifier = {
+			modifier = confident_diplomat
+			desc = agot_travel_events_dragon.0009.g.modifier_desc
+			years = 1
+		}
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+
+		stress_impact = {
+			shy = medium_stress_impact_gain
+			gregarious = minor_stress_impact_loss
+			diplomat = medium_stress_impact_loss
+			sadistic = miniscule_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = -50
+				has_trait = shy
+			}
+			modifier = {
+				add = 50
+				has_trait = gregarious
+			}
+			modifier = {
+				add = 100
+				has_trait = diplomat
+			}
+			modifier = {
+				add = -25
+				has_trait = sadistic
+			}
+		}
+	}
+
+	option = { # Noble - Leave
+		name = agot_travel_events_dragon.0009.h
+		trigger = {
+			exists = var:noble
+		}
+
+		reverse_add_opinion = {
+			target = scope:noble
+			modifier = disappointed_opinion
+			opinion = -15
+		}
+		add_character_modifier = {
+			modifier = agot_ignored_noble_modifier
+			desc = agot_travel_events_dragon.0009.h.modifier_desc
+			years = 1
+		}
+
+		stress_impact = {
+			shy = minor_stress_impact_loss
+			gregarious = minor_stress_impact_gain
+			diplomat = medium_stress_impact_gain
+			sadistic = minor_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = 50
+				has_trait = shy
+			}
+			modifier = {
+				add = -50
+				has_trait = gregarious
+			}
+			modifier = {
+				add = -100
+				has_trait = diplomat
+			}
+			modifier = {
+				add = 50
+				has_trait = sadistic
+			}
+		}
+	}
+
+	after = {
+		remove_variable = good
+		remove_variable = bad
+		remove_variable = noble
+	}
+}
+
+
+###############################
+# STORM ENCOUNTER (0011-0012) #
+# by: Steelers                #
+###############################
+# 0011 - While flying, encounter a storm.
+agot_travel_events_dragon.0011 = {
+	type = character_event
+	title = agot_travel_events_dragon.0011.t
+	desc = agot_travel_events_dragon.0011.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # We should land and wait it out.
+		name = agot_travel_events_dragon.0011.a
+		custom_tooltip = agot_travel_events_dragon.0011.a.tt
+
+		hidden_effect = {
+			random_list = { # Delay chance is guaranteed
+				# Modified by bond/rider level :thinking:
+				35 = {
+					current_travel_plan = { delay_travel_plan = { days = 3 } }
+				}
+				30 = {
+					current_travel_plan = { delay_travel_plan = { days = 4 } }
+				}
+				20 = {
+					current_travel_plan = { delay_travel_plan = { days = 5 } }
+				}
+				10 = {
+					current_travel_plan = { delay_travel_plan = { days = 6 } }
+				}
+				5 = {
+					current_travel_plan = { delay_travel_plan = { days = 7 } }
+				}
+			}
+		}
+
+		stress_impact = {
+			craven = minor_stress_impact_loss
+			patient = minor_stress_impact_loss
+			impatient = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_rationality = medium_chance_impact_positive_ai_value
+			}
+		}
+	}
+
+	option = { # Fly through it!
+		name = agot_travel_events_dragon.0011.b
+		custom_tooltip = agot_travel_events_dragon.0011.b.tt
+
+		hidden_effect = {
+			random_list = { # Injury chance is less likely
+				245 = { modifier = { add = prowess } } # Nothing
+				1 = { add_trait = incapable }
+				5 = { add_trait = scarred }
+				9 = { add_trait = wounded_3 }
+				15 = { add_trait = wounded_2 }
+				25 = { add_trait = wounded_1 }
+			}
+		}
+
+		stress_impact = {
+			brave = minor_stress_impact_loss
+			craven = minor_stress_impact_gain
+			patient = minor_stress_impact_gain
+			impatient = minor_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_rationality = medium_chance_impact_negative_ai_value
+			}
+		}
+	}
+}
+
+
+###########################################
+# DRAGON TAKES YOU OFF COURSE (0013-0014) #
+# by: Steelers                            #
+###########################################
+# 0013 - While flying, low-bond dragon takes you off course.
+agot_travel_events_dragon.0013 = {
+	type = character_event
+	title = agot_travel_events_dragon.0013.t
+	desc = agot_travel_events_dragon.0013.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	trigger = {
+		# Low bond
+		OR = {
+			has_trait_xp = {
+				trait = dragonrider
+				track = dragon_training
+				value >= 30 # Level 1
+			}
+			has_trait_xp = {
+				trait = dragonrider
+				track = dragon_bond
+				value >= 30 # Level 1
+			}
+		}
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Oh no! Wrong way boy/girl!
+		name = agot_travel_events_dragon.0013.a
+		custom_tooltip = agot_travel_events_dragon.0013.tt
+
+		hidden_effect = {
+			random_list = {
+				25 = {
+					current_travel_plan = { delay_travel_plan = { days = 1 } }
+				}
+				25 = {
+					current_travel_plan = { delay_travel_plan = { days = 3 } }
+				}
+				25 = {
+					current_travel_plan = { delay_travel_plan = { days = 5 } }
+				}
+				25 = {
+					current_travel_plan = { delay_travel_plan = { days = 7 } }
+				}
+			}
+		}
+
+		add_prestige = miniscule_prestige_loss
+		stress_impact = {
+			diligent = minor_stress_impact_gain
+			impatient = minor_stress_impact_gain
+			wrathful = minor_stress_impact_gain
+		}
+	}
+}
+
+
+##############################
+# PLAYFUL DRAGON (0021-0024) #
+# by: Steelers               #
+##############################
+# 0021 - While flying, dragon is feeling playful.
+agot_travel_events_dragon.0021 = {
+	type = character_event
+	title = agot_travel_events_dragon.0021.t
+	desc = agot_travel_events_dragon.0021.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Play :)
+		name = agot_travel_events_dragon.0021.a
+		custom_tooltip = agot_travel_events_dragon.0021.a.tt
+
+		set_variable = {
+			name = play
+			value = var:current_dragon
+		}
+		trigger_event = agot_travel_events_dragon.0022
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = low_chance_impact_positive_ai_value
+			}
+			modifier = {
+				add = 20
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value >= 30 # Level 1
+				}
+			}
+		}
+	}
+
+	option = { # Don't play :(
+		name = agot_travel_events_dragon.0021.b
+		custom_tooltip = agot_travel_events_dragon.0021.b.tt
+
+		set_variable = {
+			name = no_play
+			value = var:current_dragon
+		}
+		trigger_event = agot_travel_events_dragon.0022
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = low_chance_impact_negative_ai_value
+			}
+			modifier = {
+				add = -20
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value >= 30 # Level 1
+				}
+			}
+		}
+	}
+}
+
+# 0022 - Consequences of 0021
+agot_travel_events_dragon.0022 = {
+	type = character_event
+	title = agot_travel_events_dragon.0022.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = var:play
+				}
+				desc = agot_travel_events_dragon.0022.desc.played
+			}
+			triggered_desc = {
+				trigger = {
+					exists = var:no_play
+				}
+				desc = agot_travel_events_dragon.0022.desc.no_play
+			}
+			desc = agot_travel_events_dragon.0022.desc.fallback
+		}
+	}
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	immediate = {
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Played :)
+		name = agot_travel_events_dragon.0022.a
+		trigger = {
+			exists = var:play
+		}
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = 5
+		}
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { # Didn't play :(
+		name = agot_travel_events_dragon.0022.b
+		trigger = {
+			exists = var:no_play
+		}
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = -2
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	after = {
+		remove_variable = play
+		remove_variable = no_play
+	}
+}
+
+
+# 0023 - While camped, dragon is feeling playful.
+agot_travel_events_dragon.0023 = {
+	type = character_event
+	title = agot_travel_events_dragon.0023.t
+	desc = agot_travel_events_dragon.0023.desc
+	theme = dragon
+	override_background = {
+		trigger = {
+			exists = scope:background_terrain_scope
+		}
+		reference = terrain_scope
+	}
+	left_portrait = {
+		character = root
+		animation = idle
+	}
+	right_portrait = {
+		character = scope:pet_dragon
+		camera = camera_dragon_event_standing
+		animation = dragon_main
+	}
+
+	cooldown = { years = 30 }
+
+	trigger = {
+		root.location = {
+			is_coastal = no
+		}
+	}
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		root.location = {
+			save_scope_as = background_terrain_scope
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Play :)
+		name = agot_travel_events_dragon.0023.a
+		custom_tooltip = agot_travel_events_dragon.0023.a.tt
+
+		set_variable = {
+			name = play
+			value = var:current_dragon
+		}
+		trigger_event = agot_travel_events_dragon.0024
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = low_chance_impact_positive_ai_value
+			}
+			modifier = {
+				add = 20
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value >= 30 # Level 1
+				}
+			}
+		}
+	}
+
+	option = { # Don't play :(
+		name = agot_travel_events_dragon.0023.b
+		custom_tooltip = agot_travel_events_dragon.0023.b.tt
+
+		set_variable = {
+			name = no_play
+			value = var:current_dragon
+		}
+		trigger_event = agot_travel_events_dragon.0024
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = low_chance_impact_negative_ai_value
+			}
+			modifier = {
+				add = -20
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value >= 30 # Level 1
+				}
+			}
+		}
+	}
+}
+
+# 0024 - Consequences of 0023
+agot_travel_events_dragon.0024 = {
+	type = character_event
+	title = agot_travel_events_dragon.0024.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = var:play
+				}
+				desc = agot_travel_events_dragon.0024.desc.played
+			}
+			triggered_desc = {
+				trigger = {
+					exists = var:no_play
+				}
+				desc = agot_travel_events_dragon.0024.desc.no_play
+			}
+			desc = agot_travel_events_dragon.0024.desc.fallback
+		}
+	}
+	theme = dragon
+	override_background = {
+		trigger = {
+			exists = scope:background_terrain_scope
+		}
+		reference = terrain_scope
+	}
+	left_portrait = {
+		character = root
+		animation = idle
+	}
+	right_portrait = {
+		character = scope:pet_dragon
+		camera = camera_dragon_event_standing
+		animation = dragon_main
+	}
+
+	immediate = {
+		root.location = {
+			save_scope_as = background_terrain_scope
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Played :)
+		name = agot_travel_events_dragon.0024.a
+		trigger = {
+			exists = var:play
+		}
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = 5
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { # Didn't play :(
+		name = agot_travel_events_dragon.0024.b
+		trigger = {
+			exists = var:no_play
+		}
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = -2
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	after = {
+		remove_variable = play
+		remove_variable = no_play
+	}
+}
+
+
+##########################
+# TURBULENCE (0031-0032) #
+# by: Steelers           #
+##########################
+# 0031 - While flying, you have to navigate some turbulence.
+agot_travel_events_dragon.0031 = {
+	type = character_event
+	title = agot_travel_events_dragon.0031.t
+	desc = agot_travel_events_dragon.0031.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Fly throught it!
+		name = agot_travel_events_dragon.0031.a
+		custom_tooltip = agot_travel_events_dragon.0031.a.tt
+
+		hidden_effect = {
+			random_list = { # Delay chance
+				50 = {
+					current_travel_plan = { delay_travel_plan = { days = 1 } }
+				}
+				50 = {
+					current_travel_plan = { delay_travel_plan = { days = 3 } }
+				}
+			}
+			random_list = { # Injury chance
+				# Change from prowess to bond level :thinking:
+				70 = { modifier = { add = prowess } } # Nothing
+				5 = { add_trait = wounded_3 }
+				10 = { add_trait = wounded_2 }
+				15 = { add_trait = wounded_1 }
+			}
+		}
+
+		stress_impact = {
+			craven = minor_stress_impact_gain
+		}
+	}
+}
+
+
+#############################
+# HUNGRY DRAGON (0046-0055) #
+# by: Steelers              #
+#############################
+# 0046 - Driver event for hungry dragon events.
+agot_travel_events_dragon.0046 = {
+	hidden = yes
+	cooldown = { years = 5 }
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		random_list = {
+			20 = {
+				trigger_event = agot_travel_events_dragon.0047
+			}
+			20 = {
+				trigger_event = agot_travel_events_dragon.0048
+			}
+			20 = {
+				trigger_event = agot_travel_events_dragon.0049
+			}
+			20 = {
+				trigger_event = agot_travel_events_dragon.0050
+			}
+			20 = {
+				trigger_event = agot_travel_events_dragon.0051
+			}
+		}
+	}
+}
+
+
+# 0047 - While flying, your dragon is hungry and tries to eat a flock of birds.
+agot_travel_events_dragon.0047 = {
+	type = character_event
+	title = agot_travel_events_dragon.0047.t
+	desc = agot_travel_events_dragon.0047.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Let the dragon munch
+		name = agot_travel_events_dragon.0047.a
+		custom_tooltip = agot_travel_events_dragon.0047.a.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = 5
+		}
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+
+		ai_chance = {
+			base = 50
+		}
+	}
+
+	option = { # Don't let the dragon munch
+		name = agot_travel_events_dragon.0047.b
+		custom_tooltip = agot_travel_events_dragon.0047.b.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = -2
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = -25
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value <= 30 # Level 1
+				}
+			}
+		}
+	}
+}
+
+# 0048 - While flying over water, your dragon is hungry and tries to eat some fish.
+agot_travel_events_dragon.0048 = {
+	type = character_event
+	title = agot_travel_events_dragon.0048.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:pet_dragon.dragon_size <= level_four_dragon_size }
+				desc = agot_travel_events_dragon.0048.desc_fish
+			}
+			desc = {
+				random_valid = {
+					triggered_desc = {
+						trigger = { scope:pet_dragon.dragon_size > level_four_dragon_size }
+						desc = agot_travel_events_dragon.0048.desc_dolphin
+					}
+					triggered_desc = {
+						trigger = { scope:pet_dragon.dragon_size > level_eight_dragon_size }
+						desc = agot_travel_events_dragon.0048.desc_whale
+					}
+				}
+			}
+		}
+	}
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 30 }
+
+	trigger = {
+		root.location = {
+			is_coastal = yes
+		}
+	}
+
+	immediate = {
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Let the dragon munch
+		name = agot_travel_events_dragon.0048.a
+		custom_tooltip = agot_travel_events_dragon.0048.a.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = 5
+		}
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+
+		ai_chance = {
+			base = 50
+		}
+	}
+
+	option = { # Don't let the dragon munch
+		name = agot_travel_events_dragon.0048.b
+		custom_tooltip = agot_travel_events_dragon.0048.b.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = -2
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = -25
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value <= 30 # Level 1
+				}
+			}
+		}
+	}
+}
+
+# 0049 - While flying, your dragon is hungry and tries to eat some farm animals.
+agot_travel_events_dragon.0049 = {
+	type = character_event
+	title = agot_travel_events_dragon.0049.t
+	desc = agot_travel_events_dragon.0049.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	trigger = {
+		root.location = {
+			agot_is_farmlands_terrain = yes
+		}
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+		select_local_farm_animal_effect = yes
+	}
+
+	option = { # Let the dragon munch
+		name = agot_travel_events_dragon.0049.a
+		custom_tooltip = agot_travel_events_dragon.0049.a.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = 15
+		}
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+		root.location.county = {
+			add_county_modifier = {
+				modifier = agot_tamed_dragon_killed_livestock
+				months = 6
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = -35
+				root.location.county.county_opinion < 10
+			}
+			modifier = {
+				add = -15
+				root.location.county.county_opinion < -10
+			}
+		}
+	}
+
+	option = { # Don't let the dragon munch
+		name = agot_travel_events_dragon.0049.b
+		custom_tooltip = agot_travel_events_dragon.0049.b.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = -5
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = -25
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value <= 30 # Level 1
+				}
+			}
+		}
+	}
+}
+
+# 0050 - While flying, your dragon is hungry and tries to eat some game animals.
+agot_travel_events_dragon.0050 = {
+	type = character_event
+	title = agot_travel_events_dragon.0050.t
+	desc = agot_travel_events_dragon.0050.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Let the dragon munch
+		name = agot_travel_events_dragon.0050.a
+		custom_tooltip = agot_travel_events_dragon.0050.a.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = 5
+		}
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = low_chance_impact_positive_ai_value
+			}
+		}
+	}
+
+	option = { # Don't let the dragon munch
+		name = agot_travel_events_dragon.0050.b
+		custom_tooltip = agot_travel_events_dragon.0050.b.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = -2
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = -25
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value <= 30 # Level 1
+				}
+			}
+		}
+	}
+}
+
+# 0051 - While flying, your dragon is hungry and tries to eat some predatory animals.
+agot_travel_events_dragon.0051 = {
+	type = character_event
+	title = agot_travel_events_dragon.0051.t
+	desc = agot_travel_events_dragon.0051.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Let the dragon munch
+		name = agot_travel_events_dragon.0051.a
+		custom_tooltip = agot_travel_events_dragon.0051.a.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = 8
+		}
+		current_travel_plan = { delay_travel_plan = { days = 1 } }
+		root.location.county = {
+			add_county_modifier = {
+				modifier = agot_tamed_dragon_killed_predator
+				months = 6
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 35
+				root.location.county.county_opinion < 10
+			}
+			modifier = {
+				add = 15
+				root.location.county.county_opinion < -10
+			}
+		}
+	}
+
+	option = { # Don't let the dragon munch
+		name = agot_travel_events_dragon.0051.b
+		custom_tooltip = agot_travel_events_dragon.0051.b.tt
+
+		add_trait_xp = {
+			trait = dragonrider
+			track = dragon_bond
+			value = -2
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = -25
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value <= 30 # Level 1
+				}
+			}
+		}
+	}
+}
+
+
+################################
+# BIRD ATTACKS YOU (0056-0057) #
+# by: Steelers                 #
+################################
+# 0056 - While flying, a falcon/owl divebombs you (not the dragon).
+agot_travel_events_dragon.0056 = {
+	type = character_event
+	title = agot_travel_events_dragon.0056.t
+	desc = agot_travel_events_dragon.0056.desc
+	theme = dragon
+	override_background = {
+		reference = agot_open_sky_video
+	}
+	right_portrait = {
+		character = root
+		camera = camera_dragonrider_ride_dragon_decision
+		animation = dragon_main
+		outfit_tags = { dragonrider linear_camera_zoom }
+	}
+
+	cooldown = { years = 30 }
+
+	immediate = {
+		add_character_flag = {
+			flag = had_recent_dragon_travel_event
+			months = { 6 9 }
+		}
+		agot_set_dragon_animation_flag_effect = {
+			FLAG = dragon_hover
+			RIDING_DRAGON = yes
+		}
+		var:current_dragon = {
+			save_scope_as = pet_dragon
+		}
+	}
+
+	option = { # Fight it off!
+		name = agot_travel_events_dragon.0056.a
+		custom_tooltip = agot_travel_events_dragon.0056.a.tt
+
+		hidden_effect = {
+			random_list = { # Delay chance
+				50 = {
+					# Nothing
+				}
+				50 = {
+					current_travel_plan = { delay_travel_plan = { days = 1 } }
+				}
+			}
+			random_list = { # Injury chance
+				255 = { modifier = { add = prowess } } # Nothing
+				1 = { add_trait = blind }
+				1 = { add_trait = maimed }
+				1 = { add_trait = disfigured }
+				2 = { add_trait = incapable }
+				5 = { add_trait = scarred }
+				5 = { add_trait = wounded_3 }
+				10 = { add_trait = wounded_2 }
+				20 = { add_trait = wounded_1 }
+			}
+		}
+
+		stress_impact = {
+			brave = minor_stress_impact_loss
+			craven = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	after = {
+		# If you get seriously injured, the travel should probably be canceled :thinking:
+	}
+}
+
+
+###########################
+# MAINTENANCE (9000-9999) #
+###########################
+# 9000 - Sends none dragonriders home from the entourage.
+agot_travel_events_dragon.9000 = {
+	type = character_event
+	title = agot_travel_events_dragon.9000.t
+	desc = agot_travel_events_dragon.9000.desc
+	theme = travel
+
+	trigger = {
+		current_travel_plan ?= {
+			has_travel_option = dragon_flight_option
+			any_entourage_character = {
+				NOT = { is_current_dragonrider = yes }
+			}
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+
+	right_portrait = {
+		character = scope:awkward_entourage_member
+		animation = shame
+	}
+
+	immediate = {
+		var:current_dragon = {
+			save_scope_as = dragon
+		}
+
+		current_travel_plan ?= {
+			random_entourage_character = {
+				limit = {
+					NOT = { is_current_dragonrider = yes }
+					is_adult = yes
+				}
+				alternative_limit = {
+					NOT = { is_current_dragonrider = yes }
+				}
+				save_scope_as = awkward_entourage_member
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events_dragon.9000.a
+
+		current_travel_plan ?= {
+			every_entourage_character = {
+				limit = {
+					NOT = { is_current_dragonrider = yes }
+				}
+				save_scope_as = entourage_member
+				custom_tooltip = agot_travel_events_dragon.9000.tt
+				hidden_effect = {
+					root.current_travel_plan ?= {
+						remove_character = prev
+					}
+					# scope:activity ?=
+					if = {
+						limit = {
+							exists = scope:activity
+						}
+						remove_from_activity = scope:activity
+					}
+					return_home = yes
+				}
+			}
+		}
+	}
+}

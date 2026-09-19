@@ -1,0 +1,808 @@
+﻿rv_revenge_war = {
+	group = personal
+	icon = rv_revenge
+	#ai_only_against_neighbors = yes
+	target_top_liege_if_outside_realm = no
+
+	allowed_for_character = {
+		### Valid Memory list:
+		#relative_died dead_relation
+		#spouse_died dead_relation
+		#friend_died dead_relation
+		#best_friend_died dead_relation
+		#lover_died dead_relation
+		#soulmate_died dead_relation
+
+		#child_killed_by_rival child_attacker rival
+		#parent_was_killed_by_rivals_child dead_relation relation_killer rival
+
+		#failed_assassination_by killer
+		scope:attacker = {
+			NOT = { government_has_flag = government_is_nw }
+			custom_description = {
+				text = "rv_no_revenge_target_trigger"
+				OR = {
+					#always = yes
+					AND = {
+						#is_local_player = yes
+						is_ai = no
+						OR = {
+							any_child = {
+								even_if_dead = yes
+								is_alive = no
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_ruler = yes
+								}
+							}
+							any_memory = {
+								has_memory_type = lover_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+									}
+								}
+							}
+							any_memory = {
+								has_memory_type = soulmate_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+									}
+								}
+							}
+							any_memory = {
+								has_memory_type = friend_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+									}
+								}
+							}
+							any_memory = {
+								has_memory_type = best_friend_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+									}
+								}
+							}
+							any_memory = {
+								has_memory_type = spouse_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+									}
+								}
+							}
+
+							### Write memory for on_family_friend_death!
+
+							any_close_family_member = {
+								even_if_dead = yes
+								is_alive = no
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_ruler = yes
+								}
+							}
+							any_extended_family_member = {
+								even_if_dead = yes
+								is_alive = no
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_ruler = yes
+								}
+							}
+						}
+
+						NOT = {
+							any_owned_story = {
+								has_variable_list = rv_currently_revenging
+							}
+						}
+						#any_owned_story = {
+							#NOT = {has_variable_list = rv_currently_revenging}
+						#}
+					}
+
+					AND = {
+						is_ai = yes
+						any_owned_story = {
+							story_type = rv_revenge_war_story
+							has_variable_list = rv_revenge_list
+							NOT = {has_variable_list = rv_currently_revenging}
+							any_in_list = {
+								variable = rv_revenge_list
+								is_alive = no
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_ruler = yes
+								}
+							}
+						}
+					}
+				}
+				is_landed = yes
+				highest_held_title_tier >= tier_county
+			}
+		}
+	}
+	allowed_against_character = {
+		NOT = { government_has_flag = government_is_nw }
+		custom_description = {
+			text = "rv_no_revenge_target_trigger"
+			OR = {
+				AND = {
+					#is_local_player = yes
+					scope:attacker = {
+						is_ai = no
+						OR = {
+							any_memory = {
+								has_memory_type = lover_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+										this = scope:defender
+										prev = {save_temporary_scope_as = rv_dead_char}
+										NOR = {
+											scope:rv_dead_char = {
+												any_memory = {
+													has_memory_type = rv_was_revenged
+												}
+											}
+											any_secret = {
+												secret_type = secret_murder
+												NOT = {is_known_by = scope:attacker}
+												exists = secret_target
+												secret_target = {
+													this = scope:rv_dead_char
+												}
+											}
+											scope:attacker = {
+												any_memory = {
+													OR = {
+														has_memory_type = rival_died
+														has_memory_type = nemesis_died
+													}
+													exists = memory_participant:dead_relation
+													memory_participant:dead_relation = {
+														this = scope:rv_dead_char
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+							any_memory = {
+								has_memory_type = soulmate_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+										this = scope:defender
+										prev = {save_temporary_scope_as = rv_dead_char}
+										NOR = {
+											scope:rv_dead_char = {
+												any_memory = {
+													has_memory_type = rv_was_revenged
+												}
+											}
+											any_secret = {
+												secret_type = secret_murder
+												NOT = {is_known_by = scope:attacker}
+												exists = secret_target
+												secret_target = {
+													this = scope:rv_dead_char
+												}
+											}
+											scope:attacker = {
+												any_memory = {
+													OR = {
+														has_memory_type = rival_died
+														has_memory_type = nemesis_died
+													}
+													exists = memory_participant:dead_relation
+													memory_participant:dead_relation = {
+														this = scope:rv_dead_char
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+							any_memory = {
+								has_memory_type = friend_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+										this = scope:defender
+										prev = {save_temporary_scope_as = rv_dead_char}
+										NOR = {
+											scope:rv_dead_char = {
+												any_memory = {
+													has_memory_type = rv_was_revenged
+												}
+											}
+											any_secret = {
+												secret_type = secret_murder
+												NOT = {is_known_by = scope:attacker}
+												exists = secret_target
+												secret_target = {
+													this = scope:rv_dead_char
+												}
+											}
+											scope:attacker = {
+												any_memory = {
+													OR = {
+														has_memory_type = rival_died
+														has_memory_type = nemesis_died
+													}
+													exists = memory_participant:dead_relation
+													memory_participant:dead_relation = {
+														this = scope:rv_dead_char
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+							any_memory = {
+								has_memory_type = best_friend_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+										this = scope:defender
+										prev = {save_temporary_scope_as = rv_dead_char}
+										NOR = {
+											scope:rv_dead_char = {
+												any_memory = {
+													has_memory_type = rv_was_revenged
+												}
+											}
+											any_secret = {
+												secret_type = secret_murder
+												NOT = {is_known_by = scope:attacker}
+												exists = secret_target
+												secret_target = {
+													this = scope:rv_dead_char
+												}
+											}
+											scope:attacker = {
+												any_memory = {
+													OR = {
+														has_memory_type = rival_died
+														has_memory_type = nemesis_died
+													}
+													exists = memory_participant:dead_relation
+													memory_participant:dead_relation = {
+														this = scope:rv_dead_char
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+							any_memory = {
+								has_memory_type = spouse_died
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									exists = killer
+									killer = {
+										is_alive = yes
+										is_ruler = yes
+										this = scope:defender
+										prev = {save_temporary_scope_as = rv_dead_char}
+										NOR = {
+											scope:rv_dead_char = {
+												any_memory = {
+													has_memory_type = rv_was_revenged
+												}
+											}
+											any_secret = {
+												secret_type = secret_murder
+												NOT = {is_known_by = scope:attacker}
+												exists = secret_target
+												secret_target = {
+													this = scope:rv_dead_char
+												}
+											}
+											scope:attacker = {
+												any_memory = {
+													OR = {
+														has_memory_type = rival_died
+														has_memory_type = nemesis_died
+													}
+													exists = memory_participant:dead_relation
+													memory_participant:dead_relation = {
+														this = scope:rv_dead_char
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+							scope:defender = {
+								OR = {
+									any_killed_character = {
+										save_temporary_scope_as = rv_dead_char
+										OR = {
+											#is_heir_of = scope:attacker
+											#is_spouse_of = scope:attacker #Not working; replaced with memory
+											is_close_or_extended_family_of = scope:attacker
+										}
+										scope:defender = {
+											NOR = {
+												scope:rv_dead_char = {
+													any_memory = {
+														has_memory_type = rv_was_revenged
+													}
+												}
+												any_secret = {
+													secret_type = secret_murder
+													NOT = {is_known_by = scope:attacker}
+													exists = secret_target
+													secret_target = {
+														this = scope:rv_dead_char
+													}
+												}
+												scope:attacker = {
+													any_memory = {
+														OR = {
+															has_memory_type = rival_died
+															has_memory_type = nemesis_died
+														}
+														exists = memory_participant:dead_relation
+														memory_participant:dead_relation = {
+															this = scope:rv_dead_char
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				AND = {
+					scope:attacker = {
+						is_ai = yes
+						any_owned_story = {
+							story_type = rv_revenge_war_story
+							has_variable_list = rv_revenge_list
+							NOT = {has_variable_list = rv_currently_revenging}
+							any_in_list = {
+								variable = rv_revenge_list
+								is_alive = no
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_ruler = yes
+									this = scope:defender
+								}
+							}
+						}
+					}
+				}
+			}
+			is_landed = yes
+			highest_held_title_tier >= tier_county
+		}
+	}
+
+	on_declaration = {
+		on_declared_war = yes
+		debug_log = "rv_revenge_war_declared"
+
+		scope:attacker = {
+			if = {
+				limit = {
+					always = no # Disabled: This block is moved to re_revenge_war_declaration
+					is_ai = yes
+					exists = scope:defender
+				}
+				scope:defender = { save_scope_as = rv_defender }
+				rv_revenge_add_dead_characters_to_root_sgui = yes
+			}
+		}
+
+		rv_revenge_add_dead_characters_to_attacker_story = yes
+
+		scope:defender = {
+			if = {
+				limit = {
+					any_owned_story = {
+						story_type = rv_revenge_war_defender_story
+						count = 0
+					}
+				}
+				create_story = {
+					type = rv_revenge_war_defender_story
+					save_scope_as = rv_revenge_defender_story
+				}
+			}
+
+			else = {
+				random_owned_story = {
+					limit = {
+						story_type = rv_revenge_war_defender_story
+					}
+					save_scope_as = rv_revenge_defender_story
+				}
+			}
+			if = {
+				limit = {exists = scope:rv_revenge_defender_story}
+				scope:rv_revenge_defender_story = {
+					add_to_variable_list = {
+						name = rv_attacking_revengers
+						target = scope:attacker
+					}
+				}
+			}
+			add_to_variable_list = {
+				name = rv_attacking_revengers_temp
+				target = scope:attacker
+			}
+
+			### Expose relevant murder secrets
+			every_secret = {
+				limit = {
+					secret_type = secret_murder
+					is_known_by = scope:attacker
+					exists = secret_target
+					exists = scope:rv_revenge_story
+					secret_target = {
+						scope:rv_revenge_story = {
+							is_target_in_variable_list = {
+								name = rv_currently_revenging
+								target = prev
+							}
+						}
+					}
+				}
+				expose_secret = scope:attacker
+			}
+
+			### Rebellious vassals are not appreciated
+			if = {
+				limit = {
+					target_is_vassal_or_below = scope:attacker
+				}
+				add_opinion = {
+					target = scope:attacker
+					modifier = rebellious_vassal_opinion
+				}
+			}
+		}
+
+
+		### Liege joining war logic
+		if = {
+			limit = { exists = war }
+			war = {
+				if = {
+					limit = {
+						exists = scope:defender
+						exists = scope:defender.liege
+						scope:defender = { is_independent_ruler = no}
+						scope:defender.top_liege = scope:attacker.top_liege
+						NOR = {
+							scope:defender.liege = scope:defender.top_liege
+							scope:defender.liege = scope:attacker.liege
+						}
+					}
+					add_defender = scope:defender.liege
+				}
+				else_if = {
+					limit = {
+						exists = scope:defender
+						exists = scope:defender.top_liege
+						scope:defender = { is_independent_ruler = no }
+						NOT = {scope:defender.top_liege = scope:attacker.top_liege}
+					}
+					add_defender = scope:defender.top_liege
+				}
+			}
+		}
+	}
+
+	cost = {
+		prestige = {
+			value = 0
+			add = {
+				value = 2000
+				desc = CB_BASE_COST
+			}
+			if = {
+				limit = {
+					always = yes
+				}
+				add = rv_revenge_discount
+			}
+			multiply = common_cb_prestige_cost_multiplier
+		}
+	}
+
+	on_victory_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:defender = { is_local_player = yes }
+				}
+				desc = revenge_war_victory_desc_defender
+			}
+			desc = revenge_war_victory_desc
+		}
+	}
+
+	on_victory = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		hidden_effect = {
+			debug_log = "rv_revenge_war_won"
+
+			remove_attacking_revenger_for_defender = yes
+
+			create_successful_revenge_memory = yes
+		}
+
+		### Imprison Defender
+		scope:defender = {
+			if = {
+				limit = {
+					is_alive = yes
+				}
+				hard_imprison_character_effect = {
+					TARGET = scope:defender
+					IMPRISONER = scope:attacker
+				}
+				# Counter PoW auto release
+				trigger_event = {
+					on_action = rv_hard_imprison
+					days = 1
+				}
+			}
+		}
+
+		### Opinion boost and was_revenged marking
+		scope:attacker = {
+			random_owned_story = {
+				limit = {
+					story_type = rv_revenge_war_story
+					has_variable_list = rv_currently_revenging
+				}
+				rv_successful_revenge_relation_boost_and_marking = yes
+				end_story = yes
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		desc = rv_revenge_war_white_peace_desc
+	}
+
+	on_white_peace = {
+
+		hidden_effect = {
+			debug_log = "rv_revenge_war_white_peace"
+
+			create_failed_revenge_memory = yes
+
+			end_revenge_story_for_attacker = yes
+
+			remove_attacking_revenger_for_defender = yes
+		}
+
+		scope:attacker = { show_pow_release_message_effect = yes }
+		# Prestige loss for the attacker
+		scope:attacker = {
+			add_prestige = {
+				value = minor_prestige_value
+				multiply = -2
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Truce
+		add_truce_white_peace_effect = yes
+	}
+
+	on_defeat_desc = {
+		desc = rv_revenge_war_defeat_desc
+	}
+
+	on_defeat = {
+
+		hidden_effect = {
+			debug_log = "rv_revenge_war_defeated"
+
+			create_failed_revenge_memory = yes
+
+			end_revenge_story_for_attacker = yes
+
+			remove_attacking_revenger_for_defender = yes
+		}
+
+		scope:attacker = {
+			show_pow_release_message_effect = yes
+		}
+
+		# Prestige loss for the attacker
+		scope:attacker = {
+			pay_short_term_gold_reparations_effect = {
+				GOLD_VALUE = 4.5
+			}
+			add_prestige = {
+				value = major_prestige_value
+				multiply = -2
+			}
+		}
+
+		# Prestige for Defender
+		scope:defender = {
+			add_prestige_war_defender_effect = {
+				PRESTIGE_VALUE = major_prestige_value
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Truce
+		add_truce_attacker_defeat_effect = yes
+	}
+
+	should_invalidate = {
+		OR = {
+			scope:attacker = {
+				OR = {
+					is_landed = no
+					highest_held_title_tier < tier_county
+				}
+			}
+
+			scope:defender = {
+				OR = {
+					is_landed = no
+					highest_held_title_tier < tier_county
+				}
+			}
+		}
+	}
+
+	on_invalidated = {
+		hidden_effect = {
+			debug_log = "rv_revenge_war_invalidated"
+
+			create_failed_revenge_memory = yes
+
+			end_revenge_story_for_attacker = yes
+
+			remove_attacking_revenger_for_defender = yes
+		}
+	}
+
+	on_invalidated_desc = {
+		desc = rv_revenge_war_invalidated_desc
+	}
+
+	on_primary_attacker_death = invalidate
+	on_primary_defender_death = invalidate
+
+	transfer_behavior = invalidate
+
+	attacker_allies_inherit = no
+	defender_allies_inherit = no
+
+	war_name = "REVENGE_WAR_NAME"
+	cb_name_no_target = "REVENGE_WAR_NAME"
+
+	interface_priority = 1001
+
+	ticking_war_score_targets_entire_realm = yes
+	max_defender_score_from_occupation = 150
+	max_attacker_score_from_occupation = 150
+	attacker_ticking_warscore = 0
+	attacker_wargoal_percentage = 0.8
+	defender_ticking_warscore_delay = { months = 6 }
+	defender_ticking_warscore = 0.15
+	attacker_wargoal_percentage = 0
+
+	#max_ai_diplo_distance_to_title = 500
+
+	should_show_war_goal_subview = no
+
+	#target_de_jure_regions_above = yes
+	ai = no
+
+	#ai_score = {
+		#value = rv_rescue_war_ai_score_value_extreme
+	#}
+}

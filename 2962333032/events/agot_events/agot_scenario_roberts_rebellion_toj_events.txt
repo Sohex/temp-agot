@@ -1,0 +1,4187 @@
+﻿namespace = agot_scenario_rr_toj
+
+### SPOILER ALERT ### DO NOT READ THIS FILE IF UNFAMILIAR WITH SEVERAL THEORIES REGARDING ROBERT'S REBELLION
+
+### Chain 1: Rebels won ###
+
+# ToJ initialization
+agot_scenario_rr_toj.0001 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = agot_scenario_rr_toj.0001.desc
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = character:Stark_5
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0001
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0001
+		#RIP spawn_activity
+		# hidden_effect = {
+		# 	title:b_tower_of_joy.title_province = {
+		# 		spawn_activity = {
+		# 			owner = character:Stark_5
+		# 			type = activity_location_set
+		# 		}
+		# 	}
+		# }
+
+
+		if = {
+			limit = { scope:story.var:mw_linked_war_status = flag:rebels_won }
+
+			set_variable = agot_rr_is_companion_leader
+
+			scope:story = {
+				add_to_variable_list = {
+					name = agot_rr_toj_companions
+					target = root
+				}
+			}
+
+			agot_scenario_rr_toj_companion_setup = yes
+
+			while = {
+				limit = {
+					scope:story = {
+						OR = {
+							NOT = { has_variable_list = agot_rr_toj_companions }
+							variable_list_size = { name = agot_rr_toj_companions value < 7 }
+						}
+					}
+				}
+				agot_scenario_rr_toj_get_companions_setup = yes
+			}
+			clear_variable_list = agot_toj_possible_companions
+		}
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0001.a
+
+		custom_tooltip = agot_scenario_rr_toj_1_tooltip
+
+		trigger_event = { id = agot_scenario_rr_toj.0003 days = 8 } # Final setup event
+	}
+}
+
+# Companions are asked to join companion leader for ToJ
+agot_scenario_rr_toj.0002 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = agot_scenario_rr_toj.0002.desc
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = scope:agot_toj_chain_leader
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0002
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0002
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0002.a
+
+		scope:story = {
+			add_to_variable_list = {
+				name = agot_rr_toj_companions
+				target = root
+			}
+		}
+
+		ai_chance = {
+			base = 65
+		}
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0002.b
+
+		scope:agot_toj_chain_leader = {
+			remove_list_variable = {
+				name = agot_toj_possible_companions
+				target = root
+			}
+		}
+
+		ai_chance = {
+			base = 35
+
+			modifier = { # Always accept in historical mode
+				has_game_rule = agot_story_historical_events_historical_outcomes
+				OR = {
+					this = character:Dustin_1
+					this = character:Glover_2
+					this = character:Cassel_2
+					this = character:Ryswell_10
+					this = character:Wull_4
+				}
+				factor = 0
+			}
+
+			modifier = { # Always accept in historical mode
+				has_game_rule = agot_story_historical_events_weighted_outcomes
+				OR = {
+					this = character:Dustin_1
+					this = character:Glover_2
+					this = character:Cassel_2
+					this = character:Ryswell_10
+					this = character:Wull_4
+				}
+				factor = 0.5
+			}
+		}
+	}
+}
+
+# Companion setup finished; Journey to ToJ begins
+agot_scenario_rr_toj.0003 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = agot_scenario_rr_toj.0003.desc
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = root
+		animation = marshal
+		outfit_tags = { military_outfit }
+	}
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0003
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0003
+		add_character_flag = {
+			flag = needs_ned_armor
+			days = 30
+		}
+		#RIP spawn_activity
+		# hidden_effect = {
+		# 	title:b_tower_of_joy.title_province = {
+		# 		spawn_activity = {
+		# 			owner = root
+		# 			type = activity_location_set
+		# 		}
+		# 	}
+		# }
+		if = {
+			limit = {
+				AND = {
+					is_ai = no
+					this = root
+				}
+			}
+			pan_camera_to_title = title:b_tower_of_joy
+		}
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0003.a
+
+		scope:story = {
+			every_in_list = {
+				variable = agot_rr_toj_companions
+
+				limit = { NOT = { this = root } }
+
+				save_temporary_scope_as = temp_companion
+
+				custom_tooltip = AGOT_TOJ_COMPANION_JOINED
+			}
+		}
+
+		trigger_event = { id = agot_scenario_rr_toj.0004 days = { 25 35 } } # Arrive at ToJ
+	}
+}
+
+# Encounter kingsguard
+agot_scenario_rr_toj.0004 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:rr_kingsguard_action = flag:attack
+					exists = global_var:the_trident_battle_location
+				}
+				desc = agot_scenario_rr_toj.0004.desc_trident.a
+			}
+			triggered_desc = {
+				trigger = {
+					scope:rr_kingsguard_action = flag:attack
+					NOT = { exists = global_var:the_trident_battle_location }
+				}
+				desc = agot_scenario_rr_toj.0004.desc.a
+			}
+			triggered_desc = {
+				trigger = { scope:rr_kingsguard_action = flag:cooperate }
+				desc = agot_scenario_rr_toj.0004.desc.b
+			}
+		}
+	}
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = root
+		animation = marshal
+		outfit_tags = { military_outfit }
+	}
+	right_portrait = character:Dayne_5
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0004
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				exists = global_var:the_trident_battle_location
+			}
+			global_var:the_trident_battle_location = {
+				save_scope_as = trident_battle
+			}
+		}
+
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0004
+		add_character_flag = {
+			flag = needs_ned_armor
+			days = 30
+		}
+		if = {
+			limit = { has_variable = agot_rr_is_companion_leader }
+
+			random_list = {
+				0 = {
+					save_scope_value_as = { name = rr_kingsguard_action value = flag:attack }
+
+					character:Dayne_5 = { set_variable = duel_happened }
+					character:Whent_5 = { set_variable = duel_happened }
+					character:Hightower_3 = { set_variable = duel_happened }
+
+					modifier = { # if loyalists won the kingsguard always cooperates
+						scope:story.var:mw_linked_war_status = flag:crown_won
+						factor = 0
+					}
+
+					modifier = {
+						add = agot_historic_outcome_2
+					}
+				}
+				0 = {
+					save_scope_value_as = { name = rr_kingsguard_action value = flag:cooperate }
+
+					modifier = {
+						add = agot_nonhistoric_outcome_2
+					}
+
+					modifier = { # There is no reason for the kingsguard to still keep her captive if she has no child and is not pregnant
+						scope:agot_lyanna_preg_status = flag:initialized
+						agot_has_historical_events_trigger = no
+						factor = 0
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { scope:rr_kingsguard_action = flag:attack }
+						desc = agot_scenario_rr_toj.0004.a.1
+					}
+					triggered_desc = {
+						trigger = { scope:rr_kingsguard_action = flag:cooperate }
+						desc = agot_scenario_rr_toj.0004.a.2
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				scope:rr_kingsguard_action = flag:attack
+				exists = global_var:the_trident_battle_location
+			}
+			custom_tooltip = agot_scenario_rr_toj.0004.a.tt
+		}
+
+		if = {
+			limit = { has_variable = agot_rr_is_companion_leader }
+
+			if = {
+				limit = { scope:rr_kingsguard_action = flag:attack }
+
+
+				hidden_effect = {
+					random_list = {
+						0 = {
+							modifier = {
+								character:Reed_1 = { is_alive = yes }
+								add = agot_historic_outcome_5
+							}
+							character:Reed_1 = { save_scope_as = surviving_companion }
+							trigger_event = agot_scenario_rr_toj.0005
+						}
+						0 = {
+							modifier = {
+								add = agot_nonhistoric_outcome_5
+							}
+							modifier = {
+								character:Reed_1 = { is_alive = no }
+								add = agot_historic_outcome_5
+							}
+							scope:story = {
+								random_in_list = {
+									variable = agot_rr_toj_companions
+									limit = {
+										is_alive = yes
+										NOT = { this = root }
+									}
+
+									weight = {
+										modifier = {
+											factor = 2
+											this = character:Wull_4 #Fox bucket nepotism requirement
+										}
+									}
+
+									save_scope_as = surviving_companion
+								}
+							}
+							trigger_event = agot_scenario_rr_toj.0005
+						}
+						0 = {
+							modifier = {
+								add = agot_nonhistoric_outcome_5
+							}
+							character:Dayne_5 = { save_scope_as = surviving_kingsguard }
+							character:Whent_5 = { save_scope_as = dead_kingsguard_1 }
+							character:Hightower_3 = { save_scope_as = dead_kingsguard_2 }
+							trigger_event = agot_scenario_rr_toj.0006
+						}
+						0 = {
+							modifier = {
+								add = agot_nonhistoric_outcome_5
+							}
+							character:Whent_5 = { save_scope_as = surviving_kingsguard }
+							character:Dayne_5 = { save_scope_as = dead_kingsguard_1 }
+							character:Hightower_3 = { save_scope_as = dead_kingsguard_2 }
+							trigger_event = agot_scenario_rr_toj.0006
+						}
+						0 = {
+							modifier = {
+								add = agot_nonhistoric_outcome_5
+							}
+							character:Hightower_3 = { save_scope_as = surviving_kingsguard }
+							character:Dayne_5 = { save_scope_as = dead_kingsguard_1 }
+							character:Whent_5 = { save_scope_as = dead_kingsguard_2 }
+							trigger_event = agot_scenario_rr_toj.0006
+						}
+					}
+				}
+			}
+			else = {
+				scope:story = {
+					every_in_list = {
+						variable = agot_rr_toj_companions
+
+						limit = { NOT = { this = scope:agot_toj_chain_leader } }
+
+						trigger_event = agot_scenario_rr_toj.9004
+					}
+				}
+				if = {
+					limit = { has_variable = agot_rr_is_companion_leader }
+
+					if = {
+						limit = {
+							OR = {
+								scope:agot_lyanna_preg_status = flag:finished
+								scope:agot_lyanna_preg_status = flag:overdue
+							}
+						}
+						trigger_event = agot_scenario_rr_toj.0010
+					}
+					if = {
+						limit = {
+							OR = {
+								scope:agot_lyanna_preg_status = flag:initialized
+								scope:agot_lyanna_preg_status = flag:started
+							}
+						}
+						trigger_event = agot_scenario_rr_toj.0016
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_scenario_rr_toj.9004 = {
+	type = character_event
+	title = agot_scenario_rr_toj.9004.t
+	desc = agot_scenario_rr_toj.9004.desc
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = scope:agot_toj_chain_leader
+		animation = marshal
+		outfit_tags = { military_outfit }
+	}
+	right_portrait = character:Dayne_5
+
+	immediate = {
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.9004.a
+	}
+}
+
+# Rebels win
+agot_scenario_rr_toj.0005 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0005.t
+	desc = agot_scenario_rr_toj.0005.desc
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = scope:surviving_companion
+
+	immediate = {
+		custom_tooltip = agot_scenario_rr_toj.0005.tooltip
+		scope:story = {
+			random_in_list = {
+				variable = agot_rr_toj_companions
+				limit = {
+					is_alive = yes
+					NOT = { this = scope:surviving_companion }
+					NOT = { this = root }
+				}
+
+				save_scope_as = corpse_1
+
+				character:Whent_5 = { save_scope_as = killer }
+				trigger_event = agot_scenario_rr_toj.9005
+			}
+			random_in_list = {
+				variable = agot_rr_toj_companions
+				limit = {
+					is_alive = yes
+					NOT = { this = scope:surviving_companion }
+					NOT = { this = root }
+					NOT = { this = scope:corpse_1 }
+				}
+
+				save_scope_as = corpse_2
+
+				character:Hightower_3 = { save_scope_as = killer }
+				trigger_event = agot_scenario_rr_toj.9005
+			}
+			every_in_list = {
+				variable = agot_rr_toj_companions
+				limit = {
+					is_alive = yes
+					NOT = { this = scope:surviving_companion }
+					NOT = { this = root }
+					NOT = { this = scope:corpse_1 }
+					NOT = { this = scope:corpse_2 }
+				}
+
+				character:Dayne_5 = { save_scope_as = killer }
+				trigger_event = agot_scenario_rr_toj.9005
+			}
+			character:Hightower_3 = {
+				if = {
+					limit = {
+						is_alive = yes
+					}
+
+					death = {
+						death_reason = death_duel
+						killer = root
+					}
+				}
+			}
+			character:Whent_5 = {
+				if = {
+					limit = {
+						is_alive = yes
+					}
+
+					death = {
+						death_reason = death_duel
+						killer = scope:surviving_companion
+					}
+				}
+			}
+			character:Dayne_5 = {
+				if = {
+					limit = {
+						is_alive = yes
+					}
+
+					death = {
+						death_reason = death_duel
+						killer = scope:surviving_companion
+					}
+				}
+			}
+
+			scope:surviving_companion = { trigger_event = agot_scenario_rr_toj.9006 }
+		}
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0005.a
+		trigger_event = agot_scenario_rr_toj.0007
+	}
+}
+
+# KG Win
+agot_scenario_rr_toj.0006 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0006.t
+	desc = agot_scenario_rr_toj.0006.desc
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = scope:surviving_kingsguard
+
+	immediate = {
+		custom_tooltip = agot_scenario_rr_toj.0006.tooltip
+		scope:story = {
+			character:Hightower_3 = {
+				if = {
+					limit = {
+						is_alive = yes
+						NOT = { this = scope:surviving_kingsguard }
+					}
+
+					death = {
+						death_reason = death_duel
+						killer = root
+					}
+				}
+			}
+			character:Whent_5 = {
+				if = {
+					limit = {
+						is_alive = yes
+						NOT = { this = scope:surviving_kingsguard }
+					}
+
+					death = {
+						death_reason = death_duel
+						killer = root
+					}
+				}
+			}
+			character:Dayne_5 = {
+				if = {
+					limit = {
+						is_alive = yes
+						NOT = { this = scope:surviving_kingsguard }
+					}
+
+					death = {
+						death_reason = death_duel
+						killer = root
+					}
+				}
+			}
+			random_in_list = {
+				variable = agot_rr_toj_companions
+				limit = {
+					is_alive = yes
+					NOT = { this = root }
+				}
+
+				save_scope_as = corpse_1
+
+				character:Whent_5 = { save_scope_as = killer }
+				trigger_event = agot_scenario_rr_toj.9005
+			}
+			random_in_list = {
+				variable = agot_rr_toj_companions
+				limit = {
+					is_alive = yes
+					NOT = { this = root }
+					NOT = { this = scope:corpse_1 }
+				}
+
+				save_scope_as = corpse_2
+
+				character:Hightower_3 = { save_scope_as = killer }
+				trigger_event = agot_scenario_rr_toj.9005
+			}
+			every_in_list = {
+				variable = agot_rr_toj_companions
+				limit = {
+					is_alive = yes
+					NOT = { this = root }
+					NOT = { this = scope:corpse_1 }
+					NOT = { this = scope:corpse_2 }
+				}
+
+				character:Dayne_5 = { save_scope_as = killer }
+				trigger_event = agot_scenario_rr_toj.9005
+			}
+		}
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0006.a
+		death = {
+			death_reason = death_duel
+			killer = scope:surviving_kingsguard
+		}
+
+		hidden_effect = {
+			#KG flee to Essos with Lyanna
+			agot_scenario_rr_toj_create_baby_snow_effect = yes
+			character:Stark_5 = {
+				agot_scenario_rr_rhaegar_baby_snow_bastard = yes
+			}
+			agot_rr_remove_yearly_1010_abductor_flag = yes
+			if = {
+				limit = {
+					OR = {
+						scope:agot_lyanna_preg_outcome = flag:alive_alive
+						scope:agot_lyanna_preg_outcome = flag:dead_alive
+					}
+				}
+				character:Stark_5 = {
+					if = {
+						limit = {
+							is_betrothed = yes
+						}
+						break_betrothal = betrothed
+					}
+				}
+				agot_scenario_rr_toj_release_lyanna_from_prison = yes
+				agot_rr_remove_lyanna_infertility = yes
+			}
+			else = {
+				character:Stark_5 = { death = { death_reason = death_childbirth } }
+			}
+			scope:story = {
+				set_variable = {
+					name	= agot_rr_preg_status_lyanna
+					value	= flag:finished
+				}
+				set_variable = {
+					name	= agot_rr_toj_status
+					value	= flag:finished
+				}
+			}
+			scope:surviving_kingsguard = {
+				trigger_event = agot_scenario_rr_toj.0300
+			}
+		}
+	}
+}
+
+agot_scenario_rr_toj.9005 = {
+	type = character_event
+	title = agot_scenario_rr_toj.9005.t
+	desc = agot_scenario_rr_toj.9005.desc
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = scope:killer
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = root
+		animation = fear
+	}
+
+	immediate = {
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.9005.a
+		death = {
+			death_reason = death_duel
+			killer = scope:killer
+		}
+	}
+}
+
+agot_scenario_rr_toj.9006 = {
+	type = character_event
+	title = agot_scenario_rr_toj.9006.t
+	desc = agot_scenario_rr_toj.9006.desc
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = root
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = character:Dayne_5
+		animation = fear
+	}
+
+	immediate = {
+		scope:agot_toj_chain_leader = { save_scope_as = surviving_companion }
+		custom_tooltip = agot_scenario_rr_toj.0006.tooltip
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.9006.a
+	}
+}
+
+# # Checks kingsguard and companions; initiates combat; trigger agot_scenario_rr_toj.0007
+# agot_scenario_rr_toj.0005 = {
+# 	scope = none
+# 	hidden = yes
+
+# 	immediate = {
+# 		hidden_effect = { # Give combat advantage when in historcial story mode
+# 			if = {
+# 				limit = { has_game_rule = agot_story_outcomes_historical }
+
+# 				character:Stark_3 = {
+# 					if = {
+# 						limit = { is_alive = yes }
+
+# 						add_character_modifier = agot_rr_historical_combat_advantage_modifier
+# 					}
+# 				}
+# 				character:Reed_1 = {
+# 					if = {
+# 						limit = { is_alive = yes }
+
+# 						add_character_modifier = agot_rr_historical_combat_advantage_modifier
+# 					}
+# 				}
+# 			}
+# 		}
+
+# 		scope:story = {
+# 			every_in_list = {
+# 				variable = agot_rr_toj_companions
+
+# 				if = {
+# 					limit = { is_alive = no }
+
+# 					scope:story = {
+# 						remove_list_variable = {
+# 							name = agot_rr_toj_companions
+# 							target = prev
+# 						}
+# 					}
+# 				}
+# 				if = {
+# 					limit = {
+# 						is_alive = yes
+# 						has_variable = duel_encounter
+# 					}
+
+# 					remove_variable = duel_encounter
+# 				}
+# 			}
+
+# 			if = { # If leader is dead fetch a new one
+# 				limit = { scope:agot_toj_chain_leader = { is_alive = no } }
+
+# 				every_in_list = {
+# 					variable = agot_rr_toj_companions
+
+# 					limit = { is_alive = no }
+
+# 					save_temporary_scope_as = temp_list_deads_scope
+
+# 					scope:story = {
+# 						if = {
+# 							limit = { exists = scope:temp_list_deads_scope.killer }
+
+# 							every_in_list = {
+# 								variable = agot_rr_toj_companions
+
+# 								limit = { is_alive = yes }
+
+# 								send_interface_toast = {
+# 									#type = event_generic_neutral
+# 									title = agot_rr_toast_companion_was_killed
+# 									left_icon = scope:temp_list_deads_scope
+# 									right_icon = scope:temp_list_deads_scope.killer
+# 								}
+# 							}
+# 						}
+
+# 						remove_list_variable = {
+# 							name = agot_rr_toj_companions
+# 							target = prev
+# 						}
+# 					}
+# 				}
+
+# 				if = { # Fetch new companion leader if old one is dead
+# 					limit = {
+# 						has_variable_list = agot_rr_toj_companions
+# 						variable_list_size = { name = agot_rr_toj_companions value >= 1 }
+# 					}
+
+# 					remove_list_variable = {
+# 						name = agot_rr_toj_companions
+# 						target = root
+# 					}
+
+# 					random_in_list = {
+# 						variable = agot_rr_toj_companions
+# 						limit = { is_alive = yes }
+
+# 						save_scope_as = agot_toj_chain_leader
+# 						set_variable = agot_rr_is_companion_leader
+# 						title:e_the_north = { set_variable = { name = companion_leader value = prev } }
+# 					}
+# 				}
+# 				else_if = { # Check for kingsguard plot
+# 					limit = { # TODO
+# 						OR = {
+# 							scope:agot_lyanna_preg_status = flag:finished
+# 							scope:agot_lyanna_preg_status = flag:overdue
+# 						}
+# 						OR = {
+# 							character:Dayne_5 = { is_alive = yes }
+# 							character:Whent_5 = { is_alive = yes }
+# 							character:Hightower_3 = { is_alive = yes }
+# 						}
+# 					}
+# 					random_list = {
+# 						50 = {
+# 							character:Dayne_5 = { trigger_event = agot_scenario_rr_toj.0200 }
+# 							modifier = {
+# 								factor = 0
+# 								character:Dayne_5 = { is_alive = no }
+# 							}
+# 						}
+# 						25 = {
+# 							character:Whent_5 = { trigger_event = agot_scenario_rr_toj.0200 }
+# 							modifier = {
+# 								factor = 0
+# 								character:Whent_5 = { is_alive = no }
+# 							}
+# 						}
+# 						25 = {
+# 							character:Hightower_3 = { trigger_event = agot_scenario_rr_toj.0200 }
+# 							modifier = {
+# 								factor = 0
+# 								character:Hightower_3 = { is_alive = no }
+# 							}
+# 						}
+# 					}
+# 				}
+# 				else_if = { # Hide kingsguard and Lyanna
+# 					limit = {
+# 						OR = {
+# 							scope:agot_lyanna_preg_status = flag:initialized
+# 							scope:agot_lyanna_preg_status = flag:started
+# 						}
+# 					}
+
+# 					character:Hightower_3 = {
+# 						if = {
+# 							limit = { is_alive = yes }
+
+# 							death = { death_reason = death_disappearance }
+# 						}
+# 					}
+# 					character:Whent_5 = {
+# 						if = {
+# 							limit = { is_alive = yes }
+
+# 							death = { death_reason = death_disappearance }
+# 						}
+# 					}
+# 					character:Dayne_5 = {
+# 						if = {
+# 							limit = { is_alive = yes }
+
+# 							death = { death_reason = death_disappearance }
+# 						}
+# 					}
+# 					character:Stark_5 = {
+# 						if = {
+# 							limit = { is_alive = yes }
+
+# 							death = { death_reason = death_disappearance }
+# 						}
+# 					}
+# 					set_variable = {
+# 						name	= agot_rr_toj_status
+# 						value	= flag:finished
+# 					}
+# 				}
+# 				#else = { # Fallback # TODO
+# 				#}
+# 			}
+
+# 			if = {
+# 				limit = {
+# 					#scope:agot_toj_chain_leader = { is_alive = yes }
+# 					OR = {
+# 						character:Dayne_5 = { is_alive = yes }
+# 						character:Whent_5 = { is_alive = yes }
+# 						character:Hightower_3 = { is_alive = yes }
+# 					}
+# 				}
+
+# 				if = {
+# 					limit = { character:Dayne_5 = { is_alive = yes } }
+
+# 					random_in_list = {
+# 						variable = agot_rr_toj_companions
+# 						limit = {
+# 							is_alive = yes
+# 							NOT = { has_variable = duel_encounter }
+# 						}
+
+# 						#character:Dayne_5 = { set_variable = { name = duel_encounter value = prev } }
+# 						set_variable = { name = duel_encounter value = character:Dayne_5 }
+# 						trigger_event = agot_scenario_rr_toj.0006
+# 					}
+# 				}
+# 				if = {
+# 					limit = { character:Whent_5 = { is_alive = yes } }
+
+# 					random_in_list = {
+# 						variable = agot_rr_toj_companions
+# 						limit = {
+# 							is_alive = yes
+# 							NOT = { has_variable = duel_encounter }
+# 						}
+
+# 						#character:Whent_5 = { set_variable = { name = duel_encounter value = prev } }
+# 						set_variable = { name = duel_encounter value = character:Whent_5 }
+# 						trigger_event = agot_scenario_rr_toj.0006
+# 					}
+# 				}
+# 				if = {
+# 					limit = { character:Hightower_3 = { is_alive = yes } }
+
+# 					random_in_list = {
+# 						variable = agot_rr_toj_companions
+# 						limit = {
+# 							is_alive = yes
+# 							NOT = { has_variable = duel_encounter }
+# 						}
+
+# 						#character:Hightower_3 = { set_variable = { name = duel_encounter value = prev } }
+# 						set_variable = { name = duel_encounter value = character:Hightower_3 }
+# 						trigger_event = agot_scenario_rr_toj.0006
+# 					}
+# 				}
+
+# 				character:Stark_5 = {
+# 					trigger_event = { id = agot_scenario_rr_toj.0005 days = 1 }
+# 				}
+# 			}
+# 			else = {
+# 				scope:agot_toj_chain_leader = { trigger_event = agot_scenario_rr_toj.0007 }
+# 			}
+# 		}
+# 	}
+# }
+
+# # Fight starts; Leader and Companion event chain
+# agot_scenario_rr_toj.0006 = {
+# 	type = character_event
+# 	hidden = yes
+
+# 	override_background = {
+# 		reference = agot_tower_of_joy
+# 	}
+# 	override_icon = {
+# 		reference = "gfx/interface/icons/event_types/type_war.dds"
+# 	}
+# 	theme = war
+# 	left_portrait = root
+# 	right_portrait = var:duel_encounter
+
+# 	option = {
+# 		configure_start_single_combat_effect = {
+# 			SC_INITIATOR = var:duel_encounter
+# 			SC_ATTACKER = var:duel_encounter
+# 			SC_DEFENDER = root
+# 			FATALITY = always
+# 			FIXED = no
+# 			LOCALE = agot_tower_of_joy
+# 			OUTPUT_EVENT = single_combat.1006
+# 			INVALIDATION_EVENT = single_combat.1006	#In a real event, this would obviously be a different even to the output.
+# 		}
+
+# 		#var:duel_encounter = { remove_variable = duel_encounter }
+
+# 		if = {
+# 			limit = { is_alive = yes }
+
+# 			remove_variable = duel_encounter
+# 		}
+# 	}
+# }
+
+# Encounter resolved
+agot_scenario_rr_toj.0007 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = agot_scenario_rr_toj.0007.desc
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = character:Stark_5
+
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0007
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0007
+		hidden_effect = {
+			character:Stark_3 = {
+				if = {
+					limit = { is_alive = yes }
+
+					#RIP spawn_activity
+					# hidden_effect = {
+					# 	character:Stark_3.activity = {
+					# 		complete_activity = yes
+					# 	}
+					# }
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0007.a
+
+		if = {
+			limit = { has_variable = agot_rr_is_companion_leader }
+
+			if = {
+				limit = {
+					OR = {
+						scope:agot_lyanna_preg_status = flag:finished
+						scope:agot_lyanna_preg_status = flag:overdue
+					}
+				}
+				trigger_event = agot_scenario_rr_toj.0010
+			}
+			if = {
+				limit = {
+					OR = {
+						scope:agot_lyanna_preg_status = flag:initialized
+						scope:agot_lyanna_preg_status = flag:started
+					}
+				}
+				trigger_event = agot_scenario_rr_toj.0016
+			}
+		}
+	}
+}
+
+### Chain 2: Loyalists won ###
+
+# Start event for journey to ToJ
+agot_scenario_rr_toj.0008 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { this = character:Targaryen_3 }
+				desc = agot_scenario_rr_toj.0008.desc.a
+			}
+			desc = agot_scenario_rr_toj.0008.desc.b
+		}
+	}
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = character:Stark_5
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0008
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0008
+		scope:agot_toj_chain_leader = { add_character_flag = mw_toj_marriage_to_lyanna }
+		if = {
+			limit = {
+				character:Baratheon_2 = { is_alive = yes }
+				character:Stark_5 = {
+					is_alive = yes
+					is_betrothed = yes
+					betrothed = character:Baratheon_2
+				}
+			}
+			character:Stark_5 = { break_betrothal = character:Baratheon_2 }
+		}
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0008.a
+
+		trigger_event = { id = agot_scenario_rr_toj.0009 days = { 10 20 } }
+	}
+}
+
+# Arrival at ToJ
+agot_scenario_rr_toj.0009 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { this = character:Targaryen_3 }
+				desc = agot_scenario_rr_toj.0009.desc.a
+			}
+			desc = agot_scenario_rr_toj.0009.desc.b
+		}
+	}
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = character:Stark_5
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0009
+		}
+		exists = scope:story
+		exists = scope:agot_lyanna_preg_status
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0009
+	}
+
+
+	option = {
+		name = agot_scenario_rr_toj.0009.a
+
+		if = {
+			limit = {
+				OR = {
+					scope:agot_lyanna_preg_status = flag:finished
+					scope:agot_lyanna_preg_status = flag:overdue
+				}
+			}
+			trigger_event = agot_scenario_rr_toj.0010
+		}
+		else_if = {
+			limit = {
+				OR = {
+					scope:agot_lyanna_preg_status = flag:initialized
+					scope:agot_lyanna_preg_status = flag:started
+				}
+			}
+			trigger_event = agot_scenario_rr_toj.0016
+		}
+	}
+}
+
+### OUTCOMES ###
+
+## Outcome: Baby is born/stillborn; Lyanna dies/lives ##
+agot_scenario_rr_toj.0010 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = {
+		triggered_desc = { # Lyanna lives; Baby lives
+			trigger = {
+				character:Stark_5 = { is_alive = yes }
+				exists = scope:baby_snow # baby snow must be born/alive
+			}
+			desc = agot_scenario_rr_toj.0010.desc.a
+		}
+		triggered_desc = { # Lyanna dies; Baby lives
+			trigger = {
+				character:Stark_5 = { is_alive = no }
+				exists = scope:baby_snow # baby snow must be born/alive
+			}
+			desc = agot_scenario_rr_toj.0010.desc.b
+		}
+		triggered_desc = { # Lyanna lives; Baby dies
+			trigger = {
+				scope:agot_lyanna_preg_outcome = flag:alive_dead
+			}
+			desc = agot_scenario_rr_toj.0010.desc.c
+		}
+		triggered_desc = { # Lyanna dies; Baby dies
+			trigger = {
+				scope:agot_lyanna_preg_outcome = flag:dead_dead
+			}
+			desc = agot_scenario_rr_toj.0010.desc.d
+		}
+		triggered_desc = {
+			trigger = {
+				is_female = yes
+			}
+			desc = agot_scenario_rr_toj.0010.desc.e # You have to choose, give the baby to someone or expose his identity
+		}
+	}
+
+	override_background = {
+		reference = bedchamber
+	}
+	theme = healthcare
+	left_portrait = root
+	right_portrait = character:Stark_5
+	#lower_center_portrait = scope:baby_snow
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0010
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0010
+		hidden_effect = {
+			character:Stark_5 = {
+				if = {
+					limit = {
+						any_artifact = {
+							artifact_owner = character:Stark_5
+							has_variable = crown_of_qolab_winter_roses_artifact
+						}
+					}
+					random_artifact = {
+						limit = {
+							artifact_owner = character:Stark_5
+							has_variable = crown_of_qolab_winter_roses_artifact
+						}
+						character:Stark_5 = {
+							set_variable = {
+								name = old_tourney_location
+								value = prev.var:tourney_location
+							}
+						}
+						var:contest_winner = { save_scope_as = old_contest_winner }
+						if = {
+							limit = { has_variable = crown_of_qolab_winter_roses_artifact }
+							character:Stark_5 = { agot_create_artifact_trinket_of_qolab_winter_roses_effect = { OWNER = character:Stark_5 } }
+						}
+						destroy_artifact = this
+					}
+					remove_variable = old_tourney_location
+				}
+			}
+		}
+		agot_scenario_rr_get_baby_birth_lyanna_death_effect = yes
+		remove_variable = agot_rr_is_companion_leader
+	}
+
+	# Baby is born/alive
+
+	option = { # Keep baby's identity secret; if Lyanna survives take the child as bastard anyway #AGOT TODO link with event to select a proxy father
+		name = agot_scenario_rr_toj.0010.a
+
+		trigger = {
+			NOT = { this = character:Targaryen_3 }
+			exists = scope:baby_snow # baby snow must be born/alive
+		}
+
+		#AGOT TODO add custom tooltip
+
+		if = {
+			limit = {
+				is_female = yes
+				variable_list_size = { name = agot_rr_toj_companions value > 1 }
+				any_in_list = {
+					variable = agot_rr_toj_companions
+					is_male = yes
+				}
+			}
+			trigger_event = agot_scenario_rr_toj.0011
+		}
+
+		if = {
+			limit = {
+				character:Dayne_5 = { is_alive = no }
+			}
+			trigger_event = {
+				id = agot_scenario_rr_toj.0014
+				days = { 1 5 }
+			}
+		}
+
+		scope:baby_snow = {
+			set_father = root
+			set_house = root.house
+			set_character_faith = root.faith
+			set_culture = root.culture
+		}
+
+		if = {
+			limit = {
+				has_culture = culture:stormlander_main
+			}
+			scope:baby_snow = {
+				agot_remove_bastard_nickname_effect = yes # Remove bastard surname traits
+				make_trait_inactive = surname_storm
+				change_first_name = "Armond" #Jon Con's father's name
+			}
+		}
+		else_if = {
+			limit = {
+				has_culture = culture:riverman_main
+				#Stays Jon after Jon Mooton of old
+			}
+			scope:baby_snow = {
+				agot_remove_bastard_nickname_effect = yes # Remove bastard surname traits
+				make_trait_inactive = surname_rivers
+			}
+		}
+
+		add_courtier ?= scope:baby_snow
+
+		scope:story = { set_variable = { name = agot_rr_baby_snow_parentage value = flag:no } }
+
+		scope:story = {
+			every_in_list = {
+				variable = agot_rr_toj_companions
+
+				limit = {
+					is_alive = yes
+				}
+
+				add_secret = {
+					type = secret_agot_disputed_heritage
+					target = scope:baby_snow
+				}
+			}
+		}
+
+		if = {
+			limit = { character:Dayne_5 = { is_alive = yes } }
+			character:Dayne_5 = {
+				add_secret = {
+					type = secret_agot_disputed_heritage
+					target = scope:baby_snow
+				}
+			}
+		}
+		if = {
+			limit = { character:Whent_5 = { is_alive = yes } }
+			character:Whent_5 = {
+				add_secret = {
+					type = secret_agot_disputed_heritage
+					target = scope:baby_snow
+				}
+			}
+		}
+		if = {
+			limit = { character:Hightower_3 = { is_alive = yes } }
+			character:Hightower_3 = {
+				add_secret = {
+					type = secret_agot_disputed_heritage
+					target = scope:baby_snow
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_historic_outcome_2
+			}
+		}
+	}
+
+	option = { # Reveal the baby to the world
+		name = agot_scenario_rr_toj.0010.b
+
+		trigger = {
+			exists = scope:baby_snow # baby snow must be born/alive
+		}
+
+		if = {
+			limit = {
+				character:Dayne_5 = { is_alive = no }
+			}
+			trigger_event = {
+				id = agot_scenario_rr_toj.0014
+				days = { 1 5 }
+			}
+		}
+
+		scope:baby_snow = {
+			set_father = character:Targaryen_3
+			set_mother = character:Stark_5
+			set_house = character:Targaryen_3.house
+			hidden_effect = {
+				agot_set_birthplace = { LOCATION = b_tower_of_joy }
+			}
+		}
+		add_courtier = scope:baby_snow
+		# TODO add stress if requirements fit
+
+		scope:story = { set_variable = { name = agot_rr_baby_snow_parentage value = flag:truth_revealed } }
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				add = agot_nonhistoric_outcome_2
+			}
+		}
+	}
+
+	option = { # One of your companions takes the baby as bastard #AGOT TODO must be fixed
+		name = agot_scenario_rr_toj.0010.c
+
+		trigger = {
+			always = no #AGOT TODO fix
+			NOT = { this = character:Targaryen_3 }
+			exists = scope:baby_snow # baby snow must be born/alive
+		}
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	# Lyanna lives; no baby
+
+	option = { # Lyanna lives, no baby
+		name = agot_scenario_rr_toj.0010.d
+
+		trigger = {
+			scope:agot_lyanna_preg_outcome = flag:alive_dead
+			NOT = { this = character:Targaryen_3 }
+			NOT = { exists = scope:baby_snow }
+		}
+	}
+
+	# Rhaegar specific options
+
+	option = { # Rhaegar acknowledges baby as his own (baby becomes bastard)
+		name = agot_scenario_rr_toj.rhaegar.a
+
+		trigger = {
+			this = character:Targaryen_3
+			exists = scope:baby_snow # baby snow must be born/alive
+		}
+
+		agot_scenario_rr_rhaegar_baby_snow_bastard = yes
+
+		add_courtier ?= character:Stark_5
+		hidden_effect = { set_relation_lover = { reason = lover_longing target = character:Stark_5 } }
+		character:Stark_5 = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				break_betrothal = betrothed
+			}
+		}
+	}
+
+	option = { # Rhaegar legitimizes baby as his own (baby becomes legitimized bastard)
+		name = agot_scenario_rr_toj.rhaegar.b
+
+		trigger = {
+			this = character:Targaryen_3
+			exists = scope:baby_snow # baby snow must be born/alive
+		}
+
+		agot_scenario_rr_rhaegar_baby_snow_legitimized_bastard = yes
+
+		add_courtier ?= character:Stark_5
+		hidden_effect = { set_relation_lover = { reason = lover_longing target = character:Stark_5 } }
+		character:Stark_5 = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				break_betrothal = betrothed
+			}
+		}
+	}
+
+	option = { # Rhaegar makes Lyanna his new wife, disinherits Rhaenys/Aegon
+		name = agot_scenario_rr_toj.rhaegar.c
+
+		trigger = {
+			this = character:Targaryen_3
+			character:Stark_5 = { is_alive = yes }
+		}
+
+		agot_scenario_rr_toj_marry_lyanna_disinherit_effect = yes
+
+		if = {
+			limit = { title:c_sunspear.holder.house = character:Martell_7.house }
+
+			title:c_sunspear.holder = { trigger_event = agot_scenario_rr_toj.0060 }
+		}
+	}
+
+	option = { # Rhaegar makes Lyanna his new wife
+		name = agot_scenario_rr_toj.rhaegar.d
+
+		trigger = {
+			this = character:Targaryen_3
+			character:Stark_5 = { is_alive = yes }
+		}
+
+		agot_scenario_rr_toj_marry_lyanna_effect = yes
+
+		if = {
+			limit = { title:c_sunspear.holder.house = character:Martell_7.house }
+
+			title:c_sunspear.holder = { trigger_event = agot_scenario_rr_toj.0061 }
+		}
+	}
+
+	option = { #Baby is dead, Rhaegar brings Lyanna back to court as lover
+		name = agot_scenario_rr_toj.rhaegar.e
+		trigger = {
+			this = character:Targaryen_3
+			scope:agot_lyanna_preg_outcome = flag:alive_dead
+		}
+		add_courtier ?= character:Stark_5
+		hidden_effect = { set_relation_lover = { reason = lover_longing target = character:Stark_5 } }
+		character:Stark_5 = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				break_betrothal = betrothed
+			}
+		}
+	}
+
+	option = { #Baby is dead, Rhaegar sends Lyanna home
+		name = agot_scenario_rr_toj.rhaegar.f
+		trigger = {
+			this = character:Targaryen_3
+			scope:agot_lyanna_preg_outcome = flag:alive_dead
+		}
+		if = {
+			limit = {
+				title:c_winterfell.holder.house ?= character:Stark_5.house
+			}
+			title:c_winterfell.holder = { trigger_event = agot_scenario_rr_toj.0600 }
+		}
+	}
+
+	option = { #All dead
+		name = agot_scenario_rr_toj.rhaegar.g
+		trigger = {
+			scope:agot_lyanna_preg_outcome = flag:dead_dead
+		}
+	}
+
+	after = {
+		agot_rr_remove_yearly_1010_abductor_flag = yes
+
+		if = {
+			limit = { scope:baby_snow ?= { is_alive = yes } }
+
+			scope:baby_snow.house.house_head ?= {
+				add_hook_no_toast = {
+					type = house_head_hook
+					target = scope:baby_snow
+				}
+			}
+		}
+
+		if = {
+			limit = { character:Stark_5 = { is_alive = yes } }
+
+			agot_scenario_rr_toj_release_lyanna_from_prison = yes
+			agot_rr_remove_lyanna_infertility = yes
+		}
+		else_if = {
+			limit = { scope:story.var:mw_linked_war_status = flag:crown_won }
+			character:Stark_5 = {
+				set_death_reason = { death_reason = death_childbirth }
+			}
+		}
+		else = {
+			character:Stark_5 = {
+				set_death_reason = { death_reason = death_dungeon killer = character:Targaryen_3 }
+			}
+		}
+
+		if = {
+			limit = {
+				character:Stark_3 = { is_alive = yes }
+				character:Stark_4 = { is_alive = yes }
+				character:Stark_5 = { is_alive = no }
+			}
+			character:Stark_3 = {
+				random_list = {
+					50 = {
+						trigger = {
+							has_game_rule = agot_story_random_events_random_outcomes
+						}
+						#Nothing Happens
+					}
+					50 = {
+						trigger_event = {
+							id = agot_crowned_stag.1000
+							months = 3
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				scope:story.var:mw_linked_war_status = flag:rebels_won
+				NOT = { scope:rr_kingsguard_action = flag:cooperate }
+			}
+			agot_ruinize_title_effect = { TITLE = title:b_tower_of_joy }
+			title:b_tower_of_joy.title_province = {
+				remove_building = agot_tower_of_joy_01
+				add_special_building = agot_ruin_tower_of_joy_01
+			}
+		}
+	}
+}
+
+# Select companion who takes the baby as his bastard
+agot_scenario_rr_toj.0011 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = agot_scenario_rr_toj.0011.desc
+
+	override_background = {
+		reference = bedchamber
+	}
+	theme = healthcare
+	left_portrait = root
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0011
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0011
+		every_in_list = {
+			variable = agot_rr_toj_companions
+
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+	}
+
+	widget = {
+		is_shown = {
+			any_sibling = {
+				is_alive = yes
+				is_ruler = no
+				count > 1
+			}
+		}
+		gui = "agot_character_selection_three_options"
+		container = "custom_widgets_container"
+	}
+
+	option = { # Take the child as your own
+		name = agot_scenario_rr_toj.0011.a
+
+		trigger = {
+			is_male = yes
+		}
+
+		# We need a "new" mother for the baby
+
+		scope:baby_snow = {
+			set_father = root
+			set_house = root.house
+		}
+		add_courtier = scope:baby_snow
+
+		add_secret = {
+			type = secret_agot_disputed_heritage
+			target = scope:baby_snow
+		}
+	}
+
+	option = { # Chosen character will take the baby
+		name = agot_scenario_rr_toj.0011.b
+
+		var:si_selected_character = {
+			scope:baby_snow = {
+				set_father = prev
+				set_house = prev.house
+			}
+			add_courtier = scope:baby_snow
+
+			add_secret = {
+				type = secret_agot_disputed_heritage
+				target = scope:baby_snow
+			}
+		}
+	}
+
+	after = {
+		clear_variable_list = possible_characters
+		remove_variable = si_selected_character
+
+		scope:baby_snow.house.house_head ?= {
+			add_hook_no_toast = {
+				type = house_head_hook
+				target = scope:baby_snow
+			}
+		}
+
+		if = {
+			limit = { has_variable_list = agot_rr_toj_companions }
+
+			clear_variable_list = agot_rr_toj_companions
+		}
+
+		if = { # fallback if player is too dumb to select a character --> fire event again
+			limit = { NOT = { exists = var:si_selected_character } }
+			trigger_event = agot_scenario_rr_toj.0011
+		}
+		else = {
+			if = {
+				limit = { scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed }
+
+				title:h_the_iron_throne = {
+					every_de_jure_county_holder = {
+						limit = {
+							NOT = { this = root }
+							exists = scope:agot_toj_chain_leader
+							scope:agot_toj_chain_leader = { NOT = { has_character_flag = mw_toj_marriage_to_lyanna } }
+						}
+						trigger_event = { id = agot_scenario_rr_toj.0050 days = { 2 4 } }
+					}
+				}
+			}
+			else = {
+				trigger_event = agot_scenario_rr_toj.0012
+			}
+		}
+	}
+}
+
+# Choose what to tell Robert
+agot_scenario_rr_toj.0012 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = agot_scenario_rr_toj.0012.desc
+
+	override_background = {
+		reference = bedchamber
+	}
+	theme = healthcare
+	left_portrait = root
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0012
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0012
+	}
+
+	option = { # Keep baby secret
+		name = agot_scenario_rr_toj.0012.a
+
+		scope:story = { set_variable = { name = agot_rr_baby_snow_parentage value = flag:no } }
+	}
+
+	option = { # Tell him about the baby
+		name = agot_scenario_rr_toj.0012.b
+
+		scope:story = { set_variable = { name = agot_rr_baby_snow_parentage value = flag:truth_revealed } }
+	}
+
+	after = {
+		character:Baratheon_2 = {
+			trigger_event = { id = agot_scenario_rr_toj.0050 days = { 2 4 } }
+		}
+
+		if = {
+			limit = { exists = scope:baby_snow }
+
+			trigger_event = agot_scenario_rr_toj.0013 # Name the baby
+		}
+		else_if = {
+			limit = {
+				character:Dayne_5 = { is_alive = no }
+			}
+			trigger_event = { id = agot_scenario_rr_toj.0014 }
+		}
+	}
+}
+
+# Name the baby
+agot_scenario_rr_toj.0013 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0013.t
+	desc = agot_scenario_rr_toj.0013.desc
+
+	override_background = {
+		reference = bedchamber
+	}
+	theme = healthcare
+	left_portrait = root
+	right_portrait = scope:baby_snow
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0013
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0013
+	}
+
+	widget = {
+		is_shown = {
+			allow_naming_on_birth_of_child_trigger = { CHILD = scope:baby_snow }
+		}
+		gui = "event_window_widget_name_child"
+		container = "dynamic_birth_name"
+		controller = name_character
+		setup_scope = { scope:baby_snow = { save_scope_as = name_character_target } }
+	}
+
+	option = { #
+		name = agot_scenario_rr_toj.0013.a
+
+		if = {
+			limit = {
+				character:Dayne_5 = { is_alive = no }
+			}
+			trigger_event = {
+				id = agot_scenario_rr_toj.0014
+				days = { 1 5 }
+			}
+		}
+	}
+}
+
+# Bring Dawn to Daynes
+agot_scenario_rr_toj.0014 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0014.t
+	desc = agot_scenario_rr_toj.0014.desc # Only one loc needed since other scenarios are not visible for the player
+
+	override_background = {
+		reference = bp1_courtyard_mena
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = character:Dayne_5
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0013
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0013
+	}
+
+	option = { # Bring the sword back to Daynes
+		name = agot_scenario_rr_toj.0014.a
+
+		trigger_event = { id = agot_scenario_rr_toj.0015 days = { 7 16 } }
+	}
+
+	option = { # Why shouldn't I keep it?
+		name = agot_scenario_rr_toj.0014.b
+
+		# TODO transfer artifact Dawn
+	}
+}
+
+# You arrive at Daynes
+agot_scenario_rr_toj.0015 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0015.t
+	desc = agot_scenario_rr_toj.0015.desc
+
+	override_background = {
+		reference = bp1_courtyard_mena
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0015
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0015
+	}
+
+	theme = war
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+	right_portrait = {
+		character = character:Dayne_4
+		animation = sadness
+	}
+
+	option = { #
+		name = agot_scenario_rr_toj.0015.a
+
+		# Ned lives, Arthur dead; Ned dead, Arthur dead; Ashara kills herself either way # TODO
+	}
+}
+
+## Outcome: No baby at all; Pregnancy on-going ##
+agot_scenario_rr_toj.0016 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = { this = character:Targaryen_3 }
+					scope:agot_lyanna_preg_status = flag:started
+				}
+				desc = agot_scenario_rr_toj.0016.desc.a # Pregnancy on-going
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { this = character:Targaryen_3 }
+					scope:agot_lyanna_preg_status = flag:initialized
+				}
+				desc = agot_scenario_rr_toj.0016.desc.b # No baby
+			}
+
+			# Rhaegar specific loc
+			triggered_desc = {
+				trigger = {
+					this = character:Targaryen_3
+					scope:agot_lyanna_preg_status = flag:started
+				}
+				desc = agot_scenario_rr_toj.0016.desc.c # Pregnancy on-going
+			}
+			triggered_desc = {
+				trigger = {
+					this = character:Targaryen_3
+					scope:agot_lyanna_preg_status = flag:initialized
+				}
+				desc = agot_scenario_rr_toj.0016.desc.d # No baby
+			}
+		}
+	}
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = character:Stark_5
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0016
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0016
+		hidden_effect = {
+			character:Stark_5 = {
+				if = {
+					limit = {
+						any_artifact = {
+							artifact_owner = character:Stark_5
+							has_variable = crown_of_qolab_winter_roses_artifact
+						}
+					}
+					random_artifact = {
+						limit = {
+							artifact_owner = character:Stark_5
+							has_variable = crown_of_qolab_winter_roses_artifact
+						}
+						character:Stark_5 = {
+							set_variable = {
+								name = old_tourney_location
+								value = prev.var:tourney_location
+							}
+						}
+						var:contest_winner = { save_scope_as = old_contest_winner }
+						if = {
+							limit = { has_variable = crown_of_qolab_winter_roses_artifact }
+							character:Stark_5 = { agot_create_artifact_trinket_of_qolab_winter_roses_effect = { OWNER = character:Stark_5 } }
+						}
+						destroy_artifact = this
+					}
+					remove_variable = old_tourney_location
+				}
+			}
+		}
+		hidden_effect = {
+			if = {
+				limit = { scope:agot_lyanna_preg_status = flag:started }
+
+				character:Stark_5 = { add_trait = pregnant }
+			}
+		}
+		remove_variable = agot_rr_is_companion_leader
+	}
+
+	option = { # Nothing happens; Lyanna goes home (For Rhaegar: I don't want to play with you anymore)
+		name = agot_scenario_rr_toj.0016.a
+
+		trigger = {
+			OR = {
+				scope:agot_lyanna_preg_status = flag:initialized
+				this = character:Targaryen_3
+			}
+			NAND = {
+				NOT = { this = character:Targaryen_3 }
+				scope:story.var:mw_linked_war_status = flag:crown_won
+			}
+		}
+
+		if = {
+			limit = { this = character:Targaryen_3 }
+
+			add_courtier = character:Stark_5
+			set_relation_lover = { reason = lover_longing target = character:Stark_5 }
+			character:Stark_5 = { set_relation_lover = { reason = lover_longing target = root } }
+
+			scope:story = { set_variable = { name = agot_rr_baby_snow_parentage value = flag:truth_revealed } }
+		}
+		else_if = {
+			limit = {
+				scope:story.var:mw_linked_war_status = flag:rebels_won
+				exists = title:c_winterfell.holder
+			}
+			scope:story = { set_variable = { name = agot_rr_baby_snow_mother value = flag:mother_known } }
+		}
+	}
+
+	option = { # Tell Robert she was raped
+		name = agot_scenario_rr_toj.0016.b
+
+		trigger = {
+			NOT = {
+				this = character:Targaryen_3
+				scope:story.var:mw_linked_war_status = flag:crown_won
+			}
+			scope:agot_lyanna_preg_status = flag:started
+		}
+
+		custom_tooltip = SCENARIO_RR_PREGNANCY_TRUTH_REVEALED_NO
+
+		scope:story = { set_variable = { name = agot_rr_baby_snow_parentage value = flag:no } }
+		scope:story = { set_variable = { name = agot_rr_baby_snow_mother value = flag:mother_known } }
+
+		ai_chance = {
+			base = 80
+		}
+	}
+
+	option = { # Tell Robert the truth
+		name = agot_scenario_rr_toj.0016.c
+
+		trigger = {
+			character:Baratheon_2 = { is_alive = yes }
+			NOT = {
+				this = character:Targaryen_3
+				scope:story.var:mw_linked_war_status = flag:crown_won
+			}
+			scope:agot_lyanna_preg_status = flag:started
+		}
+
+		custom_tooltip = SCENARIO_RR_PREGNANCY_TRUTH_REVEALED_TO_ROBERT
+
+		scope:story = { set_variable = { name = agot_rr_baby_snow_parentage value = flag:truth_revealed_robert } }
+		scope:story = { set_variable = { name = agot_rr_baby_snow_mother value = flag:mother_known } }
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	option = { # Tell the realm about Rhaegar's child to be
+		name = agot_scenario_rr_toj.0016.d
+
+		trigger = {
+			NOT = { this = character:Targaryen_3 }
+			scope:agot_lyanna_preg_status = flag:started
+		}
+
+		custom_tooltip = SCENARIO_RR_PREGNANCY_TRUTH_REVEALED_TO_EVERYONE
+
+		scope:story = { set_variable = { name = agot_rr_baby_snow_parentage value = flag:truth_revealed } }
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	# Rhaegar specific options
+
+	option = { # Rhaegar makes Lyanna his new wife, disinherits Rhaenys/Aegon
+		name = agot_scenario_rr_toj.rhaegar.c
+
+		trigger = {
+			this = character:Targaryen_3
+		}
+
+		agot_scenario_rr_toj_marry_lyanna_disinherit_effect = yes
+
+		if = {
+			limit = { title:c_sunspear.holder.house = character:Martell_7.house }
+
+			title:c_sunspear.holder = { trigger_event = agot_scenario_rr_toj.0060 }
+		}
+	}
+
+	option = { # Rhaegar makes Lyanna his wife
+		name = agot_scenario_rr_toj.rhaegar.d
+
+		trigger = {
+			this = character:Targaryen_3
+		}
+
+		agot_scenario_rr_toj_marry_lyanna_effect = yes
+
+		if = {
+			limit = { title:c_sunspear.holder.house = character:Martell_7.house }
+
+			title:c_sunspear.holder = { trigger_event = agot_scenario_rr_toj.0061 }
+		}
+	}
+
+	after = {
+		agot_scenario_rr_toj_release_lyanna_from_prison = yes
+		agot_rr_remove_yearly_1010_abductor_flag = yes
+
+		if = {
+			limit = {
+				scope:story.var:mw_linked_war_status = flag:rebels_won
+				exists = title:c_winterfell.holder
+			}
+			debug_log = "rebels1"
+			if = {
+				limit = {
+					character:Stark_5 = {
+						NOT = { is_courtier_of = title:c_winterfell.holder }
+					}
+				}
+				character:Stark_5 = { move_to_pool_at = title:c_winterfell.holder.capital_province }
+				title:c_winterfell.holder = { add_courtier ?= character:Stark_5 }
+			}
+
+			if = {
+				limit = {
+					NOT = { scope:rr_kingsguard_action = flag:cooperate }
+				}
+				agot_ruinize_title_effect = { TITLE = title:b_tower_of_joy }
+				title:b_tower_of_joy.title_province = {
+					remove_building = agot_tower_of_joy_01
+					add_special_building = agot_ruin_tower_of_joy_01
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:story.var:mw_linked_war_status = flag:crown_won
+				exists = title:c_dragonstone.holder
+				NOT = { this = character:Targaryen_3 }
+			}
+			character:Stark_5 = { move_to_pool_at = title:c_dragonstone.holder.capital_province }
+			title:c_dragonstone.holder = { add_courtier ?= character:Stark_5 }
+		}
+
+		if = { # if she is NOT pregnant remove the blockers already
+			limit = { NOT = { scope:agot_lyanna_preg_status = flag:started } }
+
+			agot_rr_remove_lyanna_infertility = yes
+		}
+
+		if = {
+			limit = {
+				scope:story = { has_variable = agot_rr_baby_snow_parentage }
+				scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed
+			}
+
+			title:h_the_iron_throne = {
+				every_de_jure_county_holder = {
+					limit = {
+						NOT = { this = root }
+						exists = scope:agot_toj_chain_leader
+						scope:agot_toj_chain_leader = { NOT = { has_character_flag = mw_toj_marriage_to_lyanna } }
+					}
+
+					trigger_event = { id = agot_scenario_rr_toj.0050 days = { 2 4 } }
+				}
+			}
+		}
+		else = {
+			character:Baratheon_2 = { trigger_event = { id = agot_scenario_rr_toj.0050 days = { 2 4 } } }
+		}
+
+		scope:story = { # do it here as well to make sure the variable gets set
+			set_variable = {
+				name	= agot_rr_toj_status
+				value	= flag:finished
+			}
+		}
+	}
+}
+
+### Outcomes outside ToJ chain
+# Event for Rhaegar, kingsguard arrives and delivers message from ToJ
+agot_scenario_rr_toj.0017 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0017.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:alive_alive }
+				desc = agot_scenario_rr_toj.0017.desc.a
+			}
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:dead_alive }
+				desc = agot_scenario_rr_toj.0017.desc.b
+			}
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:alive_dead }
+				desc = agot_scenario_rr_toj.0017.desc.c
+			}
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:dead_dead }
+				desc = agot_scenario_rr_toj.0017.desc.d
+			}
+		}
+	}
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = scope:scoped_kg_messenger
+	lower_right_portrait = character:Stark_5
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0017
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0017
+
+		if = {
+			limit = { character:Dayne_5 = { is_alive = yes } }
+			character:Dayne_5 = { save_scope_as = scoped_kg_messenger }
+		}
+		else_if = {
+			limit = { character:Whent_5 = { is_alive = yes } }
+			character:Whent_5 = { save_scope_as = scoped_kg_messenger }
+		}
+		else_if = {
+			limit = { character:Hightower_3 = { is_alive = yes } }
+			character:Hightower_3 = { save_scope_as = scoped_kg_messenger }
+		}
+
+		if = {
+			limit = {
+				OR = {
+					scope:agot_lyanna_preg_outcome = flag:dead_alive
+					scope:agot_lyanna_preg_outcome = flag:dead_dead
+				}
+			}
+			character:Stark_5 = { death = { death_reason = death_childbirth } }
+		}
+		if = {
+			limit = {
+				OR = {
+					scope:agot_lyanna_preg_outcome = flag:alive_alive
+					scope:agot_lyanna_preg_outcome = flag:dead_alive
+				}
+			}
+			agot_scenario_rr_toj_create_baby_snow_effect = yes
+		}
+	}
+
+	option = { # head to ToJ
+		name = agot_scenario_rr_toj.0017.a
+		add_character_flag = { # Prevents check from firing constantly
+			flag = rhaegar_left_for_toj
+			years = 5
+		}
+		trigger_event = { id = agot_scenario_rr_toj.0018 days = { 20 30 } }
+	}
+
+	option = { # only if both are dead so story can be ended
+		trigger = { scope:agot_lyanna_preg_outcome = flag:dead_dead }
+		name = agot_scenario_rr_toj.0017.b
+		agot_rr_remove_yearly_1010_abductor_flag = yes
+		scope:story = {
+			set_variable = {
+				name	= agot_rr_toj_status
+				value	= flag:finished
+			}
+		}
+	}
+}
+
+# Rhaegar arrives at ToJ
+agot_scenario_rr_toj.0018 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0018.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:alive_alive }
+				desc = agot_scenario_rr_toj.0018.desc.a
+			}
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:dead_alive }
+				desc = agot_scenario_rr_toj.0018.desc.b
+			}
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:alive_dead }
+				desc = agot_scenario_rr_toj.0018.desc.c
+			}
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:dead_dead }
+				desc = agot_scenario_rr_toj.0018.desc.d
+			}
+		}
+	}
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { scope:agot_lyanna_preg_outcome = flag:alive_alive }
+			animation = happiness
+		}
+		triggered_animation = {
+			trigger = { scope:agot_lyanna_preg_outcome = flag:dead_alive }
+			animation = sadness
+		}
+		triggered_animation = {
+			trigger = { scope:agot_lyanna_preg_outcome = flag:alive_dead }
+			animation = sadness
+		}
+		triggered_animation = {
+			trigger = { scope:agot_lyanna_preg_outcome = flag:dead_dead }
+			animation = sadness
+		}
+	}
+
+	right_portrait = {
+		character = character:Stark_5
+		triggered_animation = {
+			trigger = { scope:agot_lyanna_preg_outcome = flag:alive_alive }
+			animation = newborn
+		}
+		triggered_animation = {
+			trigger = { scope:agot_lyanna_preg_outcome = flag:dead_alive }
+			animation = worry
+		}
+		triggered_animation = {
+			trigger = { scope:agot_lyanna_preg_outcome = flag:alive_dead }
+			animation = sadness
+		}
+		triggered_animation = {
+			trigger = { scope:agot_lyanna_preg_outcome = flag:dead_dead }
+			animation = worry
+		}
+	}
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0018
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0018
+		hidden_effect = {
+			character:Stark_5 = {
+				if = {
+					limit = {
+						any_artifact = {
+							artifact_owner = character:Stark_5
+							has_variable = crown_of_qolab_winter_roses_artifact
+						}
+					}
+					random_artifact = {
+						limit = {
+							artifact_owner = character:Stark_5
+							has_variable = crown_of_qolab_winter_roses_artifact
+						}
+						character:Stark_5 = {
+							set_variable = {
+								name = old_tourney_location
+								value = prev.var:tourney_location
+							}
+						}
+						var:contest_winner = { save_scope_as = old_contest_winner }
+						if = {
+							limit = { has_variable = crown_of_qolab_winter_roses_artifact }
+							character:Stark_5 = { agot_create_artifact_trinket_of_qolab_winter_roses_effect = { OWNER = character:Stark_5 } }
+						}
+						destroy_artifact = this
+					}
+					remove_variable = old_tourney_location
+				}
+			}
+		}
+	}
+
+	option = { # Rhaegar acknowledges baby as his own (baby becomes bastard)
+		name = agot_scenario_rr_toj.rhaegar.a
+
+		trigger = {
+			this = character:Targaryen_3
+			exists = scope:baby_snow # baby snow must be born/alive
+		}
+
+		agot_scenario_rr_rhaegar_baby_snow_bastard = yes
+
+		add_courtier ?= character:Stark_5
+		hidden_effect = { set_relation_lover = { reason = lover_longing target = character:Stark_5 } }
+		character:Stark_5 = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				break_betrothal = betrothed
+			}
+		}
+	}
+
+	option = { # Rhaegar legitimizes baby as his own (baby becomes legitimized bastard)
+		name = agot_scenario_rr_toj.rhaegar.b
+
+		trigger = {
+			this = character:Targaryen_3
+			exists = scope:baby_snow # baby snow must be born/alive
+		}
+
+		agot_scenario_rr_rhaegar_baby_snow_legitimized_bastard = yes
+
+		add_courtier ?= character:Stark_5
+		hidden_effect = { set_relation_lover = { reason = lover_longing target = character:Stark_5 } }
+		character:Stark_5 = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				break_betrothal = betrothed
+			}
+		}
+	}
+
+	option = { # Rhaegar makes Lyanna his new wife, disinherits Rhaenys/Aegon
+		name = agot_scenario_rr_toj.rhaegar.c
+
+		trigger = {
+			this = character:Targaryen_3
+			character:Stark_5 = { is_alive = yes }
+		}
+
+		agot_scenario_rr_toj_marry_lyanna_disinherit_effect = yes
+
+		if = {
+			limit = { title:c_sunspear.holder.house = character:Martell_7.house }
+
+			title:c_sunspear.holder = { trigger_event = agot_scenario_rr_toj.0060 }
+		}
+	}
+
+	option = { # Rhaegar makes Lyanna his new wife
+		name = agot_scenario_rr_toj.rhaegar.d
+
+		trigger = {
+			this = character:Targaryen_3
+			character:Stark_5 = { is_alive = yes }
+		}
+
+		agot_scenario_rr_toj_marry_lyanna_effect = yes
+
+		if = {
+			limit = { title:c_sunspear.holder.house = character:Martell_7.house }
+
+			title:c_sunspear.holder = { trigger_event = agot_scenario_rr_toj.0061 }
+		}
+	}
+
+	option = { #Baby is dead, Rhaegar brings Lyanna back to court as lover
+		name = agot_scenario_rr_toj.rhaegar.e
+		trigger = {
+			OR = {
+				scope:agot_lyanna_preg_outcome = flag:alive_dead
+			}
+		}
+		add_courtier ?= character:Stark_5
+		hidden_effect = { set_relation_lover = { reason = lover_longing target = character:Stark_5 } }
+		character:Stark_5 = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				break_betrothal = betrothed
+			}
+		}
+	}
+
+	option = { #Baby is dead, Rhaegar sends Lyanna home
+		name = agot_scenario_rr_toj.rhaegar.f
+		trigger = {
+			OR = {
+				scope:agot_lyanna_preg_outcome = flag:alive_dead
+			}
+		}
+		if = {
+			limit = {
+				title:c_winterfell.holder.house ?= character:Stark_5.house
+			}
+			title:c_winterfell.holder = { trigger_event = agot_scenario_rr_toj.0600 }
+		}
+	}
+
+	option = { #All dead
+		name = agot_scenario_rr_toj.rhaegar.g
+		trigger = {
+			scope:agot_lyanna_preg_outcome = flag:dead_dead
+		}
+	}
+
+	after = {
+		agot_rr_remove_yearly_1010_abductor_flag = yes
+		scope:story = {
+			set_variable = {
+				name	= agot_rr_toj_status
+				value	= flag:finished
+			}
+			set_variable = {
+				name	= agot_rr_preg_status_lyanna
+				value	= flag:finished
+			}
+		}
+		character:Stark_5 = {
+			remove_trait = pregnant
+			agot_scenario_rr_toj_release_lyanna_from_prison = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					scope:agot_lyanna_preg_outcome = flag:alive_dead
+					scope:agot_lyanna_preg_outcome = flag:dead_dead
+				}
+			}
+			scope:baby_snow = { # all options reveal parentage
+				set_mother = character:Stark_5
+				set_house = character:Targaryen_3.house
+				hidden_effect = {
+					agot_set_birthplace = { LOCATION = b_tower_of_joy }
+				}
+			}
+		}
+
+		scope:baby_snow.house.house_head ?= {
+			add_hook_no_toast = {
+				type = house_head_hook
+				target = scope:baby_snow
+			}
+		}
+	}
+}
+
+### Notifications ###
+
+# Notify realm about baby/pregnancy
+agot_scenario_rr_toj.0050 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = {
+		first_valid = {
+			### Robert specific descriptions
+			## Child born descriptions
+			triggered_desc = { # Lyanna died; Parentage is not revealed to Robert | Historical outcome
+				trigger = {
+					this = character:Baratheon_2
+					character:Stark_5 = { is_alive = no }
+					exists = scope:baby_snow # baby snow must be born/alive
+					scope:story.var:agot_rr_baby_snow_parentage = flag:no
+				}
+				desc = agot_scenario_rr_toj.0050.desc.a
+			}
+			triggered_desc = { # Lyanna died; Parentage is revealed to Robert
+				trigger = {
+					this = character:Baratheon_2
+					character:Stark_5 = { is_alive = no }
+					exists = scope:baby_snow # baby snow must be born/alive
+					NOT = { scope:story.var:agot_rr_baby_snow_parentage = flag:no }
+				}
+				desc = agot_scenario_rr_toj.0050.desc.b
+			}
+			triggered_desc = { # Lyanna lives; Parentage is not revealed to Robert
+				trigger = {
+					this = character:Baratheon_2
+					OR = {
+						AND = {
+							character:Stark_5 = { is_alive = yes }
+							exists = scope:baby_snow # baby snow must be born/alive
+							scope:story.var:agot_rr_baby_snow_parentage = flag:no
+						}
+						AND = {
+							character:Stark_5 = { is_alive = yes }
+							scope:agot_lyanna_preg_status = flag:initialized
+						}
+					}
+				}
+				desc = agot_scenario_rr_toj.0050.desc.c
+			}
+			triggered_desc = { # Lyanna lives; Parentage is revealed to Robert
+				trigger = {
+					this = character:Baratheon_2
+					character:Stark_5 = { is_alive = yes }
+					exists = scope:baby_snow # baby snow must be born/alive
+					NOT = { scope:story.var:agot_rr_baby_snow_parentage = flag:no }
+				}
+				desc = agot_scenario_rr_toj.0050.desc.d
+			}
+
+			## Pregnancy description
+			triggered_desc = { # Lyanna lives; Paternity is not revealed to Robert
+				trigger = {
+					this = character:Baratheon_2
+					character:Stark_5 = { is_alive = yes }
+					scope:agot_lyanna_preg_status = flag:started
+					scope:story.var:agot_rr_baby_snow_parentage = flag:no
+				}
+				desc = agot_scenario_rr_toj.0050.desc.e
+			}
+			triggered_desc = { # Lyanna lives; Paternity revealed to Robert
+				trigger = {
+					this = character:Baratheon_2
+					character:Stark_5 = { is_alive = yes }
+					scope:agot_lyanna_preg_status = flag:started
+					NOT = { scope:story.var:agot_rr_baby_snow_parentage = flag:no }
+				}
+				desc = agot_scenario_rr_toj.0050.desc.f
+			}
+			triggered_desc = { # Lyanna died; Paternity is not revealed to Robert
+				trigger = {
+					this = character:Baratheon_2
+					character:Stark_5 = { is_alive = no }
+					scope:agot_lyanna_preg_status = flag:started
+					scope:story.var:agot_rr_baby_snow_parentage = flag:no
+				}
+				desc = agot_scenario_rr_toj.0050.desc.g
+			}
+			triggered_desc = { # Lyanna died; Paternity revealed to Robert
+				trigger = {
+					this = character:Baratheon_2
+					character:Stark_5 = { is_alive = no }
+					scope:agot_lyanna_preg_status = flag:started
+					NOT = { scope:story.var:agot_rr_baby_snow_parentage = flag:no }
+				}
+				desc = agot_scenario_rr_toj.0050.desc.h
+			}
+
+			### Generic descriptions
+			## Child born descriptions
+			triggered_desc = { # Lyanna died; Parentage is not revealed | Historical outcome
+				trigger = {
+					character:Stark_5 = { is_alive = no }
+					exists = scope:baby_snow # baby snow must be born/alive
+					scope:story.var:agot_rr_baby_snow_parentage = flag:no
+				}
+				desc = agot_scenario_rr_toj.0050.desc.i
+			}
+			triggered_desc = { # Lyanna died; Parentage is revealed
+				trigger = {
+					character:Stark_5 = { is_alive = no }
+					exists = scope:baby_snow # baby snow must be born/alive
+					scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed
+				}
+				desc = agot_scenario_rr_toj.0050.desc.j
+			}
+			triggered_desc = { # Lyanna lives; Parentage is not revealed
+				trigger = {
+					character:Stark_5 = { is_alive = yes }
+					exists = scope:baby_snow # baby snow must be born/alive
+					scope:story.var:agot_rr_baby_snow_parentage = flag:no
+				}
+				desc = agot_scenario_rr_toj.0050.desc.k
+			}
+			triggered_desc = { # Lyanna lives; Parentage is revealed
+				trigger = {
+					character:Stark_5 = { is_alive = yes }
+					exists = scope:baby_snow # baby snow must be born/alive
+					scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed
+				}
+				desc = agot_scenario_rr_toj.0050.desc.l
+			}
+
+			## Pregnancy description
+			triggered_desc = { # Lyanna lives; Paternity is not revealed
+				trigger = {
+					character:Stark_5 = { is_alive = yes }
+					scope:agot_lyanna_preg_status = flag:started
+					scope:story.var:agot_rr_baby_snow_parentage = flag:no
+				}
+				desc = agot_scenario_rr_toj.0050.desc.m
+			}
+			triggered_desc = { # Lyanna lives; Paternity revealed
+				trigger = {
+					character:Stark_5 = { is_alive = yes }
+					scope:agot_lyanna_preg_status = flag:started
+					scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed
+				}
+				desc = agot_scenario_rr_toj.0050.desc.n
+			}
+			triggered_desc = { # Lyanna died; Paternity is not revealed
+				trigger = {
+					character:Stark_5 = { is_alive = no }
+					scope:agot_lyanna_preg_status = flag:started
+					scope:story.var:agot_rr_baby_snow_parentage = flag:no
+				}
+				desc = agot_scenario_rr_toj.0050.desc.o
+			}
+			triggered_desc = { # Lyanna died; Paternity revealed
+				trigger = {
+					character:Stark_5 = { is_alive = no }
+					scope:agot_lyanna_preg_status = flag:started
+					scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed
+				}
+				desc = agot_scenario_rr_toj.0050.desc.p
+			}
+			desc = agot_scenario_rr_toj.0050.desc.q
+		}
+	}
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = scope:agot_toj_chain_leader
+	right_portrait = character:Stark_5
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0050
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0050
+		scope:story = {
+			set_variable = {
+				name	= agot_rr_toj_status
+				value	= flag:finished
+			}
+		}
+		scope:agot_toj_chain_leader = { add_character_flag = mw_toj_marriage_to_lyanna }
+		if = {
+			limit = {
+				scope:story = { has_variable = agot_rr_baby_snow_parentage }
+				scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed
+				character:Stark_5 = { is_alive = no }
+			}
+			character:Stark_5 = {
+				set_death_reason = { death_reason = death_childbirth }
+			}
+		}
+	}
+
+	option = { # TODO add name specifically for Rhaegar
+		name = agot_scenario_rr_toj.0050.a
+
+		trigger = {
+			NOT = { this = character:Baratheon_2 }
+		}
+	}
+
+
+	# Robert specific options
+
+	# Break betrothal
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = { # Lyanna dead; baby kept secret
+						trigger = {
+							character:Stark_5 = { is_alive = no }
+							exists = scope:baby_snow # baby snow must be born/alive
+							scope:story.var:agot_rr_baby_snow_parentage = flag:no
+						}
+						desc = agot_scenario_rr_toj.0050.b
+					}
+					triggered_desc = { # Lyanna dead; baby revealed;
+						trigger = {
+							character:Stark_5 = { is_alive = no }
+							exists = scope:baby_snow # baby snow must be born/alive
+							NOT = { scope:story.var:agot_rr_baby_snow_parentage = flag:no }
+						}
+						desc = agot_scenario_rr_toj.0050.c
+					}
+					triggered_desc = { # Lyanna pregnant; truth revealed; Robert will not marry her anymore, he would always see Rhaegar's "work";
+						trigger = {
+							character:Stark_5 = { is_alive = yes }
+							scope:agot_lyanna_preg_status = flag:started
+							NOT = { scope:story.var:agot_rr_baby_snow_parentage = flag:no }
+						}
+						desc = agot_scenario_rr_toj.0050.d
+					}
+					desc = agot_scenario_rr_toj.0050.a
+				}
+			}
+		}
+
+		trigger = {
+			this = character:Baratheon_2
+			NOT = { scope:agot_lyanna_preg_status = flag:initialized } # Lyanna must be pregnant or gave birth
+			scope:story.var:mw_linked_war_status = flag:rebels_won
+		}
+
+		if = {
+			limit = { character:Stark_5 = { is_alive = yes } }
+
+			break_betrothal = character:Stark_5
+		}
+
+		ai_chance = {
+			base = 75
+		}
+	}
+
+	# Lyanna pregnant; truth revealed/told she was raped; Robert will marry her
+	option = {
+		name = agot_scenario_rr_toj.0050.e
+
+		trigger = {
+			this = character:Baratheon_2
+			character:Stark_5 = { is_alive = yes }
+			scope:story.var:mw_linked_war_status = flag:rebels_won
+		}
+
+		character:Stark_5 = { remove_trait = refusing_marriage }
+		marry = character:Stark_5
+
+		ai_chance = {
+			base = 100
+
+			modifier = {
+				add = -75
+				scope:agot_lyanna_preg_status = flag:initialized # no pregnancy
+			}
+		}
+	}
+
+	after = {
+		# Give Robert some stress so he can get drunk
+		if = {
+			limit = { this = character:Baratheon_2 }
+
+			if = {
+				limit = {
+					OR = {
+						character:Stark_5 = { is_alive = no }
+						scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed
+					}
+				}
+				add_stress = 150
+			}
+			else_if = {
+				limit = { scope:story.var:agot_rr_baby_snow_parentage = flag:no }
+				add_stress = 75
+			}
+			else = {
+				add_stress = -50
+			}
+		}
+	}
+}
+
+# Event for Martells about Elia returning about being set aside by Rhaegar, children disinherited
+agot_scenario_rr_toj.0060 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0060.t
+	desc = agot_scenario_rr_toj.0060.desc
+
+	#override_background = {
+	#	reference =
+	#}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0060
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0060
+		character:Martell_7 = {
+			add_to_list = temp_Martell_list
+			every_child = {
+				limit = {
+					NAND = {
+						father = character:Targaryen_3
+						has_trait = legitimized_bastard
+					}
+				}
+				add_to_list = temp_Martell_list
+			}
+		}
+		every_in_list = {
+			list = temp_Martell_list
+
+			root = { add_courtier = prev }
+		}
+	}
+
+	option = { # Your house now holds a grutch against the Targaryens (maybe feud?)
+		name = agot_scenario_rr_toj.0060.a
+
+		add_opinion = { modifier = agot_rr_martell_targaryen_feud_opinion target = character:Targaryen_3 }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { # You are cool with it
+		name = agot_scenario_rr_toj.0060.b
+
+		ai_chance = {
+			base = 0
+		}
+	}
+
+	after = {
+	}
+}
+
+# Event for Martells about Elia returning about being set aside by Rhaegar
+agot_scenario_rr_toj.0061 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0060.t
+	desc = agot_scenario_rr_toj.0060.desc
+
+	#override_background = {
+	#	reference =
+	#}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0061
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0061
+		character:Martell_7 = {
+			add_to_list = temp_Martell_list
+			every_child = {
+				limit = {
+					NAND = {
+						father = character:Targaryen_3
+						has_trait = legitimized_bastard
+					}
+				}
+				add_to_list = temp_Martell_list
+			}
+		}
+		every_in_list = {
+			list = temp_Martell_list
+
+			root = { add_courtier = prev }
+		}
+	}
+
+	option = { # Your house now holds a grutch against the Targaryens (maybe feud?)
+		name = agot_scenario_rr_toj.0060.a
+
+		add_opinion = { modifier = agot_rr_martell_targaryen_feud_opinion target = character:Targaryen_3 }
+
+		ai_chance = {
+			base = 70
+		}
+	}
+
+	option = { # You are cool with it
+		name = agot_scenario_rr_toj.0060.b
+
+		ai_chance = {
+			base = 30
+		}
+	}
+
+	after = {
+	}
+}
+
+### Lyanna receives child after ToJ concluded ###
+
+agot_scenario_rr_toj.0100 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0100.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:alive_alive }
+				desc = agot_scenario_rr_toj.0100.desc.alive_alive
+			}
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:alive_dead }
+				desc = agot_scenario_rr_toj.0100.desc.alive_dead
+			}
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:dead_alive }
+				desc = agot_scenario_rr_toj.0100.desc.dead_alive
+			}
+			triggered_desc = {
+				trigger = { scope:agot_lyanna_preg_outcome = flag:dead_dead }
+				desc = agot_scenario_rr_toj.0100.desc.dead_dead
+			}
+		}
+	}
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = character:Stark_5
+	lower_center_portrait = scope:baby_snow
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0200
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0200
+		character:Stark_5 = { remove_trait = pregnant }
+		agot_scenario_rr_get_baby_birth_lyanna_death_effect = yes
+		if = {
+			limit = { scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed }
+
+			scope:baby_snow = {
+				set_mother = character:Stark_5
+				set_father = character:Targaryen_3
+				set_house = character:Targaryen_3.house
+				hidden_effect = {
+					agot_set_birthplace = { LOCATION = b_tower_of_joy }
+				}
+			}
+
+			if = {
+				limit = { this = character:Targaryen_3 }
+				scope:baby_snow = {
+					set_culture = root.culture
+					set_character_faith = root.faith
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:story = { has_variable = agot_rr_baby_snow_mother }
+				scope:story.var:agot_rr_baby_snow_mother = flag:mother_known
+			}
+			scope:baby_snow = {
+				set_mother = character:Stark_5
+				set_house = character:Stark_5.house
+				set_variable = { name = real_father value = character:Targaryen_3 }
+				hidden_effect = {
+					agot_set_birthplace = { LOCATION = b_tower_of_joy }
+				}
+			}
+			scope:story = {
+				every_in_list = {
+					variable = agot_rr_toj_companions
+
+					limit = { is_alive = yes }
+
+					add_secret = {
+						type = secret_agot_disputed_heritage
+						target = scope:baby_snow
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = { scope:story.var:agot_rr_baby_snow_parentage = flag:no }
+			scope:baby_snow = { set_real_mother = character:Stark_5 }
+			scope:baby_snow = { set_real_father = character:Targaryen_3 }
+			scope:story = {
+				every_in_list = {
+					variable = agot_rr_toj_companions
+
+					limit = { is_alive = yes }
+
+					add_secret = {
+						type = secret_agot_disputed_heritage
+						target = scope:baby_snow
+					}
+				}
+			}
+		}
+
+		hidden_effect = {
+			scope:baby_snow.house.house_head = {
+				add_hook_no_toast = {
+					type = house_head_hook
+					target = scope:baby_snow
+				}
+			}
+
+			if = {
+				limit = { character:Stark_5 = { is_spouse_of_even_if_dead = character:Targaryen_3 } }
+				agot_scenario_rr_rhaegar_baby_snow_trueborn = yes
+			}
+		}
+	}
+
+	option = { #
+		name = agot_scenario_rr_toj.0100.a
+
+		if = {
+			limit = {
+				this = character:Baratheon_2
+				scope:story.var:agot_rr_baby_snow_parentage = flag:truth_revealed_robert
+			}
+
+			add_secret = {
+				type = secret_agot_disputed_heritage
+				target = scope:baby_snow
+			}
+		}
+	}
+}
+
+### The Kingsguard Starfall Plot ###
+
+# Kingsguard start plot
+agot_scenario_rr_toj.0200 = {
+	hidden = yes
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0100
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0100
+		if = {
+			limit = { NOT = { exists = scope:scoped_kingsguard } }
+			agot_kingsguard_plot_fetch_kingsguard_scope = yes
+		}
+		agot_scenario_rr_toj_create_baby_snow_effect = yes
+
+		if = { # Both alive, bring both to Starfall #AGOT TODO option to keep babe as Lyanna --> bastardy
+			limit = { # Lyanna alive, baby alive, child is male
+				scope:agot_lyanna_preg_outcome = flag:alive_alive
+			}
+			title:c_starfall.holder = {
+				trigger_event = { id = agot_scenario_rr_toj.0201 days = 3 }
+			}
+		}
+		else_if = { # normal kingsguard plot
+			limit = {
+				# Lyanna dead, baby alive, child
+				scope:agot_lyanna_preg_outcome = flag:dead_alive
+			}
+			character:Stark_5 = {
+				death = {
+					death_reason = death_disappearance
+				}
+			}
+			title:c_starfall.holder = {
+				trigger_event = { id = agot_scenario_rr_toj.0201 days = 3 }
+			}
+		}
+		else_if = {
+			limit = { # Lyanna alive, baby dead
+				OR = {
+					scope:agot_lyanna_preg_outcome = flag:alive_dead
+					scope:agot_lyanna_preg_outcome = flag:dead_dead
+				}
+			}
+			agot_scenario_rr_toj_release_lyanna_from_prison = yes
+			agot_rr_remove_lyanna_infertility = yes
+			if = {
+				limit = {
+					title:c_winterfell.holder.house ?= character:Stark_5.house
+				}
+				title:c_winterfell.holder = { trigger_event = agot_scenario_rr_toj.0600 }
+			}
+		}
+		else_if = {
+			limit = { # Lyanna dead, baby dead
+				OR = {
+					scope:agot_lyanna_preg_outcome = flag:dead_dead
+				}
+			}
+			character:Stark_5 = {
+				death = {
+					death_reason = death_disappearance
+				}
+			}
+		}
+		if = {
+			limit = { character:Dayne_5 = { is_alive = yes } }
+			character:Dayne_5 = { remove_variable = duel_happened }
+		}
+		if = {
+			limit = { character:Whent_5 = { is_alive = yes } }
+			character:Whent_5 = { remove_variable = duel_happened }
+		}
+		if = {
+			limit = { character:Hightower_3 = { is_alive = yes } }
+			character:Hightower_3 = { remove_variable = duel_happened }
+		}
+
+		scope:story = {
+			set_variable = {
+				name	= agot_rr_toj_status
+				value	= flag:finished
+			}
+		}
+	}
+}
+
+# Kingsguard offer baby to Daynes
+agot_scenario_rr_toj.0201 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0001.t
+	desc = {
+		triggered_desc = { # both alive
+			trigger = {
+				has_variable = duel_happened
+				scope:agot_lyanna_preg_outcome = flag:alive_alive
+			}
+			desc = agot_scenario_rr_toj.0201.desc.a
+		}
+		triggered_desc = { # Lyanna dead; baby alive
+			trigger = {
+				has_variable = duel_happened
+				# Lyanna dead, baby alive
+				scope:agot_lyanna_preg_outcome = flag:dead_alive
+			}
+			desc = agot_scenario_rr_toj.0201.desc.b
+		}
+		triggered_desc = { # both alive
+			trigger = {
+				NOT = { has_variable = duel_happened }
+				scope:agot_lyanna_preg_outcome = flag:alive_alive
+			}
+			desc = agot_scenario_rr_toj.0201.desc.c
+		}
+		triggered_desc = { # Lyanna dead; baby alive
+			trigger = {
+				NOT = { has_variable = duel_happened }
+				# Lyanna dead, baby alive
+				scope:agot_lyanna_preg_outcome = flag:dead_alive
+			}
+			desc = agot_scenario_rr_toj.0201.desc.d
+		}
+	}
+
+	#override_background = {
+	#	reference =
+	#}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+	right_portrait = scope:agot_toj_kingsguard_leader
+	lower_right_portrait = scope:baby_snow
+
+	trigger = {
+		NOT = {
+			has_character_flag = has_had_event_agot_scenario_rr_toj_0100
+		}
+	}
+
+	immediate = {
+		add_character_flag = has_had_event_agot_scenario_rr_toj_0100
+		# Lyanna is killed/not killed in event 0100!
+		# We need a "new" mother for the baby
+
+		scope:baby_snow = {
+			set_character_faith = faith:fots_seven
+			set_culture = culture:stone_dornish
+		}
+		if = {
+			limit = { is_male = yes }
+			save_scope_as = new_father_1
+		}
+		if = {
+			limit = {
+				any_close_family_member = {
+					is_male = yes
+					is_adult = yes
+					house = root.house
+					NOR = {
+						has_trait = kingsguard
+						has_trait = nightswatch
+					}
+				}
+			}
+			random_close_family_member = {
+				limit = {
+					is_male = yes
+					is_adult = yes
+					house = root.house
+					NOR = {
+						has_trait = kingsguard
+						has_trait = nightswatch
+					}
+				}
+				save_scope_as = new_father_2
+			}
+		}
+		if = {
+			limit = {
+				any_close_family_member = {
+					is_male = yes
+					is_adult = yes
+					house = root.house
+					NOR = {
+						has_trait = kingsguard
+						has_trait = nightswatch
+					}
+					NAND = {
+						exists = scope:new_father_2
+						this = scope:new_father_2
+					}
+				}
+			}
+			random_close_family_member = {
+				limit = {
+					is_male = yes
+					is_adult = yes
+					house = root.house
+					NOR = {
+						has_trait = kingsguard
+						has_trait = nightswatch
+					}
+					NAND = {
+						exists = scope:new_father_2
+						this = scope:new_father_2
+					}
+				}
+				save_scope_as = new_father_3
+			}
+		}
+		if = {
+			limit = {
+				any_extended_family_member = {
+					is_male = yes
+					is_adult = yes
+					house = root.house
+				}
+			}
+			random_extended_family_member = {
+				limit = {
+					is_male = yes
+					is_adult = yes
+					house = root.house
+				}
+				save_scope_as = new_father_4
+			}
+		}
+	}
+
+	# Step father 1
+	option = {
+		name = agot_scenario_rr_toj.0201.a
+
+		trigger = { exists = scope:new_father_1 }
+
+		scope:new_father_1 = { save_scope_as = new_father }
+		agot_baby_snow_set_foster_father = { NEW_FATHER = scope:new_father_1 }
+	}
+
+	# Step father 2
+	option = {
+		name = agot_scenario_rr_toj.0201.b
+
+		trigger = { exists = scope:new_father_2 }
+
+		agot_baby_snow_set_foster_father = { NEW_FATHER = scope:new_father_2 }
+	}
+
+	# Step father 3
+	option = {
+		name = agot_scenario_rr_toj.0201.c
+
+		trigger = { exists = scope:new_father_3 }
+
+		agot_baby_snow_set_foster_father = { NEW_FATHER = scope:new_father_3 }
+	}
+
+	# Step father 4
+	option = {
+		name = agot_scenario_rr_toj.0201.d
+
+		trigger = { exists = scope:new_father_4 }
+
+		agot_baby_snow_set_foster_father = { NEW_FATHER = scope:new_father_4 }
+	}
+
+	# Lyanna joins your court
+	option = {
+		name = agot_scenario_rr_toj.0201.e
+
+		trigger = {
+			character:Stark_5 = { is_alive = yes }
+		}
+
+		agot_scenario_rr_toj_release_lyanna_from_prison = yes
+		add_courtier = character:Stark_5
+		add_courtier = scope:baby_snow
+	}
+
+	after = {
+		agot_rr_remove_yearly_1010_abductor_flag = yes
+	}
+}
+
+### The Kingsguard Victory Post-War ###
+agot_scenario_rr_toj.0300 = {
+	hidden = yes
+
+	immediate = {
+		character:Stark_5 = { save_scope_as = lyanna }
+		character:Targaryen_3 = { save_scope_as = rhaegar }
+		if = {
+			limit = {
+				character:Stark_5 = {
+					is_alive = yes
+					is_ruler = yes
+				}
+			}
+			character:Stark_5 = { trigger_event = agot_scenario_rr_toj.0301 }
+		}
+		else_if = {
+			limit = {
+				character:Targaryen_3 = {
+					is_alive = yes
+					is_ruler = yes
+				}
+			}
+			if = {
+				limit = {
+					character:Stark_5 = { is_alive = yes }
+				}
+				character:Stark_5 = { save_scope_as = baby_holder }
+				scope:surviving_kingsguard = { save_scope_as = not_baby_holder }
+			}
+			else = {
+				scope:surviving_kingsguard = { save_scope_as = baby_holder }
+				character:Stark_5 = { save_scope_as = not_baby_holder }
+			}
+			character:Targaryen_3 = { trigger_event = agot_scenario_rr_toj.0302 }
+		}
+		else_if = {
+			limit = {
+				character:Targaryen_11 = {
+					is_alive = yes
+					is_ruler = yes
+				}
+			}
+			if = {
+				limit = {
+					character:Stark_5 = { is_alive = yes }
+					character:Targaryen_11 = { is_adult = yes }
+				}
+				character:Stark_5 = { save_scope_as = baby_holder }
+				scope:surviving_kingsguard = { save_scope_as = not_baby_holder }
+			}
+			else = {
+				scope:surviving_kingsguard = { save_scope_as = baby_holder }
+				character:Stark_5 = { save_scope_as = not_baby_holder }
+			}
+			character:Targaryen_11 = { trigger_event = agot_scenario_rr_toj.0303 }
+		}
+		else_if = {
+			limit = {
+				any_ruler = {
+					house ?= dynasty:dynn_Targaryen.dynasty_founder.house
+					government_has_flag = government_is_landless_adventurer
+					has_realm_law = camp_purpose_legitimists
+					has_variable = legitimist_claimed_title
+					var:legitimist_claimed_title = title:h_the_iron_throne
+				}
+			}
+			random_ruler = {
+				limit = {
+					house ?= dynasty:dynn_Targaryen.dynasty_founder.house
+					government_has_flag = government_is_landless_adventurer
+					has_realm_law = camp_purpose_legitimists
+					has_variable = legitimist_claimed_title
+					var:legitimist_claimed_title = title:h_the_iron_throne
+				}
+				if = {
+					limit = {
+						character:Stark_5 = { is_alive = yes }
+						is_adult = yes
+					}
+					character:Stark_5 = { save_scope_as = baby_holder }
+					scope:surviving_kingsguard = { save_scope_as = not_baby_holder }
+				}
+				else = {
+					scope:surviving_kingsguard = { save_scope_as = baby_holder }
+					character:Stark_5 = { save_scope_as = not_baby_holder }
+				}
+				trigger_event = agot_scenario_rr_toj.0304
+			}
+		}
+		else = {
+			scope:baby_snow = { trigger_event = agot_scenario_rr_toj.0305 }
+		}
+	}
+}
+
+agot_scenario_rr_toj.0301 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0301.t
+	desc = agot_scenario_rr_toj.0301.desc
+	theme = crown
+
+	override_background = {
+		reference = agot_tower_of_joy
+	}
+
+	left_portrait = {
+		character = character:Stark_5
+		animation = newborn
+	}
+	right_portrait = {
+		character = scope:surviving_kingsguard
+		animation = worry
+	}
+
+	immediate = {
+		depose = yes
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0301.a
+		trigger_event = agot_scenario_rr_toj.0300
+	}
+}
+
+scripted_effect agot_handle_victorious_kingsguard = {
+	if = {
+		limit = {
+			NOR = {
+				has_title = title:h_the_iron_throne
+				top_liege = { has_title = title:h_the_iron_throne }
+			}
+		}
+		title:h_the_iron_throne.holder ?= {
+			agot_remove_kingsguard_effect = { KINGSGUARD = scope:surviving_kingsguard }
+		}
+		add_courtier = scope:surviving_kingsguard
+	}
+}
+
+agot_scenario_rr_toj.0302 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0302.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					character:Stark_5 = { is_alive = no }
+				}
+				desc = agot_scenario_rr_toj.0302.desc_lyanna_dead
+			}
+			desc = agot_scenario_rr_toj.0302.desc
+		}
+	}
+	theme = family
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:baby_holder
+		animation = newborn
+	}
+	lower_left_portrait = scope:dead_kingsguard_1
+	lower_center_portrait = scope:not_baby_holder
+	lower_right_portrait = scope:dead_kingsguard_2
+
+	immediate = {
+		if = {
+			limit = {
+				character:Stark_5 = { is_alive = yes }
+			}
+			character:Stark_5 = {
+				set_relation_grudge = {
+					reason = rival_murderer
+					target = scope:surviving_kingsguard
+				}
+				add_trait = depressed_1
+			}
+		}
+	}
+
+	option = { # Rhaegar acknowledges baby as his own (baby becomes bastard)
+		name = agot_scenario_rr_toj.0302.a
+
+		if = {
+			limit = {
+				character:Stark_5 = { is_alive = yes }
+			}
+			hidden_effect = { set_relation_lover = { reason = lover_longing target = character:Stark_5 } }
+			character:Stark_5 = {
+				if = {
+					limit = {
+						is_betrothed = yes
+					}
+					break_betrothal = betrothed
+				}
+			}
+			add_courtier ?= character:Stark_5
+		}
+
+		add_courtier ?= scope:baby_snow
+	}
+
+	option = { # Rhaegar legitimizes baby as his own (baby becomes legitimized bastard)
+		name = agot_scenario_rr_toj.0302.b
+
+		if = {
+			limit = {
+				character:Stark_5 = { is_alive = yes }
+			}
+			hidden_effect = { set_relation_lover = { reason = lover_longing target = character:Stark_5 } }
+			character:Stark_5 = {
+				if = {
+					limit = {
+						is_betrothed = yes
+					}
+					break_betrothal = betrothed
+				}
+			}
+			add_courtier ?= character:Stark_5
+		}
+
+		scope:baby_snow = {
+			remove_trait = bastard
+			agot_remove_bastard_nickname_effect = yes # Remove bastard surname traits
+			add_trait_force_tooltip = legitimized_bastard
+		}
+		add_courtier ?= scope:baby_snow
+	}
+
+	option = { # Rhaegar makes Lyanna his new wife, disinherits Rhaenys/Aegon
+		name = agot_scenario_rr_toj.0302.c
+
+		trigger = {
+			character:Stark_5 = { is_alive = yes }
+		}
+
+		agot_scenario_rr_toj_marry_lyanna_disinherit_effect = yes
+
+		#Handled above but hidden
+		show_as_tooltip = {
+			scope:baby_snow = {
+				remove_trait = bastard
+				agot_remove_bastard_nickname_effect = yes # Remove bastard surname traits
+			}
+			add_courtier ?= scope:baby_snow
+		}
+
+		if = {
+			limit = { title:c_sunspear.holder.house = character:Martell_7.house }
+			title:c_sunspear.holder = { trigger_event = agot_scenario_rr_toj.0060 }
+		}
+	}
+
+	option = { # Rhaegar makes Lyanna his new wife
+		name = agot_scenario_rr_toj.0302.d
+
+		trigger = {
+			character:Stark_5 = { is_alive = yes }
+		}
+
+		agot_scenario_rr_toj_marry_lyanna_effect = yes
+
+		#Handled above but hidden
+		show_as_tooltip = {
+			scope:baby_snow = {
+				remove_trait = bastard
+				agot_remove_bastard_nickname_effect = yes # Remove bastard surname traits
+			}
+			add_courtier ?= scope:baby_snow
+		}
+
+		if = {
+			limit = { title:c_sunspear.holder.house = character:Martell_7.house }
+			title:c_sunspear.holder = { trigger_event = agot_scenario_rr_toj.0061 }
+		}
+	}
+
+	after = {
+		agot_handle_victorious_kingsguard = yes
+	}
+}
+
+agot_scenario_rr_toj.0303 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0303.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					is_adult = no
+				}
+				desc = agot_scenario_rr_toj.0303.desc_child
+			}
+			triggered_desc = {
+				trigger = {
+					character:Stark_5 = { is_alive = no }
+				}
+				desc = agot_scenario_rr_toj.0303.desc_lyanna_dead
+			}
+			desc = agot_scenario_rr_toj.0303.desc
+		}
+	}
+	theme = family
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:baby_holder
+		animation = newborn
+	}
+	lower_left_portrait = scope:dead_kingsguard_1
+	lower_center_portrait = scope:not_baby_holder
+	lower_right_portrait = scope:dead_kingsguard_2
+
+	immediate = {
+		if = {
+			limit = {
+				character:Stark_5 = { is_alive = yes }
+			}
+			character:Stark_5 = {
+				set_relation_grudge = {
+					reason = rival_murderer
+					target = scope:surviving_kingsguard
+				}
+				add_trait = depressed_1
+				add_trait = refusing_marriage
+			}
+		}
+	}
+
+	option = {
+		name = {
+			trigger = { is_adult = yes }
+			text = agot_scenario_rr_toj.0303.a
+		}
+		name = {
+			trigger = { is_adult = no }
+			text = agot_scenario_rr_toj.0303.a_child
+		}
+		if = {
+			limit = {
+				character:Stark_5 = { is_alive = yes }
+			}
+			add_courtier ?= character:Stark_5
+		}
+		add_courtier ?= scope:baby_snow
+	}
+
+	after = {
+		agot_handle_victorious_kingsguard = yes
+	}
+}
+
+agot_scenario_rr_toj.0304 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0304.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					is_adult = no
+				}
+				desc = agot_scenario_rr_toj.0304.desc_child
+			}
+			triggered_desc = {
+				trigger = {
+					character:Stark_5 = { is_alive = no }
+				}
+				desc = agot_scenario_rr_toj.0304.desc_lyanna_dead
+			}
+			desc = agot_scenario_rr_toj.0304.desc
+		}
+	}
+	theme = family
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:baby_holder
+		animation = newborn
+	}
+	lower_left_portrait = scope:dead_kingsguard_1
+	lower_center_portrait = scope:not_baby_holder
+	lower_right_portrait = scope:dead_kingsguard_2
+
+	immediate = {
+		if = {
+			limit = {
+				character:Stark_5 = { is_alive = yes }
+			}
+			character:Stark_5 = {
+				set_relation_grudge = {
+					reason = rival_murderer
+					target = scope:surviving_kingsguard
+				}
+				add_trait = depressed_1
+				add_trait = refusing_marriage
+			}
+		}
+	}
+
+	option = {
+		name = {
+			trigger = { is_adult = yes }
+			text = agot_scenario_rr_toj.0304.a
+		}
+		name = {
+			trigger = { is_adult = no }
+			text = agot_scenario_rr_toj.0304.a_child
+		}
+		if = {
+			limit = {
+				character:Stark_5 = { is_alive = yes }
+			}
+			add_courtier ?= character:Stark_5
+		}
+		add_courtier ?= scope:baby_snow
+		scope:baby_snow = {
+			remove_trait = bastard
+			agot_remove_bastard_nickname_effect = yes # Remove bastard surname traits
+			add_trait_force_tooltip = legitimized_bastard
+		}
+		set_designated_heir_unsafe = scope:baby_snow
+		depose = yes
+	}
+
+	option = {
+		name = {
+			trigger = { is_adult = yes }
+			text = agot_scenario_rr_toj.0304.b
+		}
+		name = {
+			trigger = { is_adult = no }
+			text = agot_scenario_rr_toj.0304.b_child
+		}
+		if = {
+			limit = {
+				character:Stark_5 = { is_alive = yes }
+			}
+			add_courtier ?= character:Stark_5
+		}
+		add_courtier ?= scope:baby_snow
+	}
+
+	after = {
+		agot_handle_victorious_kingsguard = yes
+	}
+}
+
+agot_scenario_rr_toj.0305 = {
+	hidden = yes
+
+	immediate = {
+		create_landless_adventurer_title_effect = {
+			REASON = flag:deposition
+			FLAVOR_CHAR = title:h_the_iron_throne.holder
+		}
+		primary_title = {
+			save_title_name_change_data = { TRANSFER_VAR = yes }
+			reset_title_prefix = yes
+			set_title_prefix = AGOT_PREFIX_THE
+			set_title_name = targaryen_exiles
+		}
+		add_realm_law = camp_purpose_legitimists
+		start_travel_plan = {
+			destination = title:b_the_sealords_palace.title_province
+			travel_with_domicile = yes
+			return_trip = no
+			players_use_planner = no
+			on_arrival_destinations = last
+		}
+		add_pressed_claim = title:h_the_iron_throne
+		add_pressed_claim = title:e_the_crownlands
+		add_pressed_claim = title:k_the_blackwater
+		add_pressed_claim = title:d_kings_landing
+		add_pressed_claim = title:c_kings_landing
+		add_pressed_claim = title:k_dragonstone
+		add_pressed_claim = title:d_dragonstone
+		add_pressed_claim = title:c_dragonstone
+		if = {
+			limit = {
+				has_game_rule = agot_targaryen_exile_invasion_special_content
+				NOT = {
+					exists = global_var:targaryen_exile_title
+				}
+			}
+			create_story = story_agot_targaryen_exile_invasion
+		}
+		if = {
+			limit = {
+				character:Stark_5 = { is_alive = yes }
+			}
+			add_courtier ?= character:Stark_5
+			character:Stark_5 = {
+				set_relation_grudge = {
+					reason = rival_murderer
+					target = scope:surviving_kingsguard
+				}
+				add_trait = depressed_1
+			}
+		}
+
+		agot_handle_victorious_kingsguard = yes
+	}
+}
+
+#Lyanna Returns To Winterfell
+agot_scenario_rr_toj.0600 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0600.t
+	desc = agot_scenario_rr_toj.0600.desc
+	theme = family
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = character:Stark_5
+		animation = grief
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0600.a
+		character:Stark_5 = {
+			add_trait = refusing_marriage
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				break_betrothal = betrothed
+			}
+		}
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0600.b
+		character:Stark_5 = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				break_betrothal = betrothed
+			}
+		}
+	}
+
+	option = {
+		name = agot_scenario_rr_toj.0600.c
+	}
+}
+
+# Testing event
+agot_scenario_rr_toj.9222 = {
+	type = character_event
+	title = agot_scenario_rr_toj.0015.t
+	desc = agot_scenario_rr_toj.0015.desc
+	orphan = yes
+
+	#override_background = {
+	#	reference =
+	#}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = root
+
+	option = { #
+		name = agot_scenario_rr_toj.0015.a
+
+	}
+
+	option = { #
+		name = agot_scenario_rr_toj.0015.a
+
+	}
+}

@@ -1,0 +1,991 @@
+﻿### Rescue CB
+
+rv_rescue_cost = {
+	value = 0
+
+	add = {
+		value = 0
+		# Cheap.
+		if = {
+			limit = {always = yes}
+			scope:attacker = {
+				every_in_list = {
+					variable = rv_rescue_list_temp
+					limit = {
+						is_alive = yes
+						OR = {
+							AND = {
+								is_imprisoned = yes
+								is_imprisoned_by = scope:defender
+							}
+							AND = {
+								is_concubine = yes
+								is_concubine_of = scope:defender
+							}
+						}
+					}
+					add = {
+						value = 30
+					}
+				}
+				every_in_list = {
+					variable = rv_rescue_list_temp
+					limit = {
+						is_alive = yes
+						OR = {
+							AND = {
+								is_imprisoned = yes
+								is_imprisoned_by = scope:defender
+							}
+							AND = {
+								is_concubine = yes
+								is_concubine_of = scope:defender
+							}
+						}
+						is_playable_character = yes
+						highest_held_title_tier >= tier_county
+					}
+					add = {
+						value = 25
+					}
+				}
+				every_in_list = {
+					variable = rv_rescue_list_temp
+					limit = {
+						is_alive = yes
+						OR = {
+							AND = {
+								is_imprisoned = yes
+								is_imprisoned_by = scope:defender
+							}
+							AND = {
+								is_concubine = yes
+								is_concubine_of = scope:defender
+							}
+						}
+						is_playable_character = yes
+						highest_held_title_tier >= tier_duchy
+					}
+					add = {
+						value = 45
+					}
+				}
+				every_in_list = {
+					variable = rv_rescue_list_temp
+					limit = {
+						is_alive = yes
+						OR = {
+							AND = {
+								is_imprisoned = yes
+								is_imprisoned_by = scope:defender
+							}
+							AND = {
+								is_concubine = yes
+								is_concubine_of = scope:defender
+							}
+						}
+						is_playable_character = yes
+						highest_held_title_tier >= tier_kingdom
+					}
+					add = {
+						value = 75
+					}
+				}
+				every_in_list = {
+					variable = rv_rescue_list_temp
+					limit = {
+						is_alive = yes
+						OR = {
+							AND = {
+								is_imprisoned = yes
+								is_imprisoned_by = scope:defender
+							}
+							AND = {
+								is_concubine = yes
+								is_concubine_of = scope:defender
+							}
+						}
+						is_playable_character = yes
+						highest_held_title_tier >= tier_empire
+					}
+					add = {
+						value = 100
+					}
+				}
+			}
+		}
+		desc = CB_RESCUE_COST
+	}
+	#multiply = common_cb_prestige_cost_multiplier
+}
+
+rv_rescue_criminal_cost = {
+	value = 0
+
+	add = {
+		value = 0
+		# Cheap.
+		if = {
+			limit = {always = yes}
+			scope:attacker = {
+				every_in_list = {
+					variable = rv_rescue_list_temp
+					limit = {
+						is_alive = yes
+						is_imprisoned = yes
+						is_imprisoned_by = scope:defender
+						scope:defender = {
+							has_imprisonment_reason = prev
+						}
+					}
+					add = {
+						value = 50
+					}
+				}
+			}
+		}
+		desc = CB_RESCUE_CRIMINAL_COST
+	}
+	#multiply = common_cb_prestige_cost_multiplier
+}
+
+rv_rescue_cost_AI = {
+	value = 0
+	add = medium_prestige_value
+	add = rv_rescue_cost
+	add = rv_rescue_criminal_cost
+	multiply = -1
+}
+
+rv_rescue_cost_mult = {
+	value = 0
+	add = medium_prestige_value
+	add = rv_rescue_cost
+	add = rv_rescue_criminal_cost
+	multiply = 1.3
+}
+
+rv_rescue_house_members_cb_house_unity_gain = {
+	value = 0
+
+	every_in_list = {
+		variable = rv_currently_rescuing
+		limit = {
+			is_alive = yes
+			house ?= scope:attacker.house
+		}
+		add = medium_unity_gain
+	}
+
+	max = 20
+}
+
+rv_attacker_military_strength = {
+	value = 0
+	add = {
+		value = scope:attacker.current_military_strength
+	}
+	scope:attacker = {
+		every_ally ={
+			limit = {
+				NOR = {
+					is_vassal_or_below_of = scope:defender
+					is_vassal_or_below_of = scope:attacker
+					is_liege_or_above_of = scope:attacker
+					is_liege_or_above_of = scope:defender
+				}
+			}
+			add = {
+				value = current_military_strength
+			}
+			every_hired_mercenary = {
+				limit = {
+					exists = this
+					#is_playable_character = yes
+				}
+				add = {
+					value = mercenary_company_leader.current_military_strength
+				}
+			}
+		}
+		every_hired_mercenary = {
+			limit = {
+				exists = this
+				#is_playable_character = yes
+			}
+			add = {
+				value = mercenary_company_leader.current_military_strength
+			}
+		}
+	}
+}
+
+rv_defender_military_strength = {
+	value = 0
+	add = {
+		value = scope:defender.current_military_strength
+	}
+	scope:defender = {
+		every_ally ={
+			limit = {
+				NOR = {
+					is_vassal_or_below_of = scope:defender
+					is_vassal_or_below_of = scope:attacker
+					is_liege_or_above_of = scope:attacker
+					is_liege_or_above_of = scope:defender
+				}
+			}
+			add = {
+				value = current_military_strength
+			}
+			every_hired_mercenary = {
+				limit = {
+					exists = this
+					#is_playable_character = yes
+				}
+				add = {
+					value = mercenary_company_leader.current_military_strength
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:defender
+				scope:defender = { is_independent_ruler = no}
+				scope:defender.top_liege = scope:attacker.top_liege
+				NOR = {
+					scope:defender.liege = scope:defender.top_liege
+					scope:defender.liege = scope:attacker.liege
+				}
+			}
+			scope:defender.liege = {
+				add = {
+					value = current_military_strength
+				}
+				every_hired_mercenary = {
+					limit = {
+						exists = this
+						#is_playable_character = yes
+					}
+					add = {
+						value = mercenary_company_leader.current_military_strength
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:defender
+				scope:defender = { is_independent_ruler = no }
+				NOT = {scope:defender.top_liege = scope:attacker.top_liege}
+			}
+			scope:defender.top_liege = {
+				add = {
+					value = current_military_strength
+				}
+				every_hired_mercenary = {
+					limit = {
+						exists = this
+						#is_playable_character = yes
+					}
+					add = {
+						value = mercenary_company_leader.current_military_strength
+					}
+				}
+			}
+		}
+		every_hired_mercenary = {
+			limit = {
+				exists = this
+				#is_playable_character = yes
+			}
+			add = {
+				value = mercenary_company_leader.current_military_strength
+			}
+		}
+	}
+}
+
+rv_defender_military_strength_mult = {
+	value = rv_defender_military_strength
+	multiply = 1.2
+}
+
+rv_defender_military_strength_mult_2 = {
+	value = rv_defender_military_strength
+	multiply = 1.5
+}
+
+rv_rescue_war_ai_score_value_extreme = {
+	value = 50000
+	scope:attacker = {
+		if = {
+			limit = {
+				always = yes
+			}
+			add = {
+				value = ai_compassion
+				multiply = 200
+			}
+		}
+		if = {
+			limit = {
+				ai_sociability > 0
+			}
+			add = {
+				value = ai_sociability
+				multiply = 66
+			}
+		}
+		if = {
+			limit = {
+				ai_honor > 0
+			}
+			add = {
+				value = ai_honor
+				multiply = 100
+			}
+		}
+		if = {
+			limit = {
+				ai_vengefulness > 0
+			}
+			add = {
+				value = ai_vengefulness
+				multiply = 200
+			}
+		}
+		if = {
+			limit = {
+				var:rv_rescue_priority = 3
+			}
+			add = 60000
+		}
+		if = {
+			limit = {
+				var:rv_rescue_priority = 2
+			}
+			add = 40000
+		}
+		if = {
+			limit = {
+				var:rv_rescue_priority = 1
+			}
+			add = 20000
+		}
+	}
+}
+
+rv_rescue_war_ai_score_value = {
+	value = 0
+	scope:attacker = {
+		if = {
+			limit = {
+				always = yes
+			}
+			add = {
+				value = ai_compassion
+				divide = 5
+			}
+		}
+		if = {
+			limit = {
+				ai_greed > 0
+			}
+			add = {
+				value = ai_greed
+				divide = 10
+			}
+		}
+		if = {
+			limit = {
+				ai_vengefulness > 0
+			}
+			add = {
+				value = ai_vengefulness
+				divide = 5
+			}
+		}
+		if = {
+			limit = {
+				#always = no # Replaced by rv_rescue_priority / 3
+				var:rv_rescue_priority = 3
+			}
+			add = 30
+		}
+		if = {
+			limit = {
+				#always = no # Replaced by rv_rescue_priority / 3
+				var:rv_rescue_priority = 2
+			}
+			add = 20
+		}
+		if = {
+			limit = {
+				#always = no # Replaced by rv_rescue_priority / 3
+				var:rv_rescue_priority = 1
+			}
+			add = 10
+		}
+
+		scope:attacker = {save_temporary_scope_as = rescuer}
+
+		every_in_list = {
+			list = potential_rescue_target
+			limit = {
+				always = no # This is less performant and rv_rescue_ai_list_construction already made sure every chars in the list are of similar priority
+				OR = {
+					is_imprisoned_by = scope:defender
+					is_concubine_of = scope:defender
+				}
+			}
+			add = {
+				value = rv_rescue_priority
+				divide = 3
+			}
+		}
+	}
+	min = 0
+}
+
+rv_rescue_war_defender_release_score = {
+	value = 0
+	scope:defender = {
+		if = {
+			limit = {
+				ai_compassion > 0
+			}
+			add = {
+				value = ai_compassion
+				divide = 5
+			}
+		}
+		if = {
+			limit = {
+				always = yes
+			}
+			add = {
+				value = ai_boldness
+				divide = -10
+			}
+		}
+		if = {
+			limit = {
+				ai_honor > 0
+			}
+			add = {
+				value = ai_honor
+				divide = -10
+			}
+		}
+		if = {
+			limit = {
+				ai_vengefulness > 0
+			}
+			add = {
+				value = ai_vengefulness
+				divide = -10
+			}
+		}
+	}
+	min = 0
+}
+
+rv_rescue_priority = {
+	value = 0
+	this = {
+		if = {
+			limit = {
+				is_primary_heir_of = scope:rescuer
+			}
+			add = {
+				value = 100
+			}
+		}
+		if = {
+			limit = {
+				is_heir_of = scope:rescuer
+			}
+			add = {
+				value = 45
+			}
+		}
+		if = {
+			limit = {
+				is_child_of = scope:rescuer
+			}
+			add = {
+				value = 35
+			}
+		}
+		if = {
+			limit = {
+				is_spouse_of = scope:rescuer
+			}
+			add = {
+				value = 25
+			}
+		}
+		if = {
+			limit = {
+				has_variable = rv_is_former_spouse
+				var:rv_is_former_spouse = scope:rescuer
+			}
+			add = {
+				value = 55
+			}
+		}
+		if = {
+			limit = {
+				is_close_family_of = scope:rescuer
+			}
+			add = {
+				value = 30
+			}
+		}
+		if = {
+			limit = {
+				has_relation_friend = scope:rescuer
+			}
+			add = {
+				value = 15
+			}
+		}
+		if = {
+			limit = {
+				has_relation_best_friend = scope:rescuer
+			}
+			add = {
+				value = 45
+			}
+		}
+		if = {
+			limit = {
+				has_relation_lover = scope:rescuer
+			}
+			add = {
+				value = 20
+			}
+		}
+		if = {
+			limit = {
+				has_relation_soulmate = scope:rescuer
+			}
+			add = {
+				value = 60
+			}
+		}
+		if = {
+			limit = {
+				has_relation_rival = scope:rescuer
+				NOT = {
+					any_in_list = {
+						variable = rv_demanded_me_list
+						this = scope:rescuer
+					}
+				}
+			}
+			add = {
+				value = -75
+			}
+		}
+		if = {
+			limit = {
+				has_relation_nemesis = scope:rescuer
+				NOT = {
+					any_in_list = {
+						variable = rv_demanded_me_list
+						this = scope:rescuer
+					}
+				}
+			}
+			add = {
+				value = -200
+			}
+		}
+		if = {
+			limit = {
+				any_in_list = {
+					variable = rv_demanded_me_list
+					this = scope:rescuer
+				}
+				is_at_war_with = scope:rescuer
+				any_character_war = {
+					OR = {
+						AND = {
+							primary_attacker = scope:rescuer
+							OR = {
+								defender_war_score >= 50
+								war_days >= 730
+							}
+						}
+						AND = {
+							primary_defender = scope:rescuer
+							OR = {
+								attacker_war_score >= 50
+								war_days >= 730
+							}
+						}
+					}
+				}
+			}
+			add = {
+				value = 100
+			}
+		}
+		if = {
+			limit = {
+				is_allied_to = scope:rescuer
+				NOT = {
+					scope:rescuer = {target_is_liege_or_above = prev}
+				}
+			}
+			add = {
+				value = 25
+			}
+		}
+		if = {
+			limit = {
+				scope:rescuer = {
+					opinion = {
+						target = prev
+						value >= medium_positive_opinion
+					}
+				}
+			}
+			add = {
+				value = 15
+			}
+		}
+		if = {
+			limit = {
+				scope:rescuer = {
+					opinion = {
+						target = prev
+						value >= very_high_positive_opinion
+					}
+				}
+			}
+			add = {
+				value = 10
+			}
+		}
+		if = {
+			limit = {
+				scope:rescuer = {
+					opinion = {
+						target = prev
+						value <= medium_negative_opinion
+					}
+				}
+				NOT = {
+					any_in_list = {
+						variable = rv_demanded_me_list
+						this = scope:rescuer
+					}
+				}
+			}
+			add = {
+				value = -50
+			}
+		}
+		if = {
+			limit = {
+				is_imprisoned = yes
+				imprisoner = {
+					has_imprisonment_reason = prev
+				}
+				NOT = {
+					any_in_list = {
+						variable = rv_demanded_me_list
+						this = scope:rescuer
+					}
+				}
+			}
+			add = {
+				value = -20
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					health <= poor_health
+					has_trait = infirm
+					has_trait = incapable
+				}
+			}
+			multiply = {
+				value = scope:rescuer.ai_compassion
+				divide = 50
+				max = 1.5
+				min = 1
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					has_contagious_deadly_disease_trigger = yes
+					has_epidemic_disease_trigger = yes
+				}
+			}
+			add = -200
+		}
+	}
+
+	#min = 0
+}
+
+rv_rescue_ransom_refused_modifier = {
+	value = 1
+	every_in_list = {
+		list = potential_rescue_target
+		if = {
+			limit = {
+				has_character_flag = character_ransom_refused_by_player
+				is_imprisoned_by = scope:defender
+			}
+			multiply = 1.25
+		}
+		else_if = {
+			limit = {
+				is_imprisoned_by = scope:defender
+				NOT = {has_character_flag = character_ransom_refused_by_player}
+			}
+			multiply = 0.8
+		}
+	}
+
+	#min = 0
+}
+
+### Revenge CB
+rv_revenge_discount = {
+	value = 0
+	add = {
+		value = 0
+		if = {
+			limit = {always = yes}
+			scope:attacker = {
+				if = {
+					limit = {
+						OR = {
+							### Should be constructed in rv_revenge_list_construction (clear at the beginning!!!) and refined in rv) rv_revenge_war_declaration
+							has_variable_list = rv_revenging_dead_lovers
+							has_variable_list = rv_revenging_dead_soulmates
+							has_variable_list = rv_revenging_dead_friends
+							has_variable_list = rv_revenging_dead_best_friends
+							has_variable_list = rv_revenging_dead_spouses
+						}
+					}
+					every_in_list = {
+						variable = rv_revenging_dead_lovers
+						limit = {always = yes}
+						add = {
+							value = -500
+						}
+					}
+					every_in_list = {
+						variable = rv_revenging_dead_soulmates
+						limit = {always = yes}
+						add = {
+							value = -1000
+						}
+					}
+					every_in_list = {
+						variable = rv_revenging_dead_friends
+						limit = {always = yes}
+						add = {
+							value = -250
+						}
+					}
+					every_in_list = {
+						variable = rv_revenging_dead_best_friends
+						limit = {always = yes}
+						add = {
+							value = -500
+						}
+					}
+					every_in_list = {
+						variable = rv_revenging_dead_spouses
+						limit = {always = yes}
+						add = {
+							value = -1000
+						}
+					}
+				}
+			}
+			scope:defender = {
+				every_killed_character = {
+					limit = { always = yes }
+					if = {
+						limit = {
+							is_child_of = scope:attacker
+						}
+						add = {
+							value = -700
+						}
+					}
+					if = {
+						limit = {
+							is_close_family_of = scope:attacker
+						}
+						add = {
+							value = -800
+						}
+					}
+					else_if = {
+						limit = {
+							is_extended_family_of = scope:attacker
+						}
+						add = {
+							value = -500
+						}
+					}
+				}
+			}
+		}
+		desc = CB_REVENGE_COST
+	}
+	min = -1800
+	max = 0
+}
+
+rv_revenge_cost = {
+	value = 2000
+	add = { value = rv_revenge_discount }
+	multiply = common_cb_prestige_cost_multiplier
+	min = 100
+	max = 2000
+}
+
+rv_revenge_ai_score = {
+	value = 0
+	add = {
+		value = rv_revenge_discount
+		divide = -18
+	}
+}
+
+rv_revenge_discount_for_ai_logic = {
+	value = 0
+	add = {
+		value = 0
+		if = {
+			limit = {always = yes}
+
+			scope:defender = {
+				every_killed_character = {
+					limit = { always = yes }
+					if = {
+						limit = {
+							is_child_of = scope:attacker
+						}
+						add = {
+							value = -700
+						}
+					}
+					if = {
+						limit = {
+							is_close_family_of = scope:attacker
+						}
+						add = {
+							value = -800
+						}
+					}
+					else_if = {
+						limit = {
+							is_extended_family_of = scope:attacker
+						}
+						add = {
+							value = -500
+						}
+					}
+					if = {
+						limit = {
+							scope:attacker = {
+								is_target_in_variable_list = {
+									name = rv_revenging_dead_lovers
+									target = prev
+								}
+							}
+						}
+						add = {
+							value = -500
+						}
+					}
+					if = {
+						limit = {
+							scope:attacker = {
+								is_target_in_variable_list = {
+									name = rv_revenging_dead_soulmates
+									target = prev
+								}
+							}
+						}
+						add = {
+							value = -1000
+						}
+					}
+					if = {
+						limit = {
+							scope:attacker = {
+								is_target_in_variable_list = {
+									name = rv_revenging_dead_friends
+									target = prev
+								}
+							}
+						}
+						add = {
+							value = -250
+						}
+					}
+					if = {
+						limit = {
+							scope:attacker = {
+								is_target_in_variable_list = {
+									name = rv_revenging_dead_best_friends
+									target = prev
+								}
+							}
+						}
+						add = {
+							value = -500
+						}
+					}
+					if = {
+						limit = {
+							scope:attacker = {
+								is_target_in_variable_list = {
+									name = rv_revenging_dead_spouses
+									target = prev
+								}
+							}
+						}
+						add = {
+							value = -1000
+						}
+					}
+				}
+			}
+		}
+		#desc = CB_REVENGE_COST
+	}
+	min = -1800
+	max = 0
+}
+
+rv_revenge_cost_AI = {
+	value = 2000
+	add = { value = rv_revenge_discount_for_ai_logic }
+	multiply = common_cb_prestige_cost_multiplier
+	multiply = -1
+	max = -450
+}
+
+rv_revenge_cost_for_ai_logic = {
+	value = 2000
+	add = { value = rv_revenge_discount_for_ai_logic }
+	add = major_prestige_value #Keep some prestige for calling allys
+	multiply = common_cb_prestige_cost_multiplier
+	min = 450
+}

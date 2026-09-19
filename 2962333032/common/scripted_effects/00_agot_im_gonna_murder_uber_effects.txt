@@ -1,0 +1,1576 @@
+﻿esr_grant_vassal_effect = {
+	every_spouse = {
+		limit = { NOT = { this = scope:actor } }
+		add_to_temporary_list = close_family_grant_opinion_list
+	}
+
+	every_close_family_member ={
+		limit = { NOT = { this = scope:actor } }
+		add_to_temporary_list = close_family_grant_opinion_list
+	}
+
+	if = {
+		limit = {
+			any_in_list = {
+				list = close_family_grant_opinion_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = close_family_grant_opinion_list
+			custom = all_close_family_members
+
+			add_opinion = {
+				target = scope:actor
+				modifier = esr_grant_family_vassal
+			}
+		}
+	}
+
+
+	#recipient's friends and lovers
+	every_relation = {
+		type = friend
+		limit = {
+			NOR = {
+				this = scope:recipient
+				this = scope:actor
+				has_relation_best_friend = scope:recipient
+				has_trait = callous
+				has_trait = arbitrary
+			}
+		}
+		add_to_list = recipient_close_relations_list
+	}
+	every_relation = {
+		type = lover
+		limit = {
+			NOR = {
+				this = scope:recipient
+				this = scope:actor
+				has_relation_soulmate = scope:recipient
+				is_in_list = recipient_close_relations_list
+			}
+		}
+		add_to_list = recipient_close_relations_list
+	}
+	if = {
+		limit = {
+			any_in_list = {
+				list = recipient_close_relations_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = recipient_close_relations_list
+			custom = all_friends_and_lovers
+			add_opinion = {
+				target = scope:actor
+				modifier = esr_grant_close_relation_opinion
+			}
+		}
+	}
+
+	#recipient's best friend and soulmate
+	every_relation = {
+		type = best_friend
+		limit = { NOT = {this = scope:actor}}
+		add_opinion = {
+			target = scope:actor
+			modifier = esr_grant_best_friend
+		}
+	}
+
+	every_relation = {
+		type = soulmate
+		limit = { NOT = {this = scope:actor}}
+		add_opinion = {
+			target = scope:actor
+			modifier = esr_grant_soulmate
+		}
+	}
+
+	#recipient's rivals and nemesis
+	every_relation = {
+		type = rival
+		limit = {
+			NOR = {
+				this = scope:actor
+				has_relation_nemesis = scope:recipient
+			}
+		}
+		custom = esr_rivals_execution
+		add_opinion = {
+			target = scope:actor
+			modifier = esr_grant_rival
+		}
+	}
+
+	every_relation = {
+		type = nemesis
+
+		limit = {
+			NOT = {
+				this = scope:actor
+			}
+		}
+		add_opinion = {
+			target = scope:actor
+			modifier = esr_grant_nemesis
+		}
+	}
+}
+
+esr_divorce_effect = {
+	# Close relation divorcee feels betrayed
+	if = {
+		limit = { has_relation_soulmate = $DIVORCEE$ }
+		reverse_add_opinion = {
+			modifier = betrayed_me_opinion
+			opinion = -60
+			target = $DIVORCEE$
+		}
+
+		if = {
+			limit = { can_set_relation_rival_if_adult_trigger = { CHARACTER = $DIVORCEE$ } }
+
+			random = {
+				chance = 20
+				modifier = {
+					factor = 0.5
+					$DIVORCEE$ = { ai_vengefulness <= medium_negative_vengefulness }
+				}
+				modifier = {
+					factor = 2
+					$DIVORCEE$ = { ai_vengefulness >= medium_positive_vengefulness }
+				}
+				modifier = {
+					factor = 2
+					$DIVORCEE$ = { ai_vengefulness >= high_positive_vengefulness }
+				}
+				$DIVORCEE$ = {
+					progress_towards_rival_effect = {
+						REASON = esr_rival_divorced_soulmate_vengeful
+						CHARACTER = $DIVORCER$
+						OPINION = 0
+					}
+				}
+			}
+		}
+	}
+
+	else_if = {
+		limit = { has_relation_lover = $DIVORCEE$ }
+		reverse_add_opinion = {
+			modifier = betrayed_me_opinion
+			opinion = -30
+			target = $DIVORCEE$
+		}
+
+		if = {
+			limit = { can_set_relation_rival_if_adult_trigger = { CHARACTER = $DIVORCEE$ } }
+			random = {
+				chance = 10
+				modifier = {
+					factor = 0.5
+					$DIVORCEE$ = { ai_vengefulness <= medium_negative_vengefulness }
+				}
+				modifier = {
+					factor = 2
+					$DIVORCEE$ = { ai_vengefulness >= medium_positive_vengefulness }
+				}
+				modifier = {
+					factor = 2
+					$DIVORCEE$ = { ai_vengefulness >= high_positive_vengefulness }
+				}
+				$DIVORCEE$ = {
+					progress_towards_rival_effect = {
+						REASON = esr_rival_divorced_lover_vengeful
+						CHARACTER = $DIVORCER$
+						OPINION = 0
+					}
+				}
+			}
+		}
+	}
+
+	else_if = {
+		limit = { has_relation_best_friend = $DIVORCEE$ }
+		reverse_add_opinion = {
+			modifier = betrayed_me_opinion
+			opinion = -15
+			target = $DIVORCEE$
+		}
+	}
+}
+
+esr_retract_effect = {
+	# a tuned down version of what was added in esr_override_revoke_title.txt
+	if = {
+		limit = {
+			OR = {
+				has_relation_friend = scope:actor
+				has_relation_lover = scope:actor
+			}
+		}
+		add_opinion = {
+			target = scope:actor
+			modifier = betrayed_me_opinion
+			opinion = -15
+		}
+	}
+
+	if = {
+		limit = {
+			OR = {
+				has_relation_best_friend = scope:actor
+				has_relation_soulmate = scope:actor
+			}
+		}
+		add_opinion = {
+			target = scope:actor
+			modifier = betrayed_me_opinion
+			opinion = -30
+		}
+	}
+
+	if = {
+		limit = { can_set_relation_rival_if_adult_trigger = { CHARACTER = scope:actor } }
+		random = {
+			chance = 10
+			modifier = {
+				factor = 0.5
+				scope:recipient = { ai_vengefulness <= medium_negative_vengefulness }
+			}
+			modifier = {
+				factor = 2
+				scope:recipient = { ai_vengefulness >= medium_positive_vengefulness }
+			}
+			modifier = {
+				factor = 2.5
+				scope:recipient = { ai_vengefulness >= high_positive_vengefulness }
+			}
+			progress_towards_rival_effect = {
+				REASON = esr_rival_retracted_vassal_reversed
+				CHARACTER = scope:actor
+				OPINION = 0
+			}
+		}
+	}
+
+
+	every_spouse = {
+		limit = { NOT = { this = scope:actor } }
+		add_to_temporary_list = close_family_revoke_opinion_list
+		add_to_temporary_list = esr_spouse_revoke_opinion_list
+	}
+
+	every_close_or_extended_family_member ={
+		limit = { NOT = { this = scope:actor } }
+		add_to_temporary_list = close_family_revoke_opinion_list
+		###Note close_family_revoke_opinion_list stores both close and extened family in esr
+	}
+
+	if = {
+		limit = {
+			any_in_list = {
+				list = close_family_revoke_opinion_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = close_family_revoke_opinion_list
+			custom = all_family_members
+			limit = {
+				NAND = {
+					OR = {
+						is_close_or_extended_family_of = scope:actor
+						is_spouse_of = scope:actor
+					}
+					NOT = { scope:actor = { vassal_revocation_is_tyrannical_trigger = { VASSAL = scope:recipient } } }
+				}
+			}
+
+			if = {
+				limit = {
+					OR = {
+						is_close_family_of = scope:recipient
+						is_in_list = esr_spouse_revoke_opinion_list
+					}
+				}
+				add_opinion = {
+					target = scope:actor
+					modifier = esr_retracted_close_family
+				}
+			}
+
+			else = {
+				add_opinion = {
+					target = scope:actor
+					modifier = esr_retracted_extended_family
+				}
+			}
+		}
+	}
+
+	#recipient's friends and lovers
+	every_relation = {
+		type = friend
+		limit = {
+			NOR = {
+				this = scope:recipient
+				this = scope:actor
+				has_relation_best_friend = scope:recipient
+			}
+		}
+		add_to_list = recipient_close_relations_list
+	}
+	every_relation = {
+		type = lover
+		limit = {
+			NOR = {
+				this = scope:recipient
+				this = scope:actor
+				has_relation_soulmate = scope:recipient
+				is_in_list = recipient_close_relations_list
+			}
+		}
+		add_to_list = recipient_close_relations_list
+	}
+	if = {
+		limit = {
+			any_in_list = {
+				list = recipient_close_relations_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = recipient_close_relations_list
+			custom = all_friends_and_lovers
+			add_opinion = {
+				target = scope:actor
+				modifier = esr_retracted_close_relation_opinion
+			}
+		}
+	}
+
+	#recipient's best friend and soulmate
+	every_relation = {
+		type = best_friend
+		limit = { NOT = {this = scope:actor}}
+		add_opinion = {
+			target = scope:actor
+			modifier = esr_retracted_best_friend
+		}
+	}
+
+	every_relation = {
+		type = soulmate
+		limit = { NOT = {this = scope:actor}}
+		add_opinion = {
+			target = scope:actor
+			modifier = esr_retracted_soulmate
+		}
+	}
+
+	#recipient's rivals and nemesis
+	every_relation = {
+		type = rival
+		limit = {
+			NOR = {
+				this = scope:actor
+				has_relation_nemesis = scope:recipient
+				has_trait = compassionate
+			}
+		}
+		custom = esr_rivals_execution
+		add_opinion = {
+			target = scope:actor
+			modifier = esr_retracted_rival
+		}
+	}
+
+	every_relation = {
+		type = nemesis
+
+		limit = {
+			NOR = {
+				this = scope:actor
+				has_trait = compassionate
+			}
+		}
+		add_opinion = {
+			target = scope:actor
+			modifier = esr_retracted_nemesis
+		}
+	}
+}
+
+esr_revoke_effect = {
+	if = {
+		limit = {
+			OR = {
+				has_relation_friend = scope:actor
+				has_relation_lover = scope:actor
+			}
+		}
+		add_opinion = {
+			target = scope:actor
+			modifier = betrayed_me_opinion
+			opinion = -30
+		}
+	}
+
+	if = {
+		limit = {
+			OR = {
+				has_relation_best_friend = scope:actor
+				has_relation_soulmate = scope:actor
+			}
+		}
+		add_opinion = {
+			target = scope:actor
+			modifier = betrayed_me_opinion
+			opinion = -60
+		}
+	}
+
+	if = {
+		limit = { can_set_relation_rival_if_adult_trigger = { CHARACTER = scope:actor } }
+		random = {
+			chance = 20
+			modifier = {
+				factor = 0.5
+				scope:recipient = { ai_vengefulness <= medium_negative_vengefulness }
+			}
+			modifier = {
+				factor = 2
+				scope:recipient = { ai_vengefulness >= medium_positive_vengefulness }
+			}
+			modifier = {
+				factor = 2
+				scope:recipient = { ai_vengefulness >= high_positive_vengefulness }
+			}
+			progress_towards_rival_effect = {
+				REASON = rival_revoked_title_progress
+				CHARACTER = scope:actor
+				OPINION = 0
+			}
+		}
+	}
+
+
+	if = {
+		limit = { scope:actor = { title_revocation_is_tyrannical_trigger = { VASSAL = scope:recipient } } }
+		every_spouse = {
+			limit = { NOT = { this = scope:actor } }
+			add_to_temporary_list = close_family_revoke_opinion_list
+			add_to_temporary_list = esr_spouse_revoke_opinion_list
+		}
+
+		every_close_or_extended_family_member ={
+			limit = { NOT = { this = scope:actor } }
+			add_to_temporary_list = close_family_revoke_opinion_list
+			###Note close_family_revoke_opinion_list stores both close and extened family in esr
+		}
+
+		if = {
+			limit = {
+				any_in_list = {
+					list = close_family_revoke_opinion_list
+					always = yes
+				}
+			}
+			every_in_list = {
+				list = close_family_revoke_opinion_list
+				custom = all_family_members
+
+				if = {
+					limit = {
+						OR = {
+							is_close_family_of = scope:recipient
+							is_in_list = esr_spouse_revoke_opinion_list
+						}
+					}
+					add_opinion = {
+						target = scope:actor
+						modifier = esr_revoked_close_family
+					}
+				}
+
+				else = {
+					add_opinion = {
+						target = scope:actor
+						modifier = esr_revoked_extended_family
+					}
+				}
+			}
+		}
+
+		#recipient's friends and lovers
+		every_relation = {
+			type = friend
+			limit = {
+				NOR = {
+					this = scope:recipient
+					this = scope:actor
+					has_relation_best_friend = scope:recipient
+				}
+			}
+			add_to_list = recipient_close_relations_list
+		}
+		every_relation = {
+			type = lover
+			limit = {
+				NOR = {
+					this = scope:recipient
+					this = scope:actor
+					has_relation_soulmate = scope:recipient
+					is_in_list = recipient_close_relations_list
+				}
+			}
+			add_to_list = recipient_close_relations_list
+		}
+		if = {
+			limit = {
+				any_in_list = {
+					list = recipient_close_relations_list
+					always = yes
+				}
+			}
+			every_in_list = {
+				list = recipient_close_relations_list
+				custom = all_friends_and_lovers
+				add_opinion = {
+					target = scope:actor
+					modifier = esr_revoked_close_relation_opinion
+				}
+			}
+		}
+
+		#recipient's best friend and soulmate
+		every_relation = {
+			type = best_friend
+			limit = { NOT = {this = scope:actor}}
+			add_opinion = {
+				target = scope:actor
+				modifier = esr_revoked_best_friend
+			}
+		}
+
+		every_relation = {
+			type = soulmate
+			limit = { NOT = {this = scope:actor}}
+			add_opinion = {
+				target = scope:actor
+				modifier = esr_revoked_soulmate
+			}
+		}
+
+		#recipient's rivals and nemesis
+		every_relation = {
+			type = rival
+			limit = {
+				NOR = {
+					this = scope:actor
+					has_relation_nemesis = scope:recipient
+					has_trait = compassionate
+				}
+			}
+			custom = esr_rivals_execution
+			add_opinion = {
+				target = scope:actor
+				modifier = esr_revoked_rival
+			}
+		}
+
+		every_relation = {
+			type = nemesis
+
+			limit = {
+				NOR = {
+					this = scope:actor
+					has_trait = compassionate
+				}
+			}
+			add_opinion = {
+				target = scope:actor
+				modifier = esr_revoked_nemesis
+			}
+		}
+	}
+}
+
+esr_execute_opinion_effect = {
+	every_close_or_extended_family_member = {
+		limit = {
+			NOR = {
+				this = $EXECUTIONER$
+				is_in_list = victim_family_list
+			}
+		}
+		custom = esr_extended_family_members
+		add_to_temporary_list = esr_victim_extended_family_list
+		add_opinion = {
+			target = $EXECUTIONER$
+			modifier = esr_murdered_extended_family
+		}
+	}
+
+	every_relation = {
+		type = rival
+		limit = {
+			NOR = {
+				this = $EXECUTIONER$
+				has_relation_nemesis = $VICTIM$
+				has_trait = just
+				has_trait = compassionate
+				has_trait = forgiving
+			}
+		}
+		custom = esr_rivals_execution
+		add_opinion = {
+			target = $EXECUTIONER$
+			modifier = esr_murdered_rival
+		}
+	}
+
+	#Victim's lifelong relations
+	every_relation = {
+		type = best_friend
+		limit = { NOT = { this = $EXECUTIONER$ } }
+		add_opinion = {
+			target = $EXECUTIONER$
+			modifier = esr_murdered_best_friend
+		}
+	}
+
+	every_relation = {
+		type = soulmate
+		limit = { NOT = { this = $EXECUTIONER$ } }
+		add_opinion = {
+			target = $EXECUTIONER$
+			modifier = esr_murdered_soulmate
+		}
+	}
+
+	every_relation = {
+		type = nemesis
+
+		limit = {
+			NOR = {
+				this = $EXECUTIONER$
+				has_trait = just
+				has_trait = compassionate
+				has_trait = forgiving
+			}
+		}
+		add_opinion = {
+			target = $EXECUTIONER$
+			modifier = esr_murdered_nemesis
+		}
+	}
+}
+
+esr_imprison_opinion_effect = {
+	if = {
+		limit = { can_set_relation_rival_if_adult_trigger = { CHARACTER = scope:imprisoner } }
+		random = {
+			chance = 15
+			modifier = {
+				factor = 0.5
+				scope:imprisonment_target = { ai_vengefulness <= medium_negative_vengefulness }
+			}
+			modifier = {
+				factor = 2
+				scope:imprisonment_target = { ai_vengefulness >= medium_positive_vengefulness }
+			}
+			modifier = {
+				factor = 2
+				scope:imprisonment_target = { ai_vengefulness >= high_positive_vengefulness }
+			}
+			progress_towards_rival_effect = {
+				REASON = rival_imprisoned
+				CHARACTER = scope:imprisoner
+				OPINION = 0
+			}
+		}
+	}
+
+	every_spouse = {
+		limit = { NOT = { this = scope:imprisoner } }
+		add_to_temporary_list = close_family_imprison_opinion_list
+		add_to_temporary_list = esr_spouse_imprison_opinion_list
+	}
+
+	every_close_or_extended_family_member ={
+		limit = { NOT = { this = scope:imprisoner } }
+		add_to_temporary_list = close_family_imprison_opinion_list
+		###Note close_family_imprison_opinion_list stores both close and extened family in esr
+	}
+
+	if = {
+		limit = {
+			any_in_list = {
+				list = close_family_imprison_opinion_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = close_family_imprison_opinion_list
+			custom = all_family_members
+
+			if = {
+				limit = {
+					OR = {
+						is_close_family_of = scope:imprisonment_target
+						is_in_list = esr_spouse_imprison_opinion_list
+					}
+				}
+				add_opinion = {
+					target = scope:imprisoner
+					modifier = esr_imprisoned_close_family
+				}
+			}
+
+			else = {
+				add_opinion = {
+					target = scope:imprisoner
+					modifier = esr_imprisoned_extended_family
+				}
+			}
+		}
+	}
+
+	#Victim's normal relations
+	every_relation = {
+		type = friend
+		limit = {
+			NOR = {
+				this = scope:imprisonment_target
+				this = scope:imprisoner
+				has_relation_best_friend = scope:imprisonment_target
+			}
+		}
+		add_to_list = victim_close_relations_list
+	}
+	every_relation = {
+		type = lover
+		limit = {
+			NOR = {
+				this = scope:imprisonment_target
+				this = scope:imprisoner
+				has_relation_soulmate = scope:imprisonment_target
+				is_in_list = victim_close_relations_list
+			}
+		}
+		add_to_list = victim_close_relations_list
+	}
+	if = {
+		limit = {
+			any_in_list = {
+				list = victim_close_relations_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = victim_close_relations_list
+			custom = all_friends_and_lovers
+			add_opinion = {
+				target = scope:imprisoner
+				modifier = esr_imprisoned_close_relation_opinion
+			}
+		}
+	}
+
+	every_relation = {
+		type = rival
+		limit = {
+			NOR = {
+				this = scope:imprisoner
+				has_relation_nemesis = scope:imprisonment_target
+				has_trait = just
+				has_trait = compassionate
+				has_trait = forgiving
+				#has_trait = honest
+				#has_trait = trusting
+			}
+		}
+		custom = esr_rivals_execution
+		add_opinion = {
+			target = scope:imprisoner
+			modifier = esr_imprisoned_rival
+		}
+	}
+
+	###esr
+	#Victim's lifelong relations
+	every_relation = {
+		type = best_friend
+		limit = { NOT = {this = scope:imprisoner}}
+		add_opinion = {
+			target = scope:imprisoner
+			modifier = esr_imprisoned_best_friend
+		}
+		add_to_temporary_list = esr_positive_life_long_relation_list
+	}
+
+	every_relation = {
+		type = soulmate
+		limit = { NOT = {this = scope:imprisoner}}
+		add_opinion = {
+			target = scope:imprisoner
+			modifier = esr_imprisoned_soulmate
+		}
+		add_to_temporary_list = esr_positive_life_long_relation_list
+	}
+
+	every_relation = {
+		type = nemesis
+
+		limit = {
+			NOR = {
+				this = scope:imprisoner
+				has_trait = just
+				has_trait = compassionate
+				has_trait = forgiving
+			}
+		}
+		add_opinion = {
+			target = scope:imprisoner
+			modifier = esr_imprisoned_nemesis
+		}
+		add_to_temporary_list = esr_negative_life_long_relation_list
+	}
+}
+
+esr_imprison_opinion_by_list_effect = {
+	every_in_list = {
+		list = close_family_imprison_opinion_list
+		add_opinion = {
+			modifier = esr_threw_family_in_dungeon
+			target = scope:imprisoner
+		}
+	}
+	every_in_list = {
+		list = victim_close_relations_list
+		add_opinion = {
+			modifier = esr_threw_close_relation_in_dungeon
+			target = scope:imprisoner
+		}
+	}
+	every_in_list = {
+		list = esr_positive_life_long_relation_list
+		add_opinion = {
+			modifier = esr_threw_very_close_in_dungeon
+			target = scope:imprisoner
+		}
+	}
+	every_in_list = {
+		list = esr_negative_life_long_relation_list
+		add_opinion = {
+			modifier = esr_threw_nemesis_in_dungeon
+			target = scope:imprisoner
+		}
+	}
+}
+
+esr_hard_imprison_opinion_effect = {
+	scope:new_target = {
+		add_opinion = {
+			target = scope:new_imprisoner
+			modifier = imprisoned_me
+		}
+
+		if = {
+			limit = { can_set_relation_rival_if_adult_trigger = { CHARACTER = scope:new_imprisoner } }
+			random = {
+				chance = 10
+				modifier = {
+					factor = 0.5
+					scope:new_target = { ai_vengefulness <= medium_negative_vengefulness }
+				}
+				modifier = {
+					factor = 2
+					scope:new_target = { ai_vengefulness >= medium_positive_vengefulness }
+				}
+				modifier = {
+					factor = 2
+					scope:new_target = { ai_vengefulness >= high_positive_vengefulness }
+				}
+				progress_towards_rival_effect = {
+					REASON = rival_imprisoned
+					CHARACTER = scope:new_imprisoner
+					OPINION = 0
+				}
+			}
+		}
+
+		### For testing whether the attacker is still in the war when on_defeat is triggered - Result: yes
+		#if = {
+			#limit = {
+				#is_at_war_with = scope:new_imprisoner
+			#}
+			#set_variable = {
+				#name = still_an_attacker_on_defeat
+				#value = yes
+			#}
+		#}
+		### For testing whether the attacker is still in the war when on_defeat is triggered/
+
+		every_spouse = {
+			limit = {
+				NOR = {
+					this = scope:new_imprisoner
+					is_at_war_with = scope:new_target
+				}
+			}
+			add_to_temporary_list = close_family_imprison_opinion_list
+			add_to_temporary_list = esr_spouse_imprison_opinion_list
+		}
+
+		every_close_or_extended_family_member ={
+			limit = {
+				NOR = {
+					this = scope:new_imprisoner
+					is_at_war_with = scope:new_target
+				}
+			}
+			add_to_temporary_list = close_family_imprison_opinion_list
+			###Note close_family_imprison_opinion_list stores both close and extened family in esr
+		}
+
+		if = {
+			limit = {
+				any_in_list = {
+					list = close_family_imprison_opinion_list
+					always = yes
+				}
+			}
+			every_in_list = {
+				list = close_family_imprison_opinion_list
+				custom = all_family_members
+
+				if = {
+					limit = {
+						OR = {
+							is_close_family_of = scope:new_target
+							is_in_list = esr_spouse_imprison_opinion_list
+						}
+					}
+					add_opinion = {
+						target = scope:new_imprisoner
+						modifier = esr_imprisoned_close_family
+					}
+				}
+
+				else = {
+					add_opinion = {
+						target = scope:new_imprisoner
+						modifier = esr_imprisoned_extended_family
+					}
+				}
+			}
+		}
+
+		#Victim's normal relations
+		every_relation = {
+			type = friend
+			limit = {
+				NOR = {
+					this = scope:new_target
+					this = scope:new_imprisoner
+					has_relation_best_friend = scope:new_target
+				}
+			}
+			add_to_list = victim_close_relations_list
+		}
+		every_relation = {
+			type = lover
+			limit = {
+				NOR = {
+					this = scope:new_target
+					this = scope:new_imprisoner
+					has_relation_soulmate = scope:new_target
+					is_in_list = victim_close_relations_list
+				}
+			}
+			add_to_list = victim_close_relations_list
+		}
+		if = {
+			limit = {
+				any_in_list = {
+					list = victim_close_relations_list
+					always = yes
+				}
+			}
+			every_in_list = {
+				list = victim_close_relations_list
+				custom = all_friends_and_lovers
+				add_opinion = {
+					target = scope:new_imprisoner
+					modifier = esr_imprisoned_close_relation_opinion
+				}
+			}
+		}
+
+		every_relation = {
+			type = rival
+			limit = {
+				NOR = {
+					this = scope:new_imprisoner
+					has_relation_nemesis = scope:new_target
+					has_trait = just
+					has_trait = compassionate
+					has_trait = forgiving
+				}
+			}
+			custom = esr_rivals_execution
+			add_opinion = {
+				target = scope:new_imprisoner
+				modifier = esr_imprisoned_rival
+			}
+		}
+
+		#Victim's lifelong relations
+		every_relation = {
+			type = best_friend
+			limit = { NOT = {this = scope:new_imprisoner}}
+			add_opinion = {
+				target = scope:new_imprisoner
+				modifier = esr_imprisoned_best_friend
+			}
+		}
+
+		every_relation = {
+			type = soulmate
+			limit = { NOT = {this = scope:new_imprisoner}}
+			add_opinion = {
+				target = scope:new_imprisoner
+				modifier = esr_imprisoned_soulmate
+			}
+		}
+
+		every_relation = {
+			type = nemesis
+
+			limit = {
+				NOR = {
+					this = scope:new_imprisoner
+					has_trait = just
+					has_trait = compassionate
+					has_trait = forgiving
+				}
+			}
+			add_opinion = {
+				target = scope:new_imprisoner
+				modifier = esr_imprisoned_nemesis
+			}
+		}
+
+	}
+
+	# clear list just in case this effect is called multiple times
+	every_in_list = {
+		list = close_family_imprison_opinion_list
+		remove_from_list = close_family_imprison_opinion_list
+	}
+	every_in_list = {
+		list = esr_spouse_imprison_opinion_list
+		remove_from_list = esr_spouse_imprison_opinion_list
+	}
+	every_in_list = {
+		list = victim_close_relations_list
+		remove_from_list = victim_close_relations_list
+	}
+	# clear list just in case this effect is called multiple times/
+}
+
+esr_scheme_owner_pov_murder_success_opinion_effect = {
+	# The esr_story_cycle_relation_of_the_murdered holds relations for the soon dead scheme target/victum in case the murder secret is exposed
+	scope:owner={
+		create_story = {
+			type = esr_story_cycle_relation_of_the_murdered
+			save_scope_as = esr_murder_story
+		}
+	}
+
+	# was in on_setup block of the story cycle. Taken out because error log spam (failed to create story)
+	scope:esr_murder_story = {
+		set_variable = {
+			name = relation_count
+			value = 0
+		}
+
+		set_variable = {
+			name = murdered_character
+			value = scope:target
+		}
+
+		scope:target = {
+			every_relation = {
+				type = friend
+				limit = {NOT = {this = scope:owner}}
+
+				if = {
+					limit = {NOT = {has_relation_best_friend = scope:target}}
+					scope:esr_murder_story = {
+						add_to_variable_list = {
+							name = esr_murdered_friends # prev is the firned of the victim (murdered); the same goes for all the following every_relation blocks
+							target = prev
+						}
+						change_variable = {
+							name = relation_count
+							add = 1
+						}
+					}
+
+				}
+
+				else = {
+					scope:esr_murder_story = {
+						add_to_variable_list = {
+							name = esr_murdered_best_friends
+							target = prev
+						}
+						change_variable = {
+							name = relation_count
+							add = 1
+						}
+					}
+				}
+			}
+
+			every_relation = {
+				type = rival
+				limit = {NOT = {this = scope:owner}}
+
+				if = {
+					limit = {NOT = {has_relation_nemesis = scope:target}}
+					scope:esr_murder_story = {
+						add_to_variable_list = {
+							name = esr_murdered_rivals
+							target = prev
+						}
+						change_variable = {
+							name = relation_count
+							add = 1
+						}
+					}
+				}
+
+				else = {
+					scope:esr_murder_story = {
+						add_to_variable_list = {
+							name = esr_murdered_nemeses
+							target = prev
+						}
+						change_variable = {
+							name = relation_count
+							add = 1
+						}
+					}
+				}
+			}
+
+			every_relation = {
+				type = lover
+				limit = {NOT = {this = scope:owner}}
+
+				if = {
+					limit = {NOT = {has_relation_soulmate = scope:target}}
+					scope:esr_murder_story = {
+						add_to_variable_list = {
+							name = esr_murdered_lovers
+							target = prev
+						}
+						change_variable = {
+							name = relation_count
+							add = 1
+						}
+					}
+				}
+
+				else = {
+					scope:esr_murder_story = {
+						add_to_variable_list = {
+							name = esr_murdered_soulmates
+							target = prev
+						}
+						change_variable = {
+							name = relation_count
+							add = 1
+						}
+					}
+				}
+
+			}
+		}
+
+		if = { # end story cycle if the victim has no relation (probably should move this to the top for better performance? and var:relation_count can be replaced by has_relation_<> triggers)
+			limit = {
+				var:relation_count = 0
+			}
+			end_story = yes
+		}
+	}
+}
+
+esr_close_family_murder_opinion_effect = {
+	if = {
+		limit = {
+			OR = {
+				is_close_family_of = $VICTIM$
+				is_in_list = esr_spouse_murder_opinion_list
+			}
+		}
+
+		save_scope_as = esr_victim_close_family_member
+
+		add_opinion = {
+			target = $MURDERER$
+			modifier = murdered_close_family_crime
+		}
+
+		###Hate by association ( Victim's close family memebers lose opinion of Murder's close family members )
+		# Can be replaced by esr_hate_by_association = {HATED= VICTIM= VICTIM_ASSOCIATE= MODIFIER= }
+		hidden_effect = {
+			$MURDERER$ = {
+
+				every_spouse = {
+					limit = { NOT = { this = $VICTIM$ } }
+					add_to_temporary_list = esr_murder_close_family_list
+				}
+
+				every_close_family_member = {
+					limit = { NOT = { this = $VICTIM$ } }
+					add_to_temporary_list = esr_murder_close_family_list
+				}
+
+				every_in_list = {
+					list = esr_murder_close_family_list
+					save_scope_as = esr_murder_close_family_member
+					scope:esr_victim_close_family_member = {
+						if = {
+							limit = {
+								NOR = {
+									this = scope:esr_murder_close_family_member
+									has_trait = forgiving
+								}
+							}
+							add_opinion = {
+								target = scope:esr_murder_close_family_member
+								modifier = esr_hate_by_association_murder
+							}
+						}
+					}
+				}
+			}
+		}
+		###Hate by association/
+	}
+
+	else = {
+		add_opinion = {
+			target = $MURDERER$
+			modifier = esr_murdered_extended_family
+		}
+	}
+}
+
+esr_murderer_story_cycle_effect = {
+	random_owned_story = {
+		limit = {
+			story_type = esr_story_cycle_relation_of_the_murdered
+			exists = var:murdered_character
+			var:murdered_character = $VICTIM$
+		}
+
+		if = {
+			limit = {
+				OR = {
+					has_variable_list = esr_murdered_friends
+					has_variable_list = esr_murdered_lovers
+				}
+			}
+
+			if = {
+				limit = {
+					has_variable_list = esr_murdered_friends
+				}
+				every_in_list = {
+					variable = esr_murdered_friends
+					limit = { is_alive = yes }
+					add_to_temporary_list = close_relation_murder_opinion_list
+				}
+			}
+
+			if = {
+				limit = {
+					has_variable_list = esr_murdered_lovers
+				}
+				every_in_list = {
+					variable = esr_murdered_lovers
+					limit = { is_alive = yes }
+					add_to_temporary_list = close_relation_murder_opinion_list
+				}
+			}
+
+			every_in_list = {
+				list = close_relation_murder_opinion_list
+				custom = esr_all_friends_and_lovers
+				add_opinion = {
+					target = $MURDERER$
+					modifier = executed_close_relation_opinion
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_variable_list = esr_murdered_best_friends
+			}
+
+			every_in_list = {
+				variable = esr_murdered_best_friends
+				limit = {is_alive = yes}
+				add_opinion = {
+					target = $MURDERER$
+					modifier = esr_murdered_best_friend
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_variable_list = esr_murdered_rivals
+			}
+
+			every_in_list = {
+				variable = esr_murdered_rivals
+				limit = {is_alive = yes}
+				custom = esr_rivals
+				add_opinion = {
+					target = $MURDERER$
+					modifier = esr_murdered_rival
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_variable_list = esr_murdered_nemeses
+			}
+			every_in_list = {
+				variable = esr_murdered_nemeses
+				limit = {is_alive = yes}
+				add_opinion = {
+					target = $MURDERER$
+					modifier = esr_murdered_nemesis
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_variable_list = esr_murdered_lovers
+			}
+			every_in_list = {
+				variable = esr_murdered_lovers
+				limit = {is_alive = yes}
+				add_opinion = {
+					target = $MURDERER$
+					modifier = executed_close_relation_opinion
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_variable_list = esr_murdered_soulmates
+			}
+			every_in_list = {
+				variable = esr_murdered_soulmates
+				limit = {is_alive = yes}
+				add_opinion = {
+					target = $MURDERER$
+					modifier = esr_murdered_soulmate
+				}
+			}
+		}
+	}
+}
+
+esr_attempted_murder_survivor_opinion_effect = {
+	if = {
+		limit = { can_set_relation_rival_if_adult_trigger = { CHARACTER = $MURDERER$ } }
+		random = {
+			chance = 50
+			modifier = {
+				factor = 0.5
+				$VICTIM$ = { ai_vengefulness <= medium_negative_vengefulness }
+			}
+			modifier = {
+				factor = 1.4
+				$VICTIM$ = { ai_vengefulness >= medium_positive_vengefulness }
+			}
+			modifier = {
+				factor = 1.4
+				$VICTIM$ = { ai_vengefulness >= high_positive_vengefulness }
+			}
+			progress_towards_rival_effect = {
+				REASON = esr_rival_attempted_murder_vengeful
+				CHARACTER = $MURDERER$
+				OPINION = 0
+			}
+		}
+	}
+
+	### A chance for the surviving rival to become schemer's nemesis
+	if = {
+		limit = {
+			can_set_relation_nemesis_trigger = { CHARACTER = $MURDERER$ }
+			ai_vengefulness >= low_positive_vengefulness
+		}
+		set_relation_nemesis = {
+			target = $MURDERER$
+			reason = esr_rival_attempted_murder_vengeful
+		}
+	}
+
+	if = {
+		limit = {
+			OR = {
+				has_relation_friend = $MURDERER$
+				has_relation_lover = $MURDERER$
+			}
+		}
+		add_opinion = {
+			target = $MURDERER$
+			modifier = betrayed_me_opinion
+			opinion = -60
+		}
+	}
+
+	if = {
+		limit = {
+			OR = {
+				has_relation_best_friend = $MURDERER$
+				has_relation_soulmate = $MURDERER$
+			}
+		}
+		add_opinion = {
+			target = $MURDERER$
+			modifier = betrayed_me_opinion
+			opinion = -120
+		}
+	}
+}
+
+esr_attempted_murder_opinion_effect = {
+	every_relation = {
+		type = friend
+		limit = {
+			NOR = {
+				this = $VICTIM$
+				#AGOT Added; ESR
+				this = $MURDERER$
+				has_relation_best_friend = $VICTIM$
+			}
+		}
+		add_to_list = victim_close_relations_list
+	}
+	every_relation = {
+		type = lover
+		limit = {
+			NOR = {
+				this = $VICTIM$
+				#AGOT Added; ESR
+				this = $MURDERER$
+				has_relation_soulmate = $VICTIM$
+				is_in_list = victim_close_relations_list
+			}
+		}
+		add_to_list = victim_close_relations_list
+	}
+	if = {
+		limit = {
+			any_in_list = {
+				list = victim_close_relations_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = victim_close_relations_list
+			custom = all_friends_and_lovers
+			add_opinion = {
+				target = $MURDERER$
+				modifier = esr_attempted_murder_close_relation_opinion
+			}
+		}
+	}
+
+	#AGOT Added; ESR
+	#Victim's best friend and soulmate
+	every_relation = {
+		type = best_friend
+		limit = { NOT = {this = $MURDERER$}}
+		add_opinion = {
+			target = $MURDERER$
+			modifier = esr_attempted_murder_best_friend
+		}
+	}
+
+	every_relation = {
+		type = soulmate
+		limit = { NOT = {this = $MURDERER$}}
+		add_opinion = {
+			target = $MURDERER$
+			modifier = esr_attempted_murder_soulmate
+		}
+	}
+
+	#Victim's rivals and nemesis
+	every_relation = {
+		type = rival
+		limit = {
+			NOR = {
+				this = $MURDERER$
+				has_relation_nemesis = $VICTIM$
+				has_trait = just
+				has_trait = compassionate
+				has_trait = forgiving
+				has_trait = honest
+				has_trait = trusting
+			}
+		}
+		custom = esr_rivals_attempted
+		add_opinion = {
+			target = $MURDERER$
+			modifier = esr_attempted_murder_rival
+		}
+	}
+
+	every_relation = {
+		type = nemesis
+
+		limit = {
+			NOR = {
+				this = $MURDERER$
+				has_trait = just
+				has_trait = compassionate
+				has_trait = forgiving
+			}
+		}
+		add_opinion = {
+			target = $MURDERER$
+			modifier = esr_attempted_murder_nemesis
+		}
+	}
+}
+
+transfer_prisoner_interaction_effect = { # waiting for override
+	$PRISONER$ = { save_scope_as = prismer }
+	$SENDER$ = { save_scope_as = sender }
+	$RECEIVER$ = { save_scope_as = receiver }
+}

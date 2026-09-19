@@ -1,0 +1,613 @@
+﻿on_title_gain_inheritance = {
+	on_actions = {
+		ub_on_inheritance
+	}
+}
+
+on_death = {
+	on_actions = {
+		ub_on_death
+	}
+}
+
+ub_on_death = {
+	trigger = {
+		NOT = {has_character_flag = ub_relation_inherited}
+		is_playable_character = yes
+		exists = root.primary_heir
+		root.primary_heir = {
+			OR = {
+				dynasty = root.dynasty
+				is_close_or_extended_family_of = root
+				is_spouse_of = root
+				has_relation_friend = root
+				has_relation_best_friend = root
+				has_relation_lover = root
+				has_relation_soulmate = root
+			}
+		}
+	}
+	effect = {
+		root.primary_heir = {
+			save_scope_as = heir
+			save_temporary_opinion_value_as = {
+				name = heir_opinion
+				target = root
+			}
+		}
+
+		if = {
+			limit = { #Inherit relation only if the heir has a strong relation with the previous holder
+				scope:heir_opinion > -30 # All opinions in ub_on_death refers to opinion before succession happens! (Not taking predcessor opinions, claim related opinons and short reign into account)
+				NOR = {
+					has_relation_rival = scope:heir
+					has_relation_nemesis = scope:heir
+					has_relation_bully = scope:heir
+				}
+				OR = {
+					is_close_family_of = scope:heir
+					is_spouse_of = scope:heir
+					has_relation_best_friend = scope:heir
+					has_relation_soulmate = scope:heir
+				}
+			}
+			every_relation = {
+				type = friend
+				limit = {
+					NOR = {
+						has_relation_best_friend = root #differentiate life-long relation
+						this = scope:heir
+					}
+				}
+				if = {
+					limit = {
+						can_set_relation_potential_friend_trigger = { CHARACTER = scope:heir }
+						NOR = {
+							has_relation_rival = scope:heir
+							has_relation_nemesis = scope:heir
+							has_relation_bully = scope:heir
+						}
+					}
+					set_relation_potential_friend = scope:heir
+				}
+				reverse_add_opinion = {
+					target = scope:heir
+					modifier = ub_predecessor_friend
+				}
+				add_opinion = {
+					target = scope:heir
+					modifier = ub_friend_heir
+				}
+			}
+			every_relation = {
+				type = best_friend
+				limit = { NOT = { this = scope:heir } }
+				save_scope_as = predecessor_best_frind
+				if = {
+					limit = {
+						can_set_relation_friend_trigger = {CHARACTER = scope:heir}
+						scope:heir = {is_adult = yes}
+						has_game_rule = ub_best_friend_to_heir_friend_allowed
+						NOR = {
+							has_relation_rival = scope:heir
+							has_relation_nemesis = scope:heir
+							has_relation_bully = scope:heir
+						}
+						scope:heir = {
+							save_temporary_opinion_value_as = {
+								name = heir_opinion_bf
+								target = scope:predecessor_best_frind
+							}
+							scope:heir_opinion_bf > -30
+						}
+						scope:predecessor_best_frind = {
+							save_temporary_opinion_value_as = {
+								name = bf_opinion_heir
+								target = scope:heir
+							}
+							scope:bf_opinion_heir > -30
+						}
+					}
+					#debug_log = "ub_bf_trigger 1-1"
+					set_relation_friend = { target = scope:heir reason = ub_inherited_friendship involved_character = root } #replace as an event "later TM"
+				}
+				else_if = {
+					limit = {
+						can_set_relation_potential_friend_trigger = {CHARACTER = scope:heir}
+						NOR = {
+							has_relation_rival = scope:heir
+							has_relation_nemesis = scope:heir
+							has_relation_bully = scope:heir
+						}
+					}
+					#debug_log = "ub_bf_trigger 1-2"
+					set_relation_potential_friend = scope:heir
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_best_friend
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_best_friend_heir
+					}
+				}
+				else = {
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_best_friend
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_best_friend_heir
+					}
+				}
+
+			}
+			every_relation = {
+				type = rival
+				limit = {
+					NOT = {
+						has_relation_nemesis = root #differentiate life-long relation
+						this = scope:heir
+					}
+				}
+				save_scope_as = predecessor_rival
+				if = {
+					limit = {
+						can_set_relation_potential_rival_trigger = {CHARACTER = scope:heir}
+						NOR = {
+							has_relation_friend = scope:heir
+							has_relation_best_friend = scope:heir
+							has_relation_lover = scope:heir
+							has_relation_soulmate = scope:heir
+							has_relation_crush = scope:heir
+							scope:heir = {has_relation_crush = scope:predecessor_rival}
+							has_trait = forgiving
+						}
+					}
+					set_relation_potential_rival = scope:heir
+				}
+				reverse_add_opinion = {
+					target = scope:heir
+					modifier = ub_predecessor_rival
+				}
+				add_opinion = {
+					target = scope:heir
+					modifier = ub_rival_heir
+				}
+			}
+			every_relation = {
+				type = nemesis
+				limit = { NOT = { this = scope:heir } }
+				save_scope_as = predecessor_nemesis
+				if = {
+					limit = {
+						can_set_relation_rival_trigger = {CHARACTER = scope:heir}
+						NOR = {
+							has_relation_friend = scope:heir
+							has_relation_best_friend = scope:heir
+							has_relation_lover = scope:heir
+							has_relation_soulmate = scope:heir
+							has_relation_crush = scope:heir
+							scope:heir = {has_relation_crush = scope:predecessor_nemesis}
+							has_trait = forgiving
+						}
+						scope:heir = {
+							save_temporary_opinion_value_as = {
+								name = heir_opinion_nemesis
+								target = scope:predecessor_nemesis
+							}
+							scope:heir_opinion_nemesis < 30
+						}
+						scope:predecessor_nemesis = {
+							save_temporary_opinion_value_as = {
+								name = nemesis_opinion_heir
+								target = scope:heir
+							}
+							scope:nemesis_opinion_heir < 30
+						}
+					}
+					set_relation_rival = { target = scope:heir reason = ub_inherited_rivalry involved_character = root } #replace as an event "later TM"
+				}
+				else_if = {
+					limit = {
+						can_set_relation_potential_rival_trigger = {CHARACTER = scope:heir}
+						NOR = {
+							has_relation_friend = scope:heir
+							has_relation_best_friend = scope:heir
+							has_relation_lover = scope:heir
+							has_relation_soulmate = scope:heir
+							has_relation_crush = scope:heir
+							scope:heir = {has_relation_crush = scope:predecessor_nemesis}
+							has_trait = forgiving
+						}
+					}
+					set_relation_potential_rival = scope:heir
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_nemesis
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_nemesis_heir
+					}
+				}
+				else = {
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_nemesis
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_nemesis_heir
+					}
+				}
+
+			}
+
+		}
+		else = {
+			every_relation = {
+				limit = { NOT = { this = scope:heir } }
+				type = friend
+				reverse_add_opinion = {
+					target = scope:heir
+					modifier = ub_predecessor_friend
+					opinion = 10
+				}
+				add_opinion = {
+					target = scope:heir
+					modifier = ub_friend_heir
+					opinion = 10
+				}
+			}
+			every_relation = {
+				limit = { NOT = { this = scope:heir } }
+				type = best_friend
+				reverse_add_opinion = {
+					target = scope:heir
+					modifier = ub_predecessor_best_friend
+					opinion = 20
+				}
+				add_opinion = {
+					target = scope:heir
+					modifier = ub_best_friend_heir
+					opinion = 20
+				}
+			}
+			every_relation = {
+				limit = { NOT = { this = scope:heir } }
+				type = rival
+				reverse_add_opinion = {
+					target = scope:heir
+					modifier = ub_predecessor_rival
+					opinion = -10
+				}
+				add_opinion = {
+					target = scope:heir
+					modifier = ub_rival_heir
+					opinion = -10
+				}
+			}
+			every_relation = {
+				limit = { NOT = { this = scope:heir } }
+				type = nemesis
+				reverse_add_opinion = {
+					target = scope:heir
+					modifier = ub_predecessor_nemesis
+					opinion = -20
+				}
+				add_opinion = {
+					target = scope:heir
+					modifier = ub_nemesis_heir
+					opinion = -20
+				}
+			}
+		}
+	}
+}
+
+# A title is inherited by a character
+# root = the new holder
+# scope:title = the title that changes hands
+# scope:previous_holder = previous holder. Should be dead
+ub_on_inheritance = {
+	trigger = {
+		scope:previous_holder = {
+			is_alive = yes
+			NOT = { has_character_flag = ub_relation_inherited }
+		}
+		OR = {
+			dynasty = scope:previous_holder.dynasty
+			is_close_or_extended_family_of = scope:previous_holder
+			is_spouse_of = scope:previous_holder
+			has_relation_friend = scope:previous_holder
+			has_relation_best_friend = scope:previous_holder
+			has_relation_lover = scope:previous_holder
+			has_relation_soulmate = scope:previous_holder
+		}
+
+	}
+
+	effect = {
+		#debug_log = "ub_on_inheritance_run_counter"
+		root = {
+			save_scope_as = heir
+			save_temporary_opinion_value_as = {
+				name = heir_opinion
+				target = scope:previous_holder
+			}
+		}
+
+		scope:previous_holder = {
+			add_character_flag = ub_relation_inherited
+			if = {
+				limit = { #Inherit relation only if the heir has a strong relation with the previous holder
+					scope:heir_opinion > -30 # All opinions in ub_on_death refers to opinion before succession happens! (Not taking predcessor opinions, claim related opinons and short reign into account)
+					NOR = {
+						has_relation_rival = scope:heir
+						has_relation_nemesis = scope:heir
+						has_relation_bully = scope:heir
+					}
+					OR = {
+						is_close_family_of = scope:heir
+						is_spouse_of = scope:heir
+						has_relation_best_friend = scope:heir
+						has_relation_soulmate = scope:heir
+					}
+				}
+				every_relation = {
+					type = friend
+					limit = {
+						NOT = { this = scope:heir }
+						NOT = { has_relation_best_friend = scope:previous_holder } #differentiate life-long relation
+					}
+					if = {
+						limit = {
+							can_set_relation_potential_friend_trigger = { CHARACTER = scope:heir }
+							NOR = {
+								has_relation_rival = scope:heir
+								has_relation_nemesis = scope:heir
+								has_relation_bully = scope:heir
+							}
+						}
+						set_relation_potential_friend = scope:heir
+					}
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_friend
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_friend_heir
+					}
+				}
+				every_relation = {
+					type = best_friend
+					save_scope_as = predecessor_best_frind
+					limit = { NOT = { this = scope:heir } }
+					if = {
+						limit = {
+							can_set_relation_friend_trigger = { CHARACTER = scope:heir }
+							scope:heir = { is_adult = yes }
+							has_game_rule = ub_best_friend_to_heir_friend_allowed
+							NOR = {
+								has_relation_rival = scope:heir
+								has_relation_nemesis = scope:heir
+								has_relation_bully = scope:heir
+							}
+							scope:heir = {
+								save_temporary_opinion_value_as = {
+									name = heir_opinion_bf
+									target = scope:predecessor_best_frind
+								}
+								scope:heir_opinion_bf > -30
+							}
+							scope:predecessor_best_frind = {
+								save_temporary_opinion_value_as = {
+									name = bf_opinion_heir
+									target = scope:heir
+								}
+								scope:bf_opinion_heir > -30
+							}
+						}
+						#debug_log = "ub_bf_trigger 2-1"
+						set_relation_friend = { target = scope:heir reason = ub_inherited_friendship involved_character = scope:previous_holder } #replace as an event "later TM"
+					}
+					else_if = {
+						limit = {
+							can_set_relation_potential_friend_trigger = { CHARACTER = scope:heir }
+							NOR = {
+								has_relation_rival = scope:heir
+								has_relation_nemesis = scope:heir
+								has_relation_bully = scope:heir
+							}
+						}
+						#debug_log = "ub_bf_trigger 2-2"
+						set_relation_potential_friend = scope:heir
+						reverse_add_opinion = {
+							target = scope:heir
+							modifier = ub_predecessor_best_friend
+						}
+						add_opinion = {
+							target = scope:heir
+							modifier = ub_best_friend_heir
+						}
+					}
+					else_if = {
+						limit = {
+							always = yes
+						}
+						#debug_log = "ub_bf_trigger 2-3"
+						reverse_add_opinion = {
+							target = scope:heir
+							modifier = ub_predecessor_best_friend
+						}
+						add_opinion = {
+							target = scope:heir
+							modifier = ub_best_friend_heir
+						}
+					}
+
+				}
+				every_relation = {
+					type = rival
+					limit = {
+						NOT = { this = scope:heir }
+						NOT = { has_relation_nemesis = scope:previous_holder } #differentiate life-long relation
+					}
+					save_scope_as = predecessor_rival
+					if = {
+						limit = {
+							can_set_relation_potential_rival_trigger = {CHARACTER = scope:heir}
+							NOR = {
+								has_relation_friend = scope:heir
+								has_relation_best_friend = scope:heir
+								has_relation_lover = scope:heir
+								has_relation_soulmate = scope:heir
+								has_relation_crush = scope:heir
+								scope:heir = { has_relation_crush = scope:predecessor_rival }
+								has_trait = forgiving
+							}
+						}
+						set_relation_potential_rival = scope:heir
+					}
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_rival
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_rival_heir
+					}
+				}
+
+				every_relation = {
+					type = nemesis
+					limit = { NOT = { this = scope:heir } }
+					save_scope_as = predecessor_nemesis
+					if = {
+						limit = {
+							can_set_relation_rival_trigger = { CHARACTER = scope:heir }
+							NOR = {
+								has_relation_friend = scope:heir
+								has_relation_best_friend = scope:heir
+								has_relation_lover = scope:heir
+								has_relation_soulmate = scope:heir
+								has_relation_crush = scope:heir
+								scope:heir = {has_relation_crush = scope:predecessor_nemesis}
+								has_trait = forgiving
+							}
+							scope:heir = {
+								save_temporary_opinion_value_as = {
+									name = heir_opinion_nemesis
+									target = scope:predecessor_nemesis
+								}
+								scope:heir_opinion_nemesis < 30
+							}
+							scope:predecessor_nemesis = {
+								save_temporary_opinion_value_as = {
+									name = nemesis_opinion_heir
+									target = scope:heir
+								}
+								scope:nemesis_opinion_heir < 30
+							}
+						}
+						set_relation_rival = { target = scope:heir reason = ub_inherited_rivalry involved_character = root } #replace as an event "later TM"
+					}
+					else_if = {
+						limit = {
+							can_set_relation_potential_rival_trigger = { CHARACTER = scope:heir }
+							NOR = {
+								has_relation_friend = scope:heir
+								has_relation_best_friend = scope:heir
+								has_relation_lover = scope:heir
+								has_relation_soulmate = scope:heir
+								has_relation_crush = scope:heir
+								scope:heir = { has_relation_crush = scope:predecessor_nemesis }
+								has_trait = forgiving
+							}
+						}
+						set_relation_potential_rival = scope:heir
+						reverse_add_opinion = {
+							target = scope:heir
+							modifier = ub_predecessor_nemesis
+						}
+						add_opinion = {
+							target = scope:heir
+							modifier = ub_nemesis_heir
+						}
+					}
+					else = {
+						reverse_add_opinion = {
+							target = scope:heir
+							modifier = ub_predecessor_nemesis
+						}
+						add_opinion = {
+							target = scope:heir
+							modifier = ub_nemesis_heir
+						}
+					}
+				}
+			}
+			else = {
+				every_relation = {
+					limit = { NOT = { this = scope:heir } }
+					type = friend
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_friend
+						opinion = 10
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_friend_heir
+						opinion = 10
+					}
+				}
+				every_relation = {
+					type = best_friend
+					limit = { NOT = { this = scope:heir } }
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_best_friend
+						opinion = 20
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_best_friend_heir
+						opinion = 20
+					}
+				}
+				every_relation = {
+					type = rival
+					limit = { NOT = { this = scope:heir } }
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_rival
+						opinion = -10
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_rival_heir
+						opinion = -10
+					}
+				}
+				every_relation = {
+					type = nemesis
+					limit = { NOT = { this = scope:heir } }
+					reverse_add_opinion = {
+						target = scope:heir
+						modifier = ub_predecessor_nemesis
+						opinion = -20
+					}
+					add_opinion = {
+						target = scope:heir
+						modifier = ub_nemesis_heir
+						opinion = -20
+					}
+				}
+			}
+		}
+	}
+}

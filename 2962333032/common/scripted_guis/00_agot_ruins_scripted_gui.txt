@@ -1,0 +1,240 @@
+﻿# #Checks if holder is a ruin
+agot_isnt_ruin = {
+	scope = title
+	is_shown = {
+		holder ?= {
+			NOT = { has_trait = ruin }
+		}
+	}
+}
+
+agot_is_ruin = {
+	scope = title
+	is_shown = {
+		has_holding_type = ruin_holding
+		county ?= {
+			holder ?= { has_government = ruins_government }
+		}
+		OR = {
+			NOR = {
+				has_building = special_ruin_01
+				county ?= title:c_chroyane
+			}
+			AND = {
+				has_building = special_ruin_01
+				county ?= title:c_chroyane
+			}
+		}
+	}
+}
+
+#Checks if holder is a ruin
+agot_is_reclaimed_ruin = {
+	scope = title
+	is_shown = {
+		has_province_modifier = agot_ruin_reconstruction
+	}
+}
+
+#Checks if character is not a ruin
+agot_is_ruin_char = {
+	scope = character
+	is_shown = {
+		has_trait = ruin
+	}
+}
+
+#Checks if character is not a ruin
+agot_not_ruin_char = {
+	scope = character
+	is_shown = {
+		NOT = {
+			has_trait = ruin
+		}
+	}
+}
+
+agot_province_is_not_ruin = {
+	scope = province
+
+	is_shown = {
+		NOT = { has_holding_type = ruin_holding }
+	}
+}
+
+agot_province_is_not_unknown = {
+	scope = province
+
+	is_shown = {
+		NOT = { has_holding_type = unknown_holding }
+	}
+}
+
+agot_province_is_not_wilderness = {
+	scope = province
+
+	is_shown = {
+		NOT = { has_holding_type = wilderness_holding }
+	}
+}
+
+agot_capital_province_is_not_wilderment = {
+	scope = province
+
+	is_shown = {
+		NOR = {
+			has_holding_type = wilderness_holding
+			has_holding_type = settlement_holding
+		}
+	}
+}
+
+can_reconstruct_ruin = {
+	scope = province
+	is_valid = {
+		save_temporary_scope_as = ruin
+		OR = {
+			scope:actor = {
+				any_sub_realm_county = {
+					any_title_to_title_neighboring_and_across_water_county = {
+						this = scope:ruin.county
+					}
+				}
+			}
+			scope:actor = {
+				any_held_title = {
+					tier > tier_county
+					any_de_jure_county = {
+						this = scope:ruin.county
+					}
+				}
+			}
+		}
+		trigger_if = {
+			limit = { has_building = large_ruin_01 }
+			trigger_if = {
+				limit = { scope:actor = { has_treasury = yes } }
+				scope:actor = { treasury >= 600 }
+			}
+			trigger_else = {
+				scope:actor = { gold >= 600 }
+			}
+		}
+		trigger_else_if = {
+			limit = { has_building = medium_ruin_01 }
+			trigger_if = {
+				limit = { scope:actor = { has_treasury = yes } }
+				scope:actor = { treasury >= 400 }
+			}
+			trigger_else = {
+				scope:actor = { gold >= 400 }
+			}
+		}
+		trigger_else_if = {
+			limit = { has_building = small_ruin_01 }
+			trigger_if = {
+				limit = { scope:actor = { has_treasury = yes } }
+				scope:actor = { treasury >= 200 }
+			}
+			trigger_else = {
+				scope:actor = { gold >= 200 }
+			}
+		}
+		trigger_else_if = {
+			limit = { has_building = special_ruin_01 }
+			trigger_if = {
+				limit = { scope:actor = { has_treasury = yes } }
+				scope:actor = { treasury >= 1000 }
+			}
+			trigger_else = {
+				scope:actor = { gold >= 1000 }
+			}
+		}
+		trigger_else = {
+			always = no
+		}
+	}
+}
+
+reconstruct_ruin = {
+	scope = province
+	effect = {
+		if = {
+			limit = { this = { has_building = special_ruin_01 } }
+			scope:actor = {
+				if = {
+					limit = {
+						scope:actor = {
+							has_treasury = yes
+							treasury >= 1000
+						}
+					}
+					scope:actor = { remove_short_term_treasury = 1000 }
+				}
+				else = {
+					scope:actor = { remove_short_term_gold = 1000 }
+				}
+			}
+		}
+		else_if = {
+			limit = { this = { has_building = large_ruin_01 } }
+			scope:actor = {
+				if = {
+					limit = {
+						scope:actor = {
+							has_treasury = yes
+							treasury >= 600
+						}
+					}
+					scope:actor = { remove_short_term_treasury = 600 }
+				}
+				else = {
+					scope:actor = { remove_short_term_gold = 600 }
+				}
+			}
+		}
+		else_if = {
+			limit = { this = { has_building = medium_ruin_01 } }
+			scope:actor = {
+				if = {
+					limit = {
+						scope:actor = {
+							has_treasury = yes
+							treasury >= 400
+						}
+					}
+					scope:actor = { remove_short_term_treasury = 400 }
+				}
+				else = {
+					scope:actor = { remove_short_term_gold = 400 }
+				}
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					scope:actor = {
+						has_treasury = yes
+						treasury >= 200
+					}
+				}
+				scope:actor = { remove_short_term_treasury = 200 }
+			}
+			else = {
+				scope:actor = { remove_short_term_gold = 200 }
+			}
+		}
+		scope:actor = {
+			get_title = prev.county
+		}
+	}
+}
+
+agot_human_held_ruin_county = {
+	is_shown = {
+		county.holder ?= { is_human = yes }
+		county.title_province ?= {
+			NOT = { has_holding_type = ruin_holding }
+		}
+	}
+}

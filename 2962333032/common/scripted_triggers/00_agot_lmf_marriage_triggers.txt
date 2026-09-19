@@ -1,0 +1,1276 @@
+﻿# these are all used in the marriage_ai_accept_modifier code
+secondary_actor_is_relevant_trigger = {
+	OR = {
+		is_ruler = yes
+		is_councillor = yes
+		is_close_or_extended_family_of = scope:actor
+		any_close_or_extended_family_member = { is_ruler = yes }
+		any_heir_title = { exists = holder }
+		any_pretender_title = {
+			exists = holder
+			place_in_line_of_succession = {
+				target = scope:secondary_actor
+				value < 5
+			}
+		}
+		dynasty ?= {
+			OR = {
+				any_dynasty_member = { count > 2 }
+				dynasty_prestige_level > 1
+			}
+		}
+	}
+}
+
+secondary_recipient_is_relevant_trigger = {
+	OR = {
+		is_ruler = yes
+		is_councillor = yes
+		is_close_or_extended_family_of = scope:recipient
+		any_close_or_extended_family_member = { is_ruler = yes }
+		any_heir_title = { exists = holder }
+		any_pretender_title = {
+			exists = holder
+			place_in_line_of_succession = {
+				target = scope:secondary_recipient
+				value < 5
+			}
+		}
+		dynasty ?= {
+			OR = {
+				any_dynasty_member = { count > 2 }
+				dynasty_prestige_level > 1
+			}
+		}
+	}
+}
+
+disregard_marriage_lineality_trait = {
+	OR = {
+		has_trait = bastard
+		has_trait = bastard_founder
+		has_trait = legitimized_bastard
+		has_trait = disinherited
+	}
+}
+
+cares_about_quality_candidates_trigger = {
+	OR = {
+		this = $CHARACTER$
+		is_ruler = yes
+		any_heir_title = {}
+		is_close_or_extended_family_of = $CHARACTER$
+		# will benefit the dynasty
+		AND = {
+			has_dynasty = yes
+			dynasty = $CHARACTER$.dynasty
+			OR = {
+				AND = {
+					always = scope:matrilineal
+					is_female = yes
+				}
+				AND = {
+					NOT = { always = scope:matrilineal }
+					is_male = yes
+				}
+			}
+		}
+	}
+}
+
+marriage_will_leave_current_court = {
+	is_playable_character = no
+	# will go to the other court
+	OR = {
+		AND = {
+			NOT = { always = scope:matrilineal }
+			is_female = yes
+		}
+		AND = {
+			always = scope:matrilineal
+			is_male = yes
+		}
+	}
+}
+
+has_very_low_fertility_trigger = {
+	is_adult = yes
+	OR = {
+		can_have_children = no
+		fertility <= 0.2
+		AND = {
+			is_female = yes
+			age >= marriage_female_fertility_cutoff_age_value
+		}
+	}
+}
+
+child_expected_to_be_fertile = {
+	is_adult = no
+	NOR = {
+		has_trait = leper
+		has_trait = incapable
+		has_trait = inbred
+		has_trait = infertile
+		has_trait = eunuch
+	}
+}
+
+# used to identify courtiers who a ruler can still decide marriages for
+is_non_courtier_marriage_candidate = {
+	OR = {
+		AND = {
+			is_child_of = $RULER$
+			target_is_liege_or_above = $RULER$
+		}
+		# LMF: added primary heir's children in your realm
+		AND = {
+			$RULER$ = { is_ai = no }
+			any_parent = {
+				is_child_of = $RULER$
+				is_primary_heir_of = $RULER$
+			}
+			target_is_liege_or_above = $RULER$
+		}
+		# LMF: added primary heir's grandchildren in your realm
+		AND = {
+			$RULER$ = { is_ai = no }
+			any_parent = {
+				even_if_dead = yes
+				any_parent = {
+					is_child_of = $RULER$
+					is_primary_heir_of = $RULER$
+				}
+			}
+			target_is_liege_or_above = $RULER$
+		}
+		# LMF: added grandchildren/great-grandchildren who are your heirs
+		AND = {
+			$RULER$ = { is_ai = no }
+			is_primary_heir_of = $RULER$
+			OR = {
+				is_grandchild_of = $RULER$
+				is_great_grandchild_of = $RULER$
+			}
+			target_is_liege_or_above = $RULER$
+		}
+	}
+}
+
+# used to identify if the character has any children who are their "heirs" (whether they're rulers or not)
+# needs identifiers TOTAL (this many heirs or more) and PREFER (either yes or no - if yes, we're looking for preferred gender only)
+has_inheritable_children = {
+	save_temporary_scope_as = child_check
+	any_child = {
+		count >= $TOTAL$
+		# are these children my dynasty (if I have one)
+		trigger_if = {
+			limit = {
+				scope:child_check = {
+					has_dynasty = yes
+					OR = {
+						# for rulers, both genders apply for this check
+						is_landed_or_landless_administrative = yes
+						# otherwise, female children don't apply unless the faith is female-dominated
+						AND = {
+							is_female = yes
+							faith = { has_doctrine = doctrine_gender_female_dominated }
+						}
+						# and female children don't apply if the faith is male-dominated
+						AND = {
+							is_male = yes
+							faith = { has_doctrine = doctrine_gender_male_dominated }
+						}
+						# but both apply if the faith has the equal genders doctrine
+						faith = { has_doctrine = doctrine_gender_equal }
+					}
+				}
+			}
+			dynasty ?= scope:child_check.dynasty
+		}
+		# and not children who can't inherit
+		has_inheritance_blocking_trait = no
+		# eliminate female children if I'm a ruler with male-only inheritance or
+		# non-ruler in a male-dominated faith (repeated here for lowborns)
+		trigger_if = {
+			limit = {
+				scope:child_check = {
+					OR = {
+						AND = {
+							is_ruler = no
+							faith = { has_doctrine_parameter = male_dominated_law }
+						}
+						AND = {
+							is_ruler = yes
+							has_realm_law = male_only_law
+						}
+						# we mark PREFER with 'yes' if we want to exclude girls in a male-preference situation
+						AND = {
+							$PREFER$ = yes
+							is_ruler = yes
+							has_realm_law = male_preference_law
+						}
+					}
+				}
+			}
+			is_male = yes
+		}
+		# eliminate male children if I'm a ruler with female-only inheritance or
+		# non-ruler in a female-dominated faith (repeated here for lowborns)
+		trigger_else_if = {
+			limit = {
+				scope:child_check = {
+					OR = {
+						AND = {
+							is_ruler = no
+							faith = { has_doctrine_parameter = female_dominated_law }
+						}
+						AND = {
+							is_ruler = yes
+							has_realm_law = female_only_law
+						}
+						# we mark PREFER with 'yes' if we want to exclude boys in a female-preference situation
+						AND = {
+							$PREFER$ = yes
+							is_ruler = yes
+							has_realm_law = female_preference_law
+						}
+					}
+				}
+			}
+			is_female = yes
+		}
+		trigger_else = {
+			always = yes
+		}
+	}
+}
+
+# used to determine if there is a child with an heir parent who is likely to inherit
+is_eldest_preferred_grandchild_of = {
+	any_parent = {
+		any_heir_title = {}
+	}
+	has_inheritance_blocking_trait = no
+	save_temporary_scope_as = future_heir
+	NOR = {
+		any_heir_title = {}
+		any_sibling = {
+			any_parent = {
+				is_parent_of = scope:future_heir
+				any_heir_title = {}
+			}
+			has_inheritance_blocking_trait = no
+			trigger_if = {
+				limit = {
+					scope:future_heir = {
+						is_preferred_gender_of_ruler_realm_law = { RULER = $GRANDPARENT$ }
+					}
+				}
+				is_preferred_gender_of_ruler_realm_law = { RULER = $GRANDPARENT$ }
+				age > scope:future_heir.age
+			}
+			trigger_else = {
+				OR = {
+					is_preferred_gender_of_ruler_realm_law = { RULER = $GRANDPARENT$ }
+					age > scope:future_heir.age
+				}
+			}
+		}
+	}
+}
+
+# used to determine if the character in scope is second in line to a title and likely to retain the spot for the near future
+is_solid_second_in_line_for = {
+	any_pretender_title = {
+		exists = holder
+		holder = $CHARACTER$
+		place_in_line_of_succession = {
+			target = $HEIR$
+			value = 2
+		}
+	}
+	OR = {
+		is_grandchild_of = $CHARACTER$
+		$CHARACTER$.age < 14
+		$CHARACTER$ = { has_very_low_fertility_trigger = yes }
+	}
+}
+
+# used to determine if the character needs a child quickly
+needs_child_quickly_trigger = {
+	is_ruler = yes
+	# I still have a chance of having one
+	fertility > 0.10
+	# I'm either a woman 40+
+	trigger_if = {
+		limit = { is_female = yes }
+		age >= 40
+	}
+	# or a man 50+
+	trigger_else = {
+		age >= 50
+	}
+	# and I don't have at least one "heir" child
+	NOT = {
+		has_inheritable_children = { TOTAL = 1 PREFER = yes }
+	}
+}
+
+# used in the marriage_interaction_valid_target_trigger to prevent the AI from selecting bad marriage targets
+# done this way because if the AI is evaluating marriage against a target who will auto-accept (like a courtier)
+# then it doesn't actually check the normal marriage modifiers - this is how we get so many boys married to old women
+ai_marriage_restrictions_trigger = {
+	# don't marry characters who are really sick - besides being unrealistic, most sicknesses also lower fertility
+	# so a character may be regarded as infertile by the AI when in fact that's only temporary
+	scope:secondary_actor = { has_short_disease_trigger = no }
+	scope:secondary_recipient = { has_short_disease_trigger = no }
+
+	# don't marry a fertile, under-50 secondary_recipient to someone much older
+	# unless it's to a ruler or they already have 3+ inheritable children
+	trigger_if = {
+		limit = {
+			scope:secondary_recipient = {
+				is_male = yes
+				age < 50
+				sex_opposite_of = scope:secondary_actor
+				OR = {
+					fertility > 0.1
+					child_expected_to_be_fertile = yes
+				}
+				NOR = {
+					scope:secondary_actor = { is_landed_or_landless_administrative = yes }
+					scope:secondary_recipient = {
+						has_inheritable_children = { TOTAL = 3 PREFER = no }
+					}
+				}
+			}
+		}
+		trigger_if = {
+			limit = { scope:secondary_recipient.age < 20 }
+			scope:secondary_recipient.age > scope:secondary_actor.age_minus_5
+		}
+		trigger_else = {
+			scope:secondary_recipient.age > scope:secondary_actor.age_minus_10
+		}
+	}
+	# don't marry a fertile, under-50 secondary_actor to someone much older
+	# unless it's to a ruler or they already have 3+ inheritable children
+	trigger_else_if = {
+		limit = {
+			scope:secondary_actor = {
+				is_male = yes
+				age < 50
+				sex_opposite_of = scope:secondary_recipient
+				OR = {
+					fertility > 0.1
+					child_expected_to_be_fertile = yes
+				}
+				NOR = {
+					scope:secondary_recipient = { is_landed_or_landless_administrative = yes }
+					scope:secondary_actor = {
+						has_inheritable_children = { TOTAL = 3 PREFER = no }
+					}
+				}
+			}
+		}
+		trigger_if = {
+			limit = { scope:secondary_actor.age < 20 }
+			scope:secondary_actor.age > scope:secondary_recipient.age_minus_5
+		}
+		trigger_else = {
+			scope:secondary_actor.age > scope:secondary_recipient.age_minus_10
+		}
+	}
+	trigger_else = {
+		always = yes
+	}
+
+	# AI playable rulers should never betrothe themselves (if a child) or their non-bastard close family children
+	# unless a hook has been used or an alliance is being made/reinforced - otherwise, wait for adulthood
+	trigger_if = {
+		limit = {
+			scope:actor = { is_playable_character = yes }
+			scope:secondary_actor = {
+				is_adult = no
+				OR = {
+					this = scope:actor
+					AND = {
+						is_close_family_of = scope:actor
+						NOT = { has_trait = bastard }
+					}
+				}
+			}
+		}
+		OR = {
+			scope:hook = yes
+			AND = {
+				scope:recipient = { is_playable_character = yes }
+				scope:actor = {
+					yields_alliance = {
+						candidate = scope:secondary_actor
+						target = scope:recipient
+						target_candidate = scope:secondary_recipient
+					}
+				}
+			}
+		}
+	}
+	trigger_else_if = {
+		limit = {
+			scope:recipient = { is_playable_character = yes }
+			scope:secondary_recipient = {
+				is_adult = no
+				OR = {
+					this = scope:recipient
+					AND = {
+						is_close_family_of = scope:recipient
+						NOT = { has_trait = bastard }
+					}
+				}
+			}
+		}
+		OR = {
+			scope:hook = yes
+			AND = {
+				scope:actor = { is_playable_character = yes }
+				scope:recipient = {
+					yields_alliance = {
+						candidate = scope:secondary_recipient
+						target = scope:actor
+						target_candidate = scope:secondary_actor
+					}
+				}
+			}
+		}
+	}
+	trigger_else = {
+		always = yes
+	}
+
+	# fertile AI secondary_recipient should always marry to fertile secondary actor
+	# unless they're nobodies (we don't care) or have at least two "heirs" (rulers or not)
+	trigger_if = {
+		limit = {
+			scope:secondary_recipient = {
+				OR = {
+					fertility > 0.1
+					child_expected_to_be_fertile = yes
+				}
+				OR = {
+					is_female = no
+					age < marriage_female_fertility_cutoff_age_value
+				}
+				secondary_recipient_is_relevant_trigger = yes
+				NOT = {
+					scope:secondary_recipient = {
+						has_inheritable_children = { TOTAL = 2 PREFER = no }
+					}
+				}
+			}
+		}
+		scope:secondary_actor = {
+			OR = {
+				child_expected_to_be_fertile = yes
+				has_very_low_fertility_trigger = no
+			}
+		}
+	}
+	# fertile AI secondary_actor should always marry to fertile secondary actor
+	# unless they're nobodies (we don't care) or have at least two "heirs" (rulers or not)
+	trigger_else_if = {
+		limit = {
+			scope:secondary_actor = {
+				OR = {
+					fertility > 0.1
+					child_expected_to_be_fertile = yes
+				}
+				OR = {
+					is_female = no
+					age < marriage_female_fertility_cutoff_age_value
+				}
+				secondary_actor_is_relevant_trigger = yes
+				NOT = {
+					scope:secondary_actor = {
+						has_inheritable_children = { TOTAL = 2 PREFER = no }
+					}
+				}
+			}
+		}
+		scope:secondary_recipient = {
+			OR = {
+				child_expected_to_be_fertile = yes
+				has_very_low_fertility_trigger = no
+			}
+		}
+	}
+	trigger_else = {
+		always = yes
+	}
+}
+
+# used in the ai_ruler_marry_decision to force rulers to eventually marry someone suitable, root is decision user
+is_good_ai_marriage_candidate = {
+	is_physically_able_ai = yes
+	might_agree_to_marriage = yes
+	is_playable_character = no
+	age >= 12
+	trigger_if = {
+		limit = {
+			root = { is_male = yes }
+		}
+		age <= root.age_plus_5
+	}
+	trigger_if = {
+		limit = {
+			root = { is_female = yes }
+		}
+		age >= root.age_minus_10
+	}
+	save_temporary_scope_as = secondary_recipient
+	trigger_if = {
+		limit = {
+			root = {
+				is_female = yes
+				fertility >= low_fertility
+				NOT = {
+					scope:secondary_recipient = {
+						has_inheritable_children = { TOTAL = 2 PREFER = no }
+					}
+				}
+			}
+		}
+		is_adult = yes
+		fertility >= 0.30
+	}
+	trigger_if = {
+		limit = {
+			root = {
+				is_male = yes
+				fertility >= low_fertility
+				NOT = {
+					scope:secondary_recipient = {
+						has_inheritable_children = { TOTAL = 2 PREFER = yes }
+					}
+				}
+			}
+		}
+		is_adult = yes
+		age <= root.age_plus_10
+		fertility >= 0.30
+	}
+	trigger_if = {
+		limit = {
+			root = {
+				needs_child_quickly_trigger = yes
+				is_female = yes
+			}
+		}
+		is_adult = yes
+		fertility >= medium_fertility
+	}
+	trigger_if = {
+		limit = {
+			root = {
+				needs_child_quickly_trigger = yes
+				is_male = yes
+			}
+		}
+		is_adult = yes
+		age <= 30
+		fertility >= medium_fertility
+	}
+	bp2_valid_for_standard_interactions_trigger = yes
+	is_available = yes
+	is_healthy = yes
+	is_pregnant = no
+	has_any_debilitating_illness = no
+	exists = location
+	NOR = {
+		has_variable = is_in_marriage_introduction
+		is_close_or_extended_family_of = root
+		has_relation_rival = root
+		has_opinion_modifier = { target = root modifier = refused_marriage_proposal_opinion }
+		root = { has_imprisonment_reason = prev }
+		is_diarch = yes
+		AND = {
+			num_of_relation_lover > 0
+			NOT = { has_relation_lover = root }
+			exists = liege
+			has_relation_lover = liege
+		}
+		AND = {
+			is_landless_ruler = yes
+			faith.religious_head = this
+			NOT = { faith = root.faith }
+		}
+		AND = {
+			exists = inspiration
+			has_completed_inspiration = no
+		}
+		# don't grab stray seed mothers unless their child is already born
+		any_owned_story = {
+			story_type = lmf_stray_seed_story_cycle
+			NOT = { exists = var:stray_seed_child }
+		}
+	}
+	trigger_if = {
+		limit = { is_concubine = yes }
+		is_concubine_of = root
+	}
+	trigger_if = {
+		limit = { exists = host }
+		host = { is_ai = yes }
+	}
+	can_marry_character_trigger = { CHARACTER = scope:secondary_recipient }
+	trigger_if = {
+		limit = {
+			exists = matchmaker
+			NOT = { scope:secondary_recipient = matchmaker }
+		}
+		matchmaker = { save_temporary_scope_as = recipient }
+	}
+	trigger_else = {
+		save_temporary_scope_as = recipient
+	}
+	scope:recipient = {
+		is_ai = yes
+		is_imprisoned = no
+		bp2_valid_for_standard_interactions_trigger = yes
+		exists = location
+		NOR = {
+			is_at_war_with = root
+			has_relation_rival = root
+			has_variable = is_in_marriage_introduction
+			has_government = mercenary_government
+			has_government = republic_government
+			has_government = theocracy_government
+			has_government = holy_order_government
+		}
+		in_diplomatic_range = root
+	}
+	in_diplomatic_range = root
+	# willing to leave lover, if any
+	OR = {
+		num_of_relation_lover < 1
+		has_relation_lover = root
+		might_cheat_on_every_partner_trigger = yes
+	}
+	# must be same faith or less than evil
+	OR = {
+		faith = root.faith
+		root.faith = {
+			faith_hostility_level = {
+				target = scope:secondary_recipient.faith
+				value <= faith_hostility_prevents_marriage_level
+			}
+		}
+	}
+	# must be same culture or at least not completely unaccepted
+	OR = {
+		culture = root.culture
+		root.culture = {
+			cultural_acceptance = {
+				target = scope:secondary_recipient.culture
+				value > 0
+			}
+		}
+	}
+}
+
+# used for characters who are going to be reluctant to marry (rulers will often marry anyhow, because they must)
+unlikely_to_commit = {
+	OR = {
+		# they're a serial seducer
+		has_trait = seducer
+		has_trait = rakish
+		has_focus = intrigue_temptation_focus
+		# or a deviant (secret or not)
+		is_deviant_trigger = yes
+		# or just disloyal by nature
+		has_trait = disloyal
+		# or very unsociable
+		ai_sociability <= very_high_negative_ai_value
+		# or both lustful and either dishonorable or bold
+		AND = {
+			has_trait = lustful
+			OR = {
+				ai_honor <= low_negative_ai_value
+				ai_boldness >= low_positive_ai_value
+			}
+		}
+		# or a homosexual who's either lustful or dishonorable/bold
+		AND = {
+			has_sexuality = homosexual
+			allowed_to_marry_same_sex_trigger = no
+			OR = {
+				has_trait = lustful
+				ai_boldness >= 0
+				ai_honor <= low_negative_ai_value
+			}
+		}
+	}
+}
+
+# the character might voluntarily agree to marry - not already married or promised, not a hostage or concubine, and not opposed to commitment
+might_agree_to_marriage = {
+	NOR = {
+		is_married = yes
+		is_betrothed = yes
+		is_concubine = yes
+		is_hostage = yes
+		has_been_promised_grand_wedding = yes
+		has_trait = reclusive
+		has_trait = depressed
+		has_trait = infirm
+		has_trait = incapable
+		unlikely_to_commit = yes
+		is_human = no
+		AND = {
+			OR = {
+				is_clergy = yes
+				agot_has_clergy_trait = yes
+			}
+			NOT = {
+				faith = { has_doctrine_parameter = clergy_can_marry }
+			}
+		}
+		has_trait = most_devout_member
+		agot_has_religious_order_trait = yes
+	}
+}
+
+# the following are all used for courtier proposals & marriages
+needs_permission_to_marry_character_trigger = {
+	#not a ruler themselves
+	is_ruler = no
+	#not a courtier of the other character
+	NAND = {
+		$CHARACTER$ = { is_playable_character = yes }
+		is_courtier_of = $CHARACTER$
+	}
+	#has somebody to ask permission from
+	AND = {
+		is_courtier = yes
+		exists = liege
+	}
+}
+
+needs_permission_to_marry_trigger = {
+	OR = {
+		$CHARACTER1$ = {
+			needs_permission_to_marry_character_trigger = { CHARACTER = $CHARACTER2$ }
+		}
+		$CHARACTER2$ = {
+			needs_permission_to_marry_character_trigger = { CHARACTER = $CHARACTER1$ }
+		}
+	}
+}
+
+can_elope_character_trigger = {
+	save_temporary_scope_as = can_marry_check
+
+	# first we have the equivalent of a can_marry_common_trigger but ignoring any religious traits
+	is_alive = yes
+	is_human = yes
+
+	trigger_if = {
+		# they can have the Refusing Marriage trait if they also have the story for it
+		# and it's the only trait they have
+		limit = { has_trait = refusing_marriage }
+		any_owned_story = { story_type = lmf_will_not_wed_story_cycle }
+		any_character_trait = { has_trait_flag = can_not_marry count < 2 }
+	}
+	trigger_else_if = {
+		# they can be part of a religious order, so long as it's the only trait they have
+		limit = { agot_has_religious_order_trait = yes }
+		any_character_trait = { has_trait_flag = can_not_marry count < 2 }
+	}
+	trigger_else = {
+		# otherwise, all traits that prevent marriage should still apply
+		NOT = { has_trait_with_flag = can_not_marry }
+	}
+	trigger_if = {
+		limit = { exists = primary_title }
+		NOR = {
+			primary_title = { is_mercenary_company = yes }
+			is_leading_faction_type = peasant_faction
+			#AGOT Disabled; LMF
+			# is_leading_faction_type = populist_faction
+			government_has_flag = government_is_herder
+		}
+	}
+	trigger_if = {
+		limit = {
+			exists = liege.involved_activity.var:tournament_marriage_prize
+			this = liege.involved_activity.var:tournament_marriage_prize
+		}
+		exists = scope:contest_winner
+	}
+
+	$CHARACTER$ = {
+		is_alive = yes
+		is_human = yes
+
+		trigger_if = {
+			limit = { has_trait = refusing_marriage }
+			any_owned_story = { story_type = lmf_will_not_wed_story_cycle }
+			any_character_trait = { has_trait_flag = can_not_marry count < 2 }
+		}
+		trigger_else_if = {
+			limit = { agot_has_religious_order_trait = yes }
+			any_character_trait = { has_trait_flag = can_not_marry count < 2 }
+		}
+		trigger_else = {
+			NOT = { has_trait_with_flag = can_not_marry }
+		}
+		trigger_if = {
+			limit = { exists = primary_title }
+			NOR = {
+				primary_title = { is_mercenary_company = yes }
+				is_leading_faction_type = peasant_faction
+				#AGOT Disabled; LMF
+				# is_leading_faction_type = populist_faction
+				government_has_flag = government_is_herder
+			}
+		}
+		trigger_if = {
+			limit = {
+				exists = liege.involved_activity.var:tournament_marriage_prize
+				this = liege.involved_activity.var:tournament_marriage_prize
+			}
+			exists = scope:contest_winner
+		}
+	}
+
+	# now the remainder of a could_marry_character_trigger
+
+	# Opposite genders if you don't have accepted same-sex marriage game rule enabled and your faith supports it
+	trigger_if = {
+		limit = {
+			$CHARACTER$ = { allowed_to_marry_same_sex_trigger = no }
+		}
+		sex_opposite_of = $CHARACTER$
+	}
+	# Have you recently divorced this character?
+	NOT = {
+		has_opinion_modifier = {
+			modifier = divorced_me_opinion
+			target = $CHARACTER$
+		}
+	}
+	# Have you indeed recently divorced this character?
+	# (the above actually checks if this characters has recently divorced you)
+	$CHARACTER$ = {
+		NOT = {
+			has_opinion_modifier = {
+				modifier = divorced_me_opinion
+				target = scope:can_marry_check
+			}
+		}
+	}
+	# Faith hostility & consanguinity
+	trigger_if = {
+		limit = { NOT = { is_courtier_of = $CHARACTER$ } } #If you're someone's courtier, your liege can marry you anyway
+		faith = {
+			faith_allows_marriage_consanguinity_trigger = {
+				CHARACTER_1 = scope:can_marry_check
+				CHARACTER_2 = $CHARACTER$
+			}
+		}
+	}
+	trigger_if = {
+		limit = { $CHARACTER$ = { NOT = { is_courtier_of = scope:can_marry_check } } } #If you're someone's courtier, your liege can marry you anyway
+		$CHARACTER$.faith = {
+			faith_allows_marriage_consanguinity_trigger = {
+				CHARACTER_1 = scope:can_marry_check
+				CHARACTER_2 = $CHARACTER$
+			}
+		}
+	}
+	trigger_if = {
+		limit = {
+			any_close_or_extended_family_member = {
+				any_spouse = { this = $CHARACTER$ }
+			}
+		}
+		faith = { has_doctrine = doctrine_consanguinity_unrestricted }
+		$CHARACTER$ = {
+			faith = { has_doctrine = doctrine_consanguinity_unrestricted }
+			NOT = {
+				any_spouse = {
+					is_close_or_extended_family_of = scope:can_marry_check
+					NOT = {
+						faith = { has_doctrine = doctrine_consanguinity_unrestricted }
+					}
+				}
+			}
+		}
+	}
+
+	# Cannot marry self
+	NOR = {
+		scope:can_marry_check = { is_spouse_of = $CHARACTER$ }
+		$CHARACTER$ = scope:can_marry_check
+	}
+
+	$CHARACTER$ = {
+		NOT = {
+			has_opinion_modifier = {
+				modifier = ended_engagement_opinion
+				target = scope:can_marry_check
+			}
+		}
+	}
+
+	trigger_if = {
+		limit = { is_sibling_of =  $CHARACTER$ }
+		NOR = {
+			has_character_modifier = agot_incest_aversion_modifier
+			$CHARACTER$ = { has_character_modifier = agot_incest_aversion_modifier }
+		}
+	}
+
+	# At least one of us must be a courtier
+	OR = {
+		$CHARACTER$ = { is_courtier = yes }
+		scope:can_marry_check = { is_courtier = yes }
+	}
+}
+
+would_need_elopement_to_marry_target = {
+	save_temporary_scope_as = potential_elope
+	OR = {
+		# would always need elopement in order to marry
+		AND = {
+			can_elope_character_trigger = { CHARACTER = $TARGET$ }
+			NOT = { can_be_introduced_character_trigger = { CHARACTER = $TARGET$ } }
+		}
+		# has been refused permission by their liege
+		AND = {
+			needs_permission_to_marry_character_trigger = { CHARACTER = $TARGET$ }
+			exists = liege
+			OR = {
+				has_opinion_modifier = { modifier = granted_marriage_permission_opinion target = liege }
+				has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = liege }
+			}
+		}
+		# target has been refused permission by their liege
+		$TARGET$ = {
+			needs_permission_to_marry_character_trigger = { CHARACTER = scope:potential_elope }
+			exists = liege
+			OR = {
+				has_opinion_modifier = { modifier = granted_marriage_permission_opinion target = liege }
+				has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = liege }
+			}
+		}
+	}
+}
+
+should_marry_matrilineally_trigger = {
+	$PROPOSER$ = {
+		OR = {
+			# Matrilineal marriage game rule is set to "Always", a non-lowborn female proposer will always want it
+			AND = {
+				is_female = yes
+				has_game_rule = matrilineal_marriages_always
+				OR = {
+					has_dynasty = yes
+					$TARGET$ = { is_lowborn = yes }
+				}
+			}
+			# The proposer is female and either a player or in a female-friendly faith
+			AND = {
+				is_female = yes
+				OR = {
+					faith = { has_doctrine = doctrine_gender_female_dominated }
+					AND = {
+						NOT = { has_game_rule = matrilineal_marriages_never }
+						faith = { has_doctrine = doctrine_gender_equal }
+						NOR = {
+							#has_trait = maiden
+							has_personality_submissive_trigger = yes
+						}
+					}
+					AND = {
+						is_ai = no
+						NOT = { has_game_rule = matrilineal_marriages_no_player_exception }
+					}
+				}
+			}
+			# The proposer is male but in a female-dominated faith and the target is female in an equality or female-dominated faith
+			AND = {
+				is_female = no
+				faith = { has_doctrine = doctrine_gender_female_dominated }
+				$TARGET$ = {
+					is_female = yes
+					OR = {
+						faith = { has_doctrine = doctrine_gender_female_dominated }
+						AND = {
+							NOT = { has_game_rule = matrilineal_marriages_never }
+							faith = { has_doctrine = doctrine_gender_equal }
+							NOR = {
+								#has_trait = maiden
+								has_personality_submissive_trigger = yes
+							}
+						}
+						AND = {
+							is_ai = no
+							NOT = { has_game_rule = matrilineal_marriages_no_player_exception }
+						}
+					}
+				}
+			}
+			# The proposer is male but in a gender equality faith and the target is female and either a player or in a female-dominated faith
+			AND = {
+				is_female = no
+				faith = { has_doctrine = doctrine_gender_equal }
+				$TARGET$ = {
+					is_female = yes
+					OR = {
+						AND = {
+							faith = { has_doctrine = doctrine_gender_female_dominated }
+							NOR = {
+								#has_trait = maiden
+								has_personality_submissive_trigger = yes
+							}
+						}
+						AND = {
+							is_ai = no
+							NOT = { has_game_rule = matrilineal_marriages_no_player_exception }
+						}
+					}
+				}
+			}
+			# The proposer is female and noble and the target is male but lowborn
+			AND = {
+				NOR = {
+					has_game_rule = matrilineal_marriages_never
+					has_game_rule = matrilineal_marriages_female_and_equal
+				}
+				is_female = yes
+				exists = dynasty
+				$TARGET$ = {
+					is_female = no
+					is_lowborn = yes
+				}
+			}
+			# The proposer is male and lowborn and the target is female but noble
+			AND = {
+				NOR = {
+					has_game_rule = matrilineal_marriages_never
+					has_game_rule = matrilineal_marriages_female_and_equal
+				}
+				is_female = no
+				is_lowborn = yes
+				$TARGET$ = {
+					is_female = yes
+					has_dynasty = yes
+				}
+			}
+		}
+	}
+}
+
+only_liege_to_ask_permission_trigger = {
+	OR = {
+		NOT = {
+			exists = scope:proposer_target_liege
+		}
+		AND = {
+			exists = scope:proposer_target_liege
+			scope:proposer_liege = scope:proposer_target_liege
+		}
+	}
+}
+
+dominant_marriage_partner_trigger = {
+	save_temporary_scope_as = potential_spouse
+	OR = {
+		AND = {
+			is_male = yes
+			is_spouse_of = $SPOUSE$
+			patrilinear_marriage = yes
+		}
+		AND = {
+			is_female = yes
+			is_spouse_of = $SPOUSE$
+			matrilinear_marriage = yes
+		}
+		AND = {
+			is_male = yes
+			NOR = {
+				is_spouse_of = $SPOUSE$
+				should_marry_matrilineally_trigger = { PROPOSER = scope:potential_spouse TARGET = $SPOUSE$ }
+			}
+		}
+		AND = {
+			is_female = yes
+			NOT = { is_spouse_of = $SPOUSE$ }
+			should_marry_matrilineally_trigger = { PROPOSER = scope:potential_spouse TARGET = $SPOUSE$ }
+		}
+	}
+}
+
+proposer_will_move_to_court_of_character = {
+	OR = {
+		AND = {
+			scope:proposer_target = {
+				dominant_marriage_partner_trigger = { SPOUSE = scope:proposer }
+				is_playable_character = no
+				is_courtier_of = $NEW_LIEGE$
+			}
+			scope:proposer = {
+				is_playable_character = no
+				NOT = { is_courtier_of = $NEW_LIEGE$ }
+			}
+		}
+		AND = {
+			scope:proposer_target = {
+				is_playable_character = no
+				is_courtier_of = $NEW_LIEGE$
+			}
+			scope:proposer = {
+				is_playable_character = no
+				NOT = { exists = liege }
+			}
+		}
+	}
+}
+
+proposer_target_will_move_to_court_of_character = {
+	OR = {
+		AND = {
+			scope:proposer = {
+				dominant_marriage_partner_trigger = { SPOUSE = scope:proposer_target }
+				is_playable_character = no
+				is_courtier_of = $NEW_LIEGE$
+			}
+			scope:proposer_target = {
+				is_playable_character = no
+				NOT = { is_courtier_of = $NEW_LIEGE$ }
+			}
+		}
+		AND = {
+			scope:proposer = {
+				is_playable_character = no
+				is_courtier_of = $NEW_LIEGE$
+			}
+			scope:proposer_target = {
+				is_playable_character = no
+				NOT = { exists = liege }
+			}
+		}
+	}
+}
+
+proposer_will_leave_your_court = {
+	scope:proposer = { is_courtier_of = root }
+	OR = {
+		scope:proposer_target = { is_playable_character = yes }
+		AND = {
+			exists = scope:proposer_target_liege
+			NOT = { scope:proposer_target_liege = root }
+			proposer_will_move_to_court_of_character = { NEW_LIEGE = scope:proposer_target_liege }
+		}
+	}
+}
+
+proposer_target_will_leave_your_court = {
+	scope:proposer_target = { is_courtier_of = root }
+	OR = {
+		scope:proposer = { is_playable_character = yes }
+		AND = {
+			exists = scope:proposer_liege
+			NOT = { scope:proposer_liege = root }
+			proposer_target_will_move_to_court_of_character = { NEW_LIEGE = scope:proposer_liege }
+		}
+	}
+}
+
+# these are used for dealing with heir marriages
+can_be_ordered_to_wed_by = {
+	OR = {
+		is_ai = yes
+		this = $LIEGE$
+	}
+	OR = {
+		this = $LIEGE$
+		is_courtier_of = $LIEGE$
+		is_pool_character = yes
+		is_vassal_of = $LIEGE$
+		AND = {
+			is_courtier = yes
+			liege = {
+				is_ai = yes
+				OR = {
+					has_government = mercenary_government
+					has_government = republic_government
+					has_government = theocracy_government
+					has_government = holy_order_government
+					is_vassal_of = $LIEGE$
+				}
+			}
+		}
+	}
+}
+
+can_be_ordered_to_break_betrothal_by = {
+	is_betrothed = yes
+	is_ai = yes
+	has_been_promised_grand_wedding = no
+	betrothed = {
+		OR = {
+			is_ai = yes
+			this = $LIEGE$
+		}
+		trigger_if = {
+			limit = { is_courtier = yes }
+			OR = {
+				liege = { is_ai = yes }
+				liege = $LIEGE$
+			}
+		}
+	}
+	OR = {
+		can_be_ordered_to_wed_by = { LIEGE = $LIEGE$ }
+		betrothed = {
+			can_be_ordered_to_wed_by = { LIEGE = $LIEGE$ }
+		}
+	}
+}
+
+can_be_ordered_to_abandon_vows_by = {
+	OR = {
+		agot_has_religious_order_trait = yes
+		AND = {
+			agot_has_clergy_trait = yes
+			faith = { has_doctrine = doctrine_clerical_marriage_allowed }
+		}
+	}
+	NOR = {
+		has_trait = seclusion
+		has_trait = eunuch
+		has_trait = maester
+		has_trait = kingsguard
+		has_trait = nightswatch
+		has_trait = widowed
+		has_trait = is_missing
+		is_ruler = yes
+	}
+	can_be_ordered_to_wed_by = { LIEGE = $LIEGE$ }
+}
+
+can_reverse_marriage_refusal = {
+	can_be_introduced_character_trigger = { CHARACTER = $CHARACTER$ }
+	would_need_elopement_to_marry_target = { TARGET = $CHARACTER$ }
+	can_be_ordered_to_wed_by = { LIEGE = $LIEGE$ }
+}
+
+can_get_lmf_spouse_events = {
+	NOT = { has_game_rule = lmf_spouse_event_frequency_none }
+	is_ai = no
+	is_alive = yes
+	exists = primary_spouse
+}
+

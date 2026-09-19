@@ -1,0 +1,460 @@
+﻿agot_assign_bespoke_dynasty = {
+	#Am I Bronn?
+	if = {
+		limit = {
+			has_character_flag = is_Blackwater_1
+			NOT = {
+				house = house:house_Blackwater
+			}
+		}
+		agot_convert_house_and_descendants_effect = {
+			NEW_HOUSE = house:house_Blackwater
+		}
+	}
+
+	#Am I Davos?
+	if = {
+		limit = {
+			has_character_flag = is_Seaworth_1
+			NOT = {
+				house = house:house_Seaworth
+			}
+		}
+		agot_convert_house_and_descendants_effect = {
+			NEW_HOUSE = house:house_Seaworth
+		}
+	}
+
+	#Am I Hard Hugh Hammer?
+	if = {
+		limit = {
+			has_character_flag = is_Hammer_1
+			NOT = {
+				house = house:house_Hammer
+			}
+		}
+		agot_convert_house_and_descendants_effect = {
+			NEW_HOUSE = house:house_Hammer
+		}
+	}
+
+	#Am I Ulf White?
+	if = {
+		limit = {
+			has_character_flag = is_White_1
+			NOT = {
+				house = house:house_White
+			}
+		}
+		agot_convert_house_and_descendants_effect = {
+			NEW_HOUSE = house:house_White
+		}
+	}
+
+	#Am I Nettles?
+	if = {
+		limit = {
+			has_character_flag = is_Farseed_1
+			NOT = {
+				house = house:house_Farseed
+			}
+		}
+		agot_convert_house_and_descendants_effect = {
+			NEW_HOUSE = house:house_Farseed
+		}
+	}
+
+	#Am I Allard?
+	if = {
+		limit = {
+			has_character_flag = is_Scaly_1
+			NOT = {
+				house = house:house_Scallard
+			}
+		}
+		agot_convert_house_and_descendants_effect = {
+			NEW_HOUSE = house:house_Scallard
+		}
+	}
+
+	#Am I Aegor?
+	if = {
+		limit = {
+			has_character_flag = is_Targaryen_95
+			NOT = {
+				house = house:house_Bittersteel
+			}
+		}
+		hidden_effect = {
+			house:house_Bittersteel = {
+				add_house_modifier = dragonrider_house_modifier
+			}
+			agot_prune_personal_coa = yes
+		}
+		agot_convert_house_and_descendants_effect = {
+			NEW_HOUSE = house:house_Bittersteel
+		}
+	}
+
+	#Am I Duncan?
+	if = {
+		limit = {
+			has_character_flag = is_Tall_1
+			NOT = {
+				house = house:house_Tall
+			}
+			NOT = {
+				scope:title = title:d_kingsguard
+			}
+		}
+		if = {
+			limit = {
+				has_nickname = nick_agot_historical_the_tall_Tall_1
+			}
+			remove_nickname = yes
+		}
+		trigger_event = agot_events_personal_coat_of_arms.0002
+		agot_convert_house_and_descendants_effect = {
+			NEW_HOUSE = house:house_Tall
+		}
+	}
+}
+
+agot_generate_westerosi_dynasty_name_effect = {
+	save_scope_as = new_dynast
+
+	set_global_variable = {
+		name = cadet_new_name
+		value = scope:new_dynast
+	}
+
+	scope:new_dynast.house ?= {
+		set_house_name = cadet_name
+	}
+	scope:new_dynast.dynasty ?= {
+		set_dynasty_name = cadet_name_for_dynasty
+	}
+
+	remove_global_variable = cadet_new_name
+}
+
+agot_house_revival_effect = {
+	house = { save_scope_as = old_house }
+	hidden_effect = {
+		agot_house_revival_modifiers_effect = {
+			OLD_HOUSE = scope:old_house
+			NEW_HOUSE = scope:bastard_house_of
+		}
+	}
+	agot_convert_house_and_descendants_effect = {
+		NEW_HOUSE = $NEW_HOUSE$
+	}
+	every_sibling = {
+		limit = { house = scope:old_house }
+		agot_convert_house_and_descendants_effect = {
+			NEW_HOUSE = $NEW_HOUSE$
+		}
+	}
+}
+
+agot_convert_house_and_descendants_effect = {
+	house = { save_scope_as = old_house }
+	$NEW_HOUSE$ = { save_scope_as = new_house }
+	set_house = scope:new_house
+	every_child = {
+		limit = { house = scope:old_house }
+		set_house = scope:new_house
+		every_child = {
+			limit = { house = scope:old_house }
+			set_house = scope:new_house
+			every_child = {
+				limit = { house = scope:old_house }
+				set_house = scope:new_house
+				every_child = {
+					limit = { house = scope:old_house }
+					set_house = scope:new_house
+				}
+			}
+		}
+	}
+	scope:new_house = {
+		every_house_member = {
+			every_held_title = {
+				set_coa = $NEW_HOUSE$.house_founder.dynasty
+				if = {
+					limit = {
+						title_uses_legitimate_house_mechanic = yes
+					}
+					save_scope_as = legitimate_house_title_to_change
+					agot_set_current_house = {
+						HOUSE = scope:new_house
+						TITLE = scope:legitimate_house_title_to_change
+					}
+					if = {
+						limit = {
+							var:legitimate_house = scope:old_house
+						}
+						agot_set_legitimate_house = {
+							HOUSE = scope:new_house
+							TITLE = scope:legitimate_house_title_to_change
+						}
+					}
+				}
+			}
+		}
+	}
+	if = {
+		limit = { has_variable = houseless_small_ship }
+		scope:new_house = { add_house_modifier = owns_small_ship }
+	}
+	if = {
+		limit = { has_variable = houseless_big_ship }
+		scope:new_house = { add_house_modifier = owns_big_ship }
+	}
+}
+
+agot_house_revival_modifiers_effect = {
+	$OLD_HOUSE$ = { save_scope_as = old_house }
+	$NEW_HOUSE$ = { save_scope_as = new_house }
+	if = {
+		limit = {
+			scope:old_house = { has_house_modifier = dragonrider_house_modifier }
+			scope:new_house = { NOT = { has_house_modifier = dragonrider_house_modifier } }
+		}
+		scope:new_house = { add_house_modifier = dragonrider_house_modifier }
+	}
+	if = {
+		limit = {
+			scope:old_house = { has_house_modifier = witch_coven }
+			scope:new_house = { NOT = { has_house_modifier = witch_coven } }
+		}
+		scope:new_house = { add_house_modifier = witch_coven }
+	}
+	if = {
+		limit = {
+			scope:old_house = { has_house_modifier = rival_eradicated_modifier }
+			scope:new_house = { NOT = { has_house_modifier = rival_eradicated_modifier } }
+		}
+		scope:new_house = { add_house_modifier = rival_eradicated_modifier }
+	}
+	if = {
+		limit = {
+			scope:old_house = { has_house_modifier = house_eradicated_modifier }
+			scope:new_house = { NOT = { has_house_modifier = house_eradicated_modifier } }
+		}
+		scope:new_house = { add_house_modifier = house_eradicated_modifier }
+	}
+	if = {
+		limit = {
+			scope:old_house = { has_house_modifier = legacy_adventurer_house_modifier }
+			scope:new_house = { NOT = { has_house_modifier = legacy_adventurer_house_modifier } }
+		}
+		scope:new_house = { add_house_modifier = legacy_adventurer_house_modifier }
+	}
+	if = {
+		limit = {
+			scope:old_house = { has_house_modifier = fp2_struggle_hostility_house_culture_modifier }
+			scope:new_house = { NOT = { has_house_modifier = fp2_struggle_hostility_house_culture_modifier } }
+		}
+		scope:new_house = { add_house_modifier = fp2_struggle_hostility_house_culture_modifier }
+	}
+	if = {
+		limit = { has_variable = bought_the_ship }
+		scope:old_house = {
+			if = {
+				limit = { has_house_modifier = owns_small_ship }
+				remove_house_modifier = owns_small_ship
+				scope:new_house = { add_house_modifier = owns_small_ship }
+			}
+			else_if = {
+				limit = { has_house_modifier = owns_small_ship_diving }
+				remove_house_modifier = owns_small_ship_diving
+				scope:new_house = { add_house_modifier = owns_small_ship_diving }
+			}
+			if = {
+				limit = { has_house_modifier = owns_big_ship }
+				remove_house_modifier = owns_big_ship
+				scope:new_house = { add_house_modifier = owns_big_ship }
+			}
+			else_if = {
+				limit = { has_house_modifier = owns_big_ship_diving }
+				remove_house_modifier = owns_big_ship_diving
+				scope:new_house = { add_house_modifier = owns_big_ship_diving }
+			}
+		}
+	}
+	switch = {
+		trigger = scope:new_house
+		dynasty:dynn_Darklyn.dynasty_founder.house = {
+			if = {
+				limit = {
+					any_artifact = {
+						count >= 1
+						has_artifact_modifier = vs_stalwart_modifier
+						NOT = { artifact_owner.house = dynasty:dynn_Darklyn.dynasty_founder.house }
+					}
+				}
+				random_artifact = {
+					limit = { has_artifact_modifier = vs_stalwart_modifier }
+					save_scope_as = house_vs_sword
+				}
+				if = {
+					limit = {
+						NOT = {
+							scope:new_house = { has_house_artifact_claim = scope:house_vs_sword }
+						}
+					}
+					scope:new_house = { add_house_artifact_claim = scope:house_vs_sword }
+				}
+			}
+		}
+		dynasty:dynn_Reyne.dynasty_founder.house = {
+			if = {
+				limit = {
+					any_artifact = {
+						count >= 1
+						has_artifact_modifier = vs_red_rain_modifier
+						NOT = { artifact_owner.house = dynasty:dynn_Reyne.dynasty_founder.house }
+					}
+				}
+				random_artifact = {
+					limit = { has_artifact_modifier = vs_red_rain_modifier }
+					save_scope_as = house_vs_sword
+				}
+				if = {
+					limit = {
+						NOT = {
+							scope:new_house = { has_house_artifact_claim = scope:house_vs_sword }
+						}
+					}
+					scope:new_house = { add_house_artifact_claim = scope:house_vs_sword }
+				}
+			}
+		}
+		dynasty:dynn_Gardener.dynasty_founder.house = {
+			if = {
+				limit = {
+					any_artifact = {
+						count >= 1
+						OR = {
+							has_artifact_modifier = vs_longthorn_modifier
+							has_artifact_modifier = vs_longthorn_generic_modifier
+							has_artifact_modifier = vs_longthorn_ruined_modifier
+						}
+						NOT = { artifact_owner.house = dynasty:dynn_Gardener.dynasty_founder.house }
+					}
+				}
+				random_artifact = {
+					limit = {
+						OR = {
+							has_artifact_modifier = vs_longthorn_modifier
+							has_artifact_modifier = vs_longthorn_generic_modifier
+							has_artifact_modifier = vs_longthorn_ruined_modifier
+						}
+					}
+					save_scope_as = house_vs_sword
+				}
+				if = {
+					limit = {
+						NOT = {
+							scope:new_house = { has_house_artifact_claim = scope:house_vs_sword }
+						}
+					}
+					scope:new_house = { add_house_artifact_claim = scope:house_vs_sword }
+				}
+			}
+		}
+		dynasty:dynn_Durrandon.dynasty_founder.house = {
+			if = {
+				limit = {
+					any_artifact = {
+						count >= 1
+						has_artifact_modifier = vs_eleneis_grace_modifier
+						NOT = { artifact_owner.house = dynasty:dynn_Durrandon.dynasty_founder.house }
+					}
+				}
+				random_artifact = {
+					limit = { has_artifact_modifier = vs_eleneis_grace_modifier }
+					save_scope_as = house_vs_sword
+				}
+				if = {
+					limit = {
+						NOT = {
+							scope:new_house = { has_house_artifact_claim = scope:house_vs_sword }
+						}
+					}
+					scope:new_house = { add_house_artifact_claim = scope:house_vs_sword }
+				}
+			}
+		}
+		dynasty:dynn_Stark.dynasty_founder.house = {
+			if = {
+				limit = {
+					any_artifact = {
+						count >= 1
+						has_artifact_modifier = vs_ice_modifier
+						NOT = { artifact_owner.house = dynasty:dynn_Stark.dynasty_founder.house }
+					}
+				}
+				random_artifact = {
+					limit = { has_artifact_modifier = vs_ice_modifier }
+					save_scope_as = house_vs_sword
+				}
+				if = {
+					limit = {
+						NOT = {
+							scope:new_house = { has_house_artifact_claim = scope:house_vs_sword }
+						}
+					}
+					scope:new_house = { add_house_artifact_claim = scope:house_vs_sword }
+				}
+			}
+		}
+		dynasty:dynn_Hoare.dynasty_founder.house = {
+			if = {
+				limit = {
+					any_artifact = {
+						count >= 1
+						has_artifact_modifier = vs_black_blood_modifier
+						NOT = { artifact_owner.house = dynasty:dynn_Hoare.dynasty_founder.house }
+					}
+				}
+				random_artifact = {
+					limit = { has_artifact_modifier = vs_black_blood_modifier }
+					save_scope_as = house_vs_sword
+				}
+				if = {
+					limit = {
+						NOT = {
+							scope:new_house = { has_house_artifact_claim = scope:house_vs_sword }
+						}
+					}
+					scope:new_house = { add_house_artifact_claim = scope:house_vs_sword }
+				}
+			}
+		}
+		dynasty:dynn_Lannister.dynasty_founder.house = {
+			if = {
+				limit = {
+					any_artifact = {
+						count >= 1
+						has_artifact_modifier = vs_brightroar_modifier
+						NOT = { artifact_owner.house = dynasty:dynn_Lannister.dynasty_founder.house }
+					}
+				}
+				random_artifact = {
+					limit = { has_artifact_modifier = vs_brightroar_modifier }
+					save_scope_as = house_vs_sword
+				}
+				if = {
+					limit = {
+						NOT = {
+							scope:new_house = { has_house_artifact_claim = scope:house_vs_sword }
+						}
+					}
+					scope:new_house = { add_house_artifact_claim = scope:house_vs_sword }
+				}
+			}
+		}
+	}
+}

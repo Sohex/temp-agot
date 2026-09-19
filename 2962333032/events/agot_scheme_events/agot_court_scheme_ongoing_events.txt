@@ -1,0 +1,736 @@
+﻿#######
+# LMF #
+#######
+namespace = agot_court_ongoing
+
+##################
+# ONGOING EVENTS #
+##################
+
+###SOCIAL RESCUE###
+scripted_trigger agot_court_ongoing_1000_bore_trigger = {
+	save_temporary_scope_as = potential_bore
+	is_available_ai = yes
+	is_adult = yes
+	sex_opposite_of = scope:target
+	NOR = {
+		this = scope:target
+		this = scope:owner
+		is_close_or_extended_family_of = scope:target
+	}
+	OR = {
+		reverse_opinion = {
+			target = scope:target
+			value < 0
+		}
+		AND = {
+			reverse_opinion = {
+				target = scope:target
+				value <= 20
+			}
+			number_of_opposing_traits = {
+				target = scope:target
+				value >= 1
+			}
+		}
+	}
+}
+
+agot_court_ongoing.1000 = {
+	type = character_event
+	title = agot_court_ongoing.1000.t
+	desc = agot_court_ongoing.1000.desc
+
+	theme = romance_scheme
+	left_portrait = {
+		character = scope:social_bore
+		animation = laugh
+	}
+	right_portrait = {
+		character = scope:target
+		animation = boredom
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	trigger = {
+		exists = scope:target.court_owner
+		scope:target.court_owner = { is_landed = yes }
+		scope:target = {
+			OR = {
+				court_owner = {
+					OR = {
+						agot_court_ongoing_1000_bore_trigger = yes
+						any_courtier = { agot_court_ongoing_1000_bore_trigger = yes }
+						any_vassal = { agot_court_ongoing_1000_bore_trigger = yes }
+					}
+				}
+				any_relation = { type = rival agot_court_ongoing_1000_bore_trigger = yes }
+			}
+		}
+		NOT = {
+			scope:scheme = {
+				OR = {
+					has_scheme_modifier = courting_kindness_modifier
+					has_scheme_modifier = courting_faux_pas_modifier
+					has_scheme_modifier = courting_abandoned_me_modifier
+				}
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = {
+			exists = scope:scheme.var:court_milestone_event
+			add = { #0 at milestone 1, -0.45 at milestone 2, -0.9 at milestone 3
+				value = scope:scheme.var:court_milestone_event
+				multiply = -0.45
+				add = 0.45
+			}
+		}
+	}
+
+	immediate = {
+		scope:target = {
+			court_owner = {
+				if = {
+					limit = { agot_court_ongoing_1000_bore_trigger = yes }
+					add_to_list = bore_list
+				}
+				every_vassal = {
+					limit = { agot_court_ongoing_1000_bore_trigger = yes }
+					add_to_list = bore_list
+				}
+				every_courtier = {
+					limit = { agot_court_ongoing_1000_bore_trigger = yes }
+					add_to_list = bore_list
+				}
+			}
+			every_relation = {
+				type = rival
+				limit = { agot_court_ongoing_1000_bore_trigger = yes }
+				add_to_list = bore_list
+			}
+
+			random_in_list = {
+				list = bore_list
+				weight = {
+					base = 1
+					compare_modifier = {
+						target = this
+						value = diplomacy
+						multiplier = -5
+						offset = 12
+					}
+					ai_value_modifier = {
+						ai_sociability = {
+							value = high_negative_ai_value_inverse
+							multiply = 10
+						}
+					}
+				}
+				save_scope_as = social_bore
+			}
+
+			court_owner.capital_province = { save_scope_as = location }
+		}
+	}
+
+	#Intervene
+	option = {
+		name = agot_court_ongoing.1000.a
+
+		duel = {
+			skill = diplomacy
+			target = scope:social_bore
+			30 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 0.1
+				}
+				desc = agot_court_ongoing.1000.a.success
+				send_interface_toast = {
+					title = agot_court_ongoing.1000.a.success
+					left_icon = scope:social_bore
+					right_icon = scope:target
+
+					reverse_add_opinion = {
+						target = scope:target
+						modifier = grateful_opinion
+						opinion = 15
+					}
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_kindness_modifier
+						}
+					}
+				}
+			}
+			20 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -0.1
+				}
+				desc = agot_court_ongoing.1000.a.failure
+				send_interface_toast = {
+					title = agot_court_ongoing.1000.a.failure
+					left_icon = scope:social_bore
+					right_icon = scope:target
+
+					reverse_add_opinion = {
+						target = scope:target
+						modifier = bored_opinion
+						opinion = -10
+					}
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_faux_pas_modifier
+						}
+					}
+				}
+			}
+		}
+
+		stress_impact = {
+			shy = minor_stress_impact_gain
+			humble = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 100
+
+			ai_sociability_target_modifier = { VALUE = 50 }
+			ai_boldness_target_modifier = { VALUE = 20 }
+		}
+	}
+
+	#Don't do anything
+	option = {
+		name = agot_court_ongoing.1000.b
+
+		scope:scheme = {
+			add_scheme_modifier = {
+				type = courting_abandoned_me_modifier
+			}
+		}
+
+		stress_impact = {
+			brave = minor_stress_impact_gain
+			compassionate = minor_stress_impact_gain
+			arrogant = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 50
+
+			ai_sociability_target_modifier = { VALUE = -30 }
+			ai_boldness_target_modifier = { VALUE = -20 }
+		}
+	}
+}
+
+###LIBRARY MEETING###
+agot_court_ongoing.1300 = {
+	type = character_event
+	title = agot_court_ongoing.1300.t
+	desc = agot_court_ongoing.1300.desc
+
+	theme = romance_scheme
+	right_portrait = {
+		character = scope:target
+		animation = boredom
+	}
+	override_background = { reference = bp2_courtyard }
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = {
+			exists = scope:scheme.var:court_milestone_event
+			add = { #0 at milestone 1, -0.45 at milestone 2, -0.9 at milestone 3
+				value = scope:scheme.var:court_milestone_event
+				multiply = -0.45
+				add = 0.45
+			}
+		}
+	}
+
+	trigger = {
+		exists = scope:target.court_owner
+		scope:target.court_owner = { is_landed = yes }
+		scope:target = {
+			OR = {
+				learning >= 8
+				has_education_learning_trigger = yes
+				has_focus = learning_scholarship_focus
+				has_focus = learning_medicine_focus
+				has_focus = learning_theology_focus
+			}
+		}
+		NOT = {
+			scope:scheme = {
+				OR = {
+					has_scheme_modifier = courting_impressed_modifier
+					has_scheme_modifier = courting_unimpressed_modifier
+					has_scheme_modifier = courting_unimpressed2_modifier
+				}
+			}
+		}
+	}
+
+	immediate = {
+		scope:target = {
+			court_owner.capital_province = { save_scope_as = location }
+		}
+	}
+
+	#Find a book for them
+	option = {
+		name = agot_court_ongoing.1300.a
+
+		duel = {
+			skill = learning
+			target = scope:target
+			30 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 0.1
+				}
+				desc = agot_court_ongoing.1300.a.success
+				send_interface_toast = {
+					title = agot_court_ongoing.1300.a.success
+					left_icon = scope:social_bore
+					right_icon = scope:target
+
+					reverse_add_opinion = {
+						target = scope:target
+						modifier = grateful_opinion
+						opinion = 15
+					}
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_impressed_modifier
+						}
+					}
+				}
+			}
+			20 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -0.1
+				}
+				desc = agot_court_ongoing.1300.a.failure
+				send_interface_toast = {
+					title = agot_court_ongoing.1300.a.failure
+					left_icon = scope:social_bore
+					right_icon = scope:target
+
+					reverse_add_opinion = {
+						target = scope:target
+						modifier = bored_opinion
+						opinion = -10
+					}
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_unimpressed_modifier
+						}
+					}
+				}
+			}
+		}
+
+		stress_impact = {
+			shy = minor_stress_impact_gain
+			humble = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 100
+
+			ai_sociability_target_modifier = { VALUE = 50 }
+			ai_boldness_target_modifier = { VALUE = 20 }
+		}
+	}
+
+	#Don't do anything
+	option = {
+		name = agot_court_ongoing.1300.b
+
+		stress_impact = {
+			brave = minor_stress_impact_gain
+			compassionate = minor_stress_impact_gain
+			arrogant = minor_stress_impact_gain
+		}
+
+		scope:scheme = {
+			add_scheme_modifier = {
+				type = courting_unimpressed2_modifier
+			}
+		}
+
+		ai_chance = {
+			base = 50
+
+			ai_sociability_target_modifier = { VALUE = -30 }
+			ai_boldness_target_modifier = { VALUE = -20 }
+		}
+	}
+}
+
+
+###SPARRING MATCH###
+
+scripted_trigger agot_court_ongoing_1310_combatant_trigger = {
+	save_temporary_scope_as = combatant
+	OR = {
+		is_knight = yes
+		has_trait = lifestyle_blademaster
+		has_education_martial_trigger = yes
+		has_focus = martial_strategy_focus
+		has_focus = martial_authority_focus
+		has_focus = martial_chivalry_focus
+	}
+}
+
+agot_court_ongoing.1310 = {
+	type = character_event
+	title = agot_court_ongoing.1310.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:owner }
+					agot_court_ongoing_1310_combatant_trigger = yes
+				}
+				desc = agot_court_ongoing.1310.opening.martial
+			}
+			desc = agot_court_ongoing.1310.opening
+		}
+		desc = agot_court_ongoing.1310.mid
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:owner }
+					agot_court_ongoing_1310_combatant_trigger = yes
+				}
+				desc = agot_court_ongoing.1310.ending.martial
+			}
+			triggered_desc = {
+				trigger = {
+					can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:owner }
+					agot_court_ongoing_1310_combatant_trigger = no
+				}
+				desc = agot_court_ongoing.1310.ending.spectator
+			}
+			desc = agot_court_ongoing.1310.ending
+		}
+	}
+
+	theme = romance_scheme
+	right_portrait = {
+		character = scope:target
+		animation = aggressive_sword
+	}
+	override_background = { reference = bp2_courtyard }
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	trigger = {
+		is_healthy = yes
+		has_any_illness = no
+		OR = {
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:owner }
+			AND = {
+				is_female = yes
+				sex_opposite_of = scope:target
+			}
+		}
+		scope:target = {
+			is_healthy = yes
+			has_any_illness = no
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:target }
+			agot_court_ongoing_1310_combatant_trigger = yes
+		}
+		scope:scheme = {
+			NOR = {
+				has_scheme_modifier = courting_sparring_impressed_modifier
+				has_scheme_modifier = courting_sparring_unimpressed_modifier
+				has_scheme_modifier = courting_charmed_modifier
+				has_scheme_modifier = courting_embarrassed_modifier
+			}
+		}
+	}
+
+	immediate = {
+		scope:target = {
+			add_character_flag = wear_armor
+		}
+	}
+
+	option = {
+		name = agot_court_ongoing.1310.a #Join the sparring
+		trigger = {
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:owner }
+		}
+
+		stress_impact = {
+			craven = minor_stress_impact_gain
+			brave = minor_stress_impact_loss
+		}
+		random = {
+			chance = 20
+			modifier = {
+				add = scope:target.prowess
+				prowess < scope:target.prowess
+			}
+			show_as_tooltip = {
+				increase_wounds_effect = { REASON = duel }
+			}
+			add_character_flag = duel_wounded
+		}
+		duel = {
+			skill = prowess
+			target = scope:target
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.0
+					min = 5
+				}
+				desc = agot_court_ongoing.1310.a.success
+				send_interface_toast = {
+					title = agot_court_ongoing.1310.a.success
+					right_icon = scope:target
+
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_sparring_impressed_modifier
+						}
+					}
+					if = {
+						limit = { has_character_flag = duel_wounded }
+						increase_wounds_effect = { REASON = duel }
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.0
+				}
+				desc = agot_court_ongoing.1310.a.failure
+				send_interface_toast = {
+					title = agot_court_ongoing.1310.a.failure
+					right_icon = scope:target
+
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_sparring_unimpressed_modifier
+						}
+					}
+					if = {
+						limit = { has_character_flag = duel_wounded }
+						increase_wounds_effect = { REASON = duel }
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 0.5
+				prowess < scope:target.prowess
+			}
+			ai_value_modifier = {
+   				ai_boldness = 1
+			}
+			modifier = {
+				factor = 0
+				agot_court_ongoing_1310_combatant_trigger = no
+			}
+		}
+	}
+	option = {
+		name = agot_court_ongoing.1310.b #Cheer him on
+		trigger = {
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:owner }
+		}
+
+		if = {
+			limit = { agot_court_ongoing_1310_combatant_trigger = yes }
+			stress_impact = {
+				brave = medium_stress_impact_gain
+				shy = minor_stress_impact_gain
+				gregarious = minor_stress_impact_loss
+				craven = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				shy = minor_stress_impact_gain
+				gregarious = minor_stress_impact_loss
+			}
+		}
+		duel = {
+			skill = diplomacy
+			value = high_skill_rating
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.0
+					min = 5
+				}
+				desc = agot_court_ongoing.1310.b.success
+				send_interface_toast = {
+					title = agot_court_ongoing.1310.b.success
+					right_icon = scope:target
+
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_charmed_modifier
+						}
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.0
+				}
+				desc = agot_court_ongoing.1310.b.failure
+				send_interface_toast = {
+					title = agot_court_ongoing.1310.b.failure
+					right_icon = scope:target
+
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_embarrassed_modifier
+						}
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 1
+			}
+			modifier = {
+				factor = 0.5
+				diplomacy < medium_skill_rating
+			}
+			modifier = {
+				factor = 0.5
+				agot_court_ongoing_1310_combatant_trigger = yes
+			}
+		}
+	}
+	option = {
+		name = agot_court_ongoing.1310.c #Bestow my favor
+		trigger = {
+			NOT = {
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:owner }
+			}
+		}
+
+		stress_impact = {
+			shy = minor_stress_impact_gain
+			gregarious = minor_stress_impact_loss
+		}
+		duel = {
+			skill = diplomacy
+			value = medium_skill_rating
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.0
+					min = 5
+				}
+				desc = agot_court_ongoing.1310.b.success
+				send_interface_toast = {
+					title = agot_court_ongoing.1310.b.success
+					right_icon = scope:target
+
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_charmed_modifier
+						}
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.0
+				}
+				desc = agot_court_ongoing.1310.b.failure
+				send_interface_toast = {
+					title = agot_court_ongoing.1310.b.failure
+					right_icon = scope:target
+
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = courting_embarrassed_modifier
+						}
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 0.5
+				diplomacy < medium_skill_rating
+			}
+			ai_value_modifier = {
+				ai_sociability = 1
+			}
+		}
+	}
+	option = {
+		name = agot_court_ongoing.1310.d #Quickly pass on by
+		if = {
+			limit = {
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:owner }
+				agot_court_ongoing_1310_combatant_trigger = yes
+			}
+			stress_impact = {
+				base = minor_stress_impact_gain
+				brave = medium_stress_impact_gain
+				gregarious = minor_stress_impact_gain
+				shy = minor_stress_impact_loss
+				craven = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = minor_stress_impact_gain
+				gregarious = minor_stress_impact_gain
+				shy = minor_stress_impact_loss
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_sociability = -0.5
+				ai_boldness = -0.5
+			}
+		}
+	}
+
+	after = {
+		remove_character_flag ?= duel_wounded
+		scope:target = { remove_character_flag = wear_armor }
+	}
+}

@@ -1,0 +1,2040 @@
+﻿create_rv_rescue_war_defender_story = {
+	scope:defender = {
+		create_story = {
+			type = rv_rescue_war_defender_story
+			save_scope_as = story
+		}
+
+		if = {
+			limit = {exists = scope:story}
+			scope:story = {
+				add_to_variable_list = {
+					name = rv_attacking_rescuers
+					target = scope:attacker
+				}
+			}
+		}
+		add_to_variable_list = {
+			name = rv_attacking_rescuers_temp
+			target = scope:attacker
+		}
+	}
+}
+
+create_failed_rescue_memory = {
+	### Failed Rescue Memory Creation
+	scope:attacker = {
+		random_owned_story = {
+			limit = {
+				story_type = rv_rescue_war_story
+				has_variable_list = rv_currently_rescuing
+			}
+			every_in_list = {
+				variable = rv_currently_rescuing
+				limit = {
+					is_alive = no
+				}
+				add_to_temporary_list = dead_targets
+
+				### workaround for primary heir
+				if = {
+					limit = {
+						AND = {
+							exists = scope:attacker.var:rv_rescuing_primary_heir
+							this = scope:attacker.var:rv_rescuing_primary_heir
+						}
+					}
+					add_to_temporary_list = killed_targets
+				}
+			}
+		}
+	}
+
+	scope:defender = {
+		every_killed_character = {
+			limit = {
+				is_in_list = dead_targets
+			}
+			add_to_temporary_list = killed_targets
+		}
+	}
+
+	every_in_list = {
+		list = killed_targets
+
+		scope:attacker= {
+			create_character_memory = {
+				type = rv_failed_rescue
+				participants = {
+					rescue_target_dead = prev
+					rescue_target_killer = scope:defender
+				}
+			}
+		}
+	}
+	### Failed Rescue Memory Creation/
+}
+
+end_rescue_story_for_attacker = {
+	scope:attacker = {
+		random_owned_story = {
+			limit = {
+				story_type = rv_rescue_war_story
+			}
+			end_story = yes
+		}
+	}
+}
+
+remove_attacking_rescuer_for_defender = {
+	scope:defender = {
+		random_owned_story = {
+			limit = {story_type = rv_rescue_war_defender_story}
+			remove_list_variable = {
+				name = rv_attacking_rescuers
+				target = scope:attacker
+			}
+			every_in_list = {
+				variable = rv_attacking_rescuers
+				limit = {
+					OR = {
+						is_alive = no
+						NOT = { is_at_war_with = scope:defender }
+					}
+				}
+				remove_list_variable = {
+					name = rv_attacking_rescuers
+					target = this
+				}
+			}
+			if = {
+				limit = {
+					OR = {
+						NOT = {has_variable_list = rv_attacking_rescuers}
+						any_in_list = {
+							variable = rv_attacking_rescuers
+							count = 0
+						}
+					}
+				}
+				end_story = yes
+			}
+		}
+		remove_list_variable = {
+			name = rv_attacking_rescuers_temp
+			target = scope:attacker
+		}
+	}
+}
+
+rv_rescue_relation_boost = {
+	### "Stolen" code from SRE (based on changes made to move_to_house_arrest_interaction)
+	### Use in a every_in_list iterator
+
+	save_scope_as = rescued_prisoner
+
+	add_opinion = {
+		target = scope:attacker
+		modifier = rv_rescued_me
+	}
+
+	every_spouse = {
+		limit = {
+			NOR = {
+				this = scope:attacker
+				this = scope:defender
+				has_relation_rival = scope:rescued_prisoner
+				has_relation_nemesis = scope:rescued_prisoner
+
+			}
+		}
+		add_to_temporary_list = recipient_family_opinion_list
+	}
+
+	every_close_or_extended_family_member = {
+		limit = {
+			NOR = {
+				this = scope:attacker
+				this = scope:defender
+				has_relation_rival = scope:rescued_prisoner
+				has_relation_nemesis = scope:rescued_prisoner
+			}
+		}
+		add_to_temporary_list = recipient_family_opinion_list
+		###Note recipient_family_opinion_list stores both close and extened family in esr
+	}
+
+	if = {
+		limit = {
+			any_in_list = {
+				list = recipient_family_opinion_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = recipient_family_opinion_list
+			#custom = all_family_members
+			add_opinion = {
+				target = scope:attacker
+				modifier = rv_rescued_family
+			}
+		}
+	}
+
+	#recipient's friends and lovers
+	every_relation = {
+		type = friend
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+				has_relation_best_friend = scope:rescued_prisoner
+			}
+		}
+		add_to_list = recipient_close_relations_list
+	}
+	every_relation = {
+		type = lover
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+				has_relation_soulmate = scope:rescued_prisoner
+				is_in_list = recipient_close_relations_list
+			}
+		}
+		add_to_list = recipient_close_relations_list
+	}
+	if = {
+		limit = {
+			any_in_list = {
+				list = recipient_close_relations_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = recipient_close_relations_list
+			#custom = all_friends_and_lovers
+			add_opinion = {
+				target = scope:attacker
+				modifier = rv_rescued_close_relation
+			}
+		}
+	}
+
+	#recipient's best friend and soulmate
+	every_relation = {
+		type = best_friend
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+			}
+		}
+		add_opinion = {
+			target = scope:attacker
+			modifier = rv_rescued_very_close
+		}
+	}
+
+	every_relation = {
+		type = soulmate
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+			}
+		}
+		add_opinion = {
+			target = scope:attacker
+			modifier = rv_rescued_very_close
+		}
+	}
+
+	#recipient's nemesis
+	every_relation = {
+		type = rival
+
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+				has_trait = compassionate
+				has_relation_nemesis = scope:rescued_prisoner
+			}
+		}
+		add_opinion = {
+			target = scope:attacker
+			modifier = rv_rescued_rival
+		}
+	}
+
+
+	every_relation = {
+		type = nemesis
+
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+				has_trait = compassionate
+			}
+		}
+		add_opinion = {
+			target = scope:attacker
+			modifier = rv_rescued_nemesis
+		}
+	}
+}
+
+rv_attempted_rescue_relation_boost = {
+	### "Stolen" code from SRE (based on changes made to move_to_house_arrest_interaction)
+	### Use in a every_in_list iterator
+
+	save_scope_as = rescued_prisoner
+
+	add_opinion = {
+		target = scope:attacker
+		modifier = rv_attempted_rescuing_me
+	}
+
+	every_spouse = {
+		limit = {
+			NOR = {
+				this = scope:attacker
+				this = scope:defender
+				has_relation_rival = scope:rescued_prisoner
+				has_relation_nemesis = scope:rescued_prisoner
+			}
+		}
+		add_to_temporary_list = recipient_family_opinion_list
+	}
+
+	every_close_or_extended_family_member = {
+		limit = {
+			NOR = {
+				this = scope:attacker
+				this = scope:defender
+				has_relation_rival = scope:rescued_prisoner
+				has_relation_nemesis = scope:rescued_prisoner
+			}
+		}
+		add_to_temporary_list = recipient_family_opinion_list
+		###Note recipient_family_opinion_list stores both close and extened family in esr
+	}
+
+	if = {
+		limit = {
+			any_in_list = {
+				list = recipient_family_opinion_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = recipient_family_opinion_list
+			#custom = all_family_members
+			add_opinion = {
+				target = scope:attacker
+				modifier = rv_attempted_rescuing_family
+			}
+		}
+	}
+
+	#recipient's friends and lovers
+	every_relation = {
+		type = friend
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+				has_relation_best_friend = scope:rescued_prisoner
+			}
+		}
+		add_to_list = recipient_close_relations_list
+	}
+	every_relation = {
+		type = lover
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+				has_relation_soulmate = scope:rescued_prisoner
+				is_in_list = recipient_close_relations_list
+			}
+		}
+		add_to_list = recipient_close_relations_list
+	}
+	if = {
+		limit = {
+			any_in_list = {
+				list = recipient_close_relations_list
+				always = yes
+			}
+		}
+		every_in_list = {
+			list = recipient_close_relations_list
+			#custom = all_friends_and_lovers
+			add_opinion = {
+				target = scope:attacker
+				modifier = rv_attempted_rescuing_close_relation
+			}
+		}
+	}
+
+	#recipient's best friend and soulmate
+	every_relation = {
+		type = best_friend
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+			}
+		}
+		add_opinion = {
+			target = scope:attacker
+			modifier = rv_attempted_rescuing_very_close
+		}
+	}
+
+	every_relation = {
+		type = soulmate
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+			}
+		}
+		add_opinion = {
+			target = scope:attacker
+			modifier = rv_attempted_rescuing_very_close
+		}
+	}
+
+	#recipient's nemesis
+	every_relation = {
+		type = rival
+
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+				has_trait = compassionate
+				has_relation_nemesis = scope:rescued_prisoner
+			}
+		}
+		add_opinion = {
+			target = scope:attacker
+			modifier = rv_attempted_rescuing_rival
+		}
+	}
+
+
+	every_relation = {
+		type = nemesis
+
+		limit = {
+			NOR = {
+				this = scope:defender
+				this = scope:attacker
+				has_trait = compassionate
+			}
+		}
+		add_opinion = {
+			target = scope:attacker
+			modifier = rv_attempted_rescuing_nemesis
+		}
+	}
+}
+
+rv_rescue_ai_list_construction = {
+	every_heir = {
+		limit = {
+			is_alive = yes
+			is_imprisoned = yes
+			NOT = {is_imprisoned_by = scope:rescuer}
+		}
+		add_to_temporary_list = rescue_list_unsorted
+	}
+	every_close_or_extended_family_member = {
+		limit = {
+			is_alive = yes
+			OR = {
+				AND = {
+					is_imprisoned = yes
+					NOT = {is_imprisoned_by = scope:rescuer}
+				}
+				AND = {
+					is_concubine = yes
+					NOT = {is_concubine_of = scope:rescuer}
+				}
+			}
+		}
+		add_to_temporary_list = rescue_list_unsorted
+	}
+	every_spouse = {
+		limit = {
+			is_alive = yes
+			is_imprisoned = yes
+			NOT = {is_imprisoned_by = scope:rescuer}
+		}
+		add_to_temporary_list = rescue_list_unsorted
+	}
+	every_relation = {
+		type = friend
+		limit = {
+			is_alive = yes
+			is_imprisoned = yes
+			NOT = {is_imprisoned_by = scope:rescuer}
+		}
+		add_to_temporary_list = rescue_list_unsorted
+	}
+	every_relation = {
+		type = lover
+		limit = {
+			is_alive = yes
+			is_imprisoned = yes
+			NOT = {is_imprisoned_by = scope:rescuer}
+		}
+		add_to_temporary_list = rescue_list_unsorted
+	}
+	every_relation = {
+		type = esr_family_friend
+		limit = {
+			is_alive = yes
+			is_imprisoned = yes
+			NOT = {is_imprisoned_by = scope:rescuer}
+		}
+		add_to_temporary_list = rescue_list_unsorted
+	}
+	every_former_spouse = {
+		limit = {
+			is_alive = yes
+			is_concubine = yes
+			NOT = {is_concubine_of = scope:rescuer}
+		}
+		add_to_temporary_list = rescue_list_unsorted
+		set_variable = {
+			name = rv_is_former_spouse
+			value = scope:rescuer
+		}
+	}
+	every_in_list = {
+		variable = rv_declined_prisoner_list
+		limit = {
+			is_alive = yes
+			is_imprisoned = yes
+			NOT = {is_imprisoned_by = scope:rescuer}
+		}
+		add_to_temporary_list = rescue_list_unsorted
+	}
+
+	every_in_list = {
+		list = rescue_list_unsorted
+		if = {
+			limit = {
+				rv_rescue_priority > 100
+			}
+			scope:rv_rescue_story = {
+				add_to_variable_list = {
+					name = rv_rescue_list
+					target = prev
+				}
+			}
+			scope:rescuer = {
+				set_variable = {
+					name = rv_rescue_priority
+					value = 3
+				}
+				add_to_variable_list = {
+					name = rv_rescue_list_temp
+					target = prev
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				rv_rescue_priority > 65
+				scope:rescuer = {
+					OR = {
+						NOT = {exists = var:rv_rescue_priority}
+						var:rv_rescue_priority <= 2
+					}
+				}
+			}
+			if = {
+				limit = {
+					scope:rescuer = {
+						OR = {
+							NOT = {exists = var:rv_rescue_priority}
+							var:rv_rescue_priority < 2
+						}
+					}
+				}
+				scope:rv_rescue_story = {
+					clear_variable_list = rv_rescue_list
+				}
+				scope:rescuer = {
+					clear_variable_list = rv_rescue_list_temp
+				}
+			}
+			scope:rv_rescue_story = {
+				add_to_variable_list = {
+					name = rv_rescue_list
+					target = prev
+				}
+			}
+			scope:rescuer = {
+				set_variable = {
+					name = rv_rescue_priority
+					value = 2
+				}
+				add_to_variable_list = {
+					name = rv_rescue_list_temp
+					target = prev
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				rv_rescue_priority > 30
+				scope:rescuer = {
+					OR = {
+						NOT = {exists = var:rv_rescue_priority}
+						var:rv_rescue_priority <= 1
+					}
+				}
+			}
+			if = {
+				limit = {
+					scope:rescuer = {
+						OR = {
+							NOT = {exists = var:rv_rescue_priority}
+							var:rv_rescue_priority < 1
+						}
+					}
+				}
+				scope:rv_rescue_story = {
+					clear_variable_list = rv_rescue_list
+				}
+				scope:rescuer = {
+					clear_variable_list = rv_rescue_list_temp
+				}
+			}
+			scope:rv_rescue_story = {
+				add_to_variable_list = {
+					name = rv_rescue_list
+					target = prev
+				}
+			}
+			scope:rescuer = {
+				set_variable = {
+					name = rv_rescue_priority
+					value = 1
+				}
+				add_to_variable_list = {
+					name = rv_rescue_list_temp
+					target = prev
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				rv_rescue_priority > -5
+				scope:rescuer = {
+					OR = {
+						NOT = {exists = var:rv_rescue_priority}
+						var:rv_rescue_priority <= 0
+					}
+				}
+			}
+			if = {
+				limit = {
+					scope:rescuer = {
+						OR = {
+							NOT = {exists = var:rv_rescue_priority}
+							var:rv_rescue_priority < 0
+						}
+					}
+				}
+				scope:rv_rescue_story = {
+					clear_variable_list = rv_rescue_list
+				}
+				scope:rescuer = {
+					clear_variable_list = rv_rescue_list_temp
+				}
+			}
+			#scope:rv_rescue_story = {
+				#add_to_variable_list = {
+				   # name = rv_rescue_list
+					#target = prev
+				#}
+			#}
+			scope:rescuer = {
+				set_variable = {
+					name = rv_rescue_priority
+					value = 0
+				}
+				add_to_variable_list = {
+					name = rv_rescue_list_temp
+					target = prev
+				}
+			}
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:rv_rescue_story
+			scope:rv_rescue_story = {
+				OR = {
+					NOT = {has_variable_list = rv_rescue_list}
+					any_in_list = {
+						variable = rv_rescue_list
+						count = 0
+					}
+				}
+			}
+		}
+		scope:rv_rescue_story = {
+			end_story = yes
+		}
+	}
+}
+
+rv_revenge_add_dead_characters_to_attacker_story = { # Transfer Char list to Story
+	scope:attacker = {
+		if = {
+			limit = {
+				NOT = {
+					any_owned_story = {
+						story_type = rv_revenge_war_story
+					}
+				}
+			}
+			create_story = {
+				type = rv_revenge_war_story
+				save_scope_as = rv_revenge_story
+			}
+		}
+
+		else = {
+			random_owned_story = {
+				limit = {story_type = rv_revenge_war_story}
+				save_scope_as = rv_revenge_story
+			}
+		}
+
+		if = {
+			limit = {exists = scope:rv_revenge_story}
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_lovers
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_lovers
+					scope:rv_revenge_story = {
+						add_to_variable_list = {
+							name = rv_revenging_dead_lovers
+							target = prev
+						}
+						add_to_variable_list = {
+							name = rv_currently_revenging
+							target = prev
+						}
+					}
+				}
+				clear_variable_list = rv_revenging_dead_lovers
+			}
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_soulmates
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_soulmates
+					scope:rv_revenge_story = {
+						add_to_variable_list = {
+							name = rv_revenging_dead_soulmates
+							target = prev
+						}
+						add_to_variable_list = {
+							name = rv_currently_revenging
+							target = prev
+						}
+					}
+				}
+				clear_variable_list = rv_revenging_dead_soulmates
+			}
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_friends
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_friends
+					scope:rv_revenge_story = {
+						add_to_variable_list = {
+							name = rv_revenging_dead_friends
+							target = prev
+						}
+						add_to_variable_list = {
+							name = rv_currently_revenging
+							target = prev
+						}
+					}
+				}
+				clear_variable_list = rv_revenging_dead_friends
+			}
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_best_friends
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_best_friends
+					scope:rv_revenge_story = {
+						add_to_variable_list = {
+							name = rv_revenging_dead_best_friends
+							target = prev
+						}
+						add_to_variable_list = {
+							name = rv_currently_revenging
+							target = prev
+						}
+					}
+				}
+				clear_variable_list = rv_revenging_dead_best_friends
+			}
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_spouses
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_spouses
+					scope:rv_revenge_story = {
+						add_to_variable_list = {
+							name = rv_revenging_dead_spouses
+							target = prev
+						}
+						add_to_variable_list = {
+							name = rv_currently_revenging
+							target = prev
+						}
+					}
+				}
+				clear_variable_list = rv_revenging_dead_spouses
+			}
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_families
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_families
+					scope:rv_revenge_story = {
+						add_to_variable_list = {
+							name = rv_revenging_dead_families
+							target = prev
+						}
+						add_to_variable_list = {
+							name = rv_currently_revenging
+							target = prev
+						}
+					}
+				}
+				clear_variable_list = rv_revenging_dead_families
+			}
+			clear_variable_list = rv_to_be_revenged
+		}
+	}
+}
+
+rv_revenge_add_dead_characters_to_root_sgui = {
+	random_memory = {
+		limit = {
+			exists = this
+			has_memory_type = lover_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					this = scope:rv_defender
+					#this = root.var:rv_defender_temp
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_lovers
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	random_memory = {
+		limit = {
+			exists = this
+			has_memory_type = soulmate_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					this = scope:rv_defender
+					#this = root.var:rv_defender_temp
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_soulmates
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	random_memory = {
+		limit = {
+			exists = this
+			has_memory_type = friend_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					this = scope:rv_defender
+					#this = root.var:rv_defender_temp
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_friends
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	random_memory = {
+		limit = {
+			exists = this
+			has_memory_type = best_friend_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					this = scope:rv_defender
+					#this = root.var:rv_defender_temp
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_best_friends
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	random_memory = {
+		limit = {
+			exists = this
+			has_memory_type = spouse_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					this = scope:rv_defender
+					#this = root.var:rv_defender_temp
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_spouses
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	scope:rv_defender = {
+		every_killed_character = {
+			limit = {
+				save_temporary_scope_as = rv_dead_char
+				exists = this
+				exists = root
+				is_close_or_extended_family_of = root
+				scope:rv_defender = {
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+			root = {
+				add_to_variable_list = {
+					name = rv_revenging_dead_families
+					target = prev
+				}
+				add_to_variable_list = {
+					name = rv_to_be_revenged
+					target = prev
+				}
+			}
+		}
+	}
+}
+
+rv_rescue_add_concubines_to_root_sgui = {
+	scope:rv_defender = {
+		every_consort = {
+			if = {
+				limit = {
+					NOT = {is_imprisoned_by = scope:rv_defender}
+					any_consort = {
+						reverse_has_opinion_modifier = {
+							modifier = forced_me_concubine_marriage_opinion
+							target = prev
+						}
+					}
+					OR = {
+						any_former_spouse = { this = root }
+						is_heir_of = root
+						has_relation_lover = root
+						has_relation_soulmate = root
+						has_relation_friend = root
+						has_relation_best_friend = root
+						is_close_or_extended_family_of = root
+						root = {
+							AND = {
+								has_global_variable = esr_is_loaded
+								has_relation_esr_family_friend = prev
+							}
+						}
+					}
+				}
+				root = {
+					add_to_variable_list = {
+						name = rv_defender_concubines
+						target = prev
+					}
+				}
+			}
+		}
+	}
+}
+
+remove_attacking_revenger_for_defender = {
+	scope:defender = {
+		random_owned_story = {
+			limit = {story_type = rv_revenge_war_defender_story}
+			remove_list_variable = {
+				name = rv_attacking_revengers
+				target = scope:attacker
+			}
+			every_in_list = {
+				variable = rv_attacking_revengers
+				limit = {
+					OR = {
+						is_alive = no
+						NOT = { is_at_war_with = scope:defender }
+					}
+				}
+				remove_list_variable = {
+					name = rv_attacking_revengers
+					target = this
+				}
+			}
+			if = {
+				limit = {
+					OR = {
+						NOT = {has_variable_list = rv_attacking_revengers}
+						any_in_list = {
+							variable = rv_attacking_revengers
+							count = 0
+						}
+					}
+				}
+				end_story = yes
+			}
+		}
+		remove_list_variable = {
+			name = rv_attacking_revengers_temp
+			target = scope:attacker
+		}
+	}
+}
+
+end_revenge_story_for_attacker = {
+	scope:attacker = {
+		random_owned_story = {
+			limit = {
+				story_type = rv_revenge_war_story
+			}
+			end_story = yes
+		}
+	}
+}
+
+create_successful_revenge_memory = {
+	### Successful Revenge Story
+	scope:attacker = {
+		random_owned_story = {
+			limit = {
+				story_type = rv_revenge_war_story
+			}
+
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_lovers
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_lovers
+					scope:attacker= {
+						create_character_memory = {
+							type = rv_successful_revenged_lover
+							participants = {
+								target_revenged = prev
+								target_killer = scope:defender
+							}
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_soulmates
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_soulmates
+					scope:attacker= {
+						create_character_memory = {
+							type = rv_successful_revenged_soulmate
+							participants = {
+								target_revenged = prev
+								target_killer = scope:defender
+							}
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_friends
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_friends
+					scope:attacker= {
+						create_character_memory = {
+							type = rv_successful_revenged_friend
+							participants = {
+								target_revenged = prev
+								target_killer = scope:defender
+							}
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_best_friends
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_best_friends
+					scope:attacker= {
+						create_character_memory = {
+							type = rv_successful_revenged_best_friend
+							participants = {
+								target_revenged = prev
+								target_killer = scope:defender
+							}
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_spouses
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_spouses
+					scope:attacker= {
+						create_character_memory = {
+							type = rv_successful_revenged_spouse
+							participants = {
+								target_revenged = prev
+								target_killer = scope:defender
+							}
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					has_variable_list = rv_revenging_dead_families
+				}
+				every_in_list = {
+					variable = rv_revenging_dead_families
+					scope:attacker= {
+						create_character_memory = {
+							type = rv_successful_revenged_family
+							participants = {
+								target_revenged = prev
+								target_killer = scope:defender
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+rv_successful_revenge_relation_boost_and_marking = { # Use in rv_revenge_war_story scope. It boost opinion of relations of the dead and mark them as avenged
+	if = {
+		### was_revenged marking
+		limit = { has_variable_list = rv_currently_revenging }
+		every_in_list = {
+			variable = rv_currently_revenging
+			limit = {
+				always = yes
+			}
+			create_character_memory = {
+				type = rv_was_revenged
+				participants = {
+					target_revenged = this
+					target_killer = scope:defender
+					target_revenger = scope:attacker
+				}
+			}
+
+			hidden_effect = {
+
+				### "Stolen" code from SRE (based on changes made to move_to_house_arrest_interaction)
+				### Use in a every_in_list iterator
+
+				save_scope_as = avenged_char
+
+				every_memory = {
+					limit = {
+						has_memory_type = married
+					}
+					#exists = memory_participant:spouse
+					memory_participant:spouse = {
+						if = {
+							limit = {
+								is_alive = yes
+								any_memory = {
+									has_memory_type = spouse_died
+									exists = memory_participant:dead_relation
+									memory_participant:dead_relation = {
+										this = scope:avenged_char
+									}
+								}
+								NOR = {
+									this = scope:attacker
+									this = scope:defender
+									any_memory = {
+										OR = {
+											has_memory_type = rival_died
+											has_memory_type = nemesis_died
+										}
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+							}
+							add_to_temporary_list = recipient_family_opinion_list
+						}
+					}
+				}
+
+				every_close_or_extended_family_member = {
+					limit = {
+						is_alive = yes
+						NOR = {
+							this = scope:attacker
+							this = scope:defender
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:avenged_char
+								}
+							}
+						}
+					}
+					add_to_temporary_list = recipient_family_opinion_list
+					###Note recipient_family_opinion_list stores both close and extened family in esr
+				}
+
+				if = {
+					limit = {
+						any_in_list = {
+							list = recipient_family_opinion_list
+							always = yes
+						}
+					}
+					every_in_list = {
+						list = recipient_family_opinion_list
+						#custom = all_family_members
+						add_opinion = {
+							target = scope:attacker
+							modifier = rv_avenged_family
+						}
+					}
+				}
+
+				#recipient's friends and lovers
+
+				every_memory = {
+					limit = {
+						has_memory_type = became_friends
+					}
+					#exists = memory_participant:new_relation
+					memory_participant:new_relation = {
+						if = {
+							limit = {
+								is_alive = yes
+								NOR = {
+									this = scope:attacker
+									this = scope:defender
+									any_memory = {
+										OR = {
+											has_memory_type = rival_died
+											has_memory_type = nemesis_died
+										}
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+							}
+							if = {
+								limit = {
+									NOT = {is_in_list = recipient_close_relations_list}
+									any_memory = {
+										has_memory_type = friend_died
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+								add_to_temporary_list = recipient_close_relations_list
+							}
+							else_if = {
+								limit = {
+									any_memory = {
+										has_memory_type = best_friend_died
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+								add_opinion = {
+									target = scope:attacker
+									modifier = rv_avenged_very_close
+								}
+							}
+						}
+					}
+				}
+
+
+				every_memory = {
+					limit = {
+						has_memory_type = became_lovers
+						exists = memory_participant:new_lover
+					}
+					#exists = memory_participant:new_lover
+					memory_participant:new_lover = {
+						if = {
+							limit = {
+								is_alive = yes
+								NOR = {
+									this = scope:attacker
+									this = scope:defender
+									any_memory = {
+										OR = {
+											has_memory_type = rival_died
+											has_memory_type = nemesis_died
+										}
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+							}
+							if = {
+								limit ={
+									NOT = {is_in_list = recipient_close_relations_list}
+									any_memory = {
+										has_memory_type = lover_died
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+								add_to_temporary_list = recipient_close_relations_list
+							}
+							else_if = {
+								limit ={
+									any_memory = {
+										has_memory_type = soulmate_died
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+								add_opinion = {
+									target = scope:attacker
+									modifier = rv_avenged_very_close
+								}
+							}
+						}
+					}
+				}
+
+				every_memory = {
+					limit = {
+						has_memory_type = became_soulmates
+					}
+					#exists = memory_participant:new_soulmate
+					memory_participant:new_soulmate = {
+						if = {
+							limit = {
+								is_alive = yes
+								NOR = {
+									this = scope:attacker
+									this = scope:defender
+									any_memory = {
+										OR = {
+											has_memory_type = rival_died
+											has_memory_type = nemesis_died
+										}
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+							}
+							if = {
+								limit ={
+									any_memory = {
+										has_memory_type = soulmate_died
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+								add_opinion = {
+									target = scope:attacker
+									modifier = rv_avenged_very_close
+								}
+							}
+							else_if = {
+								limit ={
+									NOT = {is_in_list = recipient_close_relations_list}
+									any_memory = {
+										has_memory_type = lover_died
+										exists = memory_participant:dead_relation
+										memory_participant:dead_relation = {
+											this = scope:avenged_char
+										}
+									}
+								}
+								add_to_temporary_list = recipient_close_relations_list
+							}
+						}
+					}
+				}
+
+				if = {
+					limit = {
+						any_in_list = {
+							list = recipient_close_relations_list
+							always = yes
+						}
+					}
+					every_in_list = {
+						list = recipient_close_relations_list
+						#custom = all_friends_and_lovers
+						add_opinion = {
+							target = scope:attacker
+							modifier = rv_avenged_close_relation
+						}
+					}
+				}
+
+				every_in_list = {
+					list = recipient_family_opinion_list
+					remove_from_list = recipient_family_opinion_list
+				}
+
+				every_in_list = {
+					list = recipient_close_relations_list
+					remove_from_list = recipient_close_relations_list
+				}
+			}
+		}
+	}
+}
+
+create_failed_revenge_memory = {
+	scope:attacker= {
+		create_character_memory = {
+			type = rv_failed_revenge
+			participants = {
+				target_killer = scope:defender
+			}
+		}
+	}
+}
+
+rv_revenge_add_dead_characters_to_root_list_construction = {
+	random_memory = {
+		limit = {
+			has_memory_type = lover_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					NOT = { this = root }
+					#this = scope:rv_defender
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_lovers
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	random_memory = {
+		limit = {
+			has_memory_type = soulmate_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					NOT = { this = root }
+					#this = scope:rv_defender
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_soulmates
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	random_memory = {
+		limit = {
+			has_memory_type = friend_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					NOT = { this = root }
+					#this = scope:rv_defender
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_friends
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	random_memory = {
+		limit = {
+			has_memory_type = best_friend_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					NOT = { this = root }
+					#this = scope:rv_defender
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_best_friends
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	random_memory = {
+		limit = {
+			has_memory_type = spouse_died
+			memory_participant:dead_relation = {
+				exists = killer
+				killer = {
+					is_alive = yes
+					is_playable_character = yes
+					NOT = { this = root }
+					#this = scope:rv_defender
+					prev = {save_temporary_scope_as = rv_dead_char}
+					NOR = {
+						scope:rv_dead_char = {
+							any_memory = {
+								has_memory_type = rv_was_revenged
+							}
+						}
+						any_secret = {
+							secret_type = secret_murder
+							NOT = {is_known_by = root}
+							exists = secret_target
+							secret_target = {
+								this = scope:rv_dead_char
+							}
+						}
+						root = {
+							any_memory = {
+								OR = {
+									has_memory_type = rival_died
+									has_memory_type = nemesis_died
+								}
+								exists = memory_participant:dead_relation
+								memory_participant:dead_relation = {
+									this = scope:rv_dead_char
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		memory_participant:dead_relation = {
+			save_scope_as = rv_revenging_dead_char
+		}
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_spouses
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+
+	every_close_or_extended_family_member = {
+		only_if_dead = yes
+		limit = {
+			exists = killer
+			killer = {
+				is_alive = yes
+				is_playable_character = yes
+				NOT = { this = root }
+				#this = scope:rv_defender
+				prev = {save_temporary_scope_as = rv_dead_char}
+				NOR = {
+					scope:rv_dead_char = {
+						any_memory = {
+							has_memory_type = rv_was_revenged
+						}
+					}
+					any_secret = {
+						secret_type = secret_murder
+						NOT = {is_known_by = root}
+						exists = secret_target
+						secret_target = {
+							this = scope:rv_dead_char
+						}
+					}
+					root = {
+						any_memory = {
+							OR = {
+								has_memory_type = rival_died
+								has_memory_type = nemesis_died
+							}
+							exists = memory_participant:dead_relation
+							memory_participant:dead_relation = {
+								this = scope:rv_dead_char
+							}
+						}
+					}
+				}
+			}
+		}
+		save_scope_as = rv_revenging_dead_char
+		root = {
+			add_to_variable_list = {
+				name = rv_revenging_dead_families
+				target = scope:rv_revenging_dead_char
+			}
+			add_to_variable_list = {
+				name = rv_to_be_revenged
+				target = scope:rv_revenging_dead_char
+			}
+		}
+	}
+}

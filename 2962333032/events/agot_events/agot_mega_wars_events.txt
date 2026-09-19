@@ -1,0 +1,3781 @@
+﻿namespace = agot_mega_wars
+
+# Initialisation; Setup important variables, story cycles, etc.
+#agot_mega_wars.0001 = { } # moved to on_war_started effect
+
+# The Realm is at war
+agot_mega_wars.0002 = {
+	type = character_event
+	title = agot_mega_wars.0002.t
+	desc = agot_mega_wars.0002.desc
+
+	theme = war
+	left_portrait = {
+		character = ROOT
+		#animation =
+	}
+	right_portrait = {
+		character = scope:right_portrait
+		#animation =
+	}
+
+	immediate = {
+	}
+
+	option = { # Call the banners
+		name = agot_mega_wars.0002.a
+
+		custom_tooltip = agot_mega_wars.0002.a.tt
+	}
+
+	after = { # This sends the call the banners notification to all level 2 vassals of the crown
+		if = {
+			limit = { NOT = { has_variable = mw_consecutive_mw } }
+
+			scope:mw_crown_story = {
+				every_in_list = {
+					variable = mw_choice_event_list
+
+					agot_mw_send_event_to_ruler_or_diarch_effect = yes
+					prev = { remove_list_variable = { name = mw_choice_event_list target = prev } }
+				}
+			}
+		}
+	}
+}
+
+# Choose sides, stay neutral or declare independence
+################################ IMPORTANT NOTE !!! #################################
+################ Please do NOT modify triggers in this event at all! ################
+######### If you want to hook in and don't know how, message me @TitanRogue! ########
+# If you want to pre-set choice for crown or rebel side use mw_is_loyal_to variable #
+############### If you want certain stance options to be unavailable, ###############
+########### combine above mentioned variable with mw_block_other_stances ############
+agot_mega_wars.0003 = {
+	type = character_event
+	title = agot_mega_wars.0002.t
+	desc = {
+		first_valid = {
+			# Internal war
+			triggered_desc = { # you are part of the rebelling faction
+				trigger = {
+					scope:mw_rebel_story.var:mw_source ?= flag:mw_internal
+					agot_mw_root_is_in_mw_faction_trigger = { TARGET = scope:this_scope }
+				}
+				desc = agot_mega_wars.0003.desc.a.10
+			}
+			triggered_desc = { # you are a diarch of a participating ruler
+				trigger = {
+					scope:mw_rebel_story.var:mw_source ?= flag:mw_internal
+					exists = scope:mw_diarch_target
+					is_diarch_of_target = scope:mw_diarch_target
+					scope:mw_crown_story = { is_target_in_variable_list = { name = mw_participants target = root } }
+				}
+				desc = agot_mega_wars.0003.desc.a.11
+			}
+			triggered_desc = { # you are a diarch of a participating ruler
+				trigger = {
+					scope:mw_rebel_story.var:mw_source ?= flag:mw_internal
+					exists = scope:mw_diarch_target
+					is_diarch_of_target = scope:mw_diarch_target
+				}
+				desc = agot_mega_wars.0003.desc.a.12
+			}
+			triggered_desc = { # you are a child Targaryen ruler of Dragonstone
+				trigger = {
+					agot_mw_dragonstone_is_loyal_to_crown_trigger = yes
+					var:mw_is_loyal_to ?= scope:mw_crown
+					has_variable = mw_block_other_stances
+				}
+				desc = agot_mega_wars.0003.desc.a.13
+			}
+			triggered_desc = { # Claimant war was started and you are the beneficient!
+				trigger = {
+					scope:war_claimant ?= root
+				}
+				desc = agot_mega_wars.0003.desc.a.14
+			}
+			triggered_desc = { # Standard desc
+				trigger = {
+					scope:mw_rebel_story.var:mw_source ?= flag:mw_internal
+				}
+				desc = agot_mega_wars.0003.desc.a.15
+			}
+
+			# External war
+			triggered_desc = { # you are a diarch of a participating ruler
+				trigger = {
+					scope:mw_rebel_story.var:mw_source ?= flag:mw_external
+					exists = scope:mw_diarch_target
+					is_diarch_of_target = scope:mw_diarch_target
+				}
+				desc = agot_mega_wars.0003.desc.a.20
+			}
+			triggered_desc = { # Standard desc
+				trigger = {
+					scope:mw_rebel_story.var:mw_source ?= flag:mw_external
+				}
+				desc = agot_mega_wars.0003.desc.a.21
+			}
+		}
+
+		triggered_desc = {
+			trigger = {
+				OR = {
+					scope:mw_ruler_scope.var:mw_is_loyal_to ?= scope:mw_crown
+					scope:mw_ruler_scope.var:mw_is_loyal_to ?= scope:mw_rebel_leader
+				}
+			}
+			desc = agot_mega_wars.0003.desc.b.1
+		}
+		first_valid = {
+			triggered_desc = { # liege is loyalist
+				trigger = {
+					scope:mw_ruler_scope ?= { is_at_war_with = liege }
+				}
+				desc = agot_mega_wars.0003.desc.c.1
+			}
+			triggered_desc = { # liege is loyalist
+				trigger = {
+					NOT = { liege = scope:mw_crown }
+					agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown TYPE = crown LIST_NAME = mw_loyalist_list TARGET = root.liege }
+				}
+				desc = agot_mega_wars.0003.desc.c.2
+			}
+			triggered_desc = { # liege is neutral
+				trigger = {
+					NOR = {
+						liege = scope:mw_crown
+						liege = scope:mw_rebel_leader
+					}
+					agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown TYPE = crown LIST_NAME = mw_neutral_list TARGET = root.liege }
+				}
+				desc = agot_mega_wars.0003.desc.c.3
+			}
+			triggered_desc = { # liege is rebel leader
+				trigger = {
+					NOT = { liege = scope:mw_rebel_leader }
+					agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_rebel_leader TYPE = rebel LIST_NAME = mw_rebel_supporter_list TARGET = root.liege }
+				}
+				desc = agot_mega_wars.0003.desc.c.4
+			}
+			triggered_desc = { # liege is independence leader
+				trigger = {
+					NOR = {
+						liege = scope:mw_crown
+						liege = scope:mw_rebel_leader
+					}
+					agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown TYPE = crown LIST_NAME = mw_independence_rebel_leader_list TARGET = root.liege }
+				}
+				desc = agot_mega_wars.0003.desc.c.5
+			}
+		}
+	}
+
+	theme = war
+	override_effect_2d = { reference = smoke }
+	left_portrait = {
+		character = scope:mw_rebel_leader
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = scope:mw_crown
+		animation = aggressive_sword
+	}
+
+	trigger = {
+		OR = {
+			highest_held_title_tier > tier_barony
+			trigger_if = {
+				limit = { exists = scope:mw_diarch_target }
+				is_diarch_of_target = scope:mw_diarch_target
+			}
+		}
+		trigger_if = {
+			limit = { NOT = { has_variable = mw_is_loyal_to } }
+			NOR = {
+				#agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown TYPE = crown LIST_NAME = mw_loyalist_list TARGET = root }
+				#agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown TYPE = crown LIST_NAME = mw_neutral_list TARGET = root }
+				agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_rebel_leader TYPE = rebel LIST_NAME = mw_rebel_supporter_list TARGET = root }
+			}
+		}
+		trigger_else = {
+			agot_mw_rebel_leader_trigger = no
+		}
+		NOT = { scope:mw_crown_story = { is_target_in_variable_list = { name = mw_independence_rebel_leader_list target = root } } }
+	}
+
+	immediate = {
+		add_character_flag = { flag = mw_had_event_0003 days = 1 }
+
+		if = {
+			limit = { has_variable = mw_is_loyal_to }
+
+			var:mw_is_loyal_to = { save_scope_as = mw_is_loyal_to }
+
+			scope:mw_crown_story = {
+				remove_list_variable = { name = mw_loyalist_list target = prev }
+				remove_list_variable = { name = mw_neutral_list target = prev }
+			}
+			scope:mw_rebel_story = {
+				remove_list_variable = { name = mw_rebel_supporter_list target = prev }
+			}
+		}
+
+		# Determine the ruler that has the title to be tested by agot_mw_choose_stance_modifier
+		if = {
+			limit = {
+				exists = scope:mw_diarch_target
+				is_diarch_of_target = scope:mw_diarch_target
+			}
+			scope:mw_diarch_target = { save_scope_as = mw_ruler_scope }
+		}
+		else = {
+			save_scope_as = mw_ruler_scope
+		}
+
+		if = { # if you already are in rebel list of another ruler, fetch that scope!
+			limit = {
+				any_ruler = {
+					NOR = {
+						this = scope:mw_crown
+						this = scope:mw_rebel_leader
+					}
+					any_owned_story = {
+						story_type = story_agot_mw_rebel
+						is_target_in_variable_list = { name = mw_rebel_supporter_list target = scope:mw_ruler_scope }
+					}
+				}
+			}
+			random_ruler = {
+				limit = {
+					NOR = {
+						this = scope:mw_crown
+						this = scope:mw_rebel_leader
+					}
+					any_owned_story = {
+						story_type = story_agot_mw_rebel
+						is_target_in_variable_list = { name = mw_rebel_supporter_list target = scope:mw_ruler_scope }
+					}
+				}
+				save_scope_as = mw_old_stance_leader
+			}
+		}
+
+		scope:mw_ruler_scope.var:mw_is_loyal_to ?= { save_scope_as = mw_loyalty_target_1 }
+
+
+		scope:mw_ruler_scope.var:mw_is_loyal_to ?= { save_scope_as = mw_loyalty_target_1 }
+
+
+		# Saving these values as scopes saves performance: The choice modifier calls it oftimes and since it is a complex calculation * many times per character * shit ton of characters = performance issues
+		scope:mw_ruler_scope ?= {
+			save_scope_value_as = { name = s_relations_to_crown value = mw_relations_to_crown_value }
+			save_scope_value_as = { name = s_relations_to_rebel_leader value = mw_relations_to_rebel_leader_value }
+			scope:mw_crown = { save_temporary_scope_as = target_scope }
+			save_scope_value_as = { name = s_close_family_crown value = mw_close_family_value }
+			scope:mw_rebel_leader = { save_temporary_scope_as = target_scope }
+			save_scope_value_as = { name = s_close_family_rebel_leader value = mw_close_family_value }
+			if = {
+				limit = { highest_held_title_tier = tier_county }
+				save_scope_value_as = { name = s_leverage_unlock value = mw_leverage_unlock_value }
+			}
+			if = {
+				limit = { agot_mw_has_relation_to_TARGET_trigger = { TARGET = scope:mw_crown } }
+				save_scope_value_as = { name = s_relation_t_crown value = yes }
+			}
+			else = {
+				save_scope_value_as = { name = s_relation_t_crown value = no }
+			}
+			if = {
+				limit = { agot_mw_has_relation_to_TARGET_trigger = { TARGET = scope:mw_rebel_leader } }
+				save_scope_value_as = { name = s_relation_t_rebel_leader value = yes }
+			}
+			else = {
+				save_scope_value_as = { name = s_relation_t_rebel_leader value = no }
+			}
+		}
+		####
+
+		### Check whether one of the stances is positive, else create fallback --> neutral; this prevents a stance being chosen randomly
+		scope:mw_ruler_scope ?= { add_character_flag = { flag = mw_fallback_checker days = 1 } }
+		random = { # loyalist
+			chance = 0
+			scope:mw_ruler_scope ?= { add_character_flag =  { flag = mw_loyalist days = 1 } }
+			agot_mw_choose_stance_modifier = { TARGET = scope:mw_crown.primary_title }
+			modifier = {
+				factor = 1000
+			}
+			modifier = {
+				NOT = { agot_mw_show_stance_trigger = { CHECK = loyalist } }
+				factor = 0
+			}
+		}
+		random = { # neutral
+			chance = 0
+			scope:mw_ruler_scope ?= { add_character_flag =  { flag = mw_neutral days = 1 } }
+			agot_mw_choose_stance_modifier = { TARGET = scope:mw_ruler_scope.primary_title }
+			modifier = {
+				factor = 1000
+			}
+			modifier = {
+				NOT = { agot_mw_show_stance_trigger = { CHECK = neutral } }
+				factor = 0
+			}
+		}
+		random = { # rebel
+			chance = 0
+			scope:mw_ruler_scope ?= { add_character_flag = { flag = mw_rebel days = 1 } }
+			agot_mw_choose_stance_modifier = { TARGET = scope:mw_rebel_leader.primary_title }
+			modifier = {
+				factor = 1000
+			}
+			modifier = {
+				NOT = { agot_mw_show_stance_trigger = { CHECK = rebel } }
+				factor = 0
+			}
+		}
+		random = { # declare independence
+			chance = 0
+			scope:mw_ruler_scope ?= { add_character_flag = { flag = mw_independence days = 1 } }
+			agot_mw_choose_stance_modifier = { TARGET = root.capital_barony }
+			modifier = {
+				factor = 1000
+			}
+			modifier = {
+				NOT = { agot_mw_show_stance_trigger = { CHECK = independence } }
+				factor = 0
+			}
+		}
+		scope:mw_ruler_scope ?= { remove_character_flag = mw_fallback_checker }
+		###
+	}
+
+	option = { # Stay loyal
+		name = { # Standard text
+			trigger = { agot_mw_dragonstone_is_loyal_to_crown_trigger = no }
+			text = agot_mega_wars.0003.a
+		}
+		# Specific texts
+		name = {
+			trigger = {
+				agot_mw_dragonstone_is_loyal_to_crown_trigger = yes
+				var:mw_is_loyal_to ?= scope:mw_crown
+				has_variable = mw_block_other_stances
+				has_character_flag = dragonstone_positive_opinion
+			}
+			text = agot_mega_wars.0003.a.dragonstone_positive
+		}
+		name = {
+			trigger = {
+				agot_mw_dragonstone_is_loyal_to_crown_trigger = yes
+				var:mw_is_loyal_to ?= scope:mw_crown
+				has_variable = mw_block_other_stances
+				NOT = { has_character_flag = dragonstone_positive_opinion }
+			}
+			text = agot_mega_wars.0003.a.dragonstone_negative
+		}
+		#
+
+		trigger = {
+			agot_mw_show_stance_trigger = { CHECK = loyalist } # show loyalist stance option?
+		}
+
+		####################################################################################################
+
+		agot_mw_betray_loyality_var_effect = { TARGET = scope:mw_crown }
+
+		if = { # in case a diarch is getting this event: this sets the stance for the diarch's target
+			limit = {
+				exists = scope:mw_diarch_target
+				is_diarch_of_target = scope:mw_diarch_target # root is diarch of diarch_target
+				scope:mw_crown_story = { is_target_in_variable_list = { name = mw_participants target = scope:mw_diarch_target } }
+			}
+
+			agot_mw_join_loyalists_effect = { RULER = scope:mw_diarch_target CROWN = scope:mw_crown }
+		}
+		if = { # this sets the stance for the diarch or for the non-diarch ruler if he is not in an active diarchy
+			limit = {
+				OR = {
+					AND = { # the diarch scope exists
+						exists = scope:mw_diarch_target
+						OR = { # either root is diarch of target --> make root join same side; or root is not diarch of target --> ruler is free
+							is_diarch_of_target = scope:mw_diarch_target # in case a diarch is getting this event
+							scope:mw_diarch_target != root # in case the proper ruler gets the event
+						}
+					}
+					NOT = { exists = scope:mw_diarch_target }
+				}
+			}
+
+			agot_mw_join_loyalists_effect = { RULER = root CROWN = scope:mw_crown }
+		}
+
+		if = {
+			limit = {
+				exists = var:mw_is_faction_member_of
+				var:mw_is_faction_member_of = scope:mw_rebel_leader
+			}
+			custom_tooltip = agot_mega_wars.0003.a.tt
+		}
+
+		hidden_effect = {
+			scope:mw_crown_story ?= {
+				if = {
+					limit = {
+						var:mw_mode ?= flag:mw_lite
+						trigger_if = {
+							limit = {
+								NOR = {
+									scope:mw_ruler_scope.liege = scope:mw_crown
+									scope:mw_ruler_scope.liege = scope:mw_rebel_leader
+								}
+							}
+							NOT = { is_target_in_variable_list = { name = mw_loyalist_list target = scope:mw_ruler_scope.liege } }
+						}
+						trigger_else = { always = no }
+					}
+
+					every_in_list = {
+						variable = mw_wars
+
+						if = {
+							limit = { is_attacker = scope:mw_crown }
+
+							add_attacker = root
+						}
+						if = {
+							limit = { is_defender = scope:mw_crown }
+
+							add_defender = root
+						}
+					}
+				}
+			}
+		}
+		####################################################################################################
+
+		ai_chance = {
+			base = 0
+
+			agot_mw_choose_stance_modifier = { TARGET = scope:mw_crown.primary_title }
+		}
+	}
+
+	option = { # Stay neutral
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						desc = agot_mega_wars.0003.ba
+						trigger = {
+							exists = scope:mw_old_stance_leader
+							agot_mw_is_in_another_rebel_list_bilateral_trigger = { RULER = scope:mw_ruler_scope TARGET = scope:mw_old_stance_leader }
+						}
+					}
+					triggered_desc = {
+						desc = agot_mega_wars.0003.bb
+						trigger = {
+							has_variable = mw_claimant_had_0020
+						}
+					}
+					desc = agot_mega_wars.0003.bc
+				}
+			}
+		}
+
+		trigger = {
+			agot_mw_show_stance_trigger = { CHECK = neutral } # show neutral stance option?
+		}
+
+		####################################################################################################
+
+		if =  { # Normal 'neutral' stance
+			limit = {
+				NOT = {
+					exists = scope:mw_old_stance_leader # are you already in the list of a rebel leader?
+					agot_mw_is_in_another_rebel_list_bilateral_trigger = { RULER = scope:mw_ruler_scope TARGET = scope:mw_old_stance_leader } # you are not in the rebel list of mw_rebel_leader
+				}
+			}
+
+			if = { # in case a diarch is getting this event: this sets the stance for the diarch's target
+				limit = {
+					exists = scope:mw_diarch_target
+					is_diarch_of_target = scope:mw_diarch_target # root is diarch of diarch_target
+					scope:mw_crown_story = { is_target_in_variable_list = { name = mw_participants target = scope:mw_diarch_target } }
+				}
+
+				agot_mw_stay_neutral_effect = { RULER = scope:mw_diarch_target CROWN = scope:mw_crown }
+			}
+			if = { # this sets the stance for the diarch or for the non-diarch ruler if he is not in an active diarchy
+				limit = {
+					OR = {
+						AND = { # the diarch scope exists
+							exists = scope:mw_diarch_target
+							OR = { # either root is diarch of target --> make root join same side; or root is not diarch of target --> ruler is free
+								is_diarch_of_target = scope:mw_diarch_target # in case a diarch is getting this event
+								scope:mw_diarch_target != root # in case the proper ruler gets the event
+							}
+						}
+						NOT = { exists = scope:mw_diarch_target }
+					}
+				}
+
+				agot_mw_stay_neutral_effect = { RULER = root CROWN = scope:mw_crown }
+			}
+		}
+		else = { # you already are in a mw
+			custom_tooltip = agot_mega_wars.0003.b.tt
+		}
+
+		####################################################################################################
+
+		ai_chance = {
+			base = 0
+
+			agot_mw_choose_stance_modifier = { TARGET = scope:mw_ruler_scope.primary_title }
+		}
+	}
+
+	option = { # Join enemies
+		name = agot_mega_wars.0003.c
+
+		trigger = {
+			agot_mw_show_stance_trigger = { CHECK = rebel } # show rebel stance option?
+		}
+
+		####################################################################################################
+
+		agot_mw_betray_loyality_var_effect = { TARGET = scope:mw_rebel_leader }
+
+		if = { # in case a diarch is getting this event: this sets the stance for the diarch's target
+			limit = {
+				exists = scope:mw_diarch_target
+				is_diarch_of_target = scope:mw_diarch_target # root is diarch of diarch_target
+				scope:mw_crown_story = { is_target_in_variable_list = { name = mw_participants target = scope:mw_diarch_target } }
+			}
+
+			agot_mw_join_rebels_effect = { RULER = scope:mw_diarch_target REBEL_LEADER = scope:mw_rebel_leader }
+		}
+		if = { # this sets the stance for the diarch or for the non-diarch ruler if he is not in an active diarchy
+			limit = {
+				OR = {
+					AND = { # the diarch scope exists
+						exists = scope:mw_diarch_target
+						OR = { # either root is diarch of target --> make root join same side; or root is not diarch of target --> ruler is free. join side
+							is_diarch_of_target = scope:mw_diarch_target # in case a diarch is getting this event
+							scope:mw_diarch_target != root # in case the proper ruler gets the event
+						}
+					}
+					NOT = { exists = scope:mw_diarch_target }
+				}
+			}
+
+			agot_mw_join_rebels_effect = { RULER = root REBEL_LEADER = scope:mw_rebel_leader }
+		}
+
+		if = {
+			limit = {
+				scope:war = { using_cb = agot_independence_war }
+				highest_held_title_tier > tier_duchy # Kingdoms and Empires
+			}
+
+			custom_tooltip = agot_mega_wars.0003.c.tt.independence
+		}
+
+		hidden_effect = {
+			scope:mw_crown_story ?= {
+				if = {
+					limit = {
+						var:mw_mode ?= flag:mw_lite
+						exists = scope:mw_ruler_scope.liege
+						scope:mw_ruler_scope.liege != scope:mw_rebel_leader
+						trigger_if = {
+							limit = {
+								NOR = {
+									scope:mw_ruler_scope.liege = scope:mw_crown
+									scope:mw_ruler_scope.liege = scope:mw_rebel_leader
+								}
+							}
+							is_target_in_variable_list = { name = mw_loyalist_list target = scope:mw_ruler_scope.liege }
+						}
+						trigger_else = { always = yes }
+					}
+
+					every_in_list = {
+						variable = mw_wars
+
+						if = {
+							limit = { is_attacker = scope:mw_rebel_leader }
+
+							add_attacker = root
+						}
+						if = {
+							limit = { is_defender = scope:mw_rebel_leader }
+
+							add_defender = root
+						}
+					}
+				}
+			}
+		}
+
+		####################################################################################################
+
+		ai_chance = {
+			base = 0
+
+			agot_mw_choose_stance_modifier = { TARGET = scope:mw_rebel_leader.primary_title }
+		}
+	}
+
+	option = { # Declare independence | This option may only show up if the started war is not an independence war!
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = { # If your liege started the independence war, show that
+						desc = agot_mega_wars.0003.da
+						trigger = {
+							scope:mw_crown_story ?= { is_target_in_variable_list = { name = mw_independence_rebel_leader_list target = scope:mw_ruler_scope.liege } }
+						}
+					}
+					triggered_desc = { # Standard declare independence desc
+						desc = agot_mega_wars.0003.db
+						trigger = { }
+					}
+				}
+			}
+		}
+
+		trigger = {
+			agot_mw_show_stance_trigger = { CHECK = independence } # show independence option?
+		}
+
+		####################################################################################################
+
+		if = {
+			limit = { has_game_rule = agot_debug_on }
+			set_variable = { name = agot_debug_ruler_stance value = flag:independence }
+		}
+
+		if = {
+			limit = {
+				highest_held_title_tier > tier_duchy # Kingdoms and Empires
+				scope:mw_rebel_story ?= { NOT = { is_target_in_variable_list = { name = mw_faction_members_list target = scope:mw_ruler_scope } } }
+				scope:mw_crown_story ?= { NOT = { is_target_in_variable_list = { name = mw_independence_rebel_leader_list target = scope:mw_ruler_scope.liege } } } # if you are kingdom tier and your empire tier liege declares independence you can not declare independence yourself
+			}
+
+			scope:mw_crown_story = {
+				add_to_variable_list = { name = mw_independence_rebel_leader_list target = root }
+			}
+		}
+		else_if = {
+			limit = { scope:mw_rebel_story ?= { is_target_in_variable_list = { name = mw_faction_members_list target = scope:mw_ruler_scope } } }
+			agot_mw_join_rebels_effect = { RULER = root REBEL_LEADER = scope:mw_rebel_leader }
+		}
+		else = {
+			random_liege_or_above = {
+				limit = {
+					save_temporary_scope_as = temp_liege_or_above
+					agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown TYPE = crown LIST_NAME = mw_independence_rebel_leader_list TARGET = scope:temp_liege_or_above }
+				}
+
+				add_to_variable_list = { name = mw_independence_rebels_list target = root }
+			}
+		}
+
+		####################################################################################################
+
+		ai_chance = {
+			base = 0
+
+			agot_mw_choose_stance_modifier = { TARGET = scope:mw_ruler_scope.capital_barony }
+		}
+	}
+
+	after = { #
+		if = {
+			limit = {
+				exists = scope:mw_diarch_target
+				is_diarch_of_target = scope:mw_diarch_target
+			}
+
+			scope:mw_diarch_target = { trigger_event = agot_mega_wars.0005 }
+		}
+		if = { # Debug stance chance
+			limit = { debug_only = yes }
+
+			random_list = {
+				0 = { # loyalist
+					trigger = { agot_mw_show_stance_trigger = { CHECK = loyalist } }
+					custom_tooltip = MW_DEBUG_JOIN_LOYALISTS
+					agot_mw_choose_stance_modifier = { TARGET = scope:mw_crown.primary_title }
+				}
+				0 = { # neutral
+					trigger = { agot_mw_show_stance_trigger = { CHECK = neutral } }
+					custom_tooltip = MW_DEBUG_STAY_NEUTRAL
+					agot_mw_choose_stance_modifier = { TARGET = scope:mw_ruler_scope.primary_title }
+				}
+				0 = { # rebel
+					trigger = { agot_mw_show_stance_trigger = { CHECK = rebel } }
+					custom_tooltip = MW_DEBUG_JOIN_REBELS
+					agot_mw_choose_stance_modifier = { TARGET = scope:mw_rebel_leader.primary_title }
+				}
+				0 = { # declare independence
+					trigger = { agot_mw_show_stance_trigger = { CHECK = independence } }
+					custom_tooltip = MW_DEBUG_DECLARES_INDEPENDENCE
+					agot_mw_choose_stance_modifier = { TARGET = scope:mw_ruler_scope.capital_barony }
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				exists = scope:mw_diarch_target
+				is_diarch_of_target = scope:mw_diarch_target
+				scope:mw_crown_story = { is_target_in_variable_list = { name = mw_participants target = scope:mw_diarch_target } }
+			}
+
+			scope:mw_crown_story = {
+				remove_list_variable = { name = mw_participants target = scope:mw_diarch_target }
+				remove_list_variable = { name = mw_participants target = root }
+			}
+			agot_mw_send_event_3_to_vassals_effect = { RULER = scope:mw_diarch_target }
+			agot_mw_send_event_3_to_vassals_effect = { RULER = root }
+		}
+		else = {
+			agot_mw_send_event_3_to_vassals_effect = { RULER = root }
+			scope:mw_crown_story = {
+				remove_list_variable = { name = mw_participants target = root }
+			}
+		}
+
+
+		remove_variable = mw_is_faction_member_of
+
+		if = { # get rid of mw_is_loyal_to and mw_block_other_stances if applicable
+			limit = {
+				OR = {
+					var:mw_is_loyal_to ?= scope:mw_crown
+					var:mw_is_loyal_to ?= scope:mw_rebel_leader
+				}
+			}
+
+			remove_variable = mw_is_loyal_to
+			remove_variable = mw_block_other_stances
+		}
+
+		scope:mw_crown_story = {
+			if = {
+				limit = { NOT = { has_variable_list = mw_participants } }
+
+				if = { # deal with rulers who declared independence
+					limit = { has_variable_list = mw_independence_rebel_leader_list }
+
+					story_owner = { trigger_event = agot_mega_wars.0011 }
+				}
+
+				every_player = {
+					limit = {
+						NOT = { scope:mw_crown_story.var:mw_mode ?= flag:mw_lite }
+						NOT = { scope:war = { is_participant = prev } }
+						OR = {
+							agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown TYPE = crown LIST_NAME = mw_loyalist_list TARGET = scope:this_scope }
+							agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_rebel_leader TYPE = rebel LIST_NAME = mw_rebel_supporter_list TARGET = scope:this_scope }
+						}
+					}
+
+					trigger_event = agot_mega_wars.0004
+				}
+			}
+		}
+
+		# Clean temporary flags needed for fallback calculation
+		remove_character_flag = mw_loyalist
+		remove_character_flag = mw_neutral
+		remove_character_flag = mw_rebel
+		remove_character_flag = mw_independence
+	}
+}
+
+# Flavour event for players to actively join the war
+agot_mega_wars.0004 = {
+	type = character_event
+	title = agot_mega_wars.0002.t
+	desc = agot_mega_wars.0004.desc
+
+	theme = war
+	left_portrait = {
+		character = ROOT
+		#animation =
+	}
+	right_portrait = {
+		character = scope:mw_target_scope
+		#animation =
+	}
+
+	immediate = {
+		if = {
+			limit = { agot_mw_is_in_loyalist_list_trigger = { TARGET = root } }
+
+			random_ruler = {
+				limit = { agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:this_scope TYPE = crown LIST_NAME = mw_loyalist_list TARGET = root } }
+
+				save_scope_as = mw_target_scope
+
+				random_owned_story = {
+					limit = {
+						story_type = story_agot_mw_crown
+						is_target_in_variable_list = { name = mw_loyalist_list target = root }
+					}
+
+					save_scope_as = mw_story_scope
+				}
+			}
+		}
+		else_if = {
+			limit = { agot_mw_is_in_rebel_list_trigger = { TARGET = root } }
+
+			random_ruler = {
+				limit = { agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:this_scope TYPE = rebel LIST_NAME = mw_rebel_supporter_list TARGET = root } }
+
+				save_scope_as = mw_target_scope
+
+				random_owned_story = {
+					limit = {
+						story_type = story_agot_mw_rebel
+						is_target_in_variable_list = { name = mw_rebel_supporter_list target = root }
+					}
+
+					save_scope_as = mw_story_scope
+				}
+			}
+		}
+	}
+
+	option = { # Join the war
+		name = agot_mega_wars.0004.a
+
+		scope:mw_story_scope = {
+			every_in_list = {
+				variable = mw_wars
+
+				if = {
+					limit = { is_attacker = scope:mw_target_scope }
+
+					add_attacker = root
+				}
+				if = {
+					limit = { is_defender = scope:mw_target_scope }
+
+					add_defender = root
+				}
+			}
+		}
+
+	}
+
+	option = { # Don't join the war
+		name = agot_mega_wars.0004.b
+
+	}
+}
+
+# You have a diarch and he decided which side to join; inform actual ruler about decision
+agot_mega_wars.0005 = {
+	type = character_event
+	title = agot_mega_wars.0002.t
+	desc = {
+		triggered_desc = {
+			desc = agot_mega_wars.0005.desc.a
+			trigger = { agot_mw_is_in_loyalist_list_trigger = { TARGET = root } }
+		}
+		triggered_desc = {
+			desc = agot_mega_wars.0005.desc.b
+			trigger = { agot_mw_is_in_neutral_list_trigger = { TARGET = root } }
+		}
+		triggered_desc = {
+			desc = agot_mega_wars.0005.desc.c
+			trigger = { agot_mw_is_in_rebel_list_trigger = { TARGET = root } }
+		}
+		desc = agot_mega_wars.0005.desc
+	}
+
+	theme = war
+	left_portrait = {
+		character = ROOT
+		#animation =
+	}
+	right_portrait = {
+		character = diarch
+		#animation =
+	}
+	lower_left_portrait = {
+		character = scope:attacker
+		#animation =
+	}
+	lower_right_portrait = {
+		character = scope:defender
+		#animation =
+	}
+
+	immediate = {
+
+	}
+
+	option = { # It is what it is...
+		name = agot_mega_wars.0005.a
+
+	}
+}
+
+# Ruler declares independence
+agot_mega_wars.0010 = {
+	type = character_event
+	title = agot_mega_wars.0010.t
+	desc = agot_mega_wars.0010.desc
+
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+	right_portrait = {
+		character = scope:mw_new_rebel_leader
+		#animation =
+	}
+
+	trigger = {
+	}
+
+	immediate = {
+		save_scope_as = mw_independence_rebel_leader
+		if = {
+			limit = { exists = root.var:agot_pwl_direct }
+			liege = {
+				root.var:agot_pwl_direct = { save_scope_as = mw_crown }
+			}
+		}
+		else_if = {
+			limit = { NOT = { liege = root } }
+			liege = { save_scope_as = mw_crown }
+		}
+		scope:mw_crown = {
+			random_owned_story = {
+				limit = { story_type = story_agot_mw_crown }
+				save_scope_as = mw_crown_story
+
+				add_to_variable_list = { name = mw_independence_rebel_leader_list target = root }
+			}
+		}
+	}
+
+	option = { #
+		name = agot_mega_wars.0010.a
+
+		scope:mw_crown = { trigger_event = { id = agot_mega_wars.0011 days = { 5 10 } } } # Send notification to liege
+	}
+}
+
+# Event for Crown | Vassal proclaims his independence
+agot_mega_wars.0011 = {
+	type = character_event
+	title = agot_mega_wars.0011.t
+	desc = {
+		triggered_desc = {
+			trigger = { scope:mw_crown_story = { variable_list_size = { name = mw_independence_rebel_leader_list value = 1 } } }
+			desc = agot_mega_wars.0011.desc.a
+		}
+		triggered_desc = {
+			trigger = { scope:mw_crown_story = { variable_list_size = { name = mw_independence_rebel_leader_list value = 2 } } }
+			desc = agot_mega_wars.0011.desc.b
+		}
+		triggered_desc = {
+			trigger = { scope:mw_crown_story = { variable_list_size = { name = mw_independence_rebel_leader_list value > 2 } } }
+			desc = agot_mega_wars.0011.desc.c
+		}
+	}
+
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+	right_portrait = {
+		character = scope:mw_independence_rebel_leader
+		#animation =
+	}
+
+	trigger = {
+		#scope:mw_crown_story = { has_variable_list = mw_independence_rebel_leader_list }
+	}
+
+	immediate = {
+		scope:mw_crown_story = {
+			random_in_list = {
+				variable = mw_independence_rebel_leader_list
+				weight = {
+					base = 1
+					modifier = {
+						add = 1000
+						highest_held_title_tier = tier_empire
+					}
+					modifier = {
+						add = 700
+						highest_held_title_tier = tier_kingdom
+					}
+					modifier = {
+						add = 350
+						highest_held_title_tier = tier_duchy
+					}
+				}
+				save_scope_as = mw_independence_rebel_leader
+			}
+			if = {
+				limit = { variable_list_size = { name = mw_independence_rebel_leader_list value > 1 } }
+
+				random_in_list = {
+					variable = mw_independence_rebel_leader_list
+
+					limit = { NOT = { this = scope:mw_independence_rebel_leader } }
+
+					save_scope_as = mw_independence_rebel_loc_scope
+				}
+			}
+		}
+		if = {
+			limit = { NOT = { exists = scope:mw_crown } }
+
+			save_scope_as = mw_crown
+		}
+		save_scope_value_as = {
+			name = agot_mw_military_strength_factor
+			value = {
+				value = 0
+				add = current_military_strength
+				divide = {
+					add = scope:mw_independence_rebel_leader.current_military_strength
+					every_character_war = {
+						limit = {
+							OR = {
+								primary_attacker = root
+								primary_defender = root
+							}
+						}
+
+						if = {
+							limit = { primary_attacker = root }
+							add = primary_defender.current_military_strength
+						}
+						else = {
+							add = primary_attacker.current_military_strength
+						}
+					}
+					min = 1
+				}
+				#multiply = 100
+			}
+		}
+	}
+
+	option = { # Make them pay
+		name = agot_mega_wars.0011.a
+
+		save_scope_value_as = { name = crown_dec_independence value = flag:decline }
+
+		if = {
+			limit = {
+				exists = scope:mw_start_up
+				scope:mw_start_up = flag:yes
+			}
+
+			set_variable = { name = mw_consecutive_mw days = 1 }
+		}
+
+		scope:mw_crown_story = {
+			every_in_list = {
+				variable = mw_independence_rebel_leader_list
+
+				save_temporary_scope_as = temp_loc_scope
+
+				custom_tooltip = agot_mega_wars.0011.a.tt
+			}
+		}
+
+		ai_chance = {
+			base = 60
+
+			ai_value_modifier = {
+				ai_vengefulness = 0.5
+				ai_greed = 0.5
+				ai_energy = 0.5
+			}
+			modifier = { # rational ai would let independence leader go, if outnumbered; irrational makes dumb decisions
+				any_character_war = { # what are the odds in other wars char is particpating as primary
+					count > 0
+					OR = {
+						primary_attacker = root
+						primary_defender = root
+					}
+				}
+
+				add = {
+					if = { # increase chance of irrational characters to seal their doom
+						limit = { scope:agot_mw_military_strength_factor < 0.75 }
+						add = {
+							value = ai_rationality
+							multiply = -0.5
+						}
+					}
+					else = { add = 20 }
+					add = {
+						value = ai_boldness
+						multiply = 0.5
+					}
+					multiply = {
+						value = 1
+						add = scope:agot_mw_military_strength_factor
+					}
+				}
+			}
+			modifier = {
+				has_trait = vengeful
+				add = 20
+			}
+			modifier = {
+				has_trait = arrogant
+				add = 10
+			}
+			modifier = {
+				has_trait = stubborn
+				add = 10
+			}
+			modifier = {
+				has_trait = wrathful
+				add = 10
+			}
+			modifier = {
+				has_trait = paranoid
+				add = 10
+			}
+
+			modifier = {
+				has_trait = craven # AHHHHHH Please dont hurty hurty!!!
+				add = -40
+			}
+			modifier = {
+				has_trait = trusting
+				add = -10
+			}
+		}
+	}
+
+	option = { # Let them go...
+		name = agot_mega_wars.0011.b
+
+		save_scope_value_as = { name = crown_dec_independence value = flag:accept }
+
+		scope:mw_crown_story = {
+			every_in_list = {
+				variable = mw_independence_rebel_leader_list
+
+				save_temporary_scope_as = temp_loc_scope
+
+				custom_tooltip = agot_mega_wars.0011.b.tt
+			}
+		}
+
+		add_character_modifier = { modifier = agot_mw_let_traitors_go_modifier years = 5 }
+
+		add_dread = -50
+		add_prestige = -1000
+
+		ai_chance = {
+			base = 40
+		}
+	}
+
+	after = {
+		scope:mw_crown_story = {
+			every_in_list = {
+				variable = mw_independence_rebel_leader_list
+
+				trigger_event = { id = agot_mega_wars.0012 days = { 5 10 } }
+			}
+		}
+	}
+}
+
+# Crown's response to your independence proclamation
+agot_mega_wars.0012 = {
+	type = letter_event
+	opening = {
+		desc = agot_mega_wars.0012.opening
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:crown_dec_independence = flag:decline }
+				desc = agot_mega_wars.0012.desc.a
+			}
+			triggered_desc = {
+				trigger = { scope:crown_dec_independence = flag:accept }
+				desc = agot_mega_wars.0012.desc.b
+			}
+		}
+	}
+
+	sender = {
+		character = scope:mw_crown
+		#animation =
+	}
+
+	trigger = {
+	}
+
+	immediate = {
+	}
+
+	option = { # They declined --> war
+		name = agot_mega_wars.0012.a
+
+		trigger = { scope:crown_dec_independence = flag:decline }
+
+		if = {
+			limit = { this = scope:mw_independence_rebel_leader }
+
+			scope:mw_crown_story = {
+				if = {
+					limit = { has_variable_list = mw_independence_rebel_leader_list }
+
+					every_in_list = {
+						variable = mw_independence_rebel_leader_list
+						limit = { NOT = { this = scope:mw_independence_rebel_leader } }
+
+						set_variable = { name = mw_is_loyal_to value = scope:mw_independence_rebel_leader }
+					}
+				}
+
+				root = { # declare the war
+					start_war = {
+						casus_belli = agot_independence_war
+						target = scope:mw_crown
+					}
+				}
+
+				if = {
+					limit = { has_variable_list = mw_independence_rebel_leader_list }
+
+					every_in_list = {
+						variable = mw_independence_rebel_leader_list
+
+						save_scope_as = temp_ind_rebel_scope
+
+						root = {
+							random_character_war = {
+								limit = {
+									using_cb = agot_independence_war
+									NOT = { is_participant = scope:temp_ind_rebel_scope }
+								}
+
+								add_attacker = scope:temp_ind_rebel_scope
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	option = { # Crown accepted
+		name = agot_mega_wars.0012.b
+
+		trigger = { scope:crown_dec_independence = flag:accept }
+
+		remove_list_variable = { name = mw_loyalist_list target = prev }
+		remove_list_variable = { name = mw_neutral_list target = prev }
+
+		scope:mw_crown_story ?= {
+			every_in_list = {
+				variable = mw_loyalist_list
+
+				limit = {
+					var:agot_pwl_direct ?= scope:mw_independence_rebel_leader
+				}
+
+				set_variable = { name = agot_pwl_top value = var:agot_pwl_direct }
+			}
+		}
+
+		agot_mw_become_independent = yes
+
+		hidden_effect = {
+			remove_variable = agot_pwl_direct
+			remove_variable = agot_pwl_top
+			agot_mw_rebuild_realm_effect = { REBUILD_MODE = only_rebel TARGET = root }
+
+			# Remove vassals and root from stance lists
+			scope:mw_crown_story = {
+				remove_list_variable = { name = mw_loyalist_list target = prev }
+				remove_list_variable = { name = mw_neutral_list target = prev }
+			}
+			every_ruler = { # remove vassals from rebel supporter list
+				limit = {
+					any_owned_story = {
+						story_type = story_agot_mw_rebel
+						any_in_list = {
+							variable = mw_rebel_supporter_list
+
+							highest_held_title_tier > tier_barony
+							exists = var:agot_pwl_direct
+							OR = {
+								var:agot_pwl_direct = root
+								any_liege_or_above = { var:agot_pwl_direct = root }
+								AND = {
+									exists = var:agot_pwl_direct.var:agot_pwl_direct
+									var:agot_pwl_direct.var:agot_pwl_direct = root
+								}
+							}
+						}
+					}
+				}
+				random_owned_story = {
+					limit = {
+						story_type = story_agot_mw_rebel
+						var:mw_crown_story_var ?= scope:mw_crown_story
+					}
+
+					remove_list_variable = { name = mw_rebel_supporter_list target = root }
+
+					every_in_list = {
+						variable = mw_rebel_supporter_list
+
+						limit = {
+							highest_held_title_tier > tier_barony
+							exists = var:agot_pwl_direct
+							OR = {
+								var:agot_pwl_direct = root
+								any_liege_or_above = { var:agot_pwl_direct = root }
+								AND = {
+									exists = var:agot_pwl_direct.var:agot_pwl_direct
+									var:agot_pwl_direct.var:agot_pwl_direct = root
+								}
+							}
+						}
+
+						scope:mw_rebel_story = { remove_list_variable = { name = mw_rebel_supporter_list target = prev } }
+					}
+				}
+			}
+			every_vassal_or_below = { # remove vassals from loyalist and neutral list
+				limit = { highest_held_title_tier > tier_barony }
+
+				scope:mw_crown_story = { remove_list_variable = { name = mw_loyalist_list target = prev } }
+				scope:mw_crown_story = { remove_list_variable = { name = mw_neutral_list target = prev } }
+			}
+		}
+
+		agot_mw_clear_data_effect = yes
+		every_vassal_or_below = {
+			limit = { highest_held_title_tier > tier_barony }
+
+			agot_mw_clear_data_effect = yes
+		}
+
+		clear_variable_list = mw_independence_rebels_list
+		scope:mw_crown_story = { remove_list_variable = { name = mw_independence_rebel_leader_list target = root } }
+	}
+}
+
+# Faction claimant war | claimant may choose to lead the rebellion or stay neutral
+agot_mega_wars.0020 = {
+	type = letter_event
+	opening = {
+		desc = agot_mega_wars.0020.opening
+	}
+	desc = agot_mega_wars.0020.desc
+
+	sender = {
+		character = scope:faction_leader
+		#animation =
+	}
+
+	# В последнее время мне трудно жить. Я вижу, я стал понимать слишком много.
+
+	immediate = {
+	}
+
+	option = { # Become leader of war
+		name = agot_mega_wars.0020.a
+
+		trigger = { NOT = { scope:faction_target = { has_strong_hook = scope:faction_claimant } } }
+
+		show_as_unavailable = {
+			scope:faction_target = { has_strong_hook = scope:faction_claimant }
+		}
+
+		save_scope_value_as = {
+			name = mw_0020_option
+			value = flag:opt_a
+		}
+
+		if = {
+			limit = { is_allied_to = scope:faction_target }
+			add_prestige = -500
+			break_alliance = scope:faction_target
+		}
+
+		scope:faction_leader = { # transfer data from olf leader to new leader
+			if = {
+				limit = { has_variable_list = mw_faction_members_list }
+
+				every_in_list = {
+					variable = mw_faction_members_list
+
+					if = {
+						limit = { NOT = { this = root } }
+						set_variable = { name = mw_is_faction_member_of value = root }
+					}
+					root = {
+						add_to_variable_list = {
+							name = mw_faction_members_list
+							target = prev
+						}
+						add_to_variable_list = {
+							name = mw_make_independent_list
+							target = prev
+						}
+					}
+				}
+				clear_variable_list = mw_faction_members_list
+				clear_variable_list = mw_make_independent_list
+			}
+		}
+
+		save_scope_as = mw_faction_leader
+		agot_mw_faction_war_claimant_effect = yes
+
+		ai_chance = {
+			base = 100
+
+			modifier = {
+				add = {
+					add = ai_greed
+					add = ai_boldness
+				}
+			}
+		}
+	}
+
+	option = { # Let the faction do the job, you do not join
+		name = {
+			trigger = { NOT = { scope:faction_target = { has_strong_hook = scope:faction_claimant } } }
+			text = agot_mega_wars.0020.b
+		}
+		name = {
+			trigger = { scope:faction_target = { has_strong_hook = scope:faction_claimant } }
+			text = agot_mega_wars.0020.c
+		}
+
+		save_scope_value_as = {
+			name = mw_0020_option
+			value = flag:opt_b
+		}
+
+		set_variable = { name = mw_claimant_had_0020 days = 20 } # mark claimant to have received this event to block him from choosing any side --> neutral.
+
+		scope:faction_leader = {
+			save_scope_as = mw_faction_leader
+		}
+
+		ai_chance = {
+			base = 20
+		}
+	}
+
+	after = { #
+		scope:faction_leader = { trigger_event = agot_mega_wars.0021 }
+	}
+}
+
+# Demand presser receives answer from claimant
+agot_mega_wars.0021 = {
+	type = letter_event
+	opening = {
+		desc = agot_mega_wars.0021.opening
+	}
+	desc = {
+		triggered_desc = {
+			trigger = { scope:mw_0020_option = flag:opt_a }
+			desc = agot_mega_wars.0021.desc.a
+		}
+		triggered_desc = {
+			trigger = { scope:mw_0020_option = flag:opt_b }
+			desc = agot_mega_wars.0021.desc.b
+		}
+	}
+
+	sender = {
+		character = scope:faction_claimant
+		#animation =
+	}
+
+	immediate = {
+		if = {
+			limit = { scope:mw_0020_option = flag:opt_a }
+
+			show_as_tooltip = {
+				scope:faction_claimant = { agot_mw_faction_war_claimant_effect = yes }
+			}
+		}
+	}
+
+	option = { #
+		name = agot_mega_wars.0021.a
+		if = {
+			limit = { scope:mw_0020_option = flag:opt_b }
+
+			scope:faction_claimant = { agot_mw_faction_war_claimant_effect = yes }
+		}
+	}
+
+	after = { #
+	}
+}
+
+
+### Mega Wars Aftermath ###
+
+# To be King or not to be King...
+agot_mega_wars.0500 = {
+	type = character_event
+	title = agot_mega_wars.0500.t
+	desc = {
+		triggered_desc = {
+			trigger = {
+				NOT = { has_character_flag = response_event }
+			}
+			desc = agot_mega_wars.0500.desc.a
+		}
+		triggered_desc = {
+			trigger = {
+				exists = scope:claim_ancestor
+				NOT = { has_character_flag = response_event }
+			}
+			desc = agot_mega_wars.0500.desc.ba
+		}
+		triggered_desc = {
+			trigger = {
+				has_character_flag = num_1
+				NOT = { has_character_flag = response_event }
+			}
+			desc = agot_mega_wars.0500.desc.bb
+		}
+		triggered_desc = {
+			trigger = {
+				scope:mw_num_lp ?= 2
+				NOT = { has_character_flag = response_event }
+			}
+			desc = agot_mega_wars.0500.desc.bc
+		}
+		triggered_desc = {
+			trigger = {
+				scope:mw_num_lp ?= 3
+				NOT = { has_character_flag = response_event }
+			}
+			desc = agot_mega_wars.0500.desc.bd
+		}
+		triggered_desc = {
+			trigger = {
+				NOT = { exists = scope:mw_num_lp }
+				NOT = { has_character_flag = response_event }
+			}
+			desc = agot_mega_wars.0500.desc.be
+		}
+		triggered_desc = {
+			trigger = {
+				exists = scope:mw_num_lp
+				NOT = { has_character_flag = response_event }
+			}
+			desc = agot_mega_wars.0500.desc.c
+		}
+		triggered_desc = {
+			trigger = {
+				has_character_flag = response_event
+			}
+			desc = agot_mega_wars.0500.desc.d
+		}
+	}
+
+	theme = war
+	left_portrait = {
+		character = scope:choosing_ruler
+		#animation =
+	}
+	right_portrait = {
+		character = scope:war_loser
+		#animation =
+	}
+
+	immediate = {
+		scope:attacker = {
+			random_owned_story = {
+				limit = {
+					story_type = story_agot_mw_rebel
+					var:mw_crown_story_var.story_owner ?= scope:defender
+				}
+				save_scope_as = mw_rebel_story # the attacker side must always be the rebel side!
+				var:mw_crown_story_var ?= {
+					save_scope_as = mw_crown_story
+				}
+			}
+			save_scope_as = choosing_ruler
+		}
+		scope:defender = { save_scope_as = war_loser }
+
+		# Clearing flag in case of rejection by offered LP
+		remove_character_flag = mw_gave_up_crown_after_megawar
+		# Localization start #
+		# If we could not set target titles list, then generate it now based on defender's primary title and its capital county
+		if = {
+			limit = { NOT = { any_in_list = { list = target_titles exists = this } } }
+
+			scope:defender.primary_title ?= {
+				add_to_list = target_titles
+				every_in_de_jure_hierarchy = {
+					limit = {
+						tier > tier_barony
+						holder = scope:defender
+						OR = {
+							AND = { # defender is hegemon --> all titles of his capital county empire
+								scope:defender.highest_held_title_tier = tier_hegemony
+								empire ?= scope:defender.primary_title.title_capital_county.empire
+							}
+							AND = { # defender is emperor --> all titles of his capital county kingdom
+								scope:defender.highest_held_title_tier = tier_empire
+								kingdom ?= scope:defender.primary_title.title_capital_county.kingdom
+							}
+							AND = { # defender is king --> all titles of his capital county duchy
+								scope:defender.highest_held_title_tier = tier_kingdom
+								duchy ?= scope:defender.primary_title.title_capital_county.duchy
+							}
+						}
+					}
+					add_to_list = target_titles
+				}
+			}
+		}
+		ordered_in_list = { # Fetch highest tier title
+			list = target_titles
+			order_by = tier
+			max = 1
+			save_scope_as = primary_target_title
+		}
+		if = { # Get LP option
+			limit = {
+				any_in_list = {
+					list = attackers
+					tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+					NOT = { this = scope:choosing_ruler }
+					count = 1
+				}
+			}
+			random_in_list = {
+				list = attackers
+				limit = {
+					tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+					NOT = { this = scope:choosing_ruler }
+				}
+
+				save_scope_as = chosen_LP
+			}
+			add_character_flag = { flag = num_1 days = 4 }
+		}
+		else_if = { # Fetch two LPs for loc
+			limit = {
+				OR = {
+					any_in_list = {
+						list = attackers
+						tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+						NOT = { this = scope:choosing_ruler }
+						count = 2
+					}
+					any_in_list = {
+						list = attackers
+						tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+						NOT = { this = scope:choosing_ruler }
+						count > 2
+					}
+				}
+			}
+			if = {
+				limit = {
+					any_in_list = {
+						list = attackers
+						tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+						NOT = { this = scope:choosing_ruler }
+						count = 2
+					}
+				}
+
+				save_scope_value_as = { name = mw_num_lp value = 2 }
+			}
+			if = {
+				limit = {
+					any_in_list = {
+						list = attackers
+						tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+						NOT = { this = scope:choosing_ruler }
+						count > 2
+					}
+				}
+				save_scope_value_as = { name = mw_num_lp value = 3 }
+			}
+			every_in_list = {
+				list = attackers
+				limit = {
+					tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+					NOT = { this = scope:choosing_ruler }
+					NOR = {
+						AND = {
+							exists = scope:option_LP_1
+							this = scope:option_LP_1
+						}
+						AND = {
+							exists = scope:option_LP_2
+							this = scope:option_LP_2
+						}
+					}
+				}
+
+				if = {
+					limit = {
+						NOR = {
+							exists = scope:option_LP_2
+							exists = scope:option_LP_1
+						}
+					}
+					save_scope_as = option_LP_1
+				}
+				if = {
+					limit = {
+						exists = scope:option_LP_1
+						NOR = {
+							exists = scope:option_LP_2
+							this = scope:option_LP_1
+						}
+					}
+					save_scope_as = option_LP_2
+				}
+			}
+		}
+		if = { # has possible claim through blood? Fetch the ancestor
+			limit = {
+				OR = {
+					father.father.house = scope:war_loser.house
+					father.mother.house = scope:war_loser.house
+					mother.father.house = scope:war_loser.house
+					mother.mother.house = scope:war_loser.house
+				}
+			}
+
+			if = {
+				limit = {
+					father.house = scope:war_loser.house
+				}
+				father = { save_scope_as = claim_ancestor }
+			}
+			if = {
+				limit = {
+					mother.house = scope:war_loser.house
+				}
+				if = {
+					limit = { NOT = { exists = scope:claim_ancestor } }
+					mother = { save_scope_as = claim_ancestor }
+				}
+			}
+			if = {
+				limit = {
+					father.father.house = scope:war_loser.house
+				}
+
+				if = {
+					limit = { NOT = { exists = scope:claim_ancestor } }
+					father.father = { save_scope_as = claim_ancestor }
+				}
+			}
+			if = {
+				limit = {
+					father.mother.house = scope:war_loser.house
+				}
+
+				if = {
+					limit = { NOT = { exists = scope:claim_ancestor } }
+					father.mother = { save_scope_as = claim_ancestor }
+				}
+			}
+			if = {
+				limit = {
+					mother.father.house = scope:war_loser.house
+				}
+
+				if = {
+					limit = { NOT = { exists = scope:claim_ancestor } }
+					mother.father = { save_scope_as = claim_ancestor }
+				}
+			}
+			if = {
+				limit = {
+					mother.mother.house = scope:war_loser.house
+				}
+
+				if = {
+					limit = { NOT = { exists = scope:claim_ancestor } }
+					mother.mother = { save_scope_as = claim_ancestor }
+				}
+			}
+		}
+		# Localization end #
+
+		# Setup for aftermath events
+		#if = {
+			#limit = { any_held_title = { tier = tier_kingdom } }
+		#}
+		# Setup for aftermath events end
+
+		# Setup AI weighting
+		if = {
+			limit = { exists = scope:war_loser.primary_heir }
+
+			save_opinion_value_as = { name = opinion_of_heir target = scope:war_loser.primary_heir }
+		}
+	}
+
+	option = { # Depose
+		name = agot_mega_wars.0500.a
+
+		trigger = {
+			NOT = { has_title = scope:primary_target_title }
+		}
+
+		save_scope_value_as = {
+			name = depose_king
+			value = yes
+		}
+
+		scope:war_loser = { depose = yes }
+
+		ai_chance = {
+			base = 0
+
+			# modifier = {
+			#	add = scope:opinion_of_heir
+			#	exists = scope:war_loser.primary_heir
+			# }
+
+			# modifier = {
+			#	add = 10
+			#	has_trait = compassionate
+			# }
+		}
+	}
+
+	option = { # Take the crown for yourself
+		name = agot_mega_wars.0500.b
+
+		if = {
+			limit = {
+				OR = {
+					root = character:Baratheon_2
+					root = character:Baratheon_3
+					root = character:Baratheon_4
+				}
+			}
+			set_global_variable = baratheons_won_throne
+			set_variable = rr_summerhall_no_more
+		}
+
+		save_scope_as = chosen_crown_ruler
+		agot_mw_cb_new_ruler_effect = yes
+
+		ai_chance = {
+			base = 50
+
+			modifier = {
+				father.house = scope:war_loser.house
+				add = 20
+			}
+			modifier = {
+				mother.house = scope:war_loser.house
+				add = 20
+			}
+			modifier = {
+				father.father.house = scope:war_loser.house
+				add = 15
+			}
+			modifier = {
+				father.mother.house = scope:war_loser.house
+				add = 15
+			}
+			modifier = {
+				mother.father.house = scope:war_loser.house
+				add = 15
+			}
+			modifier = {
+				mother.mother.house = scope:war_loser.house
+				add = 15
+			}
+
+			modifier = {
+				has_trait = ambitious
+				add = 10
+			}
+			modifier = {
+				has_trait = arrogant
+				add = 7
+			}
+			modifier = {
+				has_trait = diligent
+				add = 5
+			}
+			modifier = {
+				has_trait = brave
+				add = 5
+			}
+
+			modifier = {
+				has_trait = lazy
+				add = -15
+			}
+			modifier = {
+				has_trait = craven
+				add = -10
+			}
+
+			modifier = {
+				any_in_list = {
+					list = target_titles
+
+					root = { has_claim_on = prev }
+				}
+				add = 60
+			}
+		}
+	}
+
+	option = { # Give it to one of your LP supporters
+		name = {
+			trigger = {
+				any_in_list = {
+					list = attackers
+					tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+					NOT = { this = scope:choosing_ruler }
+					count = 1
+				}
+			}
+			text = agot_mega_wars.0500.ca
+		}
+		name = {
+			trigger = {
+				any_in_list = {
+					list = attackers
+					tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+					NOT = { this = scope:choosing_ruler }
+					count > 1
+				}
+			}
+			text = agot_mega_wars.0500.cb
+		}
+
+		trigger = {
+			any_in_list = {
+				list = attackers
+				tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+				NOT = { this = scope:choosing_ruler }
+				count > 0
+			}
+		}
+
+		add_character_flag = mw_gave_up_crown_after_megawar
+
+		if = { # Choose LP if multiple available
+			limit = {
+				any_in_list = {
+					list = attackers
+					tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+					NOT = { this = scope:choosing_ruler }
+					count > 1
+				}
+			}
+			if = {
+				limit = { is_ai = no }
+				trigger_event = agot_mega_wars.0501
+				custom_tooltip = MEGA_WARS_0500_cb_TOOLTIP
+			}
+			else = {
+				agot_mw_aftermath_ai_choose_character_from_list_effect = { LIST_TYPE = list LIST = attackers MAX = 7 }
+				scope:ai_selected_char = { trigger_event = agot_mega_wars.0502 }
+			}
+		}
+		else = {
+			scope:chosen_LP = {
+				save_scope_as = chosen_crown_ruler
+				trigger_event = agot_mega_wars.0502
+			}
+			custom_tooltip = MEGA_WARS_0500_ca_TOOLTIP
+		}
+
+		ai_chance = {
+			base = 10
+
+			modifier = {
+				has_trait = lazy
+				add = 20
+			}
+			modifier = {
+				has_trait = craven
+				add = 15
+			}
+			modifier = {
+				root = character:Baratheon_2
+				has_game_rule = agot_story_historical_events_historical_outcomes
+				factor = 0
+			}
+
+			modifier = {
+				root = character:Baratheon_2
+				has_game_rule = agot_story_historical_events_weighted_outcomes
+				factor = 0.5
+			}
+		}
+	}
+
+	#option = { # Call for a great council to determine the fate of the realm
+	#	name = agot_mega_wars.0500.d
+
+	#	trigger = { always = no } # TODO implement Great Council mechanic
+
+	#	add_character_flag = { flag = hold_council days = 4 }
+	#}
+
+	after = {
+		remove_variable = si_selected_character
+
+		if = { # triggers event for remaining royal family to flee into exile
+			limit = {
+				NOT = { scope:primary_target_title.holder = scope:defender }
+			}
+			#scope:defender.house = {
+			#	every_house_member = {
+			#		trigger_event =
+			#	}
+			#}
+		}
+	}
+}
+
+# Choose a new ruler
+agot_mega_wars.0501 = {
+	type = character_event
+	title = agot_mega_wars.0501.t
+	desc = agot_mega_wars.0501.desc
+
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+	right_portrait = {
+		character = scope:mw_new_rebel_leader
+		#animation =
+	}
+
+	widget = {
+		is_shown = {
+			any_in_list = {
+				variable = possible_characters
+				count > 0
+			}
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		every_in_list = {
+			list = attackers
+
+			limit = {
+				tier_difference = { target = scope:war_loser value > agot_mw_tier_difference }
+				NOT = { this = scope:choosing_ruler }
+			}
+
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+
+		ordered_in_list = {
+			variable = possible_characters
+			set_variable = {
+				name = si_selecting_character
+				value = root
+			}
+			root = {
+				set_variable = {
+					name = si_selected_character
+					value = prev
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_mega_wars.0501.a
+
+		custom_tooltip = MEGA_WARS_0501_a_TOOLTIP
+		clear_variable_list = possible_characters
+
+		if = {
+			limit = { NOT = { exists = var:si_selected_character } }
+			trigger_event = agot_mega_wars.0501
+		}
+		else = {
+			var:si_selected_character ?= {
+				save_scope_as = chosen_crown_ruler
+				remove_variable = si_selecting_character
+				trigger_event = agot_mega_wars.0502
+			}
+		}
+	}
+}
+
+# Chosen LP responds
+agot_mega_wars.0502 = {
+	type = character_event
+	title = agot_mega_wars.0502.t
+	desc = agot_mega_wars.0502.desc
+
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+	right_portrait = {
+		character = scope:mw_new_rebel_leader
+		#animation =
+	}
+
+	immediate = {
+	}
+
+	option = { # Yes
+		name = agot_mega_wars.0502.a
+
+		agot_mw_cb_new_ruler_effect = yes
+
+		ai_chance = {
+			base = 80
+		}
+	}
+
+	option = { # No
+		name = agot_mega_wars.0502.b
+
+		remove_from_list = attackers
+		scope:choosing_ruler = {
+			add_character_flag = { flag = response_event days = 4 }
+			trigger_event = agot_mega_wars.0500
+		}
+
+		ai_chance = {
+			base = 20
+		}
+	}
+}
+
+# Who shall rule old_demesne_main_title in your stead?
+agot_mega_wars.0503 = {
+	type = character_event
+	title = agot_mega_wars.0503.t
+	desc = {
+		triggered_desc = { #
+			trigger = { always = yes }
+			desc = agot_mega_wars.0503.desc.a
+		}
+		first_valid = {
+			triggered_desc = { # both brothers living;
+				trigger = {
+					this = character:Baratheon_2
+					AND = {
+						character:Baratheon_3 = { is_alive = yes }
+						character:Baratheon_4 = { is_alive = yes }
+					}
+				}
+				desc = agot_mega_wars.0503.desc.ba
+			}
+			triggered_desc = { # only one brother is alive;
+				trigger = {
+					this = character:Baratheon_2
+					OR = {
+						AND = {
+							character:Baratheon_3 = { is_alive = yes }
+							character:Baratheon_4 = { is_alive = no }
+						}
+						AND = {
+							character:Baratheon_3 = { is_alive = no }
+							character:Baratheon_4 = { is_alive = yes }
+						}
+					}
+				}
+				desc = agot_mega_wars.0503.desc.bb
+			}
+			triggered_desc = { # both brothers are dead, fetch other landed dynasty members;
+				trigger = {
+					this = character:Baratheon_2
+					AND = {
+						character:Baratheon_3 = { is_alive = no }
+						character:Baratheon_4 = { is_alive = no }
+					}
+				}
+				desc = agot_mega_wars.0503.desc.bc
+			}
+		}
+		triggered_desc = { # possible Estermonts
+			trigger = {
+				this = character:Baratheon_2
+				OR = {
+					character:Estermont_1 = { is_alive = yes }
+					character:Estermont_3 = { is_alive = yes }
+					character:Estermont_4 = { is_alive = yes }
+				}
+			}
+			desc = agot_mega_wars.0503.desc.c
+		}
+	}
+
+	theme = crown
+	override_background = { reference = throne_room_west }
+
+	left_portrait = {
+		character = root
+	}
+
+	trigger = {
+		OR = { # Selection should only show up if there are valid characters
+			any_close_or_extended_family_member = { exists = this }
+			dynasty = { any_dynasty_member = { exists = this } }
+			any_held_title = {
+				tier > tier_barony
+				NOT = { is_in_list = target_titles }
+				any_in_de_jure_hierarchy = {
+					trigger_if = {
+						limit = { prev.tier = tier_kingdom }
+						tier = tier_duchy
+					}
+					trigger_else = {
+						tier = tier_county
+					}
+					NOR = {
+						holder = root
+						scope:mw_crown_story = { is_target_in_variable_list = { name = mw_loyalist_list target = prev.holder } }
+					}
+				}
+			}
+		}
+		any_held_county = {
+			count > 1
+		}
+		any_held_title = {
+			agot_mw_valid_realm_to_give_away_trigger = yes
+		}
+	}
+
+	immediate = {
+		#loc scope
+		if = {
+			limit = { NOT = { exists = scope:choosing_ruler } }
+			save_scope_as = choosing_ruler
+		}
+		if = {
+			limit = { NOT = { exists = scope:primary_target_title } }
+			primary_title = { save_scope_as = primary_target_title }
+		}
+		if = {
+			limit = {
+				this = character:Baratheon_2
+				OR = {
+					AND = {
+						character:Baratheon_3 = { is_alive = yes }
+						character:Baratheon_4 = { is_alive = no }
+					}
+					AND = {
+						character:Baratheon_3 = { is_alive = no }
+						character:Baratheon_4 = { is_alive = yes }
+					}
+				}
+			}
+			if = {
+				limit = {
+					character:Baratheon_3 = { is_alive = yes }
+				}
+				character:Baratheon_3 = { save_scope_as = living_brother }
+			}
+			else_if = {
+				limit = {
+					character:Baratheon_4 = { is_alive = yes }
+				}
+				character:Baratheon_4 = { save_scope_as = living_brother }
+			}
+		}
+
+		ordered_held_title = {
+			limit = {
+				agot_mw_valid_realm_to_give_away_trigger = yes
+			}
+			order_by = tier
+			add_to_list = old_demesne_main_titles_list
+			save_scope_as = old_demesne_main_title
+		}
+
+		# For localization
+		every_close_or_extended_family_member = {
+			limit = {
+				NOT = { this = root }
+				is_lowborn = no
+				NOR = {
+					has_trait = kingsguard
+					has_trait = maester
+					has_trait = nightswatch
+				}
+			}
+			save_scope_value_as = { name = allow_family value = yes }
+			add_to_list = close_and_extended_family_members
+		}
+		dynasty = {
+			every_dynasty_member = {
+				limit = {
+					NOR = {
+						this = root
+						is_in_list = close_and_extended_family_members
+					}
+					NOR = {
+						has_trait = kingsguard
+						has_trait = maester
+						has_trait = nightswatch
+					}
+				}
+				save_scope_value_as = { name = allow_dynasty value = yes }
+				add_to_list = dynasty_members
+			}
+		}
+		every_in_list = {
+			list = old_demesne_main_titles_list
+
+			every_in_de_jure_hierarchy = {
+				limit = {
+					trigger_if = {
+						limit = { prev.tier = tier_kingdom }
+						tier = tier_duchy
+					}
+					trigger_else = {
+						tier = tier_county
+					}
+					NOR = {
+						holder = root
+						scope:mw_crown_story = { is_target_in_variable_list = { name = mw_loyalist_list target = prev.holder } }
+					}
+				}
+				save_scope_value_as = { name = allow_vassals value = yes }
+				holder ?= { add_to_list = title_vassals }
+			}
+		}
+	}
+
+	option = { # Choose someone from my family
+		name = agot_mega_wars.0503.a
+
+		trigger = { exists = scope:allow_family }
+
+		if = {
+			limit = { is_ai = no }
+
+			save_scope_value_as = { name = choose_from value = flag:family }
+		}
+		else = {
+			agot_mw_aftermath_ai_choose_character_from_list_effect = { LIST_TYPE = list LIST = close_and_extended_family_members MAX = 1 }
+		}
+
+		ai_chance = {
+			base = 80
+		}
+	}
+
+	option = { # Choose a dynasty member
+		name = agot_mega_wars.0503.b
+
+		trigger = { exists = scope:allow_dynasty }
+
+		if = {
+			limit = { is_ai = no }
+
+			save_scope_value_as = { name = choose_from value = flag:dynasty }
+		}
+		else = {
+			agot_mw_aftermath_ai_choose_character_from_list_effect = { LIST_TYPE = list LIST = dynasty_members MAX = 1 }
+		}
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	option = { # Choose one of my vassals
+		name = agot_mega_wars.0503.c
+
+		trigger = { exists = scope:allow_vassals }
+
+		if = {
+			limit = { is_ai = no }
+
+			save_scope_value_as = { name = choose_from value = flag:vassals }
+		}
+		else = {
+			agot_mw_aftermath_ai_choose_character_from_list_effect = { LIST_TYPE = list LIST = title_vassals MAX = 1 }
+		}
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	option = { # keep it
+		name = agot_mega_wars.0503.d
+
+		save_scope_value_as = { name = choose_from value = flag:none }
+
+		ai_chance = { # AI should always delegate
+			base = 0
+
+			modifier = {
+				add = {
+					add = ai_greed
+					multiply = 0.3
+				}
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = { NOT = { scope:choose_from ?= flag:none } }
+
+			if = {
+				limit = { is_ai = no }
+
+				trigger_event = agot_mega_wars.0504
+			}
+			else = {
+				agot_mw_grant_old_demesne_main_title_to_char_effect = { NEW_HOLDER = scope:ai_selected_char }
+				if = {
+					limit = {
+						any_in_list = {
+							list = target_titles
+							this = title:c_dragonstone
+						}
+					}
+					trigger_event = { id = agot_mega_wars.0505 days = 4 }
+				}
+			}
+			every_vassal_or_below = {
+				limit = { highest_held_title_tier > tier_barony }
+				if = {
+					limit = { exists = scope:chosen_crown_ruler }
+					trigger_event = agot_mega_wars.0510
+				}
+				else = {
+					send_interface_toast = {
+						type = event_generic_neutral_text
+						title = agot_mega_wars.0510.t
+						desc = agot_mega_wars.0503.desc.msg
+						left_icon = scope:choosing_ruler
+						right_icon = scope:old_demesne_main_title.holder
+					}
+				}
+			}
+		}
+	}
+}
+
+# Choose a new ruler for old_demesne_main_titles_list
+agot_mega_wars.0504 = {
+	type = character_event
+	title = agot_mega_wars.0504.t
+	desc = agot_mega_wars.0504.desc
+
+	theme = war
+	left_portrait = {
+		character = root
+		animation = personality_callous
+	}
+	right_portrait = {
+		character = scope:mw_new_rebel_leader
+		#animation =
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = { scope:choose_from ?= flag:family }
+			every_in_list = {
+				list = close_and_extended_family_members
+
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		if = {
+			limit = { scope:choose_from ?= flag:dynasty }
+			every_in_list = {
+				list = dynasty_members
+
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		if = {
+			limit = { scope:choose_from ?= flag:vassals }
+			every_in_list = {
+				list = title_vassals
+
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+
+		agot_mw_aftermath_ai_choose_character_from_list_effect = { LIST_TYPE = variable LIST = possible_characters MAX = 1 }
+
+		if = {
+			limit = { exists = scope:ai_selected_char }
+
+			scope:ai_selected_char = {
+				root = { set_variable = { name = si_selected_character value = prev } }
+				set_variable = si_selecting_character
+			}
+		}
+	}
+
+	option = {
+		name = agot_mega_wars.0504.a
+
+		#trigger = { has_variable = si_selected_character }
+
+		#custom_tooltip = MEGA_WARS_0501_a_TOOLTIP
+		#var:si_selected_character = {
+		#	trigger_event = agot_mega_wars.0502
+		#}
+
+		if = {
+			limit = { exists = var:si_selected_character }
+
+			agot_mw_grant_old_demesne_main_title_to_char_effect = { NEW_HOLDER = root.var:si_selected_character }
+			scope:mw_rebel_story = {
+				add_to_variable_list = { name = mw_rebel_supporter_list target = root.var:si_selected_character }
+			}
+		}
+
+		if = {
+			limit = {
+				NOR = {
+					any_held_title = { this = title:c_dragonstone }
+					any_in_list = {
+						list = old_demesne_main_titles_list
+						this = title:c_dragonstone
+					}
+				}
+				any_in_list = {
+					list = target_titles
+					this = title:c_dragonstone
+				}
+			}
+
+			trigger_event = { id = agot_mega_wars.0505 days = 4 }
+		}
+		else_if = {
+			limit = {
+				any_held_title = { this = title:c_dragonstone }
+				any_in_list = {
+					list = old_demesne_main_titles_list
+					this = title:c_dragonstone
+				}
+			}
+
+			trigger_event = agot_mega_wars.0505
+		}
+		#else = { #AGOT TODO disabed for now
+		#	trigger_event = agot_mega_wars.0506
+		#}
+	}
+
+	option = {
+		name = agot_mega_wars.0504.b
+
+		trigger_event = agot_mega_wars.0503
+	}
+
+	after = {
+		clear_variable_list = possible_characters
+		var:si_selected_character = { remove_variable = si_selecting_character }
+		remove_variable = si_selected_character
+	}
+}
+
+# Decide what to do with Dragonstone #AGOT TODO revisit event once Dragonstone heir thing is added
+agot_mega_wars.0505 = {
+	type = character_event
+	title = agot_mega_wars.0505.t
+	desc = agot_mega_wars.0505.desc
+
+	theme = crown
+	override_background = { reference = throne_room_west }
+	left_portrait = {
+		character = scope:choosing_ruler
+	}
+
+
+	trigger = {
+		any_sibling = {
+			is_alive = yes
+			is_ruler = no
+		}
+		has_title = title:c_dragonstone
+	}
+
+	immediate = {
+		every_sibling = {
+			limit = {
+				is_alive = yes
+				is_ruler = no
+			}
+
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+		if = {
+			limit = {
+				any_sibling = {
+					is_alive = yes
+					is_ruler = no
+					count = 1
+				}
+			}
+			random_sibling = {
+				limit = {
+					is_alive = yes
+					is_ruler = no
+				}
+				save_scope_as = chosen_sibling
+			}
+		}
+	}
+
+	widgets = {
+		widget = {
+			is_shown = {
+				NOT = { exists = scope:chosen_sibling }
+				any_sibling = {
+					is_alive = yes
+					is_ruler = no
+					count > 1
+				}
+			}
+			gui = "agot_character_selection_two_options"
+			container = "custom_widgets_container"
+		}
+		widget = {
+			is_shown = {
+				exists = scope:chosen_sibling
+				any_sibling = {
+					is_alive = yes
+					is_ruler = no
+					count > 1
+				}
+			}
+			gui = "agot_character_selection_three_options"
+			container = "custom_widgets_container"
+		}
+	}
+
+	option = { #
+		name = agot_mega_wars.0505.a
+		trigger = {
+			exists = scope:chosen_sibling
+		}
+
+		scope:chosen_sibling = {
+			get_title = title:c_dragonstone
+			get_title = title:d_dragonstone
+			get_title = title:k_dragonstone
+		}
+
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = dragonstone
+			add_claim_on_loss = no
+		}
+
+		every_vassal = {
+			limit = {
+				NOT = { this = scope:chosen_sibling }
+				highest_held_title_tier > tier_barony
+				capital_province.county ?= { target_is_de_jure_liege_or_above = title:k_dragonstone }
+				liege = root
+			}
+			change_liege = {
+				liege = scope:chosen_sibling
+				change = scope:dragonstone
+			}
+		}
+		resolve_title_and_vassal_change = scope:dragonstone
+	}
+
+	option = { #
+		name = agot_mega_wars.0505.b
+		trigger = {
+			exists = var:si_selected_character
+		}
+
+		var:si_selected_character = { get_title = title:c_dragonstone }
+		var:si_selected_character = { get_title = title:d_dragonstone }
+		var:si_selected_character = { get_title = title:k_dragonstone }
+
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = dragonstone
+			add_claim_on_loss = no
+		}
+
+		every_vassal = {
+			limit = {
+				NOT = { this = var:si_selected_character }
+				highest_held_title_tier > tier_barony
+				capital_province.county ?= { target_is_de_jure_liege_or_above = title:k_dragonstone }
+				liege = root
+			}
+			change_liege = {
+				liege = var:si_selected_character
+				change = scope:dragonstone
+			}
+		}
+		resolve_title_and_vassal_change = scope:dragonstone
+	}
+
+	option = { # Keep it for youself
+		name = agot_mega_wars.0505.c
+	}
+
+	after = {
+		clear_variable_list = possible_characters
+		remove_variable = si_selected_character
+
+		#trigger_event = agot_mega_wars.0506 #AGOT TODO disabled for now
+	}
+}
+
+# Decide what to do with the enemy house/dynasty #AGOT TODO disabed for now
+agot_mega_wars.0506 = {
+	type = character_event
+	title = agot_mega_wars.0506.t
+	desc = agot_mega_wars.0506.desc
+	orphan = yes #AGOT TODO disabed for now
+
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+	right_portrait = {
+		character = scope:war_loser
+		#animation =
+	}
+
+	immediate = {
+	}
+
+	option = { # Leave them be
+		name = agot_mega_wars.0506.a
+
+
+	}
+
+	option = { # Exile close family
+		name = agot_mega_wars.0506.b
+
+
+	}
+
+	option = { # Exile entire dynasty
+		name = agot_mega_wars.0506.b
+
+
+	}
+
+	option = { # Kill close family
+		name = agot_mega_wars.0506.b
+
+
+	}
+
+	option = { # Kill entire dynasty
+		name = agot_mega_wars.0506.b
+
+		#every_in_list = { AGOT TODO : Create List of dynasty members to be killed
+		#	list = defender_house_members
+
+		#	death = { death_reason = death_execution killer = root }
+		#}
+	}
+}
+
+# Notification for realm
+agot_mega_wars.0510 = {
+	type = letter_event
+	title = agot_mega_wars.0510.t
+	opening = {
+		desc = agot_mega_wars.0510.desc.a
+	}
+	desc = {
+		desc = agot_mega_wars.0510.desc.b
+		triggered_desc = { #
+			trigger = {
+				scope:ruler = yes
+				scope:choosing_ruler = scope:primary_target_title.holder
+			}
+			desc = agot_mega_wars.0510.desc.c
+		}
+		triggered_desc = { #
+			trigger = {
+				scope:ruler = yes
+				NOT = { scope:choosing_ruler = scope:primary_target_title.holder }
+			}
+			desc = agot_mega_wars.0510.desc.d
+		}
+		triggered_desc = { #
+			trigger = { scope:depose_king = yes }
+			desc = agot_mega_wars.0510.desc.e
+		}
+		triggered_desc = { #
+			trigger = { scope:choosing_ruler = { NOT = { has_title = scope:old_demesne_main_title } } }
+			desc = agot_mega_wars.0510.desc.f
+		}
+	}
+	sender = scope:choosing_ruler
+
+	immediate = {
+	}
+
+	option = { #
+		name = agot_mega_wars.0510.a
+
+	}
+
+	option = { #lets player switch to newly crowned king
+		name = agot_mega_wars.0510.b
+
+		trigger = {
+			exists = scope:chosen_crown_ruler
+			is_ai = no
+		}
+
+		set_player_character = scope:chosen_crown_ruler
+	}
+}
+
+# TODO add notification event for new ruler
+
+
+### Deal with traitors ###
+
+# Punishment initial event
+agot_mega_wars.0600 = {
+	type = character_event
+	title = agot_mega_wars.0600.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:attacker ?= root
+					scope:mw_crown_story ?= {
+						var:mw_outcome ?= flag:rebels_won
+						OR = {
+							var:mw_war_cb ?= flag:claim_cb
+							var:mw_war_cb ?= flag:rebellion_war
+						}
+					}
+				}
+				desc = agot_pui_events.0600.desc.mw_rebels_won
+			}
+			desc = agot_mega_wars.0600.desc
+		}
+	}
+
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+	right_portrait = {
+		character = scope:war_loser
+		#animation =
+	}
+
+	immediate = {
+	}
+
+	option = { #
+		name = agot_mega_wars.0600.a
+
+		if = { # Give AI punishers event to PUNISH!!!!
+			limit = {
+				is_ai = no
+				has_royal_court = yes # make sure only royal court characters get a court event
+			}
+
+			open_view_data = {
+				view = royal_court
+				player = root
+			}
+			trigger_event = agot_mega_wars.0601
+		}
+		else = {
+			trigger_event = agot_mega_wars.0605
+		}
+	}
+}
+
+# Punishment court event
+agot_mega_wars.0601 = {
+	type = court_event
+	title = agot_mega_wars.0601.t
+	desc = agot_mega_wars.0601.desc
+
+	theme = war
+
+	court_scene = {
+		button_position_character = scope:selected_traitor
+		court_event_force_open = yes
+		show_timeout_info = no
+		should_pause_time = yes
+		roles = {
+			scope:selected_traitor = {
+				group = petitioners_group
+				animation = throne_room_kneel_2
+			}
+		}
+	}
+
+	widget = {
+		is_shown = {
+			always = yes
+		}
+		gui = "agot_mw_punishment_summary"
+		container = "custom_widgets_container"
+	}
+
+	trigger = {
+		any_in_list = {
+			variable = mw_traitors_list
+			is_alive = yes
+		}
+	}
+
+	immediate = {
+		#set_variable = { name = crown_target value = root } #AGOT TODO; I think this one serves no purpose here
+		remove_variable = selected_traitor
+		if = {
+			limit = { NOT = { has_variable = selected_traitor } }
+			agot_mw_fetch_traitor_variable = yes
+		}
+		if = {
+			limit = { exists = var:selected_traitor }
+
+			var:selected_traitor = { save_scope_as = selected_traitor }
+			agot_mw_traitor_gui_generate_traitor_data_lists_effect = { CROWN_TARGET = root TRAITOR_TARGET = scope:selected_traitor }
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+
+	option = { # Let LP deal with this traitor
+		name = agot_mega_wars.0601.a
+
+		trigger = {
+			highest_held_title_tier = tier_hegemony
+			NOT = { scope:selected_traitor.liege = root }
+			exists = scope:selected_traitor.liege
+		}
+
+		scope:selected_traitor = {
+			random_liege_or_above = {
+				limit = { highest_held_title_tier > tier_duchy }
+
+				add_to_variable_list = {
+					name = mw_traitors_list
+					target = scope:selected_traitor
+				}
+				if = {
+					limit = { is_ai = yes }
+					trigger_event = agot_mega_wars.0605
+				}
+			}
+		}
+		agot_mw_gui_next_traitor_effect = yes
+	}
+
+	option = { # Let LP deal with all his vassal traitor
+		name = agot_mega_wars.0601.b
+
+		trigger = {
+			highest_held_title_tier = tier_hegemony
+			NOT = { scope:selected_traitor.liege = root }
+			any_in_list = {
+				variable = mw_traitors_list
+
+				count > 1
+
+				any_liege_or_above = {
+					highest_held_title_tier = tier_empire
+					scope:selected_traitor = {
+						any_liege_or_above = {
+							highest_held_title_tier = tier_kingdom
+							save_temporary_scope_as = temp_lieges_scope
+						}
+					}
+					this = scope:temp_lieges_scope
+				}
+			}
+		}
+
+		# Move all vassals from mw_selected_traitor's liege to liege's traitor list
+		every_in_list = {
+			variable = mw_traitors_list
+
+			limit = {
+				any_liege_or_above = {
+					highest_held_title_tier = tier_kingdom
+					save_temporary_scope_as = temp_liege_scope
+					scope:selected_traitor = {
+						any_liege_or_above = {
+							highest_held_title_tier = tier_kingdom
+							this = scope:temp_liege_scope
+						}
+					}
+				}
+			}
+
+			random_liege_or_above = {
+				limit = {
+					highest_held_title_tier = tier_kingdom
+					save_temporary_scope_as = temp_liege_scope
+					scope:selected_traitor = {
+						any_liege_or_above = {
+							highest_held_title_tier = tier_kingdom
+							this = scope:temp_liege_scope
+						}
+					}
+				}
+
+				add_to_variable_list = {
+					name = mw_traitors_list
+					target = prev
+				}
+			}
+
+			save_temporary_scope_as = temp_traitors_scope
+
+			custom_tooltip = agot_mega_wars.0601.b.tt
+			root = { remove_list_variable = { name = mw_traitors_list target = prev } }
+		}
+
+		scope:selected_traitor = {
+			random_liege_or_above = {
+				limit = { highest_held_title_tier = tier_kingdom }
+
+				add_to_variable_list = {
+					name = mw_traitors_list
+					target = scope:selected_traitor
+				}
+				if = {
+					limit = { is_ai = yes }
+					trigger_event = agot_mega_wars.0605
+				}
+			}
+		}
+		agot_mw_gui_next_traitor_effect = yes
+	}
+
+	option = { # Keep in dungeons for now --> remove from list
+		name = agot_mega_wars.0601.c
+
+		agot_mw_gui_next_traitor_effect = yes
+	}
+
+	option = { # Pass your sentence (Punishment)
+		name = agot_mega_wars.0601.d
+
+		agot_mw_gui_transfer_punishment_vars_to_traitor = yes
+
+		agot_mw_apply_opinion_modifiers = { CROWN_TARGET = root TRAITOR_TARGET = scope:selected_traitor }
+
+		#if = { # We already show it in the event, no need to show it again as tooltip
+		#	limit = { exists = scope:selected_traitor }
+		#	show_as_tooltip = { agot_mw_gui_punish_traitor_effect = { CROWN_TARGET = root TRAITOR_TARGET = scope:selected_traitor } }
+		#}
+		scope:selected_traitor = {
+			set_variable = { name = crown_target value = root }
+			trigger_event = { id = agot_mega_wars.0603 }
+		}
+		agot_mw_gui_next_traitor_effect = yes
+	}
+
+	option = { # DEBUG; This just skips everything
+		name = agot_mega_wars.0601.e
+
+		trigger = { debug_only = yes }
+
+		clear_variable_list = mw_traitors_list
+	}
+
+	#option = { # Select a traitor | currently unused cause too clunky in event chain
+	#	name = agot_mega_wars.0601.c
+	#}
+
+	after = {
+		if = { # if there are still traitors on the list, repeat event
+			limit = { has_variable_list = mw_traitors_list }
+
+			trigger_event = agot_mega_wars.0601
+		}
+		else = { # else resolve punishment
+			every_vassal_or_below = { # Let LPs punish
+				limit = { has_variable_list = mw_traitors_list }
+
+				trigger_event = agot_mega_wars.0600
+			}
+			trigger_event = agot_mega_wars.0604 # Check for post war rebels
+			agot_mw_clear_traitor_setup_data_effect = yes
+			remove_variable = mw_punishment_window
+		}
+		#else = { #AGOT TODO
+		#	trigger_event = agot_mega_wars.0602
+		#}
+	}
+}
+
+# Give taken land to loyalists | Currently unused
+agot_mega_wars.0602 = {
+	type = court_event
+	title = agot_mega_wars.0602.t
+	desc = agot_mega_wars.0602.desc
+	orphan = yes
+
+	theme = war
+
+	court_scene = {
+		button_position_character = scope:selected_traitor
+		court_event_force_open = yes
+		show_timeout_info = no
+		should_pause_time = yes
+		roles = {
+			scope:selected_traitor = {
+				group = petitioners_group
+				animation = throne_room_kneel_2
+			}
+		}
+	}
+
+	immediate = {
+		scope:mw_rebel_story = {
+			every_in_list = {
+				variable = mw_rebel_supporter_list
+
+				every_held_title = {
+					limit = {
+						tier = tier_county
+						any_claimant = { exists = this }
+					}
+
+					add_to_list = rebel_list_counties_list
+				}
+			}
+		}
+		scope:mw_crown_story = {
+			every_in_list = {
+				variable = mw_loyalist_list
+
+				limit = { is_claimant = yes }
+
+				add_to_list = loyalist_list
+			}
+		}
+	}
+
+	option = { #
+		name = agot_mega_wars.0602.a
+
+		every_in_list = {
+			list = rebel_list_counties_list
+
+			save_scope_as = rebel_list_counties_scope
+
+			every_in_list = {
+				list = loyalist_list
+
+				limit = { has_strong_claim_on = prev }
+
+				get_title = prev
+			}
+		}
+		#trigger_event = agot_mega_wars.0601
+	}
+}
+
+# Traitor gets notification about his punishment
+agot_mega_wars.0603 = {
+	type = character_event
+	title = agot_mega_wars.0603.t
+	desc = {
+		desc = agot_mega_wars.0603.desc.a # Standard introduction desc
+		triggered_desc = { #
+			trigger = { has_variable = take_hostage }
+			desc = agot_mega_wars.0603.desc.b
+		}
+		triggered_desc = { #
+			trigger = { has_variable = take_specific_title }
+			desc = agot_mega_wars.0603.desc.c
+		}
+		triggered_desc = { #
+			trigger = { has_variable = take_main_titles }
+			desc = agot_mega_wars.0603.desc.d
+		}
+		triggered_desc = { #
+			trigger = { has_variable = take_secondary_titles }
+			desc = agot_mega_wars.0603.desc.e
+		}
+		triggered_desc = { #
+			trigger = { has_variable = take_entire_demesne }
+			desc = agot_mega_wars.0603.desc.f
+		}
+		triggered_desc = { #
+			trigger = { has_variable = take_entire_demesne_except_capital }
+			desc = agot_mega_wars.0603.desc.g
+		}
+		triggered_desc = { #
+			trigger = { has_variable = take_half_demesne }
+			desc = agot_mega_wars.0603.desc.h
+		}
+		triggered_desc = { #
+			trigger = { has_variable = take_artifact }
+			desc = agot_mega_wars.0603.desc.i
+		}
+		triggered_desc = { #
+			trigger = { has_variable = execution_traitor }
+			desc = agot_mega_wars.0603.desc.j
+		}
+		triggered_desc = { #
+			trigger = { has_variable = execution_family }
+			desc = agot_mega_wars.0603.desc.k
+		}
+		triggered_desc = { #
+			trigger = { has_variable = execution_house }
+			desc = agot_mega_wars.0603.desc.l
+		}
+		triggered_desc = { #
+			trigger = { has_variable = sent_to_wall }
+			desc = agot_mega_wars.0603.desc.m
+		}
+		triggered_desc = { #
+			trigger = { has_variable = expel_traitor }
+			desc = agot_mega_wars.0603.desc.n
+		}
+		triggered_desc = { #
+			trigger = { has_variable = expel_family }
+			desc = agot_mega_wars.0603.desc.o
+		}
+		triggered_desc = { #
+			trigger = { has_variable = expel_house }
+			desc = agot_mega_wars.0603.desc.p
+		}
+	}
+
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+	right_portrait = {
+		character = root.var:crown_target
+		#animation =
+	}
+
+	trigger = {
+		has_variable = crown_target
+	}
+
+	immediate = {
+		save_scope_as = selected_traitor
+		var:crown_target = { save_scope_as = crown_target }
+		set_variable = { name = selected_traitor value = root }
+		agot_mw_traitor_gui_generate_traitor_data_lists_effect = { CROWN_TARGET = scope:crown_target TRAITOR_TARGET = scope:selected_traitor }
+
+		set_variable = { name = acceptance_indicator value = agot_mw_acceptance_base }
+		change_variable = { name = acceptance_indicator add = agot_mw_acceptance_indicator_script_value }
+
+		if = {
+			limit = {
+				has_variable = take_hostage
+				NOT = { has_variable = selected_hostage }
+			}
+
+			random_in_list = {
+				variable = mw_traitors_hostage_list
+
+				root = { set_variable = { name = selected_hostage value = prev } }
+			}
+		}
+	}
+
+	option = { # I accept my punishment
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							#NOR = { #AGOT TODO
+							#	scope:crown_target = {
+							#		any_in_list = {
+							#			variable = mw_loyalist
+
+							#			root = { is_imprisoned_by = prev }
+							#		}
+							#	}
+							#	is_imprisoned_by = scope:crown_target
+							#}
+							is_imprisoned = no
+						}
+						desc = agot_mega_wars.0603.a.1a
+					}
+					triggered_desc = {
+						trigger = {
+							#OR = { #AGOT TODO
+							#	scope:crown_target = {
+							#		any_in_list = {
+							#			variable = mw_loyalist
+
+							#			root = { is_imprisoned_by = prev }
+							#		}
+							#	}
+							#	is_imprisoned_by = scope:crown_target
+							#}
+							is_imprisoned = yes
+						}
+						desc = agot_mega_wars.0603.a.1b
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				#OR = { #AGOT TODO
+				#	scope:crown_target = {
+				#		any_in_list = {
+				#			variable = mw_loyalist
+
+				#			root = { is_imprisoned_by = prev }
+				#		}
+				#	}
+				#	is_imprisoned_by = scope:crown_target
+				#}
+				is_imprisoned = yes
+			}
+			custom_tooltip = MEGA_WARS_0300_a1_IMPRISONED
+		}
+
+		#trigger = { agot_mw_has_any_punishment_variable_trigger = yes }
+
+		agot_mw_gui_punish_traitor_effect = {
+			CROWN_TARGET = scope:crown_target
+			TRAITOR_TARGET = root
+		}
+
+		if = {
+			limit = { is_alive = yes }
+
+			agot_mw_clear_traitor_setup_data_effect = yes
+
+			set_variable = { name = mw_is_loyal_to value = scope:crown_target.top_liege days = 3 } # Ensures that you join the crown in a possible post war rebellion
+		}
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				always = yes
+				exists = scope:selected_traitor
+				add = agot_mw_acceptance_indicator_script_value
+			}
+		}
+	}
+
+	option = { # De fack do i care? Do not accept punishment
+		name = agot_mega_wars.0603.b
+
+		trigger = { # You can't rebel if you are imprisoned
+			agot_mw_has_any_punishment_variable_trigger = yes
+			#NOR = { #AGOT TODO
+			#	scope:crown_target = {
+			#		any_in_list = {
+			#			variable = mw_loyalist
+
+			#			root = { is_imprisoned_by = prev }
+			#		}
+			#	}
+			#	is_imprisoned_by = scope:crown_target
+			#	is_imprisoned_by = scope:crown_target.liege
+			#}
+			is_imprisoned = no
+		}
+
+		# TODO Add him to the list of guys who don't accept punishment. Crown gets option to fight them once more or to give in (heavy prestige loss and heavy dread gain penality).
+		var:crown_target = {
+			add_to_variable_list = {
+				name = mw_post_war_rebels
+				target = prev
+			}
+		}
+		custom_tooltip = MEGA_WARS_0300_b
+
+		ai_chance = {
+			base = 20
+		}
+	}
+
+	after = {
+		if = {
+			limit = { is_alive = yes }
+			remove_variable = crown_target
+			remove_variable = selected_traitor
+		}
+	}
+}
+
+# Crown gets notification about lords who don't accept punishment
+agot_mega_wars.0604 = {
+	type = character_event
+	title = agot_mega_wars.0604.t
+	desc = {
+		triggered_desc = {
+			trigger = { any_in_list = { variable = mw_post_war_rebels count = 1 } }
+			desc = agot_mega_wars.0604.desc.a
+		}
+		triggered_desc = {
+			trigger = { any_in_list = { variable = mw_post_war_rebels count > 1 } }
+			desc = agot_mega_wars.0604.desc.b
+		}
+	}
+
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+	right_portrait = {
+		character = scope:mw_new_rebel_leader
+		#animation =
+	}
+
+	trigger = {
+		has_variable_list = mw_post_war_rebels
+	}
+
+	immediate = {
+		random_in_list = {
+			variable = mw_post_war_rebels
+			weight = {
+				base = 1
+				modifier = {
+					add = 1000
+					highest_held_title_tier = tier_empire
+				}
+				modifier = {
+					add = 700
+					highest_held_title_tier = tier_kingdom
+				}
+				modifier = {
+					add = 350
+					highest_held_title_tier = tier_duchy
+				}
+				modifier = { # please no children as leaders if possible
+					add = 10000
+					is_adult = yes
+				}
+			}
+			save_scope_as = mw_new_rebel_leader
+			root = { set_variable = { name = mw_new_rebel_leader value = prev } }
+		}
+	}
+
+	option = { # Make them pay
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { any_in_list = { variable = mw_post_war_rebels count = 1 } }
+						desc = agot_mega_wars.0604.a.1
+					}
+					triggered_desc = {
+						trigger = { any_in_list = { variable = mw_post_war_rebels count > 1 } }
+						desc = agot_mega_wars.0604.a.2
+					}
+				}
+			}
+		}
+
+		remove_list_variable = { name = mw_post_war_rebels target = scope:mw_new_rebel_leader }
+
+		if = { # if there already is a depose war, make the post war rebels join that war
+			limit = {
+				any_character_war = {
+					is_defender = root
+					using_cb = agot_revolt_war
+				}
+			}
+			random_character_war = {
+				limit = {
+					is_defender = root
+					using_cb = agot_revolt_war
+				}
+				save_scope_as = agot_revolt_war
+			}
+			every_in_list = {
+				variable = mw_post_war_rebels
+
+				scope:agot_revolt_war = { add_attacker = prev }
+			}
+		}
+		else = {
+			if = {
+				limit = { scope:mw_new_rebel_leader.highest_held_title_tier = tier_kingdom }
+
+				every_in_list = { # in case another mega war starts off, these rulers are marked to stay on the same side
+					variable = mw_post_war_rebels
+
+					set_variable = { name = mw_is_loyal_to value = scope:mw_new_rebel_leader }
+				}
+			}
+			scope:mw_new_rebel_leader = {
+				start_war = {
+					casus_belli = agot_revolt_war
+					target = root
+				}
+			}
+			random_character_war = {
+				limit = { using_cb = agot_revolt_war }
+				save_scope_as = agot_revolt_war
+			}
+			every_in_list = {
+				variable = mw_post_war_rebels
+
+				limit = { NOT = { this = scope:mw_new_rebel_leader } }
+
+				save_scope_as = post_rebel_scope
+
+				custom_tooltip = POST_REBEL_JOINS_TOOLTIP # Tooltip (or any other effect) needed for start_war tooltip showing up correctly, this is a vanilla bug
+			}
+			if = {
+				limit = { scope:mw_new_rebel_leader.highest_held_title_tier < tier_kingdom }
+
+				every_in_list = {
+					variable = mw_post_war_rebels
+
+					scope:agot_revolt_war = { add_attacker = prev }
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 60
+
+			modifier = {
+				has_trait = just
+				add = 20
+			}
+			modifier = {
+				has_trait = arrogant
+				add = 10
+			}
+			modifier = {
+				has_trait = stubborn
+				add = 10
+			}
+			modifier = {
+				has_trait = vengeful
+				add = 10
+			}
+			modifier = {
+				has_trait = wrathful
+				add = 10
+			}
+			modifier = {
+				has_trait = sadistic
+				add = 10
+			}
+			modifier = {
+				has_trait = paranoid
+				add = 10
+			}
+
+			modifier = {
+				has_trait = craven # AHHHHHH Please dont hurty hurty!!!
+				add = -40
+			}
+			modifier = {
+				has_trait = trusting
+				add = -10
+			}
+		}
+	}
+
+	option = { # Let them go...
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { any_in_list = { variable = mw_post_war_rebels count = 1 } }
+						desc = agot_mega_wars.0604.b.1
+					}
+					triggered_desc = {
+						trigger = { any_in_list = { variable = mw_post_war_rebels count > 1 } }
+						desc = agot_mega_wars.0604.b.2
+					}
+				}
+			}
+		}
+
+		add_character_modifier = { modifier = agot_mw_let_traitors_go_modifier years = 5 }
+
+		add_dread = -50
+		add_prestige = -1000
+
+		agot_mw_clear_traitor_setup_data_effect = yes
+
+		ai_chance = {
+			base = 40
+		}
+	}
+
+	after = {
+		clear_variable_list = mw_post_war_rebels
+		remove_variable = mw_new_rebel_leader
+	}
+}
+
+# AI chooses penality harshness for traitor | AI only
+agot_mega_wars.0605 = {
+	type = character_event
+	title = agot_mega_wars.0605.t
+	desc = agot_mega_wars.0605.desc
+
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+
+	immediate = {
+		agot_mw_aftermath_ai_punishes_effect = yes
+	}
+
+	option = { # PLACEHOLDER
+		name = agot_mega_wars.0605.a
+	}
+}
+
+agot_mega_wars.0606 = {
+	hidden = yes
+
+	immediate = {
+		agot_mw_clear_traitor_data_effect = yes
+	}
+}
+
+# This is my personal MW testing area!
+agot_mega_wars.9999 = {
+	type = character_event
+	title = agot_mega_wars.9999.t
+	desc = agot_mega_wars.9999.desc
+	orphan = yes
+	#override_background = {
+	#	event_background =
+	#}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = root
+		#animation =
+	}
+	right_portrait = {
+		character = root
+		#animation =
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_mega_wars.9999.a
+
+	}
+
+	option = {
+		name = agot_mega_wars.9999.b
+
+	}
+
+	option = {
+		name = agot_mega_wars.9999.c
+
+	}
+
+	after = {
+	}
+}

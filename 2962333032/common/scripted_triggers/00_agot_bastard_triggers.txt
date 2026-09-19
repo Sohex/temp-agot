@@ -1,0 +1,433 @@
+﻿# Called to test if the real_father's line held the iron throne and the claim has passed to this character
+real_paternal_held_iron_throne_claim = {
+	save_temporary_scope_as = real_paternal_held_iron_throne_claim_scope
+	exists = real_father
+	real_father = { is_alive = no } # Claims are inherited - father must be dead for the bastard to hold political significance
+	title:h_the_iron_throne = { # Daddy, granddaddy, or grandma was king / queen
+		any_past_holder = {
+			count >= 1
+			OR = {
+				this = scope:real_paternal_held_iron_throne_claim_scope.real_father
+				this = scope:real_paternal_held_iron_throne_claim_scope.real_father.father
+				this = scope:real_paternal_held_iron_throne_claim_scope.real_father.mother
+			}
+			is_alive = no
+			NOT = { has_character_flag = mw_gave_up_crown_after_megawar } # Didn't hold the throne for only a day
+		}
+	}
+}
+
+# Tests if they know a royal bastard secret that is about themselves ie. do they know the truth of their own birth?
+knows_self_royal_bastard_secret = {
+	save_temporary_scope_as = knows_self_royal_bastard_secret_scope
+	OR = {
+		any_known_secret = { # Knows Jon Snow secret
+			secret_type = secret_agot_disputed_heritage
+			secret_target = {
+				this = scope:knows_self_royal_bastard_secret_scope
+				real_paternal_held_iron_throne_claim = yes
+			}
+		}
+		any_known_secret = { # Knows other claiment secret
+			secret_type = secret_disputed_heritage
+			secret_target = {
+				this = scope:knows_self_royal_bastard_secret_scope
+				real_paternal_held_iron_throne_claim = yes
+			}
+		}
+		any_known_secret = { # Knows other claiment unmarried secret
+			secret_type = secret_unmarried_illegitimate_child
+			secret_target = {
+				this = scope:knows_self_royal_bastard_secret_scope
+				real_paternal_held_iron_throne_claim = yes
+			}
+		}
+	}
+}
+
+# Tests if they know a royal bastard secret that is not their own
+knows_other_royal_bastard_secret = {
+	save_temporary_scope_as = knows_other_royal_bastard_secret_scope
+	OR = {
+		any_known_secret = { # Knows Jon Snow type secret
+			secret_type = secret_agot_disputed_heritage
+			secret_target = {
+				NOT = { this = scope:knows_other_royal_bastard_secret_scope } # Not your own secret
+				real_paternal_held_iron_throne_claim = yes
+			}
+			can_be_exposed_by = scope:knows_other_royal_bastard_secret_scope
+		}
+		any_known_secret = { # Knows other claiment disputed secret
+			secret_type = secret_disputed_heritage
+			secret_target = {
+				NOT = { this = scope:knows_other_royal_bastard_secret_scope } # Not your own secret
+				real_paternal_held_iron_throne_claim = yes
+			}
+			can_be_exposed_by = scope:knows_other_royal_bastard_secret_scope
+		}
+		any_known_secret = { # Knows other claiment unmarried secret
+			secret_type = secret_unmarried_illegitimate_child
+			secret_target = {
+				NOT = { this = scope:knows_other_royal_bastard_secret_scope } # Not your own secret
+				real_paternal_held_iron_throne_claim = yes
+			}
+			can_be_exposed_by = scope:knows_other_royal_bastard_secret_scope
+		}
+	}
+}
+
+# Tests if an employer / landed should give up by default - applies factor = 0 on AI chance to reject demands
+agot_royal_bastard_should_give_up = {
+	OR = {
+		current_military_strength <= 1000 # They have no chance of winning
+		primary_title = {				  # They're only a baron
+			tier = tier_barony
+		}
+	}
+}
+
+can_have_bastard_surname = {
+	is_human = yes
+	NOT = { has_trait = bastard_founder }
+	OR = {
+		is_lowborn = no
+		agot_bastard_surname_trigger = yes
+		trigger_if = {
+			limit = { exists = father }
+			father ?= {
+				OR = {
+					is_lowborn = no
+					agot_bastard_surname_trigger = yes
+				}
+			}
+		}
+		trigger_if = {
+			limit = { exists = mother }
+			mother ?= {
+				OR = {
+					is_lowborn = no
+					agot_bastard_surname_trigger = yes
+				}
+			}
+		}
+	}
+}
+
+has_bastard_surname_flowers = {
+	OR = {
+		has_inactive_trait = surname_flowers
+		AND = {
+			is_lowborn = no
+			has_trait = bastard
+			faith ?= {
+				NOT = { has_doctrine_parameter = bastards_none }
+			}
+			OR = {
+				culture = culture:honeywiner
+				culture = culture:marcher
+				culture = culture:reachman
+				culture = culture:shieldman
+				culture = culture:vineman
+			}
+			NOR = {
+				has_inactive_trait = surname_flowers
+				has_inactive_trait = surname_hill
+				has_inactive_trait = surname_pyke
+				has_inactive_trait = surname_rivers
+				has_inactive_trait = surname_sand
+				has_inactive_trait = surname_snow
+				has_inactive_trait = surname_stone
+				has_inactive_trait = surname_storm
+				has_inactive_trait = surname_waters
+			}
+		}
+	}
+}
+
+has_bastard_surname_hill = {
+	OR = {
+		has_inactive_trait = surname_hill
+		AND = {
+			is_lowborn = no
+			has_trait = bastard
+			faith ?= {
+				NOT = { has_doctrine_parameter = bastards_none }
+			}
+			culture = culture:westerman_main
+			NOR = {
+				has_inactive_trait = surname_flowers
+				has_inactive_trait = surname_hill
+				has_inactive_trait = surname_pyke
+				has_inactive_trait = surname_rivers
+				has_inactive_trait = surname_sand
+				has_inactive_trait = surname_snow
+				has_inactive_trait = surname_stone
+				has_inactive_trait = surname_storm
+				has_inactive_trait = surname_waters
+			}
+		}
+	}
+}
+
+has_bastard_surname_pyke = {
+	OR = {
+		has_inactive_trait = surname_pyke
+		AND = {
+			is_lowborn = no
+			has_trait = bastard
+			faith ?= {
+				NOT = { has_doctrine_parameter = bastards_none }
+			}
+			culture = culture:ironborn
+			NOR = {
+				has_inactive_trait = surname_flowers
+				has_inactive_trait = surname_hill
+				has_inactive_trait = surname_pyke
+				has_inactive_trait = surname_rivers
+				has_inactive_trait = surname_sand
+				has_inactive_trait = surname_snow
+				has_inactive_trait = surname_stone
+				has_inactive_trait = surname_storm
+				has_inactive_trait = surname_waters
+			}
+		}
+	}
+}
+
+has_bastard_surname_rivers = {
+	OR = {
+		has_inactive_trait = surname_rivers
+		AND = {
+			is_lowborn = no
+			has_trait = bastard
+			faith ?= {
+				NOT = { has_doctrine_parameter = bastards_none }
+			}
+			culture = culture:riverman_main
+			NOR = {
+				has_inactive_trait = surname_flowers
+				has_inactive_trait = surname_hill
+				has_inactive_trait = surname_pyke
+				has_inactive_trait = surname_rivers
+				has_inactive_trait = surname_sand
+				has_inactive_trait = surname_snow
+				has_inactive_trait = surname_stone
+				has_inactive_trait = surname_storm
+				has_inactive_trait = surname_waters
+			}
+		}
+	}
+}
+
+has_bastard_surname_sand = {
+	OR = {
+		has_inactive_trait = surname_sand
+		AND = {
+			is_lowborn = no
+			has_trait = bastard
+			faith ?= {
+				NOT = { has_doctrine_parameter = bastards_none }
+			}
+			OR = {
+				culture = culture:greenblood
+				culture = culture:salt_dornish
+				culture = culture:sand_dornish
+				culture = culture:stone_dornish
+			}
+			NOR = {
+				has_inactive_trait = surname_flowers
+				has_inactive_trait = surname_hill
+				has_inactive_trait = surname_pyke
+				has_inactive_trait = surname_rivers
+				has_inactive_trait = surname_sand
+				has_inactive_trait = surname_snow
+				has_inactive_trait = surname_stone
+				has_inactive_trait = surname_storm
+				has_inactive_trait = surname_waters
+			}
+		}
+	}
+}
+
+has_bastard_surname_snow = {
+	OR = {
+		has_inactive_trait = surname_snow
+		AND = {
+			is_lowborn = no
+			has_trait = bastard
+			faith ?= {
+				NOT = { has_doctrine_parameter = bastards_none }
+			}
+			OR = {
+				culture = culture:barrowman
+				culture = culture:bearman
+				culture = culture:crannogman
+				culture = culture:fangman
+				culture = culture:first_man
+				culture = culture:forestman
+				culture = culture:frozen_shoreman
+				culture = culture:harborman
+				culture = culture:northern_clan
+				culture = culture:hornfoot
+				culture = culture:ice_riverman
+				culture = culture:krakenman
+				culture = culture:lakefolk
+				culture = culture:nightrunner
+				culture = culture:northman
+				culture = culture:skagosi
+				culture = culture:thenn
+				culture = culture:wolfswood_clansman
+			}
+			NOR = {
+				has_inactive_trait = surname_flowers
+				has_inactive_trait = surname_hill
+				has_inactive_trait = surname_pyke
+				has_inactive_trait = surname_rivers
+				has_inactive_trait = surname_sand
+				has_inactive_trait = surname_snow
+				has_inactive_trait = surname_stone
+				has_inactive_trait = surname_storm
+				has_inactive_trait = surname_waters
+			}
+		}
+	}
+}
+
+has_bastard_surname_stone = {
+	OR = {
+		has_inactive_trait = surname_stone
+		AND = {
+			is_lowborn = no
+			has_trait = bastard
+			faith ?= {
+				NOT = { has_doctrine_parameter = bastards_none }
+			}
+			OR = {
+				culture = culture:valeman_finger
+				culture = culture:valeman_upper
+				culture = culture:valeman_main
+				culture = culture:sisterman
+				culture = culture:moon_clan
+			}
+			NOR = {
+				has_inactive_trait = surname_flowers
+				has_inactive_trait = surname_hill
+				has_inactive_trait = surname_pyke
+				has_inactive_trait = surname_rivers
+				has_inactive_trait = surname_sand
+				has_inactive_trait = surname_snow
+				has_inactive_trait = surname_stone
+				has_inactive_trait = surname_storm
+				has_inactive_trait = surname_waters
+			}
+		}
+	}
+}
+
+has_bastard_surname_storm = {
+	OR = {
+		has_inactive_trait = surname_storm
+		AND = {
+			is_lowborn = no
+			has_trait = bastard
+			faith ?= {
+				NOT = { has_doctrine_parameter = bastards_none }
+			}
+			culture = culture:stormlander_main
+			NOR = {
+				has_inactive_trait = surname_flowers
+				has_inactive_trait = surname_hill
+				has_inactive_trait = surname_pyke
+				has_inactive_trait = surname_rivers
+				has_inactive_trait = surname_sand
+				has_inactive_trait = surname_snow
+				has_inactive_trait = surname_stone
+				has_inactive_trait = surname_storm
+				has_inactive_trait = surname_waters
+			}
+		}
+	}
+}
+
+has_bastard_surname_waters = {
+	OR = {
+		has_inactive_trait = surname_waters
+		AND = {
+			is_lowborn = no
+			has_trait = bastard
+			faith ?= {
+				NOT = { has_doctrine_parameter = bastards_none }
+			}
+			OR = {
+				culture = culture:clawman
+				culture = culture:crownlander
+				culture = culture:westerosi_valyrian
+			}
+			NOR = {
+				has_inactive_trait = surname_flowers
+				has_inactive_trait = surname_hill
+				has_inactive_trait = surname_pyke
+				has_inactive_trait = surname_rivers
+				has_inactive_trait = surname_sand
+				has_inactive_trait = surname_snow
+				has_inactive_trait = surname_stone
+				has_inactive_trait = surname_storm
+				has_inactive_trait = surname_waters
+			}
+		}
+	}
+}
+
+agot_bastard_surname_trigger = {
+	is_human = yes
+	NOT = { has_trait = bastard_founder }
+	OR = {
+		has_bastard_surname_flowers = yes
+		has_bastard_surname_hill = yes
+		has_bastard_surname_pyke = yes
+		has_bastard_surname_rivers = yes
+		has_bastard_surname_sand = yes
+		has_bastard_surname_snow = yes
+		has_bastard_surname_stone = yes
+		has_bastard_surname_storm = yes
+		has_bastard_surname_waters = yes
+	}
+}
+
+agot_is_valid_bastard_for_deathbed_legitimization = {
+	$PARENT$.faith = { has_doctrine_parameter = bastards_legitimize }
+	OR = {
+		has_trait = bastard
+		has_trait = bastard_founder
+	}
+	OR = {
+		AND = {
+			exists = $PARENT$.dynasty
+			dynasty ?= $PARENT$.dynasty
+			$PARENT$ = dynasty.dynast
+		}
+		AND = {
+			exists = $PARENT$.house
+			house ?= $PARENT$.house
+			$PARENT$ = house.house_head
+		}
+	}
+}
+
+has_no_non_bastard_inheritance_blockers  = {
+	NOR = {
+		has_trait = kingsguard
+		has_trait = nightswatch
+		has_trait = maester
+		has_trait = septon
+		has_trait = disinherited
+		has_trait = eunuch_1
+		has_trait = beardless_eunuch
+		has_trait = devoted
+		has_trait = order_member
+		has_trait = gallivanter
+		has_trait = silent_sister
+		has_trait = dragon
+		has_trait = broke_vows
+	}
+}

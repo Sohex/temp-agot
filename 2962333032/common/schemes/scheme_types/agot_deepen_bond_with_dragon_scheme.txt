@@ -1,0 +1,110 @@
+﻿deepen_bond_with_dragon_scheme = {
+	# Basic Setup
+	skill = diplomacy
+	desc = deepen_bond_with_dragon_scheme_desc
+	success_desc = "DEEPEN_BOND_DRAGON_SUCCESS_DESC"
+	icon = icon_scheme_dragon
+	illustration = "gfx/interface/illustrations/event_scenes/corridor.dds"
+	category = personal
+	target_type = character
+	is_secret = no
+	is_basic = yes
+	uses_resistance = no
+	cooldown = { years = 2 }
+
+	# Parameters
+	speed_per_skill_point = -2.5
+	spymaster_speed_per_skill_point = 0
+	base_progress_goal = 365
+	base_maximum_success = 95
+	minimum_success = 20
+
+	# Core Triggers
+	allow = {
+		can_use_deepen_bond_with_dragon_scheme = { TARGET = scope:target }
+		age >= 6
+		is_imprisoned = no
+		scope:target = {
+			age >= 6
+			is_imprisoned = no
+		}
+	}
+	valid = {
+		has_relation_agot_dragon = scope:target
+		scope:target = {
+			has_trait = dragon
+		}
+	}
+
+	odds_prediction = {
+		add = base_odds_prediction_target_is_char_value
+		add = odds_skill_contribution_diplomacy_value
+		add = odds_befriend_scheme_misc_value
+		min = 0
+	}
+
+	# Base Chances
+	base_success_chance = {
+		base = 0
+		agot_dragon_deepen_bonding_scheme_modifier = yes
+	}
+
+	# On Actions
+	on_start = {
+	}
+	on_phase_completed = {
+		# Grab our scopes.
+		save_scope_as = scheme
+		scheme_target_character = { save_scope_as = target }
+		scheme_owner = { save_scope_as = owner }
+		#Outcome system by Mathilda Bjarnehed
+		scope:scheme.scheme_owner = {
+			trigger_event = dragon_bond_events.2000
+		}
+	}
+	on_invalidated = {
+		scheme_target_character = {
+			save_scope_as = target
+		}
+		scheme_owner = {
+			save_scope_as = owner
+		}
+		if = {
+			limit = {
+				scope:target = { is_alive = no }
+			}
+			scope:owner = {
+				send_interface_toast = {
+					title = deepen_bond_with_dragon_scheme_invalidated_title
+					left_icon = scope:target
+					custom_tooltip = deepen_bond_with_dragon_scheme_invalidated_dead
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:target = {
+					NOT = { in_diplomatic_range = scope:owner }
+				}
+			}
+			scope:owner = {
+				send_interface_toast = {
+					title = deepen_bond_with_dragon_scheme_invalidated_title
+					left_icon = scope:target
+					custom_description_no_bullet = {
+						object = scope:target
+						text = scheme_target_not_in_diplomatic_range
+					}
+				}
+			}
+		}
+	}
+	on_monthly = {
+		save_scope_as = scheme
+		scheme_target_character = { save_scope_as = target }
+		scheme_owner = { save_scope_as = owner }
+		scheme_owner = {
+			trigger_event = { on_action = dragon_strengthen_bonding_ongoing }
+		}
+	}
+}

@@ -1,0 +1,85 @@
+﻿=== Order of execution ===
+
+The game fires all of the effect brackets after it has fired all of the date brackets. By the time effect brackets are fired, all of date-valid commands are already fired.
+For example, if you load the game in 8282 and you have date bracket with "employer = " in 8281 and "effect = { set_employer = " in 8280, the "employer" will be fired before "set_employer" despite it being in the later date.
+Thus, you can't override "effect" brackets with non-effect history command ("trait =", "employer =", "dynasty =" etc.)
+
+You can't bypass this by removing "effect = { }" and putting effects directly into date brackets, as game just interprets them as if the effect brackets were in place.
+The order of execution will remain unchanged. It is advised to keep effect brackets in order to not mislead people about the order of execution in the edited character.
+
+If the character is loaded as dead, all of the effect brackets (as well as things that should be put in effect brackets but for some reason they aren't) will be omitted.
+That's why keeping "effect = { }" outside of effects is really important, as it helps to visualize how the character would be loaded after it's demise.
+It also means that if you put any effect on the same date as character's death it WILL NOT BE EXECUTED AT ANY POINT IN TIME.
+
+In order to apply effects to dead character, please turn to common/scripted_effects/00_agot_scripted_effects_posthistory_effects file.
+You also need that file to apply every instance of make_trait_inactive or set_real_father commands, as those would not persist on dead characters.
+Every character who uses any of those two effects mentioned above absolutely needs those effects being repeated in aforementioned scripted_effects file.
+
+
+
+
+=== Proper construction of trait removal ===
+
+8298.1.1 = {
+	trait = diligent # Trait that is staying for entire life
+	effect = { add_trait = ambitious } # Trait that will later be removed
+}
+8299.1.1 = {
+	effect = { remove_trait = ambitious }
+}
+
+Keep in mind that 'effect' brackets aren't executed if the character is loaded as already dead.
+If only removal is inside 'effect', then dead characters will retain removed trait, thus both needs to be inside effect.
+
+The reason is that alive character will execute "effects" while dead character will not.
+So alive character will have it's trait REMOVED, while dead character will have it's trait NEVER ADDED IN THE FIRST PLACE.
+
+
+
+
+=== Disallow Random Traits ===
+
+You can't use "disallow_random_traits = yes" on characters that died as children.
+In order to apply this command, please turn to common/scripted_effects/00_agot_scripted_effects_posthistory_effects file.
+
+
+
+
+=== Leveled traits on dead characters ===
+
+Since the only way of leveling trait is through effect, you can't level a trait on a dead character. Trait would remain on it's level one.
+For some traits, we have placeholder traits that will be turned into leveled variants on game load if character is loaded alive.
+They are located in common/traits/00_agot_history_traits
+
+
+=== Incapable traits and error.log ===
+
+Giving lords Incapable trait directly as a history command causes them to false-positive into error.log
+Contents of the error.log are near-impossible to track, due to them being attributed to "unknown location"
+As a consequence, incapable traits are forbidden to be added directly in a form of "trait = incapable"
+The bug is not present if they are added through effect - "effect = { add_trait = incapable }"
+The error is only caused by alive character, so it is safe to give them trait normally in their death-date-bracket, so it shows on the dead character
+
+
+=== Canonicity tags ===
+
+# Canon - character comes directly from GRRM's books
+# Mentioned - character's existence is somehow implied in GRRM's books, but the name itself is our invention
+# Semi-Canon - character comes from Semi-Canon sources, such as for example Show, Telltale games, Blood of Dragons online RPG, unifinished drafts of AFFC, Hedge Knight Graphic Novels art
+# Easter Egg - character is a joke or reference to non-canon sources
+
+Characters without tags are implied to be non-canon/mod-canon
+
+There is no need to put "non-canon" or "not a lord" tags next to characters, as lack of "canon" or "a lord" tag is indicator in itself.
+
+
+=== Proper legitimisation of bastards ===
+
+RTP update introduced new error.log "Failed build succession for [...]". It's happening for landed characters when history files are removing bastard trait from their relatives.
+
+To properly represent character being legitimized you need to:
+1. Give them "trait = legitimized_bastard" normally outside of the date brackets
+2. Assign them with flag "unlegitimize_on_load" on birth
+3. Remove said flag at the date of their legitimisation
+
+This way characters are always legit when the succession errors are calculated, and are only unlegitmised in on_game_start if they should not be legitimised yet.

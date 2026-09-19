@@ -1,0 +1,264 @@
+﻿story_agot_fourth_blackfyre_rebellion = {
+	# Stocky Kruegar
+
+	#The Iron Throne
+	#Aegon V - Targaryen_122
+
+	#The Westerlands
+	#Gerold Lannister - Lannister_120
+	#Tion Lannister - Lannister_128
+
+	#The Blackfyre/Invaders
+	#Blackfyre_11 - Daemon III Blackfyre
+	#Targaryen_95 - Aegor Rivers
+
+	on_setup = {
+		debug_log = "Fourth Blackfyre Rebellion initialized"
+		debug_log_date = yes
+		##################################
+		#Initialize
+		character:Blackfyre_11 = {
+			trigger_event = agot_fourth_blackfyre_rebellion.1000
+			add_trait = refusing_marriage
+		}
+	}
+	on_end = {
+		story_owner = { trigger_event = agot_fourth_blackfyre_rebellion.9989 }
+		agot_duncan_cassandra_remove_trait_effect = yes
+		debug_log = "AGOT: 4th Blackfyre rebellion story ended on:"
+		debug_log_date = yes
+	}
+
+	on_owner_death = {
+		debug_log = "AGOT: 4th Blackfyre rebellion story ended via death on:"
+		debug_log_date = yes
+		story_owner = {
+			destroy_title = title:e_blackfyre_rebellion
+		}
+		end_story = yes
+	}
+
+	# General daily checks
+	effect_group = {
+		days = 1
+
+		#Daemon III Dethroned, End Story
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					OR = {
+						is_playable_character = no
+						AND = {
+							is_landless_adventurer = yes
+							NOT = { has_character_flag = agot_claimant_king }
+						}
+						AND = {
+							is_landless_adventurer = no
+							exists = primary_title
+							primary_title.tier < tier_empire
+						}
+					}
+				}
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+
+		# Daemon III takes Iron Throne
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					has_title = title:h_the_iron_throne
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_fourth_blackfyre_rebellion.0010
+				}
+				end_story = yes
+			}
+		}
+	}
+
+	# War Effects Block
+	effect_group = {
+		days = 1
+
+		trigger = {
+			story_owner = {
+				is_at_war_with = title:h_the_iron_throne.holder
+			}
+		}
+		#Daemon - Duncan Tall duel
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				NOT = { character:Blackfyre_11 = { has_character_flag = currently_in_duel } }
+				daemon_tall_duel_trigger = yes
+			}
+			effect = {
+				if = {
+					limit = {
+						daemon_tall_duel_trigger = yes
+					}
+					set_variable = daemon_tall_duel
+					#Daemon Tall Duel stuff here
+					if = {
+						limit = { #Player Daemon takes priority
+							character:Blackfyre_11 = {
+								is_ai = no
+							}
+						}
+						character:Blackfyre_11 = {
+							trigger_event = agot_fourth_blackfyre_rebellion.9990
+							add_character_flag = currently_in_duel
+						}
+					}
+					else_if = { #Player Tall
+						limit = {
+							character:Tall_1 = {
+								is_ai = no
+							}
+						}
+						character:Tall_1 = {
+							trigger_event = agot_fourth_blackfyre_rebellion.9991
+						}
+					}
+					else = { #AI Prowess Comparison
+						random_list = {
+							0 = {
+								modifier = {
+									add = agot_historic_event_chance
+								}
+								character:Blackfyre_11 = {
+									trigger_event = agot_fourth_blackfyre_rebellion.9993
+								}
+							}
+							0 = {
+								#no duel
+								modifier = {
+									add = agot_nonhistoric_event_chance
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		#Aegor - Tion Lannister duel
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				NOT = { character:Targaryen_95 = { has_character_flag = currently_in_duel } }
+				aegor_tion_duel_trigger = yes
+			}
+			effect = {
+				if = {
+					limit = {
+						aegor_tion_duel_trigger = yes
+					}
+					set_variable = aegor_tion_duel
+					#Aegor Tion Duel stuff here
+					if = {
+						limit = { #Player Aegor takes priority
+							character:Targaryen_95 = {
+								is_ai = no
+							}
+						}
+						character:Targaryen_95 = {
+							trigger_event = agot_fourth_blackfyre_rebellion.9994
+							add_character_flag = currently_in_duel
+						}
+					}
+					else_if = { #Player Tion
+						limit = {
+							character:Lannister_128 = {
+								is_ai = no
+							}
+						}
+						character:Lannister_128 = {
+							trigger_event = agot_fourth_blackfyre_rebellion.9995
+						}
+					}
+					else = { #AI Prowess Comparison
+						random_list = {
+							0 = {
+								modifier = {
+									add = agot_historic_event_chance
+								}
+								character:Targaryen_95 = {
+									trigger_event = agot_fourth_blackfyre_rebellion.9997
+								}
+							}
+							0 = {
+								#no duel
+								modifier = {
+									add = agot_nonhistoric_event_chance
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		# Call Rest of Blackfyre Loyalists in
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				NOT = { character:Blackfyre_11 = { has_character_flag = currently_in_duel } }
+				exists = var:fourth_bf_war
+				OR = {
+					var:fourth_bf_war = {
+						# Must not be at 100% war score, no MW when Aegon is captured
+						NOT = { attacker_war_score >= 100 }
+						# Must have been a year atleast
+						war_days >= 365
+						# Winning with positive war score
+						attacker_war_score > 0
+						# Daemon must have fought a battle OR be currently leading one
+						primary_attacker = {
+							OR = {
+								# Daemon must've fought in a single battle
+								OR = {
+									any_memory = {
+										has_memory_type = battle_won_memory
+									}
+									any_memory = {
+										has_memory_type = battle_lost_memory
+									}
+								}
+								# OR, be leading an army in Westeros
+								AND = {
+									is_in_army = yes
+									is_alive = yes
+									location = {
+										geographical_region = world_westeros
+									}
+								}
+							}
+						}
+					}
+					story_owner = {
+						has_character_flag = bf_loyalists_call_in
+					}
+				}
+				NOT = { has_variable = called_bfl_in_already }
+			}
+			effect = {
+				set_variable = called_bfl_in_already
+				story_owner = {
+					# Daemon Kills Duncan Tall
+					if = {
+						limit = { has_character_flag = bf_loyalists_call_in }
+						trigger_event = agot_fourth_blackfyre_rebellion.0014
+						remove_character_flag = bf_loyalists_call_in
+					}
+					# Daemon lasts over 365 days of war
+					else = { trigger_event = agot_fourth_blackfyre_rebellion.0013 }
+				}
+			}
+		}
+	}
+}
+

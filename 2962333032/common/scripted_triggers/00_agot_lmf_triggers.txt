@@ -1,0 +1,699 @@
+﻿capital_province_being_besieged = {
+	capital_province = {
+		any_army_in_location = {
+			army_owner = {
+				is_at_war_with = root
+			}
+		}
+	}
+}
+
+is_in_same_army_location_as = {
+	is_in_army = yes
+	$CHARACTER$ = { is_in_army = yes }
+
+	trigger_if = {
+		limit = { exists = knight_army }
+		knight_army = { save_temporary_scope_as = my_army }
+	}
+	trigger_else = {
+		commanding_army ?= { save_temporary_scope_as = my_army }
+	}
+
+	trigger_if = {
+		limit = { exists = $CHARACTER$.knight_army }
+		$CHARACTER$.knight_army = { save_temporary_scope_as = their_army }
+	}
+	trigger_else = {
+		$CHARACTER$.commanding_army ?= { save_temporary_scope_as = their_army }
+	}
+
+	OR = {
+		AND = {
+			exists = scope:my_army
+			exists = scope:their_army
+			scope:my_army = scope:their_army
+		}
+		AND = {
+			exists = scope:my_army.army_owner
+			exists = scope:their_army.army_owner
+			exists = scope:my_army.location
+			exists = scope:their_army.location
+			scope:my_army.army_owner = scope:their_army.army_owner
+			scope:my_army.location = scope:their_army.location
+		}
+	}
+}
+
+is_in_same_location_or_activity_as = {
+	OR = {
+		# they're physically at the same location
+		is_at_same_location = $CHARACTER$
+		# they're traveling together
+		current_travel_plan ?= {
+			OR = {
+				travel_plan_owner = { this = $CHARACTER$ }
+				any_entourage_character = { this = $CHARACTER$ }
+			}
+		}
+		# they're at the same activity
+		involved_activity ?= {
+			OR = {
+				activity_host = { this = $CHARACTER$ }
+				any_attending_character = {
+					this = $CHARACTER$
+					is_travelling = no
+				}
+			}
+		}
+		# they're in the same army location
+		is_in_same_army_location_as = { CHARACTER = $CHARACTER$ }
+	}
+}
+
+available_or_same_location = {
+	NOR = {
+		has_variable = gone_adventuring
+
+		has_character_flag = holding_court_character_flag
+		has_character_flag = petition_liege_character_flag
+		has_variable = homage_liege_scope
+		is_being_visited_on_tour_strict = yes
+	}
+	OR = {
+		is_travelling = no
+		current_travel_plan = {
+			OR = {
+				travel_plan_owner = { this = $EXCEPTION$ }
+				any_entourage_character = { this = $EXCEPTION$ }
+			}
+		}
+	}
+	OR = {
+		NOT = { exists = involved_activity }
+		involved_activity = {
+			OR = {
+				activity_host = { this = $EXCEPTION$ }
+				any_attending_character = {
+					this = $EXCEPTION$
+					is_travelling = no
+				}
+			}
+		}
+	}
+	OR = {
+		is_in_army = no
+		is_in_same_army_location_as = { CHARACTER = $EXCEPTION$ }
+	}
+}
+
+is_preferred_gender_of_ruler_realm_law = {
+	trigger_if = {
+		limit = {
+			$RULER$ = {
+				trigger_if = {
+					limit = { is_ruler = yes }
+					OR = {
+						has_realm_law = male_only_law
+						has_realm_law = male_preference_law
+					}
+				}
+				trigger_else_if = {
+					limit = { exists = liege }
+					liege = {
+						OR = {
+							has_realm_law = male_only_law
+							has_realm_law = male_preference_law
+						}
+					}
+				}
+				trigger_else = {
+					faith = { has_doctrine = doctrine_gender_male_dominated }
+				}
+			}
+		}
+		is_male = yes
+	}
+	trigger_else_if = {
+		limit = {
+			$RULER$ = {
+				trigger_if = {
+					limit = { is_ruler = yes }
+					OR = {
+						has_realm_law = female_only_law
+						has_realm_law = female_preference_law
+					}
+				}
+				trigger_else_if = {
+					limit = { exists = liege }
+					liege = {
+						OR = {
+							has_realm_law = female_only_law
+							has_realm_law = female_preference_law
+						}
+					}
+				}
+				trigger_else = {
+					faith = { has_doctrine = doctrine_gender_female_dominated }
+				}
+			}
+		}
+		is_female = yes
+	}
+	trigger_else = {
+		always = yes
+	}
+}
+
+is_old_age_or_not_have_children = {
+	trigger_if = {
+		limit = { is_female = yes }
+		OR = {
+			age > define:NChildbirth|MAX_FEMALE_REPRODUCTION_AGE
+			age > define:NCharacter|FEMALE_ELDERLY_AGE
+		}
+	}
+	trigger_else = {
+		age > define:NCharacter|MALE_ELDERLY_AGE
+	}
+}
+
+is_pious_or_clergy = {
+	OR = {
+		ai_zeal >= 100
+		AND = {
+			OR = {
+				is_clergy = yes
+				has_council_position = councillor_court_chaplain
+				agot_has_religious_trait = yes
+			}
+			ai_zeal > 0
+		}
+	}
+}
+
+army_can_have_army_events = {
+	army_size >= 1000
+	is_army_in_combat = no
+	is_army_in_raid = no
+	exists = location
+	location = {
+		is_sea_province = no
+		NOT = { this = root.capital_province }
+	}
+}
+
+#would the character in scope leave CURRENT_LIEGE's court to move to NEW_LIEGE's court?
+would_leave_liege_trigger = {
+	NOR = {
+		is_obedient_to = $CURRENT_LIEGE$
+		is_courtier_of = $NEW_LIEGE$
+		is_close_or_extended_family_of = $CURRENT_LIEGE$
+		is_councillor_of = $CURRENT_LIEGE$
+		is_consort_of = $CURRENT_LIEGE$
+		has_relation_friend = $CURRENT_LIEGE$
+		has_relation_lover = $CURRENT_LIEGE$
+		has_relation_rival = $NEW_LIEGE$
+		$NEW_LIEGE$ = { has_imprisonment_reason = prev }
+		has_opinion_modifier = { modifier = demanded_recruitment target = $CURRENT_LIEGE$ }
+		has_opinion_modifier = { modifier = loyal_servant target = $CURRENT_LIEGE$ }
+		$CURRENT_LIEGE$ = { has_hook = prev }
+		AND = {
+			exists = inspiration
+			has_completed_inspiration = no
+		}
+		AND = {
+			NOT = { has_relation_soulmate = $NEW_LIEGE$ }
+			OR = {
+				has_any_court_position = yes
+				is_knight_of = $CURRENT_LIEGE$
+			}
+			OR = {
+				opinion = { target = $CURRENT_LIEGE$ value >= 50 }
+				AND = {
+					save_temporary_opinion_value_as = { name = opinion_of_you target = $NEW_LIEGE$ }
+					opinion = { target = $CURRENT_LIEGE$ value > scope:opinion_of_you }
+				}
+			}
+		}
+	}
+}
+
+#this is based on has_any_major_revenge_opinion_against_character_trigger but removes some of the less egregious offences
+has_simplified_revenge_opinion_against_character_trigger = {
+	OR = {
+		has_opinion_modifier = {
+			modifier = imprisoned_me
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = banished_me
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = killed_my_child
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = botched_my_treatment_crime_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = botched_treatment_of_kin_crime_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = theft_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = embezzled_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = attempted_arrest_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = attempted_imprisonment_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = abducted_me_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = attempted_abduction_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = murdered_close_family_crime
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = attempted_murder_close_family_crime
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = attempted_murder_me_crime
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = murdered_close_relation_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = murdered_someone_close_to_me_crime
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = hurt_someone_close_to_me_crime
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = executed_close_family
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = executed_close_family_crime
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = tortured_family_member
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = tortured_me
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = blinded_family_member
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = blinded_me
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = castrated_family_member
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = castrated_me
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = slept_with_spouse_discovered_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = slept_with_spouse_exposed_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = unfaithful_spouse_discovered_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = unfaithful_spouse_exposed_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = refused_to_renounce_lover_opinion
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = betrayed_our_promise
+			target = $CHARACTER$
+		}
+		has_opinion_modifier = {
+			modifier = reason_child_died
+			target = $CHARACTER$
+		}
+	}
+}
+
+#used for determining if the character should use player-only realistic pregnancy rule
+should_use_realistic_pregnancy_player_only = {
+	OR = {
+		is_ai = no
+		primary_spouse = { is_ai = no }
+		AND = {
+			is_courtier = yes
+			liege = { is_ai = no }
+		}
+	}
+}
+
+#both of the below are used for determining valid pregnancies
+is_at_same_location_or_activity_as_father = {
+	# first make sure there IS a father - if not, we need to fail the trigger immediately
+	OR = {
+		exists = scope:real_father
+		exists = scope:father
+	}
+	# then track which kind of father it is
+	trigger_if = {
+		limit = { exists = scope:real_father }
+		scope:real_father = { save_temporary_scope_as = father_check }
+	}
+	trigger_else = {
+		scope:father = { save_temporary_scope_as = father_check }
+	}
+
+	# and neither of them are imprisoned
+	is_imprisoned = no
+	scope:father_check = { is_imprisoned = no }
+
+	# now let's see if they're close enough to have a pregnancy
+	is_in_same_location_or_activity_as = { CHARACTER = scope:father_check }
+}
+
+should_disallow_pregnancy_trigger = {
+	OR = {
+		# disallow the pregnancy if a flag has been set on either the mother or father to prevent them from having children
+		has_character_flag = lmf_no_children
+		scope:real_father = { has_character_flag = lmf_no_children }
+		# Canonical Unfruitful Marriage
+		AND = {
+			has_game_rule = agot_story_historical_events_historical_outcomes
+			has_relation_historical_unfruitful_marriage = scope:real_father
+		}
+		# Canonical Pregnancy Block
+		agot_canon_children_should_block_pregnancy_trigger = yes
+		# Unfruitful Marriage Relation
+		has_relation_unfruitful_marriage = scope:real_father
+		# Kicked from marriage bed relation
+		has_relation_kicked_from_marriage_bed = scope:real_father
+		AND = {
+			# or if the game rule is set we check whether it's valid
+			has_game_rule = agot_realistic_pregnancy_chance
+			NOR = {
+				# allow it anyhow if this is an event-driven pregnancy (this flag is set in had_sex_with_effect)
+				has_character_flag = no_pregnancy_blocker
+				# but otherwise they need to be at the same location
+				is_at_same_location_or_activity_as_father = yes
+				# this is for agot canon children
+				has_character_flag = agot_is_pregnant
+				# adding this exception since separated courtiers cannot visit each other
+				AND = {
+					is_ruler = no
+					scope:real_father = { is_ruler = no }
+				}
+			}
+		}
+	}
+}
+
+is_interesting_character_trigger = {
+	OR = {
+		is_lowborn = no
+		has_trait = intellect_good
+		has_trait = physique_good
+		has_trait = beauty_good
+		diplomacy >= high_skill_rating
+		martial >= high_skill_rating
+		stewardship >= high_skill_rating
+		intrigue >= high_skill_rating
+		learning >= high_skill_rating
+		prowess >= high_skill_rating
+	}
+}
+
+#these are used for rivalry events
+has_revenge_motivation_against = {
+	ai_vengefulness >= 0
+	has_simplified_revenge_opinion_against_character_trigger = { CHARACTER = $CHARACTER$ }
+}
+
+is_resentful_of_impious_character = {
+	OR = {
+		has_personality_malicious_trigger = yes
+		is_hot_headed_trigger = yes
+	}
+	is_pious_or_clergy = yes
+	$CHARACTER$.ai_zeal <= -100
+	faith = $CHARACTER$.faith
+}
+
+is_resentful_of_pious_character = {
+	OR = {
+		has_personality_malicious_trigger = yes
+		is_hot_headed_trigger = yes
+	}
+	$CHARACTER$ = { is_pious_or_clergy = yes }
+	ai_zeal <= -100
+	faith = $CHARACTER$.faith
+}
+
+is_resentful_of_hostile_faith_character = {
+	OR = {
+		has_personality_malicious_trigger = yes
+		is_hot_headed_trigger = yes
+	}
+	is_pious_or_clergy = yes
+	faith = {
+		faith_hostility_level = {
+			target = $CHARACTER$.faith
+			value >= faith_hostile_level
+		}
+	}
+}
+
+is_resentful_of_pious_astray_faith_character = {
+	OR = {
+		has_personality_malicious_trigger = yes
+		is_hot_headed_trigger = yes
+	}
+	is_pious_or_clergy = yes
+	$CHARACTER$ = { is_pious_or_clergy = yes }
+	faith = {
+		faith_hostility_level = {
+			target = $CHARACTER$.faith
+			value = faith_astray_level
+		}
+	}
+}
+
+has_hatred_towards = {
+	age <= $CHARACTER$.age_plus_10
+	age >= $CHARACTER$.age_minus_10
+	OR = {
+		has_personality_malicious_trigger = yes
+		is_hot_headed_trigger = yes
+	}
+	has_moderate_bad_opinion_of_character_trigger = { CHARACTER = $CHARACTER$ }
+}
+
+has_major_incompatibility_with = {
+	age <= $CHARACTER$.age_plus_10
+	age >= $CHARACTER$.age_minus_10
+	has_personality_benevolent_trigger = no
+	has_personality_submissive_trigger = no
+	trait_compatibility = { target = $CHARACTER$ value <= -20 }
+	NOT = {
+		has_any_moderate_good_relationship_with_character_trigger = { CHARACTER = $CHARACTER$ }
+	}
+}
+
+is_jealous_of_their_lover = {
+	save_temporary_scope_as = jealous_lover
+	$CHARACTER$ = {
+		any_relation = {
+			type = lover
+			OR = {
+				any_secret = {
+					secret_type = secret_lover
+					is_known_by = scope:jealous_lover
+					secret_target = $CHARACTER$
+				}
+				NOT = {
+					any_secret = {
+						secret_type = secret_lover
+						secret_target = $CHARACTER$
+					}
+				}
+			}
+			OR = {
+				has_relation_lover = scope:jealous_lover
+				AND = {
+					has_relation_old_flame = scope:jealous_lover
+					reverse_opinion = { target = scope:jealous_lover value >= 40 }
+				}
+			}
+		}
+	}
+}
+
+has_equal_or_better_aptitude_for_court_position = {
+	$CHARACTER$ = { has_court_position = $POSITION$ }
+	can_be_employed_as = $POSITION$
+	aptitude = {
+		court_position = $POSITION$
+		value >= $CHARACTER$.aptitude:$POSITION$
+	}
+}
+
+is_jealous_of_their_court_position = {
+	$CHARACTER$ = { has_any_court_position = yes }
+	opinion = { target = $CHARACTER$ value < 0 }
+	is_jealous_trigger = yes
+	is_adult = yes
+	is_councillor = no
+	has_any_court_position = no
+	exists = liege
+	liege = $CHARACTER$.liege
+	OR = {
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = court_physician_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = lady_in_waiting_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = travel_leader_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = court_tutor_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = master_of_horse_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = master_of_hunt_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = royal_architect_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = seneschal_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = court_poet_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = court_musician_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = champion_court_position }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = second_camp_officer }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = quartermaster_camp_officer }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = chief_engineer_camp_officer }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = master_bard_camp_officer }
+		has_equal_or_better_aptitude_for_court_position = { CHARACTER = $CHARACTER$ POSITION = master_of_arms_camp_officer }
+	}
+}
+
+is_jealous_of_their_council_position = {
+	$CHARACTER$ = { is_councillor = yes }
+	opinion = { target = $CHARACTER$ value < 0 }
+	is_jealous_trigger = yes
+	is_adult = yes
+	is_councillor = no
+	exists = liege
+	liege = $CHARACTER$.liege
+	NOT = { is_consort_of = liege }
+	OR = {
+		is_ruler = yes
+		$CHARACTER$ = { is_ruler = no }
+	}
+	OR = {
+		AND = {
+			$CHARACTER$ = { has_council_position = councillor_chancellor }
+			diplomacy_plus_2 >= $CHARACTER$.diplomacy
+		}
+		AND = {
+			$CHARACTER$ = { has_council_position = councillor_marshal }
+			martial_plus_2 >= $CHARACTER$.martial
+		}
+		AND = {
+			$CHARACTER$ = { has_council_position = councillor_steward }
+			stewardship_plus_2 >= $CHARACTER$.stewardship
+		}
+		AND = {
+			$CHARACTER$ = { has_council_position = councillor_spymaster }
+			intrigue_plus_2 >= $CHARACTER$.intrigue
+		}
+	}
+}
+
+is_jealous_of_their_heir_position = {
+	is_jealous_trigger = yes
+	NOT = {
+		has_any_moderate_good_relationship_with_character_trigger = { CHARACTER = $CHARACTER$ }
+	}
+	save_temporary_scope_as = title_check
+	any_pretender_title = {
+		tier >= tier_county
+		OR = {
+			scope:title_check = { is_ruler = no }
+			tier > scope:title_check.highest_held_title_tier
+		}
+		place_in_line_of_succession = {
+			target = scope:title_check
+			value < 4
+		}
+		place_in_line_of_succession = {
+			target = $CHARACTER$
+			value < "place_in_line_of_succession(scope:title_check)"
+		}
+	}
+}
+
+has_issue_with_disputed_heritage_of = {
+	$CHARACTER$ = {
+		has_trait = disputed_heritage
+		has_dynasty = yes
+	}
+	dynasty = $CHARACTER$.dynasty
+	is_dynast = no
+	OR = {
+		has_trait = arrogant
+		has_personality_malicious_trigger = yes
+	}
+	NOR = {
+		has_relation_friend = $CHARACTER$
+		is_grandparent_of = $CHARACTER$
+		is_parent_of = $CHARACTER$
+		is_child_of = $CHARACTER$
+		is_grandchild_of = $CHARACTER$
+		is_illegitimate = yes
+		has_trait = disputed_heritage
+		AND = {
+			exists = $CHARACTER$.real_father
+			this = $CHARACTER$.real_father
+		}
+	}
+}
+
+#used to identify rulers in a player realm, but to be conscious of processing
+is_player_realm_ruler = {
+	exists = capital_province
+	any_player = {
+		is_liege_or_above_of = $RULER$
+		capital_province.kingdom ?= $RULER$.capital_province.kingdom
+		trigger_if = {
+			limit = { highest_held_title_tier > tier_duchy }
+			$RULER$.highest_held_title_tier >= tier_duchy
+		}
+	}
+}

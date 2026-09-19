@@ -1,0 +1,84 @@
+﻿
+# Fires when a character joins a court. Not fired for just generated characters
+# Root is the character
+# scope:new_employer is their new employer
+# scope:old_employer is their old employer (if they had one; otherwise unset)
+on_join_court = {
+	#AGOT Added
+	on_actions = {
+		on_join_court_culture_conversion
+		on_join_court_faith_conversion
+		on_join_court_nights_watch
+		on_join_court_silent_sisterhood
+		on_join_court_wildlings
+		on_join_court_uninteractable
+		on_join_court_dragonriders
+		on_join_court_return_to_sender
+		on_move_birthplace
+	}
+	events = {
+		court_maintenance.0005 # Add 'Order member' trait to courtiers who join holy order court
+		#AGOT Added
+		agot_nights_watch.0001 # Add 'NW brother' trait to courtiers who join NW court
+		agot_silent_sisters.0001 # Add silent sister trait to courtiers who join SS court
+	}
+}
+
+# Fires when a character leaves a court. Not fired when leaving due to death or similar
+# Will still fire even if on_join_court is firing (fires just before it)
+# Root is the character
+# scope:old_employer is their old employer
+on_leave_court = {
+	effect = {
+		scope:old_employer = {
+			every_courtier = {
+				limit = { exists = var:booner_target }
+				employed_booner_invalidation_effect = { EMPLOYEE = this LIEGE = scope:old_employer }
+			}
+			if = {
+				limit = {
+					is_alive = yes
+					has_variable_list = halved_position_salary_employees
+				}
+				remove_list_variable = {
+					name = halved_position_salary_employees
+					target = root
+				}
+			}
+			if = {
+				limit = { 
+					is_alive = yes
+					has_variable_list = increased_position_salary_employees
+				}
+				remove_list_variable = {
+					name = increased_position_salary_employees
+					target = root
+				}
+			}
+		}
+		root = {
+			if = {
+				limit = {
+					has_character_flag = suzerains_missionary
+				}
+				remove_character_flag = suzerains_missionary
+			}
+		}
+		remove_variable = court_8311_cooldown
+	}
+	events = {
+		stewardship_duty.1064 # Cancels the employment contract between this character and their former employer.
+		#AGOT Added
+		agot_kingsguard.9003 #AGOT Added Come here you fucking idiot Kingsguard stop leaving my court
+		agot_maester.9015 # Same for grandmaester
+		agot_contraceptives_events.0002
+		agot_dragon_pits.2001
+	}
+	#AGOT Added
+	on_actions = {
+		on_move_birthplace
+		delay = { days = 1 }
+		on_leave_court_nights_watch
+		on_leave_court_with_pirate_landless_heir_variables
+	}
+}

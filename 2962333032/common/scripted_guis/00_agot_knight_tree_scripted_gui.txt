@@ -1,0 +1,188 @@
+﻿###############
+# Knight Tree #
+###############
+
+agot_knight_tree_top = {
+	scope = character
+
+	is_shown = {
+		has_variable = knight_tree_stump
+	}
+}
+
+agot_knight_tree_child = {
+	scope = character
+	saved_scopes = { tree_story }
+
+	is_shown = {
+		scope:tree_story = {
+			any_in_list = {
+				variable = teacher_story_container
+				var:this_teacher ?= root
+			}
+		}
+	}
+}
+
+agot_knight_tree_check = {
+	scope = character
+
+	is_shown = {
+		OR = {
+			has_trait = knight
+			has_trait_xp = {
+				trait = squire
+				track = knight
+				value >= 100
+			}
+		}
+		trigger_if = { # Alive variable check
+			limit = {
+				is_alive = yes
+				has_variable = my_knight_tree
+			}
+			var:my_knight_tree ?= {
+				any_in_list = {
+					variable = teacher_story_container
+					OR = {
+						var:this_teacher ?= root
+						any_in_list = {
+							variable = student_container
+							this = root
+						}
+					}
+				}
+			}
+		}
+		trigger_else_if = { # Dead list check
+			limit = { is_alive = no }
+			any_in_global_list = {
+				variable = known_knight_trees
+				any_in_list = {
+					variable = teacher_story_container
+					OR = {
+						var:this_teacher ?= root
+						any_in_list = {
+							variable = student_container
+							this = root
+						}
+					}
+				}
+			}
+		}
+		trigger_else = { always = no }
+	}
+}
+
+agot_open_knight_tree = { # Applies variables to use for the tree
+	scope = character
+	saved_scopes = { opened_character }
+
+	effect = {
+		if = {
+			limit = {
+				any_in_global_list = { # Has tree story
+					variable = known_knight_trees
+					OR = {
+						var:knight_tree_founder ?= scope:opened_character
+						any_in_list = {
+							variable = teacher_story_container
+							any_in_list = {
+								variable = student_container
+								this = scope:opened_character
+							}
+						}
+					}
+				}
+			}
+			random_in_global_list = { # Find tree story
+				variable = known_knight_trees
+				limit = {
+					OR = {
+						var:knight_tree_founder ?= scope:opened_character
+						any_in_list = {
+							variable = teacher_story_container
+							any_in_list = {
+								variable = student_container
+								this = scope:opened_character
+							}
+						}
+					}
+				}
+				root = { # Save tree story on player
+					set_variable = {
+						name = knight_tree_being_shown
+						value = prev
+					}
+				}
+			}
+		}
+
+		var:knight_tree_being_shown ?= { # Save tree founder
+			ordered_in_list = {
+				variable = teacher_story_container
+				position = 0
+				save_scope_as = knight_tree_stump
+			}
+		}
+		set_variable = { # Tree founder
+			name = knight_tree_stump
+			value = scope:knight_tree_stump
+		}
+		set_variable = { # Total members
+			name = total_knight_tree_members
+			value = knight_tree_members_count
+		}
+		set_variable = { # Living members
+			name = total_knight_tree_alive
+			value = knight_tree_members_alive_count
+		}
+		if = { # Debug values
+			limit = { debug_only = yes }
+			set_variable = { # Total trees
+				name = total_knight_trees
+				value = knight_tree_count
+			}
+			set_variable = { # Total teachers
+				name = total_knight_tree_teachers
+				value = knight_tree_teacher_count
+			}
+			set_variable = { # Total destroyed
+				name = knight_trees_destroyed
+				value = knight_trees_destroyed_count
+			}
+		}
+	}
+}
+
+agot_close_knight_tree = { # Clear variables from memory so you don't always open the same tree
+	scope = character
+
+	effect = {
+		if = {
+			limit = {
+				debug_only = yes
+				has_variable = total_knight_trees
+				has_variable = total_knight_tree_teachers
+			}
+			remove_variable = total_knight_trees
+			remove_variable = total_knight_tree_teachers
+		}
+		if = {
+			limit = { has_variable = knight_tree_stump }
+			remove_variable = knight_tree_stump
+		}
+		if = {
+			limit = { has_variable = knight_tree_being_shown }
+			remove_variable = knight_tree_being_shown
+		}
+		if = {
+			limit = { has_variable = total_knight_tree_members }
+			remove_variable = total_knight_tree_members
+		}
+		if = {
+			limit = { has_variable = total_knight_tree_alive }
+			remove_variable = total_knight_tree_alive
+		}
+	}
+}

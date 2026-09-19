@@ -1,0 +1,552 @@
+﻿agot_nw_post_petition_scripted_effect = {
+	switch = {
+		trigger = $PETITION_TYPE$
+		flag:nothing_sad_emoji = {
+
+		}
+		flag:men_army = {
+			spawn_army = {
+				levies = nw_petition_man_taken_size_script_var
+				location = title:k_the_wall.holder.capital_province
+				origin = title:k_the_wall.holder.capital_province
+				inheritable = yes
+				uses_supply = yes
+				name = black_brothers # gives the troops a specific name that shows up in interfaces
+			}
+		}
+		flag:men_add_to_pool = {
+			if = {
+				limit = {
+					exists = var:nw_manpower_pool
+				}
+				change_variable = {
+					name = nw_manpower_pool
+					add = nw_petition_man_taken_size_script_var
+				}
+			}
+			else = {
+				set_variable = {
+					name = nw_manpower_pool
+					value = nw_petition_man_taken_size_script_var
+				}
+			}
+		}
+		flag:supplies_army = {
+			add_character_modifier = {
+				modifier = nw_petition_supplies_army_mod
+				years = 2
+			}
+		}
+		flag:supplies_normal = {
+			add_character_modifier = {
+				modifier = nw_petition_supplies_normal_mod
+				years = 2
+			}
+		}
+		flag:supplies_normal_army_army = {
+			capital_county = {
+				add_county_modifier = {
+					modifier = nw_petition_supplies_normal_mod
+					years = 2
+				}
+			}
+			spawn_army = {
+				levies = nw_petition_man_taken_size_script_var
+				location = title:k_the_wall.holder.capital_province
+				origin = title:k_the_wall.holder.capital_province
+				inheritable = yes
+				uses_supply = yes
+				name = black_brothers # gives the troops a specific name that shows up in interfaces
+			}
+		}
+		flag:supplies_normal_army_pool = {
+			add_character_modifier = {
+				modifier = nw_petition_supplies_normal_mod
+				years = 2
+			}
+			if = {
+				limit = {
+					exists = var:nw_manpower_pool
+				}
+				change_variable = {
+					name = nw_manpower_pool
+					add = nw_petition_man_taken_size_script_var
+				}
+			}
+			else = {
+				set_variable = {
+					name = nw_manpower_pool
+					value = nw_petition_man_taken_size_script_var
+				}
+			}
+		}
+		flag:supplies_army_army_army = {
+			add_character_modifier = {
+				modifier = nw_petition_supplies_army_mod
+				years = 2
+			}
+			spawn_army = {
+				levies = nw_petition_man_taken_size_script_var
+				location = title:k_the_wall.holder.capital_province
+				origin = title:k_the_wall.holder.capital_province
+				inheritable = yes
+				uses_supply = yes
+				name = black_brothers # gives the troops a specific name that shows up in interfaces
+			}
+		}
+		flag:supplies_army_army_pool = {
+			add_character_modifier = {
+				modifier = nw_petition_supplies_army_mod
+				years = 2
+			}
+			if = {
+				limit = {
+					exists = var:nw_manpower_pool
+				}
+				change_variable = {
+					name = nw_manpower_pool
+					add = nw_petition_man_taken_size_script_var
+				}
+			}
+			else = {
+				set_variable = {
+					name = nw_manpower_pool
+					value = nw_petition_man_taken_size_script_var
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			exists = var:nw_petition_condition
+		}
+
+		switch = {
+			trigger = var:nw_petition_condition
+
+			flag:family_member = {
+				scope:nw_petition_target.house ?= {
+					random_house_member = {
+						limit = {
+							NOT = { this = scope:nw_petition_target  }
+							agot_valid_potential_nw_member = yes
+							age >= 16
+							opinion = {
+								target = scope:nw_petition_target
+								value <= 0
+							}
+						}
+						agot_add_to_nightswatch_effect = yes
+					}
+				}
+			}
+			#flag:wildling_tribe = {
+			#	root = {
+			#		trigger_event = {
+			#			id = agot_nw_petition_events.1012
+			#			days = { 2  10 }
+			#		}
+			#	}
+			#}
+			flag:pay = {
+				pay_short_term_gold = { target = scope:nw_petition_target gold = 100 } #AGOT TODO: TURN INTO SCRIPT VAR
+			}
+			flag:rare_artifact = {
+				random_character_artifact = {
+					limit = {
+						artifact_rarity >= 3
+					}
+					set_owner = scope:nw_petition_target
+				}
+			}
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:nw_petition_206_supplies_thief
+		}
+		scope:nw_petition_206_supplies_thief = {
+			agot_add_to_nightswatch_effect = yes
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:nw_petition_203_local_knight
+		}
+		scope:nw_petition_203_local_knight = {
+			agot_add_to_nightswatch_effect = yes
+		}
+	}
+	if = {
+		limit = {
+			list_size = { name = nw_petition_202_deserters value >= 1 }
+		}
+		every_in_list = {
+			list = nw_petition_202_deserters
+			agot_add_to_nightswatch_effect = yes
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:nw_petition_200_lords_family_member
+			agot_valid_potential_nw_member = yes
+		}
+		scope:nw_petition_200_lords_family_member = {
+			agot_add_to_nightswatch_effect = yes
+		}
+	}
+
+	#Clean every possible var, modifier and scope to make sure nothing will bleed through
+
+	remove_variable = nw_petition_supplies_amount
+	remove_variable = nw_petition_man_taken_size
+	remove_variable = nw_petition_type
+
+	scope:nw_petition_target = {
+		remove_variable = nw_accepted_petition_ruler
+		remove_variable = nw_accepted_petition_condition_ruler
+		remove_variable = nw_rejected_petition_ruler
+		remove_variable = nw_petition_condition
+	}
+
+	clear_saved_scope = nw_petition_target
+	clear_saved_scope = nw_petition_envoy
+	clear_saved_scope = nw_petition_envoy_killer
+	clear_saved_scope = drunk_brawler
+	clear_saved_scope = local_knight
+	clear_saved_scope = idiotic_knight_whomst_think_BB_is_bandit
+	clear_saved_scope = peasant_leader
+	clear_saved_scope = nw_petition_206_supplies_thief
+	clear_saved_scope = nw_petition_203_local_knight
+	clear_saved_scope = nw_petition_200_lords_family_member
+	clear_local_variable_list = nw_petition_202_deserters
+
+}
+
+agot_nw_in_petition_envoy_died = {
+	remove_variable = nw_petition_supplies_amount
+	remove_variable = nw_petition_man_taken_size
+	remove_variable = nw_petition_type
+
+	scope:nw_petition_target = {
+		remove_variable = nw_accepted_petition_ruler
+		remove_variable = nw_accepted_petition_condition_ruler
+		remove_variable = nw_rejected_petition_ruler
+		remove_variable = nw_petition_condition
+	}
+
+	clear_saved_scope = nw_petition_target
+	clear_saved_scope = nw_petition_envoy
+	clear_saved_scope = nw_petition_envoy_killer
+	clear_saved_scope = drunk_brawler
+	clear_saved_scope = local_knight
+	clear_saved_scope = idiotic_knight_whomst_think_BB_is_bandit
+	clear_saved_scope = peasant_leader
+	clear_saved_scope = nw_petition_206_supplies_thief
+	clear_saved_scope = nw_petition_203_local_knight
+	clear_saved_scope = nw_petition_200_lords_family_member
+	clear_local_variable_list = nw_petition_202_deserters
+
+}
+
+agot_btw_on_action_effect = {
+	switch = {
+		trigger = $VAR_VALUE$
+
+		flag:Men = {
+			scope:nw_new_holder = {
+				set_variable = {
+					name = nw_petition_type
+					value = flag:Men
+				}
+			}
+		}
+		flag:Supplies = {
+			scope:nw_new_holder = {
+				set_variable = {
+					name = nw_petition_type
+					value = flag:Men
+				}
+			}
+		}
+		flag:Both = {
+			scope:nw_new_holder = {
+				set_variable = {
+					name = nw_petition_type
+					value = flag:Men
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			exists = var:nw_petition_supplies_amount
+		}
+		scope:nw_new_holder = {
+			set_variable = {
+				name = nw_petition_supplies_amount
+				value = root.var:nw_petition_supplies_amount
+			}
+		}
+		remove_variable = nw_petition_supplies_amount
+	}
+	if = {
+		limit = {
+			exists = var:nw_petition_man_taken_size
+		}
+		scope:nw_new_holder = {
+			set_variable = {
+				name = nw_petition_man_taken_size
+				value = root.var:nw_petition_man_taken_size
+			}
+		}
+		remove_variable = nw_petition_man_taken_size
+	}
+	if = {
+		limit = {
+			variable_list_size = { name = nw_petition_202_deserters value > 0 }
+		}
+		every_in_list = {
+			variable = nw_petition_202_deserters
+			add_to_list = nw_petition_202_deserters
+		}
+	}
+
+	clear_local_variable_list = nw_petition_202_deserters
+}
+
+agot_nw_elect_lc = {
+	custom_tooltip = {
+		text = agot_a_new_lord_commander_is_elected_tt
+		# actual effect
+		save_scope_as = current_lc
+
+		# Determine all potential candidates
+		every_courtier = {
+			limit = {
+				has_trait = nightswatch
+				NOT = { government_has_flag = government_is_republic }
+			}
+			add_to_temporary_list = potential_lc_candidates
+		}
+		every_vassal_or_below = {
+			limit = {
+				has_trait = nightswatch
+				NOT = { government_has_flag = government_is_republic }
+				NOT = { this = title:d_nw_landless_first_ranger.holder }
+			}
+			add_to_temporary_list = potential_lc_candidates
+			every_courtier = {
+				limit = {
+					has_trait = nightswatch
+					NOT = { government_has_flag = government_is_republic }
+				}
+				add_to_temporary_list = potential_lc_candidates
+			}
+		}
+		if = {
+			limit = { agot_ranger_beyond_the_wall = no }
+			title:d_nw_landless_first_ranger.holder = {
+				add_to_temporary_list = potential_lc_candidates
+			}
+		}
+
+		# Determine all elligible candidates and calculate their succession scores
+		every_in_list = {
+			list = potential_lc_candidates
+			limit = {
+				has_trait = nightswatch
+				has_trait_xp = {
+					trait = nightswatch
+					value >= 100
+				}
+				is_physically_able_adult = yes
+				NOR = {
+					has_trait = maester
+					has_trait = septon
+				}
+			}
+			scope:current_lc = {
+				save_temporary_opinion_value_as = {
+					name = current_lc_opinion
+					target = prev
+				}
+			}
+			set_variable = {
+				name = agot_nw_lc_succession_score
+				value = agot_nw_lc_succession_score_value
+				days = 1
+			}
+			add_to_temporary_list = elligile_lc_candidates
+		}
+
+		# Shortlist the top 5 elligile candidates by their succession score
+		ordered_in_list = {
+			list = elligile_lc_candidates
+			limit = { has_variable = agot_nw_lc_succession_score }
+			order_by = var:agot_nw_lc_succession_score
+			max = 5
+			check_range_bounds = no
+			add_to_temporary_list = shortlisted_lc_candidates
+		}
+
+		# Choose a random shortlisted candidate weighted by their succession score
+		random_in_list = {
+			list = shortlisted_lc_candidates
+			weight = {
+				base = 0
+				modifier = {
+					add = var:agot_nw_lc_succession_score
+				}
+
+				# Historical events
+				modifier = {
+					has_game_rule = agot_story_historical_events_historical_outcomes
+					character:Mormont_2 = this
+					factor = 1000
+				}
+				modifier = {
+					has_game_rule = agot_story_historical_events_weighted_outcomes
+					character:Mormont_2 = this
+					add = 1000
+				}
+			}
+			save_scope_as = nw_new_holder
+			#First Ranger Title should be handled via event
+			if = {
+				limit = {
+					exists = title:d_nw_landless_first_ranger.holder
+					title:d_nw_landless_first_ranger.holder = this
+					NOT = { has_character_flag = fr_assign_block }
+				}
+				add_character_flag = {
+					flag = fr_assign_block
+					days = 3
+				}
+			}
+		}
+
+		if = {
+			limit = { NOT = { exists = scope:nw_new_holder } }
+			create_character = {
+				location = title:c_castle_black.title_province
+				template = agot_black_brother_character
+				save_scope_as = nw_new_holder
+			}
+		}
+
+		every_courtier = {
+			scope:nw_new_holder = {
+				add_to_variable_list = {
+					name = lc_courtiers
+					target = prev
+				}
+			}
+		}
+
+		scope:nw_new_holder ?= {
+			remove_trait = nightswatch
+			add_trait = nightswatch_temp
+			trigger_event = { id = agot_nights_watch.0028 days = 5 }
+			set_variable = {
+				name = lc_primary_title
+				value = scope:current_lc.primary_title
+				days = 5
+			}
+			if = {
+				limit = { has_trait = disinherited }
+				remove_trait = disinherited
+				set_variable = {
+					name = is_disinherited
+					value = yes
+					days = 5
+				}
+			}
+			if = {
+				limit = { has_trait = eunuch_1 }
+				remove_trait = eunuch_1
+				set_variable = {
+					name = is_eunuch
+					value = yes
+					days = 5
+				}
+			}
+			if = {
+				limit = { has_trait = beardless_eunuch }
+				remove_trait = beardless_eunuch
+				set_variable = {
+					name = is_beardless_eunuch
+					value = yes
+					days = 5
+				}
+			}
+			if = {
+				limit = { has_trait = devoted }
+				remove_trait = devoted
+				set_variable = {
+					name = is_devoted
+					value = yes
+					days = 5
+				}
+			}
+			if = {
+				limit = { has_trait = order_member }
+				remove_trait = order_member
+				set_variable = {
+					name = is_order_member
+					value = yes
+					days = 5
+				}
+			}
+			if = {
+				limit = { has_trait = bastard }
+				remove_trait = bastard
+				set_variable = {
+					name = is_bastard
+					value = yes
+					days = 5
+				}
+			}
+			if = {
+				limit = { has_trait = bastard_founder }
+				remove_trait = bastard_founder
+				set_variable = {
+					name = is_bastard_founder
+					value = yes
+					days = 5
+				}
+			}
+			if = {
+				limit = { has_trait = maester }
+				remove_trait = maester
+				set_variable = {
+					name = is_maester
+					value = yes
+					days = 5
+				}
+			}
+		}
+
+		set_global_variable = nights_watch_temp_realm_succession_law_active
+		add_realm_law_skip_effects = nights_watch_temp_realm_succession_law
+		set_designated_heir_unsafe = scope:nw_new_holder
+
+		if = {
+			limit = {
+				exists = scope:depose
+				NOT = { has_character_flag = do_not_kill_on_depose }
+			}
+			death = { death_reason = death_beaten_by_mob }
+		}
+		else_if = {
+			limit = { has_character_flag = do_not_kill_on_depose }
+			remove_character_flag = do_not_kill_on_depose
+			depose = yes
+			scope:nw_new_holder ?= {
+				change_government = nights_watch_government
+			}
+		}
+	}
+}

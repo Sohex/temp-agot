@@ -1,0 +1,667 @@
+﻿agot_proclaim_iron_throne = {
+	picture = {
+		reference = "gfx/interface/illustrations/event_scenes/ironthrone/throneroom_ironthrone.dds"
+	}
+	decision_group_type = major
+	desc = agot_proclaim_iron_throne_desc
+	ai_goal = yes
+	ai_potential = { always = yes }
+	ai_will_do = { base = 10000 }
+
+	is_shown = {
+		is_independent_ruler = yes
+		primary_title.tier >= tier_kingdom
+		OR = {
+			has_title = title:e_the_crownlands
+			has_title = title:e_the_north
+			has_title = title:e_the_riverlands
+			has_title = title:e_the_iron_islands
+			has_title = title:e_the_vale
+			has_title = title:e_the_westerlands
+			has_title = title:e_the_reach
+			has_title = title:e_the_stormlands
+			has_title = title:e_dorne
+			primary_title.title_capital_county = {
+				title_province = {
+					geographical_region = world_westeros_seven_kingdoms
+				}
+			}
+		}
+		NOT = { exists = title:h_the_iron_throne.holder }
+		NOT = { government_has_flag = government_is_nw }
+	}
+
+	is_valid = {
+		custom_description = {
+			text = agot_proclaim_it
+			any_empire = {
+				title_capital_county.title_province = { geographical_region = world_westeros_seven_kingdoms }
+				save_temporary_scope_as = de_jure_empire
+				root = { completely_controls = scope:de_jure_empire }
+				is_titular = no
+				count >= 5
+			}
+		}
+		has_title = title:d_kings_landing
+		has_title = title:c_kings_landing
+		is_imprisoned = no
+		agot_is_independent_ruler = yes
+	}
+
+	effect = {
+		hidden_effect = {
+			title:e_targaryen_it_title = {
+				if = {
+					limit = {
+						NOT = {
+							has_global_variable = pk_iron_throne_historic_copy
+						}
+					}
+				}
+				copy_title_history = title:h_the_iron_throne
+				set_coa = dynn_Targaryen
+				set_global_variable = pk_iron_throne_historic_copy
+			}
+		}
+		title:h_the_iron_throne = {
+			#PLACEHOLDER - Until we get a founding the Kingsguard event, this will be the only way not to break the game and have no Kingsguard
+			set_variable = kingsguard
+			create_title_and_vassal_change = {
+				type = created
+				save_scope_as = change_it
+				add_claim_on_loss = no
+			}
+			change_title_holder = {
+				holder = root
+				change = scope:change_it
+			}
+			resolve_title_and_vassal_change = scope:change_it
+			hidden_effect = {
+				copy_title_history = root.primary_title
+			}
+		}
+		every_empire = {
+			limit = {
+				any_de_jure_county = {
+					title_province = {
+						geographical_region = world_westeros_seven_kingdoms
+						NOT = { geographical_region = world_westeros_the_wall }
+					}
+				}
+			}
+			set_de_jure_liege_title = title:h_the_iron_throne
+		}
+		add_prestige = 7000
+		dynasty = { add_dynasty_prestige = 3500 }
+		add_legitimacy = 2100 #Max Legitimacy
+		add_dread = 100
+		add_tyranny = -35
+		gain_legitimizing_legend_seed_tooltip_effect = yes
+		give_nickname = nick_the_conqueror
+		agot_create_fake_iron_throne_effect = { OWNER = this }
+		change_government = lp_feudal_government
+		hidden_effect = {
+			legend_seed_great_deed_dynasty_effect = yes
+			every_vassal_or_below = {
+				limit = {
+					agot_is_valid_lp_feudal_government_target = yes
+				}
+				change_government = lp_feudal_government
+			}
+		}
+		spawn_army = {
+			name = iron_throne_decision_troops
+			men_at_arms = {
+				type = westerosi_sellswords
+				men = 100
+			}
+			men_at_arms = {
+				type = barrow_knights #replace these with a riverlands cav MAA if they ever get one
+				men = 100
+			}
+			men_at_arms = {
+				type = winged_knights
+				men = 100
+			}
+			men_at_arms = {
+				type = summer_knights
+				men = 100
+			}
+			men_at_arms = {
+				type = storm_knights
+				men = 100
+			}
+			men_at_arms = {
+				type = westerlands_knights
+				men = 100
+			}
+			men_at_arms = {
+				type = sand_steeds
+				men = 100
+			}
+			inheritable = no
+			location = title:d_kings_landing.holder.capital_province
+			origin = title:d_kings_landing.holder.capital_province
+		}
+
+		hidden_effect = {
+			scope:fake_artifact = {
+				add_durability = -1000
+			}
+		}
+
+		if = {
+			limit = {
+				title:k_the_most_devout.holder ?= {
+					is_independent_ruler = yes
+					faith = root.faith
+				}
+			}
+			title:k_the_most_devout.holder ?= { agot_assign_high_septon_effect = yes }
+		}
+
+		save_scope_as = i_am_the_king
+		every_player = {
+			limit = { NOT = { this = scope:i_am_the_king } }
+			trigger_event = {
+				id = agot_proclaim.0001
+			}
+		}
+	}
+
+	cost = { gold = 7000 }
+}
+
+set_capital_kingslanding_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_destiny_goal.dds"
+	}
+
+	desc = set_capital_kingslanding_decision_desc
+	selection_tooltip = set_capital_kingslanding_decision_tooltip
+	decision_group_type = major
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 12
+		hegemony = 12
+	}
+
+	is_shown = {
+		is_ruler = yes
+		is_landed = yes
+		has_title = title:h_the_iron_throne
+		NOT = {
+			capital_county = {
+				this = title:c_kings_landing
+			}
+			title:b_hookmarket.title_province = {
+				has_holding_type = ruin_holding
+			}
+		}
+		OR = {
+			title:c_kings_landing.holder = {
+				any_liege_or_above = { this = root }
+			}
+			title:c_kings_landing.holder = { this = root }
+		}
+	}
+
+	effect = {
+		if = { #Usurp if not held personally.
+			limit = {
+				NOT = { title:c_kings_landing.holder = { this = root } }
+			}
+			title:c_kings_landing.holder = { save_scope_as = target_for_denunciation }
+			create_title_and_vassal_change = {
+				type = returned
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+			title:c_kings_landing = {
+				change_title_holder = {
+					holder = root
+					change = scope:change
+				}
+			}
+			resolve_title_and_vassal_change = scope:change
+
+		}
+		if = { #Usurp if not held personally.
+			limit = {
+				exists = title:d_kings_landing.holder
+				NOT = { title:d_kings_landing.holder = { this = root } }
+			}
+			title:d_kings_landing.holder = { save_scope_as = target_for_denunciation }
+			create_title_and_vassal_change = {
+				type = returned
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+			title:d_kings_landing = {
+				change_title_holder = {
+					holder = root
+					change = scope:change
+				}
+			}
+			resolve_title_and_vassal_change = scope:change
+
+		}
+		set_realm_capital = title:c_kings_landing
+		if = {
+			limit = {
+				exists = scope:target_for_denunciation
+			}
+			scope:target_for_denunciation = {
+				trigger_event = {
+					id = agot_events_generic.0030
+				}
+			}
+		}
+	}
+	ai_potential = {
+		primary_title.tier = tier_hegemony
+		has_title = title:h_the_iron_throne
+	}
+
+	ai_will_do = { #Do it always, for coherence.
+		base = 100
+		modifier = {
+			title:c_kings_landing.holder = {
+				any_realm_county = {
+					count < 2
+					holder = title:c_kings_landing.holder
+				}
+			}
+			factor = 0
+		}
+	}
+}
+
+# end_the_ironborn_decision = { AGOT TODO : Great Wars needs to be recreated in mod for this to work
+# 	ai_check_interval = 36
+# 	picture = "gfx/interface/illustrations/decisions/end_the_ironborn_decision.dds"
+
+# 	desc = end_the_ironborn_decision_desc
+
+# 	selection_tooltip = end_the_ironborn_decision_tooltip
+
+# 	decision_group_type = major
+
+# 	ai_goal = no
+
+# 	confirm_text = end_the_ironborn_decision_confirm_text_desc
+
+# 	is_shown = {
+# 		is_available_adult = yes
+# 		root.primary_title = {
+# 			tier >= tier_kingdom
+# 		}
+# 		has_trait = ambitious
+# 		OR = {
+# 			location = {
+# 				geographical_region = world_westeros_the_westerlands
+# 			}
+# 			location = {
+# 				geographical_region = world_westeros_the_reach
+# 			}
+# 			location = {
+# 				geographical_region = world_westeros_the_north
+# 			}
+# 			location = {
+# 				geographical_region = world_westeros_the_riverlands
+# 			}
+# 		}
+# 		agot_is_independent_ruler = yes
+# 	}
+
+# 	cost = {
+# 		gold = 250
+# 		prestige = 150
+# 	}
+
+# 	effect = {
+# 		root.faith = {
+# 			start_great_holy_war = {
+# 				target_character = title:e_the_iron_islands.holder
+# 				target_title = title:e_the_iron_islands
+# 			}
+# 		}
+# 	}
+
+# 	ai_potential = {
+# 		always = yes
+# 	}
+
+# 	ai_will_do = {
+# 		base = 5
+# 	}
+# }
+
+### The Reach
+
+regrow_oakenseat_decision = {
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_herbs.dds"
+	}
+	decision_group_type = major
+
+	desc = regrow_oakenseat_decision_desc
+
+	selection_tooltip = regrow_oakenseat_decision_tooltip
+
+	is_shown = {
+		has_title = title:b_highgarden
+		any_character_artifact = {
+			has_variable = ruined_oakenseat
+		}
+		NOT = {
+			title:b_highgarden = { has_variable = restoring_oakenseat }
+		}
+	}
+
+	is_valid = {
+		OR = {
+			has_trait = lifestyle_gardener
+			has_trait = lifestyle_herbalist
+			AND = {
+				employs_court_position = court_gardener_court_position
+				custom_tooltip = {
+					text = regrow_oakenseat_excellent_aptitude
+					any_court_position_holder = {
+						type = court_gardener_court_position
+						aptitude = {
+							court_position = court_gardener_court_position
+							value >= 4
+						}
+					}
+				}
+			}
+		}
+	}
+
+	effect = {
+		title:b_ruins.holder = {
+			trigger_event = {
+				id = agot_major_decisions_events.1000
+				years = 75
+			}
+		}
+		title:b_highgarden = {
+			set_variable = {
+				name = restoring_oakenseat
+				value = yes
+				years = 75
+			}
+		}
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_will_do = {
+		base = 20
+	}
+}
+
+### The Iron Islands
+
+ironborn_rebellion_decision = {
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 36
+		empire = 36
+		hegemony = 36
+	}
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_reaving.dds"
+	}
+
+	desc = ironborn_rebellion_decision_desc
+
+	selection_tooltip = ironborn_rebellion_decision_tooltip
+
+	decision_group_type = major
+
+	ai_goal = no
+
+	confirm_text = ironborn_rebellion_decision_confirm_text_desc
+
+	is_shown = {
+		is_available_adult = yes
+		has_title = title:e_the_iron_islands
+		has_trait = ambitious
+		OR = {
+			AND = {
+				culture = { has_cultural_pillar = heritage_ironman }
+				liege = {
+					NOT = { culture = { has_cultural_pillar = heritage_ironman } }
+				}
+			}
+			AND = {
+				faith = faith:drowned_god
+				liege = {
+					NOT = { faith = faith:drowned_god }
+				}
+			}
+		}
+		exists = liege
+		NOT = {
+			has_character_flag = ironborn_rebellion
+		}
+	}
+
+	cost = {
+		gold = 500
+		prestige = 2000
+	}
+
+	effect = {
+		start_war = {
+			casus_belli = agot_independence_war
+			target = liege
+		}
+		add_character_flag = ironborn_rebellion
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_will_do = {
+		base = 25
+	}
+}
+
+### The North
+
+# This decision is currently broken
+# defy_winter_lords_decision = {
+# 	ai_check_interval = 24
+# 	picture = "gfx/interface/illustrations/decisions/defy_winter_lords_decision.dds" #AGOT TODO: Does this exist?
+
+# 	desc = defy_winter_lords_decision_desc
+
+# 	selection_tooltip = defy_winter_lords_decision_tooltip
+
+# 	decision_group_type = major
+
+# 	ai_goal = no
+
+# 	confirm_text = defy_winter_lords_decision_confirm_text_desc
+
+# 	is_shown = {
+# 		is_available_adult = yes
+# 		has_culture = culture:skagosi
+# 		NOT = {
+# 			has_trait = just
+# 		}
+# 		NOR = {
+# 			has_title = title:d_skagos
+# 		}
+# 		is_vanilla_independent_ruler = no
+# 	}
+
+# 	cost = { #AGOT TODO: 500 gold seems pretty steep, but that might be intentional.
+# 		gold = 500
+# 		prestige = 50
+# 	}
+
+# 	effect = {
+# 		trigger_event = agot_minor_decisions_events.0001
+# 	}
+
+# 	ai_potential = {
+# 		always = yes
+# 	}
+
+# 	ai_will_do = {
+# 		base = 5
+# 		modifier = {
+# 			factor = 10
+# 			root.liege = {
+# 				is_at_war = yes
+# 			}
+# 		}
+# 	}
+# }
+
+### Beyond the Wall
+
+agot_adopt_kneeler_ways_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_knight_kneeling.dds"
+	}
+	decision_group_type = major
+	desc = agot_adopt_kneeler_ways_decision_desc
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 36
+		duchy = 36
+		kingdom = 36
+		empire = 36
+		hegemony = 36
+	}
+
+	is_shown = {
+		culture = {
+			has_variable = wildling_culture
+		}
+		any_held_title = {
+			NOT = {
+				empire = title:e_beyond_the_wall
+			}
+		}
+	}
+
+	is_valid = {
+		is_independent_ruler = yes
+		custom_description = {
+			text = is_culture_head
+			culture = {
+				exists = culture_head
+				culture_head = root
+			}
+		}
+		OR = {
+			custom_description = {
+				text = hybridized_with_kneelers
+				culture = {
+					any_parent_culture_or_above = {
+						NOR = {
+							this = culture:fangman
+							this = culture:forestman
+							this = culture:nightrunner
+							this = culture:frozen_shoreman
+							this = culture:hornfoot
+							this = culture:ice_riverman
+							this = culture:lakefolk
+							this = culture:thenn
+							this = culture:first_man
+						}
+					}
+				}
+			}
+			culture = {
+				has_cultural_tradition = tradition_xenophilic
+			}
+		}
+		culture = {
+			NOT = { has_cultural_tradition = tradition_agot_wildling }
+		}
+		custom_description = {
+			text = capital_south_of_the_wall
+			NOT = {
+				capital_county.empire = title:e_beyond_the_wall
+			}
+		}
+	}
+
+	cost = {
+		prestige = 200
+	}
+
+	effect = {
+		custom_tooltip = agot_adopt_kneeler_ways_decision_tooltip
+		trigger_event = agot_major_decisions_events.0003
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = 100
+			culture = {
+				has_cultural_tradition = tradition_xenophilic
+			}
+		}
+		modifier = {
+			add = -100
+			culture = {
+				has_cultural_tradition = tradition_staunch_traditionalists
+			}
+		}
+		modifier = {
+			add = -100
+			culture = {
+				has_cultural_tradition = tradition_isolationist
+			}
+		}
+		modifier = {
+			add = 25
+			culture = {
+				has_cultural_tradition = tradition_welcoming
+			}
+		}
+		modifier = {
+			add = 25
+			culture = {
+				has_cultural_tradition = tradition_esteemed_hospitality
+			}
+		}
+		modifier = {
+			add = 50
+			culture = {
+				has_cultural_tradition = tradition_fp2_malleable_subjects
+			}
+		}
+	}
+}

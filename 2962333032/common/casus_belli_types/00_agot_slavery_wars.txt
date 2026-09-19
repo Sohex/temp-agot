@@ -1,0 +1,821 @@
+﻿slave_raid_cb = {
+	icon = ducal_conquest_cb
+	group = slavery
+	ai_only_against_neighbors = yes
+	allow_hostages = no
+
+	# Root is the title
+	# scope:attacker is the attacker
+	# scope:defender is the defender
+	allowed_against_character = {
+		scope:attacker = {
+			NOT = {
+				any_liege_or_above = { this = scope:defender }
+			}
+			trigger_if = {
+				limit = { is_landed = yes }
+				OR = {
+					has_realm_law = slavery_allowed_law
+					government_has_flag = government_is_pirate
+				}
+			}
+			trigger_else = {
+				OR = {
+					is_landless_adventurer = yes
+					government_has_flag = government_is_pirate
+				}
+			}
+		}
+
+		scope:defender = {
+			is_independent_ruler = yes
+		}
+	}
+
+	cost = {
+		prestige = {
+			add = {
+				value = 500
+				desc = CB_BASE_COST
+			}
+			multiply = common_cb_prestige_cost_multiplier
+		}
+	}
+
+	should_invalidate = {
+		scope:attacker = {
+			trigger_if = {
+				limit = { is_landed = yes }
+				NOR = {
+					has_realm_law = slavery_allowed_law
+					government_has_flag = government_is_pirate
+				}
+			}
+			trigger_else = {
+				AND = {
+					is_landless_adventurer = no
+					NOT = { government_has_flag = government_is_pirate }
+				}
+			}
+		}
+	}
+
+	on_invalidated_desc = msg_invalidate_war_title
+
+	on_invalidated = {
+
+	}
+
+	on_declaration = {
+		on_declared_war = yes
+	}
+
+	on_victory_desc = {
+		desc = slave_raid_cb_victory_desc
+	}
+
+	on_victory = {
+		if = {
+			limit = {
+				scope:attacker = {
+					NOT = { has_trait = slave_master }
+				}
+			}
+			scope:attacker = { add_trait = slave_master }
+		}
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		#EP2 Accolade glory gain from winning against higher ranked enemy
+		scope:attacker = { accolade_attacker_war_end_glory_gain_low_effect = yes }
+
+		scope:attacker = {
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_county }
+				add_prestige = { value = minor_prestige_gain }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_duchy }
+				add_prestige = { value = medium_prestige_gain }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_kingdom }
+				add_prestige = { value = major_prestige_gain }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_empire }
+				add_prestige = { value = massive_prestige_gain }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_hegemony }
+				add_prestige = { value = monumental_prestige_gain }
+			}
+		}
+		scope:defender = {
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_county }
+				add_prestige = { value = minor_prestige_loss }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_duchy }
+				add_prestige = { value = medium_prestige_loss }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_kingdom }
+				add_prestige = { value = major_prestige_loss }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_empire }
+				add_prestige = { value = massive_prestige_loss }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_hegemony }
+				add_prestige = { value = monumental_prestige_loss }
+			}
+		}
+
+		scope:attacker = {	#Upgrade Slave Camps
+			if = {
+				limit = { scope:defender.primary_title.tier >= tier_county }
+				if = {
+					limit = { agot_can_upgrade_any_slave_population_trigger = yes }
+					custom_description = {
+						text = agot_upgrade_slave_population
+					}
+					if = {
+						limit = {
+							culture = {
+								has_cultural_parameter = more_slaves_from_raiding
+							}
+						}
+						add_character_flag = double_slave_upgrade
+					}
+					trigger_event = agot_slavery.9001
+				}
+				else_if = {
+					limit = {
+						culture = {
+							has_cultural_parameter = more_slaves_from_raiding
+						}
+					}
+					add_gold = 500
+				}
+				else = {
+					add_gold = 250
+				}
+			}
+		}
+
+		# Allies on both sides get full prestige value for helping in the war, based on their war participation.
+		modify_allies_of_participants_fame_values = {
+			WINNER = scope:attacker
+			FAME_BASE = major_prestige_value
+			IS_RELIGIOUS_WAR = no
+			WINNER_ALLY_FAME_SCALE = 1
+			LOSER_ALLY_FAME_SCALE = 1
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		desc = slave_raid_cb_white_peace_desc
+	}
+
+	on_white_peace = {
+		scope:attacker = {
+			show_pow_release_message_effect = yes
+			stress_impact = {
+				ambitious = medium_stress_impact_gain
+				arrogant = medium_stress_impact_gain
+			}
+		}
+		scope:attacker = {
+			add_prestige = {
+				value = medium_prestige_loss
+			}
+		}
+
+		# Allies on both sides get full prestige value for helping in the war, based on their war participation.
+		modify_allies_of_participants_fame_values = {
+			WINNER = scope:attacker # not important as the scales are identical
+			FAME_BASE = major_prestige_value
+			IS_RELIGIOUS_WAR = no
+			WINNER_ALLY_FAME_SCALE = 1
+			LOSER_ALLY_FAME_SCALE = 1
+		}
+
+		scope:defender = {
+			stress_impact = {
+				arrogant = medium_stress_impact_gain
+			}
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+
+	}
+
+	on_defeat_desc = {
+		desc = slave_raid_cb_defeat_desc
+	}
+
+	on_defeat = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		#EP2 Accolade glory gain from winning against higher ranked enemy
+		scope:defender = { accolade_defender_war_end_glory_gain_low_effect = yes }
+
+		scope:attacker = {
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_county }
+				add_prestige = { value = minor_prestige_loss }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_duchy }
+				add_prestige = { value = medium_prestige_loss }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_kingdom }
+				add_prestige = { value = major_prestige_loss }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_empire }
+				add_prestige = { value = massive_prestige_loss }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_hegemony }
+				add_prestige = { value = monumental_prestige_loss }
+			}
+		}
+		scope:defender = {
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_county }
+				add_prestige = { value = minor_prestige_gain }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_duchy }
+				add_prestige = { value = medium_prestige_gain }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_kingdom }
+				add_prestige = { value = major_prestige_gain }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_empire }
+				add_prestige = { value = massive_prestige_gain }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_hegemony }
+				add_prestige = { value = monumental_prestige_gain }
+			}
+		}
+
+		# Allies on both sides get full prestige value for helping in the war, based on their war participation.
+		modify_allies_of_participants_fame_values = {
+			WINNER = scope:defender
+			FAME_BASE = major_prestige_value
+			IS_RELIGIOUS_WAR = no
+			WINNER_ALLY_FAME_SCALE = 1
+			LOSER_ALLY_FAME_SCALE = 1
+		}
+
+		# Truce
+		add_truce_attacker_defeat_effect = yes
+
+		scope:attacker = { save_temporary_scope_as = loser }
+		on_lost_aggression_war_discontent_loss = yes
+	}
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = "SLAVE_RAID_CB_NAME"
+	war_name_base = "SLAVE_RAID_WAR_NAME_BASE"
+	cb_name = "SLAVE_RAID_CB_NAME"
+	interface_priority = 80
+
+	ticking_war_score_targets_entire_realm = yes
+	attacker_ticking_warscore = 0
+	attacker_wargoal_percentage = 0.01
+	attacker_score_from_occupation_scale = 50
+	defender_score_from_occupation_scale = 50
+	attacker_score_from_battles_scale = 200
+	defender_score_from_battles_scale = 200
+
+	max_attacker_score_from_battles = 200
+	max_defender_score_from_battles = 200
+
+	max_defender_score_from_occupation = 150
+	max_attacker_score_from_occupation = 150
+
+	max_ai_diplo_distance_to_title = 500
+
+	ai_score = {
+		value = slave_raid_ai_score_value
+	}
+}
+
+free_slaves_cb = {
+	icon = rv_rescue
+	group = slavery
+	ai_only_against_neighbors = yes
+	allow_hostages = no
+
+	# Root is the title
+	# scope:attacker is the attacker
+	# scope:defender is the defender
+	allowed_against_character = {
+		scope:attacker = {
+			OR = {
+				has_realm_law = slavery_disallowed_law
+				is_landless_adventurer = yes
+			}
+		}
+
+		scope:defender = {
+			is_independent_ruler = yes
+			has_realm_law = slavery_allowed_law
+		}
+	}
+
+	cost = {
+		prestige = {
+			add = {
+				value = 500
+				desc = CB_BASE_COST
+			}
+			multiply = common_cb_prestige_cost_multiplier
+		}
+	}
+
+	should_invalidate = {
+		scope:defender = {
+			NOT = { has_realm_law = slavery_allowed_law }
+		}
+	}
+
+	on_invalidated_desc = msg_invalidate_war_title
+
+	on_invalidated = {
+
+	}
+
+	on_declaration = {
+		on_declared_war = yes
+	}
+
+	on_victory_desc = {
+		desc = free_slaves_cb_victory_desc
+	}
+
+	on_victory = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		#EP2 Accolade glory gain from winning against higher ranked enemy
+		scope:attacker = { accolade_attacker_war_end_glory_gain_low_effect = yes }
+
+		scope:attacker = {
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_county }
+				add_prestige = { value = minor_prestige_gain }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_duchy }
+				add_prestige = { value = medium_prestige_gain }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_kingdom }
+				add_prestige = { value = major_prestige_gain }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_empire }
+				add_prestige = { value = massive_prestige_gain }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_hegemony }
+				add_prestige = { value = monumental_prestige_gain }
+			}
+		}
+		scope:defender = {
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_county }
+				add_prestige = { value = minor_prestige_loss }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_duchy }
+				add_prestige = { value = medium_prestige_loss }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_kingdom }
+				add_prestige = { value = major_prestige_loss }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_empire }
+				add_prestige = { value = massive_prestige_loss }
+			}
+			if = {
+				limit = { scope:defender.primary_title.tier = tier_hegemony }
+				add_prestige = { value = monumental_prestige_loss }
+			}
+		}
+		scope:attacker = {
+			scope:defender = { save_scope_as = slaveowner }
+			custom_description = {
+				text = agot_freedman_courtiers_will_join
+				trigger_event = agot_slavery.9002
+			}
+		}
+
+		scope:defender = {
+			add_character_flag = {
+				flag = forced_to_end_slavery
+				days = 1
+			}
+			forcibly_end_realm_slavery_effect = yes
+			depose = yes
+		}
+
+		# Allies on both sides get full prestige value for helping in the war, based on their war participation.
+		modify_allies_of_participants_fame_values = {
+			WINNER = scope:attacker
+			FAME_BASE = major_prestige_value
+			IS_RELIGIOUS_WAR = no
+			WINNER_ALLY_FAME_SCALE = 1
+			LOSER_ALLY_FAME_SCALE = 1
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		desc = free_slaves_cb_white_peace_desc
+	}
+
+	on_white_peace = {
+		scope:attacker = {
+			show_pow_release_message_effect = yes
+			stress_impact = {
+				ambitious = medium_stress_impact_gain
+				arrogant = medium_stress_impact_gain
+			}
+		}
+		scope:attacker = {
+			add_prestige = {
+				value = medium_prestige_loss
+			}
+		}
+
+
+
+		# Allies on both sides get full prestige value for helping in the war, based on their war participation.
+		modify_allies_of_participants_fame_values = {
+			WINNER = scope:attacker # not important as the scales are identical
+			FAME_BASE = major_prestige_value
+			IS_RELIGIOUS_WAR = no
+			WINNER_ALLY_FAME_SCALE = 1
+			LOSER_ALLY_FAME_SCALE = 1
+		}
+
+		scope:defender = {
+			stress_impact = {
+				arrogant = medium_stress_impact_gain
+			}
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+
+	}
+
+	on_defeat_desc = {
+		desc = free_slaves_cb_defeat_desc
+	}
+
+	on_defeat = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		#EP2 Accolade glory gain from winning against higher ranked enemy
+		scope:defender = { accolade_defender_war_end_glory_gain_low_effect = yes }
+
+		scope:attacker = {
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_county }
+				add_prestige = { value = minor_prestige_loss }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_duchy }
+				add_prestige = { value = medium_prestige_loss }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_kingdom }
+				add_prestige = { value = major_prestige_loss }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_empire }
+				add_prestige = { value = massive_prestige_loss }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_hegemony }
+				add_prestige = { value = monumental_prestige_loss }
+			}
+		}
+		scope:defender = {
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_county }
+				add_prestige = { value = minor_prestige_gain }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_duchy }
+				add_prestige = { value = medium_prestige_gain }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_kingdom }
+				add_prestige = { value = major_prestige_gain }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_empire }
+				add_prestige = { value = massive_prestige_gain }
+			}
+			if = {
+				limit = { scope:attacker.primary_title.tier = tier_hegemony }
+				add_prestige = { value = monumental_prestige_gain }
+			}
+		}
+
+		# Allies on both sides get full prestige value for helping in the war, based on their war participation.
+		modify_allies_of_participants_fame_values = {
+			WINNER = scope:defender
+			FAME_BASE = major_prestige_value
+			IS_RELIGIOUS_WAR = no
+			WINNER_ALLY_FAME_SCALE = 1
+			LOSER_ALLY_FAME_SCALE = 1
+		}
+
+		# Truce
+		add_truce_attacker_defeat_effect = yes
+
+		scope:attacker = { save_temporary_scope_as = loser }
+		on_lost_aggression_war_discontent_loss = yes
+	}
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = "FREE_SLAVES_CB_NAME"
+	war_name_base = "FREE_SLAVES_WAR_NAME_BASE"
+	cb_name = "FREE_SLAVES_CB_NAME"
+	interface_priority = 80
+
+	ticking_war_score_targets_entire_realm = yes
+	attacker_ticking_warscore = 0
+	attacker_wargoal_percentage = 0.01
+	attacker_score_from_occupation_scale = 50
+	defender_score_from_occupation_scale = 50
+	attacker_score_from_battles_scale = 200
+	defender_score_from_battles_scale = 200
+
+	max_attacker_score_from_battles = 200
+	max_defender_score_from_battles = 200
+
+	max_defender_score_from_occupation = 150
+	max_attacker_score_from_occupation = 150
+
+	max_ai_diplo_distance_to_title = 500
+
+	ai_score = {
+		value = free_slaves_ai_score_value
+	}
+}
+
+slavery_revolt = {
+	icon = peasant_war
+	group = civil_war
+	allow_hostages = no
+	ai_only_against_liege = yes
+	target_titles = claim
+	white_peace_possible = no
+	allowed_for_character = {
+		scope:attacker = {
+			is_leading_faction_type = slavery_revolt_faction
+		}
+	}
+
+	allowed_against_character = {
+		any_in_list = {
+			list = target_titles
+			OR = {
+				NOT = { exists = holder }
+				holder = scope:defender
+			}
+		}
+	}
+
+	target_de_jure_regions_above = yes
+	target_top_liege_if_outside_realm = no
+
+	valid_to_start = {
+	}
+
+	should_invalidate = {
+		NOT = {
+			scope:attacker = {
+				has_variable = rebel_leader_slave
+				exists = joined_faction
+				joined_faction = var:rebel_leader_slave
+			}
+		}
+	}
+
+	on_declaration = {
+		#on_declared_war = yes
+
+		scope:defender = {
+			add_opinion = {
+				modifier = peasant_revolt_opinion
+				target = scope:attacker
+			}
+		}
+
+		# Generate troops
+		hidden_effect = {
+			generate_troops_from_revolt_county_modifiers_effect = yes
+		}
+	}
+
+	on_victory_desc = {
+		desc = slave_war_victory_desc
+	}
+
+	on_victory = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+		scope:attacker = {
+			joined_faction = {
+				slave_faction_demands_enforced = { FACTION = this }
+			}
+		}
+		scope:defender = {
+			random_held_county = {
+				create_title_and_vassal_change = {
+					type = conquest_populist
+					save_scope_as = change3
+					add_claim_on_loss = yes
+				}
+				change_title_holder = {
+					holder = scope:attacker
+					change = scope:change3
+					take_baronies = no
+				}
+				resolve_title_and_vassal_change = scope:change3
+			}
+			every_vassal = {
+				limit = {
+					primary_title.tier >= tier_county
+				}
+				if = {
+					limit = {
+						has_trait = slave_master
+					}
+					create_title_and_vassal_change = {
+						type = conquest_populist
+						save_scope_as = change
+						add_claim_on_loss = yes
+					}
+					every_held_title = {
+						limit = {
+							tier >= tier_county
+						}
+						change_title_holder = {
+							holder = scope:attacker
+							change = scope:change
+							take_baronies = no
+						}
+					}
+					resolve_title_and_vassal_change = scope:change
+					if = { # Imprison them if they aren't imprisoned.
+						limit = {
+							is_imprisoned = no
+						}
+						scope:attacker = {
+							imprison = {
+								target = prev
+								type = dungeon
+							}
+						}
+					}
+				}
+			}
+			create_title_and_vassal_change = {
+				type = conquest_populist
+				save_scope_as = change2
+				add_claim_on_loss = yes
+			}
+			every_held_title = {
+				limit = {
+					tier >= tier_county
+				}
+				change_title_holder = {
+					holder = scope:attacker
+					change = scope:change2
+					take_baronies = no
+				}
+			}
+			resolve_title_and_vassal_change = scope:change2
+			scope:attacker = {
+				if = { # Imprison them if they aren't imprisoned.
+					limit = {
+						is_imprisoned = no
+					}
+					imprison = {
+						target = scope:defender
+						type = dungeon
+					}
+				}
+			}
+		}
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		desc = WHITE_PEACE_DISABLED
+	}
+
+	on_defeat_desc = {
+		desc = slave_war_defeat_desc
+	}
+
+	on_defeat = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+		scope:defender = {
+			add_character_flag = peasant_revolt_do_not_kill
+			remove_variable = rebel_leader_slave
+		}
+		scope:attacker = {
+			joined_faction = {
+				destroy_faction = yes
+			}
+		}
+		scope:defender = {
+			if = {
+				limit = {
+					NOT = { #In case defender has changed
+						has_opinion_modifier = {
+							modifier = peasant_revolt_opinion
+							target = scope:attacker
+						}
+					}
+				}
+				add_opinion = {
+					modifier = peasant_revolt_opinion
+					target = scope:attacker
+				}
+			}
+			if = {
+				limit = {
+					scope:attacker = { is_imprisoned = no }
+				}
+				imprison = {
+					target = scope:attacker
+					type = dungeon
+				}
+			}
+		}
+	}
+
+	on_invalidated_desc = msg_invalidate_war_title
+
+	on_primary_attacker_death = invalidate
+	on_primary_defender_death = inherit
+
+	transfer_behavior = transfer
+
+	attacker_allies_inherit = no
+	defender_allies_inherit = yes
+
+	war_name = "SLAVE_WAR_NAME"
+
+	interface_priority = 80
+
+	use_de_jure_wargoal_only = yes
+
+	attacker_wargoal_percentage = 0.8
+
+	max_attacker_score_from_battles = 100
+	max_defender_score_from_battles = 50
+
+	max_ai_diplo_distance_to_title = 500
+}

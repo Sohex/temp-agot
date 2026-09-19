@@ -1,0 +1,670 @@
+﻿namespace = agot_dynastic_stability
+
+agot_dynastic_stability.0001 = { #Maintenance
+	type = character_event
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				NOT = { has_trait = bastard }
+				scope:title = { tier > tier_barony }
+				has_game_rule = agot_dynastic_stability_enabled
+			}
+			trigger_event = agot_dynastic_stability.0002
+		}
+
+		if = {
+			limit = {
+				has_trait = refusing_marriage
+				exists = dynasty
+				dynasty = {
+					any_dynasty_member = {
+						count <= 2
+					}
+				}
+			}
+			remove_trait = refusing_marriage
+		}
+	}
+}
+
+agot_dynastic_stability.0002 = {
+	type = character_event
+	theme = diplomacy
+	title = agot_dynastic_stability.0002.t
+	desc = agot_dynastic_stability.0002.desc
+	right_portrait = root
+
+	trigger = {
+		has_primary_title = scope:title
+		NOT = { dynasty = scope:previous_holder.dynasty }
+		NOT = {
+			any_heir_title = {
+				holder = { dynasty = root.dynasty }
+				tier >= scope:title.tier
+			}
+		}
+		NOT = {
+			any_pretender_title = {
+				holder = { dynasty = root.dynasty }
+				tier >= scope:title.tier
+			}
+		}
+		scope:title = {
+			any_past_holder = {
+				NOT = { dynasty = root.dynasty }
+				OR = {
+					is_parent_of = root
+					is_grandparent_of = root
+					is_great_grandparent_of = root
+				}
+				#AGOT TODO - Add a check for if root is part of a cadet branch and make sure they aren't
+				#AGOT TODO - Add a check for bittersteel, blackfyre and Targ and make sure they never convert to each other
+			}
+			NOT = {
+				any_past_holder = {
+					dynasty = root.dynasty
+					OR = {
+						is_sibling_of = root
+						is_child_of = root
+						is_parent_of = root
+						is_grandparent_of = root
+						is_grandchild_of = root
+						is_great_grandparent_of = root
+						root = {
+							is_nibling_of = prev
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		#fallback to their current dynasty
+		save_scope_as = line_of_descent
+		if = {
+			limit = {
+				scope:title = {
+					any_past_holder = {
+						NOT = { dynasty = root.dynasty }
+						is_parent_of = root
+					}
+				}
+			}
+			scope:title = {
+				random_past_holder = {
+					limit = {
+						NOT = { dynasty = root.dynasty }
+						is_parent_of = root
+					}
+					save_scope_as = line_of_descent
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:title = {
+					any_past_holder = {
+						NOT = { dynasty = root.dynasty }
+						is_grandparent_of = root
+					}
+				}
+			}
+			scope:title = {
+				random_past_holder = {
+					limit = {
+						NOT = { dynasty = root.dynasty }
+						is_grandparent_of = root
+					}
+					save_scope_as = line_of_descent
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:title = {
+					any_past_holder = {
+						NOT = { dynasty = root.dynasty }
+						is_great_grandparent_of = root
+					}
+				}
+			}
+			scope:title = {
+				random_past_holder = {
+					limit = {
+						NOT = { dynasty = root.dynasty }
+						is_great_grandparent_of = root
+					}
+					save_scope_as = line_of_descent
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_dynastic_stability.0002.a
+		hidden_effect = {
+			every_child = {
+				limit = { dynasty = root.dynasty }
+				set_house = scope:line_of_descent.house
+				every_child = {
+					limit = {
+						save_temporary_scope_as = child
+						dynasty = root.dynasty
+						NOT = {
+							any_heir_title = {
+								holder = { dynasty = scope:child.dynasty }
+								tier >= scope:title.tier
+							}
+						}
+						NOT = {
+							any_pretender_title = {
+								holder = { dynasty = scope:child.dynasty }
+								tier >= scope:title.tier
+							}
+						}
+					}
+					set_house = scope:line_of_descent.house
+					every_child = {
+						limit = {
+							save_temporary_scope_as = grandchild
+							dynasty = root.dynasty
+							NOT = {
+								any_heir_title = {
+									holder = { dynasty = scope:grandchild.dynasty }
+									tier >= scope:title.tier
+								}
+							}
+							NOT = {
+								any_pretender_title = {
+									holder = { dynasty = scope:grandchild.dynasty }
+									tier >= scope:title.tier
+								}
+							}
+						}
+						set_house = scope:line_of_descent.house
+					}
+				}
+			}
+		}
+		house = { save_scope_as = root_original_house }
+		set_house = scope:line_of_descent.house
+		# Legitimate house maintenance
+		every_held_title = {
+			limit = {
+				title_uses_legitimate_house_mechanic = yes
+			}
+			save_scope_as = legitimate_house_title_to_change
+			agot_set_current_house = {
+				HOUSE = root.house
+				TITLE = scope:legitimate_house_title_to_change
+			}
+			if = {
+				limit = {
+					var:legitimate_house = scope:root_original_house
+				}
+				agot_set_legitimate_house = {
+					HOUSE = root.house
+					TITLE = scope:legitimate_house_title_to_change
+				}
+			}
+		}
+		# COA maintenance
+		every_held_title = {
+			limit = {
+				NOT = {
+					tier = tier_barony
+					title_province ?= { has_holding_type = ruin_holding }
+				}
+			}
+			set_coa = root.house
+		}
+		ai_chance = {
+			base = 2
+			modifier = {
+				scope:line_of_descent.house = {
+					any_house_relation = {
+						any_relation_house = { this = root.house }
+						OR = {
+							has_house_relation_level = feud
+							has_house_relation_level = quarrel
+							has_house_relation_level = rivalry
+						}
+					}
+				}
+				add = -5
+			}
+			modifier = {
+				OR = {
+					any_relation = {
+						type = rival
+						OR = {
+							this = scope:line_of_descent.house.house_head
+							this = scope:line_of_descent.house.house_head.primary_heir
+						}
+					}
+					any_relation = {
+						type = nemesis
+						OR = {
+							this = scope:line_of_descent.house.house_head
+							this = scope:line_of_descent.house.house_head.primary_heir
+						}
+					}
+				}
+				add = -5
+			}
+		}
+	}
+	option = {
+		name = agot_dynastic_stability.0002.b
+		ai_chance = {
+			base = 0
+			modifier = {
+				scope:line_of_descent.house = {
+					any_house_relation = {
+						any_relation_house = { this = root.house }
+						OR = {
+							has_house_relation_level = feud
+							has_house_relation_level = quarrel
+							has_house_relation_level = rivalry
+						}
+					}
+				}
+				add = 5
+			}
+			modifier = {
+				OR = {
+					any_relation = {
+						type = rival
+						OR = {
+							this = scope:line_of_descent.house.house_head
+							this = scope:line_of_descent.house.house_head.primary_heir
+						}
+					}
+					any_relation = {
+						type = nemesis
+						OR = {
+							this = scope:line_of_descent.house.house_head
+							this = scope:line_of_descent.house.house_head.primary_heir
+						}
+					}
+				}
+				add = 5
+			}
+		}
+	}
+}
+
+agot_dynastic_stability.1000 = {
+	hidden = yes
+
+	trigger = {
+		OR = {
+			exists = mother.dynasty
+			exists = father.dynasty
+		}
+
+		#Character was not house head
+		trigger_if = {
+			limit = {
+				exists = scope:old_dynasty
+				mother.dynasty ?= scope:old_dynasty
+			}
+			mother.house = { exists = house_head }
+		}
+		trigger_else_if = {
+			limit = {
+				exists = scope:old_dynasty
+				father.dynasty ?= scope:old_dynasty
+			}
+			father.house = { exists = house_head }
+		}
+		trigger_else_if = {
+			limit = {
+				should_mother_give_house_to_bastard_trigger = yes
+			}
+			mother.house = { exists = house_head }
+		}
+		trigger_else_if = {
+			limit = {
+				exists = father
+				exists = father.house
+				NOT = { father = { has_trait = bastard } }
+			}
+			father.house = { exists = house_head }
+		}
+		trigger_else = { always = no }
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				exists = scope:old_dynasty
+				mother.dynasty ?= scope:old_dynasty
+			}
+			add_character_flag = {
+				flag = had_mother_house
+				days = 1
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:old_dynasty
+				father.dynasty ?= scope:old_dynasty
+			}
+			add_character_flag = {
+				flag = had_father_house
+				days = 1
+			}
+		}
+
+		house = { save_scope_as = generated_house }
+
+		if = {
+			limit = { has_game_rule = agot_bastard_cadets_landed_only }
+
+			if = {
+				limit = { is_ruler = yes }
+
+				trigger_event = agot_dynastic_stability.1001
+				trigger_event = agot_dynastic_stability.1002
+			}
+			else_if = {
+				limit = { is_ruler = no }
+
+				trigger_event = agot_dynastic_stability.1003
+			}
+		}
+		else_if = {
+			limit = { has_game_rule = agot_bastard_cadets_everyone }
+
+			trigger_event = agot_dynastic_stability.1001
+			trigger_event = agot_dynastic_stability.1002
+		}
+	}
+}
+
+# Puting this in here since it has to do with dynasty switching as well
+# This event relates to bastards forming cadets
+agot_dynastic_stability.1001 = {
+	hidden = yes
+
+	immediate = {
+		agot_set_parent_house_effect = yes # Rejoin your house
+		if = {
+			limit = {
+				is_lowborn = no
+				exists = house
+			}
+			house = { save_scope_as = former_house }
+		}
+		create_cadet_branch = {} # Create the Cadet subhouse
+		house = {
+			if = {
+				limit = {
+					scope:former_house = { has_house_modifier = dragonrider_house_modifier }
+				}
+				add_house_modifier = dragonrider_house_modifier
+			}
+			set_variable = { name = bastard_house_of value = scope:former_house }
+			#COA
+			if = {
+				limit = { prev = { has_character_flag = has_personal_coa } }
+				set_coa = prev.var:my_personal_coa.house
+			}
+			else = {
+				generate_coa = bastards
+			}
+		}
+		#House Name
+		if = {
+			limit = {
+				any_child = {
+					house = scope:generated_house
+				}
+			}
+			random_child = {
+				limit = {
+					house = scope:generated_house
+				}
+				save_scope_as = child
+			}
+			house = {
+				set_house_name_from_house = scope:child.house
+			}
+		}
+		# Add your kids back to your new house
+		if = {
+			limit = {
+				any_child = {
+					house = scope:generated_house
+				}
+			}
+			every_child = {
+				limit = {
+					house = scope:generated_house
+				}
+				add_to_list = not_dynastic_kiddos
+			}
+			every_in_list = {
+				list = not_dynastic_kiddos
+				set_house = root.house
+			}
+		}
+		house = {
+			if = {
+				limit = { prev = { has_variable = bought_the_ship } }
+				if = {
+					limit = {
+						scope:former_house = { has_house_modifier = owns_small_ship }
+					}
+					scope:former_house = { remove_house_modifier = owns_small_ship }
+					add_house_modifier = owns_small_ship
+				}
+				else_if = {
+					limit = {
+						scope:former_house = { has_house_modifier = owns_small_ship_diving }
+					}
+					scope:former_house = { remove_house_modifier = owns_small_ship_diving }
+					add_house_modifier = owns_small_ship_diving
+				}
+				else_if = {
+					limit = {
+						scope:former_house = { has_house_modifier = owns_big_ship }
+					}
+					scope:former_house = { remove_house_modifier = owns_big_ship }
+					add_house_modifier = owns_big_ship
+				}
+				else_if = {
+					limit = {
+						scope:former_house = { has_house_modifier = owns_big_ship_diving }
+					}
+					scope:former_house = { remove_house_modifier = owns_big_ship_diving }
+					add_house_modifier = owns_big_ship_diving
+				}
+			}
+		}
+		trigger_event = agot_coa_events.0001
+	}
+}
+
+agot_dynastic_stability.1002 = { #PINEAPPLE  - Badger's Custom Cadet Name Generator
+	hidden = yes
+
+	immediate = {
+		set_global_variable = {
+			name = cadet_new_name
+			value = root
+		}
+
+		house = {
+			set_house_name = cadet_name
+		}
+		remove_global_variable = cadet_new_name
+	}
+}
+
+# This event shifts bastards back to their house if the "Cadet Bastards Landed Only" game rtule is active
+agot_dynastic_stability.1003 = {
+	hidden = yes
+
+	immediate = {
+		agot_set_parent_house_effect = yes # Rejoin your house
+		remove_trait = bastard_founder
+		add_trait = bastard
+		if = {
+			limit = {
+				any_child = {
+					house = scope:generated_house
+				}
+			}
+			every_child = {
+				limit = {
+					house = scope:generated_house
+				}
+				add_to_list = not_dynastic_kiddos
+			}
+			every_in_list = {
+				list = not_dynastic_kiddos
+				agot_set_parent_house_effect = yes
+			}
+		}
+	}
+}
+
+scripted_trigger valid_child_for_bastard_branch = {
+	OR = {
+		is_lowborn = yes
+		AND = {
+			scope:bastard_branch_creator = { is_male = yes }
+			mother ?= { is_spouse_of = scope:bastard_branch_creator }
+			mother ?= { matrilinear_marriage = no }
+		}
+		AND = {
+			scope:bastard_branch_creator = { is_female = yes }
+			father ?= { is_spouse_of = scope:bastard_branch_creator }
+			father ?= { matrilinear_marriage = yes }
+		}
+	}
+}
+
+#Bastards being landed after having children
+agot_dynastic_stability.1100 = {
+	hidden = yes
+
+	trigger = {
+		has_game_rule = agot_bastard_cadets_landed_only
+		exists = house
+		has_trait = bastard
+		save_temporary_scope_as = bastard_branch_creator
+		any_child = {
+			valid_child_for_bastard_branch = yes
+		}
+		NOT = {
+			any_owned_story = {
+				story_type = agot_royal_bastard_story
+				has_variable = claimant_war_being_fought
+			}
+		}
+	}
+
+	immediate = {
+		house = { save_scope_as = former_house }
+		agot_create_bastard_cadet_effect = yes
+		house = { save_scope_as = new_house }
+		# Add your kids back to your new house
+		agot_update_noble_bastard_house_and_descendants = { OLD_HOUSE = scope:former_house NEW_HOUSE = scope:new_house }
+	}
+}
+
+agot_dynastic_stability.2000 = {
+	type = character_event
+	theme = family
+	title = agot_dynastic_stability.2000.t
+	desc = agot_dynastic_stability.2000.desc
+
+
+	left_portrait = root
+	right_portrait = scope:bastard
+
+
+	immediate = {}
+
+	option = {
+		name = agot_dynastic_stability.2000.a
+		scope:bastard = {
+			send_interface_message = {
+				type = event_generic_good
+				title = agot_dynastic_stability.2000.legitimization_granted
+				left_icon = root
+				remove_trait = bastard_founder
+				add_trait = legitimized_bastard
+				scope:bastard.house = { save_scope_as = house }
+				hidden_effect = {
+					agot_house_revival_modifiers_effect = {
+						OLD_HOUSE = scope:bastard.house
+						NEW_HOUSE = scope:bastard.house.var:bastard_house_of
+					}
+				}
+				every_child = {
+					limit = { this.house = scope:bastard.house }
+					set_house = scope:bastard.house.var:bastard_house_of
+					every_child = {
+						limit = {
+							this.house = scope:bastard.house
+						}
+						set_house = house.var:bastard_house_of
+						every_child = {
+							limit = {
+								this.house = scope:bastard.house
+							}
+							set_house = scope:bastard.house.var:bastard_house_of
+						}
+					}
+				}
+				set_house = scope:bastard.house.var:bastard_house_of
+				every_held_title = {
+					set_coa = scope:bastard.house
+				}
+				hidden_effect = {
+					house = {
+						if = {
+							limit = { scope:bastard ?= { is_house_head = no } }
+							set_house_head = scope:bastard
+						}
+					}
+				}
+				add_legitimacy = medium_legitimacy_loss
+			}
+		}
+		reverse_add_opinion = {
+			target = scope:bastard
+			modifier = legitimized_me_opinion
+		}
+		ai_chance = {
+			base = 70
+			ai_value_modifier = {
+				ai_rationality = 1
+			}
+			opinion_modifier = {
+				opinion_target = scope:bastard
+				multiplier = 1.1
+			}
+		}
+	}
+	option = {
+		name = agot_dynastic_stability.2000.b
+		scope:bastard = {
+			send_interface_message = {
+				type = event_generic_bad
+				title = agot_dynastic_stability.2000.legitimization_rejected
+				desc = agot_dynastic_stability.2000.legitimization_rejected_desc
+				left_icon = root
+			}
+		}
+		ai_chance = {
+			base = 30
+		}
+	}
+}

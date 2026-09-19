@@ -1,0 +1,819 @@
+﻿namespace = agot_faceless_decision
+
+# Hall of faces page one
+agot_faceless_decision.0001 = {
+	type = character_event
+	title = agot_faceless_decision.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					has_character_flag = choosing_character
+				}
+				desc = agot_faceless_decision.0001.desc
+			}
+			desc = agot_faceless_decision.0001.desc_face
+		}
+	}
+	theme = death
+
+	override_background = { reference = ce1_catacombs }
+
+	right_portrait = {
+		character = root
+	}
+
+	# Option for faces of victims
+	option = {
+		trigger = {
+			trigger_if = {
+				limit = {
+					any_owned_story = {
+						story_type = story_wear_face
+						var:new_face ?= { save_temporary_scope_as = new_face_temp }
+					}
+				}
+				any_killed_character = {
+					trigger_if = {
+						limit = {
+							root = { has_character_flag = choosing_face }
+						}
+						OR = {
+							AND = {
+								is_male = yes
+								root = { is_male = yes }
+							}
+							AND = {
+								is_male = no
+								root = { is_male = no }
+							}
+						}
+					}
+					trigger_else = {
+						always = yes
+					}
+					is_human = yes
+					NOT = { scope:new_face_temp ?= this }
+					count >= 1
+				}
+			}
+			trigger_else = {
+				any_killed_character = {
+					trigger_if = {
+						limit = {
+							root = { has_character_flag = choosing_face }
+						}
+						OR = {
+							AND = {
+								is_male = yes
+								root = { is_male = yes }
+							}
+							AND = {
+								is_male = no
+								root = { is_male = no }
+							}
+						}
+					}
+					trigger_else = {
+						always = yes
+					}
+					is_human = yes
+					count >= 1
+				}
+			}
+		}
+		name = agot_faceless_decision.0001.victims
+		trigger_event = agot_faceless_decision.0002
+	}
+	# Option for faces in the hall
+	option = {
+		name = agot_faceless_decision.0001.hall
+		trigger_event = agot_faceless_decision.0003
+	}
+	# Reconsider
+	option = {
+		name = agot_faceless_decision.0001.cancel
+		custom_tooltip = agot_faceless_decision.0001.cancel.tt
+		remove_character_flag = choosing_face
+		remove_character_flag = choosing_character
+	}
+}
+
+# Choose face of victim
+agot_faceless_decision.0002 = {
+	type = character_event
+	title = agot_faceless_decision.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					has_character_flag = choosing_character
+				}
+				desc = agot_faceless_decision.0002.desc
+			}
+			desc = agot_faceless_decision.0002.desc_face
+		}
+	}
+	theme = death
+
+	override_background = { reference = ce1_catacombs }
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_three_options"
+		container = "custom_widgets_container"
+	}
+
+	right_portrait = {
+		character = root
+	}
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_wear_face
+			}
+			var:new_face = { save_scope_as = new_face }
+		}
+		every_killed_character = {
+			limit = {
+				trigger_if = {
+					limit = {
+						root = { has_character_flag = choosing_face }
+					}
+					OR = {
+						AND = {
+							is_male = yes
+							root = { is_male = yes }
+						}
+						AND = {
+							is_male = no
+							root = { is_male = no }
+						}
+					}
+				}
+				trigger_else = {
+					always = yes
+				}
+				is_human = yes
+				NOT = { scope:new_face ?= this }
+			}
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+
+		ordered_in_list = {
+			variable = possible_characters
+			order_by = age
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = selected_character
+		}
+	}
+	# Confirm face
+	option = {
+		name = agot_faceless_decision.0002.select
+		custom_tooltip = agot_faceless_decision.0002.select.tt
+		var:si_selected_character ?= {
+			save_scope_as = selected_face
+		}
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+
+		trigger_event = agot_faceless_decision.0004
+	}
+	# Go back
+	option = {
+		name = agot_faceless_decision.0002.back
+		trigger_event = agot_faceless_decision.0001
+
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+	}
+	# Reconsider
+	option = {
+		name = agot_faceless_decision.0002.cancel
+		custom_tooltip = agot_faceless_decision.0002.cancel.tt
+
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+
+		remove_character_flag = choosing_face
+		remove_character_flag = choosing_character
+	}
+}
+
+# Choose face from hall
+agot_faceless_decision.0003 = {
+	type = character_event
+	title = agot_faceless_decision.0003.t
+	desc = agot_faceless_decision.0003.desc
+	theme = death
+
+	override_background = { reference = ce1_catacombs }
+
+	right_portrait = {
+		character = root
+	}
+
+	immediate = {
+		global_var:hall_of_faces = {
+			title_province = {
+
+				random_in_list = {
+					limit = {
+						trigger_if = {
+							limit = {
+								root = { has_character_flag = choosing_face }
+							}
+							OR = {
+								AND = {
+									is_male = yes
+									root = { is_male = yes }
+								}
+								AND = {
+									is_male = no
+									root = { is_male = no }
+								}
+							}
+						}
+						trigger_else = {
+							always = yes
+						}
+					}
+					variable = faces
+					save_scope_as = face_1
+				}
+
+				random_in_list = {
+					limit = {
+						trigger_if = {
+							limit = {
+								root = { has_character_flag = choosing_face }
+							}
+							OR = {
+								AND = {
+									is_male = yes
+									root = { is_male = yes }
+								}
+								AND = {
+									is_male = no
+									root = { is_male = no }
+								}
+							}
+						}
+						trigger_else = {
+							always = yes
+						}
+						NOT = {
+							this = scope:face_1
+						}
+					}
+					variable = faces
+					save_scope_as = face_2
+				}
+
+				random_in_list = {
+					limit = {
+						trigger_if = {
+							limit = {
+								root = { has_character_flag = choosing_face }
+							}
+							OR = {
+								AND = {
+									is_male = yes
+									root = { is_male = yes }
+								}
+								AND = {
+									is_male = no
+									root = { is_male = no }
+								}
+							}
+						}
+						trigger_else = {
+							always = yes
+						}
+						NOR = {
+							this = scope:face_1
+							this = scope:face_2
+						}
+					}
+					variable = faces
+					save_scope_as = face_3
+				}
+
+				random_in_list = {
+					limit = {
+						trigger_if = {
+							limit = {
+								root = { has_character_flag = choosing_face }
+							}
+							OR = {
+								AND = {
+									is_male = yes
+									root = { is_male = yes }
+								}
+								AND = {
+									is_male = no
+									root = { is_male = no }
+								}
+							}
+						}
+						trigger_else = {
+							always = yes
+						}
+						NOR = {
+							this = scope:face_1
+							this = scope:face_2
+							this = scope:face_3
+						}
+					}
+					variable = faces
+					save_scope_as = face_4
+				}
+
+				random_in_list = {
+					limit = {
+						trigger_if = {
+							limit = {
+								root = { has_character_flag = choosing_face }
+							}
+							OR = {
+								AND = {
+									is_male = yes
+									root = { is_male = yes }
+								}
+								AND = {
+									is_male = no
+									root = { is_male = no }
+								}
+							}
+						}
+						trigger_else = {
+							always = yes
+						}
+						NOR = {
+							this = scope:face_1
+							this = scope:face_2
+							this = scope:face_3
+							this = scope:face_4
+						}
+					}
+					variable = faces
+					save_scope_as = face_5
+				}
+			}
+		}
+	}
+
+	# Select Face 1
+	option = {
+		trigger = {
+			exists = scope:face_1
+		}
+		name = agot_faceless_decision.0003.face_1
+		scope:face_1 = {
+			save_scope_as = selected_face
+		}
+		trigger_event = agot_faceless_decision.0004
+	}
+
+	# Select Face 2
+	option = {
+		trigger = {
+			exists = scope:face_2
+		}
+		name = agot_faceless_decision.0003.face_2
+		scope:face_2 = {
+			save_scope_as = selected_face
+		}
+		trigger_event = agot_faceless_decision.0004
+	}
+
+	# Select Face 3
+	option = {
+		trigger = {
+			exists = scope:face_3
+		}
+		name = agot_faceless_decision.0003.face_3
+		scope:face_3 = {
+			save_scope_as = selected_face
+		}
+		trigger_event = agot_faceless_decision.0004
+	}
+
+	# Select Face 4
+	option = {
+		trigger = {
+			exists = scope:face_4
+		}
+		name = agot_faceless_decision.0003.face_4
+		scope:face_4 = {
+			save_scope_as = selected_face
+		}
+		trigger_event = agot_faceless_decision.0004
+	}
+
+	# Select Face 5
+	option = {
+		trigger = {
+			exists = scope:face_5
+		}
+		name = agot_faceless_decision.0003.face_5
+		scope:face_5 = {
+			save_scope_as = selected_face
+		}
+		trigger_event = agot_faceless_decision.0004
+	}
+
+	#Random face not in the hall
+	option = {
+		name = agot_faceless_decision.0003.random
+		custom_tooltip = agot_faceless_decision.0003.random.tt
+		hidden_effect = {
+			random_culture_global = {
+				limit = {
+					exists = culture_head
+					culture_head = { is_alive = yes }
+				}
+				save_scope_as = random_culture
+			}
+
+			if = {
+				limit = {
+					has_character_flag = choosing_face
+					is_male = yes
+				}
+				set_local_variable = {
+					name = female_chance
+					value = 0
+				}
+			}
+			else_if = {
+				limit = {
+					has_character_flag = choosing_face
+					is_male = no
+				}
+
+				set_local_variable = {
+					name = female_chance
+					value = 100
+				}
+			}
+			else = {
+				set_local_variable = {
+					name = female_chance
+					value = 50
+				}
+			}
+
+			create_character = {
+				location = root.location
+				template = agot_faceless_character
+				culture = scope:random_culture
+				gender_female_chance = local_var:female_chance
+				save_scope_as = selected_face
+			}
+
+			scope:selected_face = {
+				death = {
+					death_reason = death_accident
+				}
+			}
+		}
+		trigger_event = agot_faceless_decision.0004
+	}
+
+	# Go back
+	option = {
+		name = agot_faceless_decision.0003.back
+
+		trigger_event = agot_faceless_decision.0001
+	}
+	# Reconsider
+	option = {
+		name = agot_faceless_decision.0003.cancel
+		custom_tooltip = agot_faceless_decision.0003.cancel.tt
+
+		remove_character_flag = choosing_face
+		remove_character_flag = choosing_character
+	}
+
+	after = {
+		clear_saved_scope = face_1
+		clear_saved_scope = face_2
+		clear_saved_scope = face_3
+		clear_saved_scope = face_4
+		clear_saved_scope = face_5
+	}
+}
+
+agot_faceless_decision.0004 = {
+	type = character_event
+	title = agot_faceless_decision.0004.t
+	desc = agot_faceless_decision.0004.desc
+	theme = death
+
+	override_background = { reference = ce1_catacombs }
+
+	right_portrait = {
+		character = root
+	}
+
+	left_portrait = {
+		character = scope:selected_face
+		animation = dead
+	}
+
+	option = {
+		trigger = {
+			has_character_flag = choosing_character
+		}
+		name = agot_faceless_decision.0004.confirm
+		custom_tooltip = agot_faceless_decision.0004.take_new_character.tt
+		# want to make sure the faces of kills are preserved
+		if = {
+			limit = {
+				any_killed_character = {
+					this = scope:selected_face
+					save_temporary_scope_as = kill_temp
+				}
+
+				NOT = {
+					global_var:hall_of_faces = {
+						title_province = {
+							any_in_list = {
+								variable = faces
+								this = scope:kill_temp
+							}
+						}
+					}
+				}
+			}
+			scope:selected_face = { make_unprunable = yes }
+		}
+		hidden_effect = { agot_faceless_take_face_adventure = { NEW_FACE = scope:selected_face OLD_FACE = root } }
+		agot_make_unpruneable = yes
+	}
+
+	option = {
+		trigger = {
+			has_character_flag = choosing_face
+		}
+		name = agot_faceless_decision.0004.confirm
+		custom_tooltip = agot_faceless_decision.0004.take_new_face.tt
+		# want to make sure the faces of kills are preserved
+		if = {
+			limit = {
+				any_killed_character = {
+					this = scope:selected_face
+					save_temporary_scope_as = kill_temp
+				}
+
+				NOT = {
+					global_var:hall_of_faces = {
+						title_province = {
+							any_in_list = {
+								variable = faces
+								this = scope:kill_temp
+							}
+						}
+					}
+				}
+			}
+			scope:selected_face = { make_unprunable = yes }
+		}
+		hidden_effect = { agot_faceless_take_face = { NEW_FACE = scope:selected_face OLD_FACE = root } }
+		remove_character_flag = choosing_face
+	}
+
+	# Back
+	option = {
+		name = agot_faceless_decision.0004.back
+
+		clear_saved_scope = selected_face
+
+		trigger_event = agot_faceless_decision.0001
+	}
+
+	# Cancel
+	option = {
+		name = agot_faceless_decision.0004.cancel
+		custom_tooltip = agot_faceless_decision.0004.cancel.tt
+
+		remove_character_flag = choosing_face
+		remove_character_flag = choosing_character
+	}
+}
+
+agot_faceless_decision.0005 = {
+	type = character_event
+	theme = death
+
+	title = agot_faceless_interaction.0002.t
+	desc = agot_faceless_decision.0005.desc
+
+	left_portrait = {
+		character = root
+	}
+
+	right_portrait = {
+		character = scope:faceless_man
+	}
+
+	immediate = {
+		agot_faceless_use_face_random = yes
+	}
+
+	option = {
+		name = agot_faceless_decision.0005.a
+		death = {
+			death_reason = death_murder
+			killer = scope:faceless_man
+		}
+	}
+
+	option = {
+		trigger = {
+			has_dlc_feature = roads_to_power
+		}
+		name = agot_faceless_decision.0005.b
+
+		custom_tooltip = {
+			text = faceless_will_become_landless_run.tt
+
+			if = {
+				limit = {
+					is_landless_adventurer = yes
+				}
+				# remove old adventuring camp
+				random_held_title = {
+					save_scope_as = old_title
+				}
+
+				create_landless_adventurer_title_effect = {
+					REASON = flag:voluntary
+					FLAVOR_CHAR = root
+				}
+
+				destroy_title = scope:old_title
+			}
+			else = {
+				agot_quick_laamp = yes
+			}
+		}
+		custom_tooltip = {
+			text = faceless_lose_hall_access.tt
+			add_character_flag = last_face
+		}
+
+	}
+
+	after = {
+
+		random_owned_story = {
+			limit = {
+				story_type = story_wear_face
+			}
+			save_scope_as = story
+			var:old_face = { save_scope_as = original_character }
+		}
+
+		global_var:hall_of_faces = {
+			title_province = {
+				add_to_variable_list = {
+					name = faces
+					target = scope:original_character
+				}
+			}
+		}
+
+		scope:faceless_man = {
+			silent_disappearance_effect = yes
+		}
+	}
+}
+
+agot_faceless_decision.0010 = {
+	hidden = yes
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_wear_face
+			}
+			save_scope_as = story
+		}
+
+		set_local_variable = {
+			name = faces_worn_local
+			value = scope:story.var:faces_worn
+		}
+
+		if = {
+			limit = {
+				local_var:faces_worn_local > 5
+			}
+
+			set_local_variable = {
+				name = gt_5_local
+				value = {
+					value = local_var:faces_worn_local
+					add = -5
+				}
+			}
+			random_list = {
+				100 = {
+					modifier = {
+						add = {
+							value = -10
+							multiply = local_var:gt_5_local
+						}
+					}
+				}
+				0 = {
+					modifier = {
+						add = {
+							value = 10
+							multiply = local_var:gt_5_local
+						}
+					}
+
+					trigger_event = agot_faceless_decision.0005
+				}
+			}
+		}
+	}
+
+}
+
+#Setup
+agot_faceless_decision.9000 = {
+	scope = none
+	hidden = yes
+
+	immediate = {
+		global_var:hall_of_faces = {
+			title_province = {
+				save_scope_as = location
+			}
+		}
+
+		while = {
+			count < 20
+
+			random_culture_global = {
+				limit = {
+					exists = culture_head
+					culture_head = { is_alive = yes }
+				}
+				save_scope_as = random_culture
+			}
+
+			create_character = {
+				location = scope:location
+				template = agot_faceless_character
+				culture = scope:random_culture
+				save_scope_as = new_face
+				after_creation = {
+					death = { death_reason = death_accident }
+				}
+			}
+
+			global_var:hall_of_faces = {
+				title_province = {
+					add_to_variable_list = {
+						name = faces
+						target = scope:new_face
+					}
+				}
+			}
+		}
+
+		trigger_event = {
+			id = agot_faceless_decision.9001
+			days = 1
+		}
+	}
+}
+
+agot_faceless_decision.9001 = {
+	scope = none
+	hidden = yes
+
+	immediate = {
+		global_var:hall_of_faces = {
+			title_province = {
+				every_in_list = {
+					variable = faces
+					make_unprunable = yes
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,1089 @@
+﻿return_settlement_county_to_wilderness = {
+	category = interaction_category_uncategorized
+	hidden = yes
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:target.county ?= {
+						any_county_province = {
+							has_holding = yes
+							barony ?= { is_capital_barony = no }
+						}
+					}
+				}
+				desc = return_settlement_county_to_wilderness_desc
+			}
+			desc = return_settlement_county_to_wilderness_desc_one_province
+		}
+	}
+
+	target_type = title
+	target_filter = actor_domain_titles
+
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = { this = scope:recipient }
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			holder = scope:actor
+			is_capital_barony = no # we'll use the county in that case
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					has_holding_type = settlement_holding
+				}
+			}
+			trigger_else = {
+				custom_description = {
+					text = "feudalize_tribal_holding_interaction_title_not_county_or_below"
+					always = no
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		custom_tooltip = {
+			text = return_settlement_to_wilderness_cannot_be_your_primary_title
+			scope:actor = {
+				any_held_title = {
+					this = scope:target
+					NOT = { scope:target.title_province.county = scope:actor.capital_county }
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		if = {
+			limit = {
+				scope:target.county = {
+					any_county_province = {
+						has_holding = yes
+						barony ?= { is_capital_barony = no }
+					}
+				}
+				scope:target.title_province = { geographical_region = historical_pirate_region }
+			}
+			agot_get_potential_pirate_effect = yes
+			scope:target.county = {
+				every_county_province = {
+					limit = {
+						has_holding = yes
+						barony = { is_capital_barony = no }
+					}
+					set_variable = pirate_den
+				}
+			}
+		}
+		scope:actor = {
+			make_settlement_county_wilderness = { COUNTY = scope:target.title_province.county }
+			trigger_event = agot_colonization_events.0007
+		}
+		if = {
+			limit = { exists = scope:potential_pirate }
+			hidden_effect = {
+				scope:potential_pirate = {
+					trigger_event = {
+						id = agot_colonization_events.1595
+						days = 1
+					}
+				}
+				scope:target.title_province.county = {
+					title_province = { set_holding_type = pirate_den_holding }
+					create_title_and_vassal_change = {
+						type = returned
+						save_scope_as = change
+					}
+					change_title_holder = {
+						holder = scope:potential_pirate
+						change = scope:change
+						take_baronies = yes
+					}
+					resolve_title_and_vassal_change = scope:change
+					set_county_faith = scope:potential_pirate.faith
+					if = {
+						limit = {
+							scope:potential_pirate.culture = culture:high_valyrian
+							has_game_rule = agot_hv_conversion_offshoots
+							title_province = { geographical_region = world_westeros }
+						}
+						set_county_culture = culture:westerosi_valyrian
+					}
+					else_if = {
+						limit = {
+							scope:potential_pirate.culture = culture:high_valyrian
+							has_game_rule = agot_hv_conversion_offshoots
+							NOT = {
+								title_province = { geographical_region = world_westeros }
+							}
+						}
+						set_county_culture = culture:essosi_valyrian
+					}
+					else = {
+						set_county_culture = scope:potential_pirate.culture
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 150
+	}
+}
+
+feudalize_into_castle_holding_interaction = {
+	category = interaction_category_uncategorized
+	hidden = yes
+
+	desc = feudalize_into_castle_holding_interaction_desc
+
+	target_type = title
+	target_filter = actor_domain_titles
+
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			this = scope:recipient
+			NOT = {
+				government_has_flag = government_is_tribal
+			}
+
+		}
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			holder = scope:actor
+			is_capital_barony = no # we'll use the county in that case
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					has_holding_type = settlement_holding
+				}
+			}
+			trigger_else = {
+				custom_description = {
+					text = "feudalize_tribal_holding_interaction_title_not_county_or_below"
+					always = no
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		scope:target = {
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					barony_controller = scope:actor
+					has_ongoing_construction = no
+				}
+			}
+		}
+		scope:target = {
+			trigger_if = {
+				limit = {
+					title_province = {
+						has_holding_type = settlement_holding
+					}
+				}
+				custom_tooltip = {
+					text = blockers_remain_in_settlement
+					title_province = {
+						has_building_with_flag = {
+							flag = obstacle
+							count = 0
+						}
+					}
+				}
+				custom_tooltip = {
+					text = less_than_three_development
+					county.development_level >= 3
+				}
+				custom_tooltip = {
+					text = has_fully_upgraded_settlement_holding
+					title_province = { has_building = settlement_03 }
+				}
+			}
+		}
+		trigger_if = {
+			limit = { scope:target.tier = tier_barony }
+			custom_tooltip = {
+				text = capital_province_is_settlement
+				NOT = {
+					scope:target.county.title_province = {
+						has_holding_type = settlement_holding
+					}
+				}
+			}
+		}
+		scope:target.title_province = { japan_castle_construction_trigger = yes }
+		scope:target.title_province.county.holder = {
+			culture = { has_innovation = innovation_motte }
+			NOT = { government_has_flag = government_is_pirate_trigger_check }
+		}
+	}
+
+	cost = {
+		gold = {
+			value = 0
+
+			if = {
+				limit = {
+					scope:actor = { is_ai = no }
+					scope:target.tier = tier_county
+				}
+				add = feudalize_tribal_holding_interaction_cost
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			send_interface_toast = {
+				title = feudalize_into_castle_holding_interaction_notification
+
+				right_icon = scope:actor
+
+				if = {
+					limit = { exists = scope:target.title_province }
+					scope:target.title_province = {
+						set_holding_type = castle_holding
+					}
+					scope:target = { set_color_from_title = scope:target.de_jure_liege }
+				}
+				if = {
+					limit = { scope:target.tier = tier_county }
+					scope:target = { agot_remove_permafrost_modifiers = yes }
+				}
+			}
+			if = {
+				limit = {
+					has_variable = num_settled_wilderness
+					var:num_settled_wilderness > 0
+				}
+				decrease_variable = {
+					NAME = num_settled_wilderness
+					AMOUNT = 1
+				}
+				remove_wilderness_tracker_variable = yes
+				trigger_event = agot_colonization_events.0007
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 150
+	}
+}
+
+feudalize_into_city_holding_interaction = {
+	category = interaction_category_uncategorized
+	hidden = yes
+
+	desc = feudalize_into_city_holding_interaction_desc
+
+	target_type = title
+	target_filter = actor_domain_titles
+
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			this = scope:recipient
+			NOT = {
+				government_has_flag = government_is_tribal
+			}
+		}
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			holder = scope:actor
+			#is_capital_barony = no # we'll use the county in that case
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					has_holding_type = settlement_holding
+				}
+			}
+			trigger_else = {
+				custom_description = {
+					text = "feudalize_tribal_holding_interaction_title_not_county_or_below"
+					always = no
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		scope:target = { # Target province has an ongoing construction
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					barony_controller = scope:actor
+					has_ongoing_construction = no
+				}
+			}
+		}
+		scope:target = { # Whether the title meets the requirements to upgrade into normal holding
+			trigger_if = {
+				limit = {
+					title_province = {
+						has_holding_type = settlement_holding
+					}
+				}
+				custom_tooltip = {
+					text = blockers_remain_in_settlement
+					title_province = {
+						has_building_with_flag = {
+							flag = obstacle
+							count = 0
+						}
+					}
+				}
+				custom_tooltip = {
+					text = less_than_three_development
+					county.development_level >= 3
+				}
+				custom_tooltip = { # Settlement needs to be upgraded to the maximum
+					text = has_fully_upgraded_settlement_holding
+					title_province = { has_building = settlement_03 }
+				}
+			}
+		}
+		trigger_if = {
+			limit = { scope:target.tier = tier_barony }
+			custom_tooltip = {
+				text = capital_province_is_settlement
+				NOT = {
+					scope:target.county.title_province = {
+						has_holding_type = settlement_holding
+					}
+				}
+			}
+		}
+		scope:target.title_province = {
+			agot_can_build_city_holdings = yes
+			building_requirement_tribal_holding_in_county = yes
+			building_requirement_nomad_holding_in_county = yes
+			building_requirement_herder_holding_in_county = yes
+		}
+		scope:target.title_province.county.holder = {
+			culture = { has_innovation = innovation_city_planning }
+			save_temporary_scope_as = holder
+			building_requirement_tribal = no
+			building_requirement_nomad = no
+			building_requirement_herder = no
+		}
+	}
+
+	cost = {
+		gold = {
+			value = 0
+
+			if = {
+				limit = {
+					scope:actor = { is_ai = no }
+					scope:target.tier = tier_county
+				}
+				add = feudalize_tribal_holding_interaction_cost
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			send_interface_toast = {
+				title = feudalize_into_city_holding_interaction_notification
+
+				right_icon = scope:actor
+
+				if = {
+					limit = { exists = scope:target.title_province }
+					scope:target.title_province = {
+						set_holding_type = city_holding
+					}
+					scope:target = { set_color_from_title = scope:target.de_jure_liege }
+				}
+				if = {
+					limit = { scope:target.tier = tier_county }
+					scope:target = { agot_remove_permafrost_modifiers = yes }
+				}
+			}
+			if = {
+				limit = {
+					has_variable = num_settled_wilderness
+					var:num_settled_wilderness > 0
+				}
+				decrease_variable = {
+					NAME = num_settled_wilderness
+					AMOUNT = 1
+				}
+				remove_wilderness_tracker_variable = yes
+				trigger_event = agot_colonization_events.0007
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 150
+	}
+}
+
+feudalize_into_temple_holding_interaction = {
+	category = interaction_category_uncategorized
+	hidden = yes
+
+	desc = feudalize_into_temple_holding_interaction_desc
+
+	target_type = title
+	target_filter = actor_domain_titles
+
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			this = scope:recipient
+			NOT = {
+				government_has_flag = government_is_tribal
+			}
+			agot_holder_can_build_temple_holdings = yes
+		}
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			holder = scope:actor
+			is_capital_barony = no # we'll use the county in that case
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					has_holding_type = settlement_holding
+				}
+			}
+			trigger_else = {
+				custom_description = {
+					text = "feudalize_tribal_holding_interaction_title_not_county_or_below"
+					always = no
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		scope:target = {
+			title_province = {
+				is_county_capital = no
+			}
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					barony_controller = scope:actor
+					has_ongoing_construction = no
+				}
+			}
+		}
+		scope:target = {
+			trigger_if = {
+				limit = {
+					title_province = {
+						has_holding_type = settlement_holding
+					}
+				}
+				custom_tooltip = {
+					text = blockers_remain_in_settlement
+					title_province = {
+						has_building_with_flag = {
+							flag = obstacle
+							count = 0
+						}
+					}
+				}
+				custom_tooltip = {
+					text = less_than_three_development
+					county.development_level >= 3
+				}
+				custom_tooltip = {
+					text = has_fully_upgraded_settlement_holding
+					title_province = { has_building = settlement_03 }
+				}
+			}
+		}
+		trigger_if = {
+			limit = { scope:target.tier = tier_barony }
+			custom_tooltip = {
+				text = capital_province_is_settlement
+				NOT = {
+					scope:target.county.title_province = {
+						has_holding_type = settlement_holding
+					}
+				}
+			}
+		}
+		scope:target.title_province = {
+			agot_province_can_build_temple_holdings = yes
+			building_requirement_nomad_holding_in_county = yes
+			building_requirement_herder_holding_in_county = yes
+			trigger_if = {
+				limit = {
+					NOT = { scope:target.holder.culture = { has_cultural_parameter = tribals_can_into_temples } }
+				}
+				scope:target.county.holder = {
+					save_temporary_scope_as = holder
+					building_requirement_tribal = no
+				}
+				building_requirement_tribal_holding_in_county = yes
+			}
+			trigger_else = {
+				scope:target.holder.culture = { has_cultural_parameter = tribals_can_into_temples }
+			}
+		}
+		scope:target.title_province.county.holder = {
+			NOT = { has_character_modifier = tgp_rebuilder_modifier }
+			trigger_if = {
+				limit = {
+					NOT = {
+						culture = { has_cultural_parameter = tribals_can_into_temples }
+					}
+				}
+				culture = { has_innovation = innovation_city_planning }
+			}
+			trigger_else = {
+				culture = { has_cultural_parameter = tribals_can_into_temples }
+			}
+			culture = { has_innovation = innovation_city_planning }
+			save_temporary_scope_as = holder
+			building_requirement_nomad = no
+			building_requirement_herder = no
+		}
+	}
+
+	cost = {
+		gold = {
+			value = 0
+
+			if = {
+				limit = {
+					scope:actor = { is_ai = no }
+					scope:target.tier = tier_county
+				}
+				add = feudalize_tribal_holding_interaction_cost
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			send_interface_toast = {
+				title = feudalize_into_temple_holding_interaction_notification
+
+				right_icon = scope:actor
+
+				if = {
+					limit = { exists = scope:target.title_province }
+					scope:target.title_province = {
+						set_holding_type = church_holding
+					}
+					scope:target = { set_color_from_title = scope:target.de_jure_liege }
+				}
+				if = {
+					limit = { scope:target.tier = tier_county }
+					scope:target = { agot_remove_permafrost_modifiers = yes }
+				}
+			}
+			if = {
+				limit = {
+					has_variable = num_settled_wilderness
+					var:num_settled_wilderness > 0
+				}
+				decrease_variable = {
+					NAME = num_settled_wilderness
+					AMOUNT = 1
+				}
+				remove_wilderness_tracker_variable = yes
+				trigger_event = agot_colonization_events.0007
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 150
+	}
+}
+
+tribalize_settlement_holding_interaction = {
+	category = interaction_category_uncategorized
+	hidden = yes
+
+	desc = tribalize_settlement_holding_interaction_desc
+
+	target_type = title
+	target_filter = actor_domain_titles
+
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			this = scope:recipient
+			government_has_flag = government_is_tribal
+		}
+	}
+
+	cost = {
+		gold = {
+			value = settle_settlement_holding_interaction_cost
+			divide = 2
+		}
+		prestige = {
+			value = settle_settlement_holding_interaction_cost
+			multiply = 2
+		}
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			holder = scope:actor
+			is_capital_barony = no # we'll use the county in that case
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					has_holding_type = settlement_holding
+				}
+			}
+			trigger_else = {
+				custom_tooltip = {
+					text = tribalize_settlement_holding_interaction_title_not_county_or_below
+					always = no
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		scope:target = {
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					barony_controller = scope:actor
+					has_ongoing_construction = no
+				}
+			}
+		}
+		scope:target = {
+			trigger_if = {
+				limit = {
+					title_province = {
+						has_holding_type = settlement_holding
+					}
+				}
+				custom_tooltip = {
+					text = blockers_remain_in_settlement
+					title_province = {
+						has_building_with_flag = {
+							flag = obstacle
+							count = 0
+						}
+					}
+				}
+				custom_tooltip = {
+					text = has_fully_upgraded_settlement_holding
+					title_province = { has_building = settlement_03 }
+				}
+			}
+		}
+		trigger_if = {
+			limit = { scope:target.tier = tier_barony }
+			custom_tooltip = {
+				text = capital_province_is_settlement
+				NOT = {
+					scope:target.county.title_province = {
+						has_holding_type = settlement_holding
+					}
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			send_interface_toast = {
+				title = tribalize_settlement_holding_interaction_notification
+
+				right_icon = scope:actor
+
+				if = {
+					limit = {
+						exists = scope:target.title_province
+						scope:target.title_province = { has_holding_type = settlement_holding }
+					}
+					scope:target = { set_color_from_title = scope:target.de_jure_liege }
+				}
+
+				if = {
+					limit = { exists = scope:target.title_province }
+					scope:target.title_province = {
+						set_holding_type = tribal_holding
+					}
+				}
+			}
+		}
+		scope:actor = {
+			if = {
+				limit = {
+					has_variable = num_settled_wilderness
+					var:num_settled_wilderness > 0
+				}
+				decrease_variable = {
+					NAME = num_settled_wilderness
+					AMOUNT = 1
+				}
+				remove_wilderness_tracker_variable = yes
+				trigger_event = agot_colonization_events.0007
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 150
+	}
+}
+
+colonize_pirate_den_interaction = {
+	category = interaction_category_uncategorized
+	hidden = yes
+	special_interaction = feudalize_holding
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:target.county ?= {
+						any_county_province = {
+							has_holding = yes
+							barony ?= { is_capital_barony = no }
+						}
+					}
+				}
+				desc = colonize_pirate_den_interaction_desc
+			}
+			desc = colonize_pirate_den_interaction_desc_one_province
+		}
+	}
+
+	target_type = title
+	target_filter = actor_domain_titles
+
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			this = scope:recipient
+			NOT = { government_has_flag = government_is_pirate_trigger_check }
+		}
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			holder = scope:actor
+			is_capital_barony = no # we'll use the county in that case
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = { has_holding_type = pirate_den_holding }
+			}
+			trigger_else = {
+				custom_description = {
+					text = "colonize_pirate_den_interaction_title_not_county_or_below"
+					always = no
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		scope:target = {
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					barony_controller = scope:actor
+					has_ongoing_construction = no
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = colonize_pirate_den_interaction_notification
+
+				right_icon = scope:actor
+
+				if = {
+					limit = { exists = scope:target.title_province }
+					scope:target.title_province = {
+						colonize_pirate_den_effect = { COLONIZER = scope:actor PIRATE_DEN = scope:target.title_province }
+					}
+				}
+			}
+		}
+	}
+
+	# Interaction frequency determined by code, do not change
+	ai_frequency = 0
+
+	# Used to determine which holding should be feudalized over another AND how important this AI goal is compared to others, like creating titles and constructing new holdings
+	ai_will_do = {
+		base = 1500
+	}
+}
+
+support_colonize_pirate_den_interaction = {
+	category = interaction_category_vassal
+	icon = request_funding_interaction
+
+	desc = support_colonize_pirate_den_interaction_desc
+
+	target_type = title
+	target_filter = recipient_domain_titles
+
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			NOT = { government_has_flag = government_is_pirate_trigger_check }
+		}
+		scope:recipient = {
+			target_is_liege_or_above = scope:actor
+			NOT = { government_has_flag = government_is_tribal }
+			NOT = { this = scope:actor }
+			any_held_title = {
+				tier <= tier_county
+				title_province = {
+					has_holding_type = pirate_den_holding
+				}
+			}
+		}
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			is_capital_barony = no # we'll use the county in that case
+
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					barony_controller = scope:recipient
+					has_ongoing_construction = no
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		scope:target = {
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					has_holding_type = pirate_den_holding
+				}
+			}
+			trigger_else = {
+				custom_description = {
+					text = "feudalize_holding_interaction_title_not_county_or_below"
+					always = no
+				}
+			}
+		}
+	}
+
+	is_highlighted = {
+		# Highlight the interaction if we have the gold to spare
+		scope:actor = {
+			gold >= {
+				value = feudalize_holding_interaction_cost
+			}
+		}
+	}
+
+	on_accept = {
+		scope:recipient = {
+			# Add some opinion to make it worthwhile
+			add_opinion = {
+				target = scope:actor
+				modifier = grateful_opinion
+				opinion = 15
+			}
+
+			# Notify actor and recipient
+			scope:actor = {
+				send_interface_toast = {
+					type = event_toast_effect_good
+					title = colonize_pirate_den_interaction_notification
+
+					left_icon = scope:actor
+					right_icon = scope:target
+
+					if = {
+						limit = { exists = scope:target.title_province }
+						scope:target.title_province = {
+							set_holding_type = castle_holding
+						}
+					}
+				}
+			}
+		}
+		scope:actor = {
+			# If you are admin, you get some influence for your efforts
+			if = {
+				limit = { government_has_flag = government_is_administrative }
+				change_influence = medium_influence_gain
+			}
+		}
+	}
+
+	# The AI doesn't check this very often - So if they have more important expenses, they will put their gold to better use first.
+	ai_frequency = 72
+
+	ai_targets = {
+		ai_recipients = vassals
+		max = 10
+	}
+
+	ai_potential = {
+		# Some basic triggers
+		is_at_war = no
+		is_adult = yes
+		# The AI only does this if they have plenty of gold to spare
+		gold >= { value = feudalize_holding_interaction_cost multiply = 4 }
+		# Warring AI don't do this - They want to spend their gold on war!
+		ai_has_warlike_personality = no
+		ai_has_conqueror_personality = no
+	}
+
+	ai_will_do = {
+		base = 25
+		modifier = {
+			scope:actor = { ai_has_economical_boom_personality = yes }
+			add = 50
+		}
+	}
+}
+
+#Piratize Holding
+pirate_takeover_of_holding_interaction = {
+	category = interaction_category_uncategorized
+	hidden = yes
+	special_interaction = tribalize_holding
+
+	desc = tribalize_holding_interaction_desc
+
+	target_type = title
+	target_filter = actor_domain_titles
+
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			this = scope:recipient
+			government_has_flag = government_is_pirate
+			is_landed = yes
+		}
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			holder = scope:actor
+			is_capital_barony = no # we'll use the county in that case
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					OR = {
+						has_holding_type = castle_holding
+						has_holding_type = city_holding
+					}
+				}
+			}
+			trigger_else = {
+				custom_description = {
+					text = "feudalize_holding_interaction_title_not_county_or_below"
+					always = no
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		scope:target = {
+			custom_tooltip = {
+				text = "county_dev_must_be_below_or_equal_to_15"
+				county.development_level <= dev_level_to_convert_into_pirate_holding
+			}
+			custom_tooltip = {
+				text = "county_must_be_coastal"
+				county = {
+					is_coastal_county = yes
+				}
+			}
+			trigger_if = {
+				limit = { tier <= tier_county }
+				title_province = {
+					barony_controller = scope:actor
+					has_ongoing_construction = no
+				}
+			}
+		}
+	}
+
+	cost = {
+		gold = {
+			add = {
+				value = 200
+				desc = BASE
+			}
+		}
+		prestige = {
+			scope:actor = {
+				add = {
+					value = 500
+					desc = BASE
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = feudalize_holding_interaction_notification
+
+				right_icon = scope:actor
+
+				if = {
+					limit = { exists = scope:target.title_province }
+					scope:target.title_province = {
+						set_holding_type = pirate_den_holding
+					}
+				}
+			}
+		}
+	}
+
+	# Interaction frequency determined by code, do not change
+	ai_frequency = 0
+
+	# Used to determine which holding should be feudalized over another AND how important this AI goal is compared to others, like creating titles and constructing new holdings
+	ai_will_do = {
+		base = 1500
+	}
+}

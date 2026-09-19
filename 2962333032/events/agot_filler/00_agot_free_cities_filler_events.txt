@@ -1,0 +1,3747 @@
+﻿#Generic filler events for the Free Cities
+
+namespace = agot_filler_free_cities
+
+#################################
+# Wisdom From Afar: 0001 - 0032 #
+#################################
+# agot_filler_free_cities.0001 - Maester arrives at your court
+# agot_filler_free_cities.0002 - Fallback - Maester is no longer available at root's court
+# agot_filler_free_cities.0003 - Maester has decided to leave the court
+# agot_filler_free_cities.0004 - You discover the maester stealing from you!
+# agot_filler_free_cities.0005 - Convince the maester to stay at your court instead of heading back to the Citadel
+# agot_filler_free_cities.0006 - Character died before the end of the chain, inform heir that maester left
+# agot_filler_free_cities.0010 - Tyrosh: Maester wishes to acquire more snails for his research
+# agot_filler_free_cities.0011 - Tyrosh: Maester asks for alchemical supplies
+# agot_filler_free_cities.0012 - Tyrosh: Outcome
+# agot_filler_free_cities.0020 - Lys: Maester needs a poisonous substance to continue his research
+# agot_filler_free_cities.0021 - Lys: Maester asks permission to conduct a shady experiment
+# agot_filler_free_cities.0022 - Lys: Outcome
+# agot_filler_free_cities.0030 - Myr: Maester needs to acquire more supplies
+# agot_filler_free_cities.0031 - Myr: Maester suggests building an observatory
+# agot_filler_free_cities.0032 - Myr: Outcome
+
+###############################
+# Plunder at sea: 1000 - 1001 #
+###############################
+# agot_filler_free_cities.1000 - Pirates pester merchant ships, admiral and marshal argue how to deal with them
+# agot_filler_free_cities.1001 - Situation ignored, Follow-up
+###############################
+
+###########################################
+# A Delicious Drink: 2000 - 2001 #
+###########################################
+# agot_filler_free_cities.2000 - You visit the local market and try a local wine.
+# agot_filler_free_cities.2001 - The wine is delicious, you decide to invest in your local wine industry!
+##############################################################################################################
+
+
+scripted_trigger traveling_maester_available_at_court = {
+	scope:maester ?= {
+		is_alive = yes
+		is_courtier_of = root
+		NOR = {
+			is_imprisoned = yes
+			has_contagious_deadly_disease_trigger = yes
+			has_trait = incapable
+		}
+	}
+}
+
+scripted_trigger traveling_maester_is_greedy = {
+	scope:maester = {
+		NOT = { ai_honor >= low_positive_ai_value }
+		OR = {
+			has_trait = greedy
+			has_trait = deceitful
+			has_trait = arbitrary
+		}
+	}
+}
+
+scripted_effect random_success_high_chance_roll = {
+	change_variable = {
+		name = research_score
+		add = {
+			integer_range = {
+				min = 3
+				max = 5
+			}
+		}
+	}
+}
+
+scripted_effect random_success_chance_roll = {
+	change_variable = {
+		name = research_score
+		add = {
+			integer_range = {
+				min = 1
+				max = 3
+			}
+		}
+	}
+}
+
+scripted_effect random_failure_chance_roll = {
+	change_variable = {
+		name = research_score
+		add = {
+			integer_range = {
+				min = -1
+				max = 2
+			}
+		}
+	}
+}
+
+#A Maester from the Citadel arrives at your court
+agot_filler_free_cities.0001 = {
+	type = character_event
+	title = agot_filler_free_cities.0001.t
+	desc = {
+		desc = agot_filler_free_cities.0001.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					capital_province = { geographical_region = world_essos_tyrosh }
+				}
+				desc = agot_filler_free_cities.0001.tyrosh
+			}
+			triggered_desc = {
+				trigger = {
+					capital_province = { geographical_region = world_essos_lys }
+				}
+				desc = agot_filler_free_cities.0001.lys
+			}
+			triggered_desc = {
+				trigger = {
+					capital_province = { geographical_region = world_essos_myr }
+				}
+				desc = agot_filler_free_cities.0001.myr
+			}
+		}
+		desc = agot_filler_free_cities.0001.outro
+	}
+
+	theme = court
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_learning.dds"
+	}
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = beg
+	}
+
+	trigger = {
+		is_available_adult = yes
+		is_landed = yes
+		culture = {
+			NOT = { has_innovation = innovation_maesters }
+		}
+		capital_province = {
+			OR = {
+				geographical_region = world_essos_lys
+				geographical_region = world_essos_tyrosh
+				geographical_region = world_essos_myr
+			}
+		}
+		NOT = { has_character_flag = had_maester_visit }
+	}
+
+	immediate = {
+		add_character_flag = had_maester_visit
+		capital_province = {
+			save_scope_as = scoped_location
+		}
+		if = {
+			limit = {
+				global_var:citadel_title.holder = {
+					any_courtier_or_guest = {
+						has_trait_xp = {
+							trait = maester
+							value = 100
+						}
+						NOR = {
+							has_trait = archmaester
+							has_character_flag = maester_researcher
+						}
+						is_adult = yes
+					}
+				}
+			}
+			global_var:citadel_title.holder = {
+				random_courtier_or_guest = {
+					limit = {
+						has_trait_xp = {
+							trait = maester
+							value = 100
+						}
+						NOR = {
+							has_trait = archmaester
+							has_character_flag = maester_researcher
+						}
+						is_adult = yes
+					}
+					save_scope_as = maester
+					if = {
+						limit = {
+							has_character_flag = blocked_from_leaving
+						}
+						remove_character_flag = blocked_from_leaving
+					}
+				}
+			}
+		}
+		else = {
+			create_character = {
+				location = root.capital_province
+				template = maester_character
+				age = { 20 40 }
+				dynasty = none
+				save_scope_as = maester
+			}
+		}
+		scope:maester = {
+			add_character_flag = traveling_maester
+		}
+	}
+
+	#A: Allow Maester to stay
+	option = {
+		name = agot_filler_free_cities.0001.a
+		custom_tooltip = agot_filler_free_cities.0001.a.tt
+		add_courtier = scope:maester
+		scope:maester = {
+			add_opinion = {
+				target = root
+				modifier = grateful_opinion
+				opinion = 40
+			}
+		}
+		hidden_effect = {
+			set_variable = {
+				name = research_score
+				value = 0
+				days = 3650
+			}
+			if = {
+				limit = { location = { geographical_region = world_essos_tyrosh } }
+				trigger_event = {
+					id = agot_filler_free_cities.0010
+					days = { 730 1095 }
+				}
+			}
+			if = {
+				limit = { location = { geographical_region = world_essos_lys } }
+				trigger_event = {
+					id = agot_filler_free_cities.0020
+					days = { 730 1095 }
+				}
+			}
+			if = {
+				limit = { location = { geographical_region = world_essos_myr} }
+				trigger_event = {
+					id = agot_filler_free_cities.0030
+					days = { 730 1095 }
+				}
+			}
+		}
+
+		stress_impact = {
+			paranoid = minor_stress_impact_gain
+			shy = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 0.5
+				ai_rationality = 0.25
+			}
+			modifier = {
+				add = -40
+				has_trait = paranoid
+			}
+			modifier = {
+				add = -40
+				has_trait = shy
+			}
+		}
+	}
+	#B: Turn the Maester away
+	option = {
+		name = agot_filler_free_cities.0001.b
+		custom_tooltip = agot_filler_free_cities.0001.b.tt
+		hidden_effect = {
+			send_traveling_maester_to_citadel = yes
+		}
+
+		stress_impact = {
+			gregarious = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = -0.5
+				ai_rationality = -0.25
+			}
+			modifier = {
+				add = -40
+				has_trait = gregarious
+			}
+		}
+	}
+
+	#If maester stays, roll initial score increase based on maester's learning skill
+	after = {
+		if = {
+			limit = { has_variable = research_score }
+			if = {
+				limit = { scope:maester = { learning >= 24 } }
+				change_variable = {
+					name = research_score
+					add = 3
+				}
+			}
+			else_if = {
+				limit = { scope:maester = { learning >= 20 } }
+				change_variable = {
+					name = research_score
+					add = 2
+				}
+			}
+			else_if = {
+				limit = { scope:maester = { learning >= 16 } }
+				change_variable = {
+					name = research_score
+					add = 1
+				}
+			}
+		}
+	}
+}
+
+#on_trigger_fail fallback - Maester is dead or gone from court before the chain reaches its conclusion
+agot_filler_free_cities.0002 = {
+	type = character_event
+	title = agot_filler_free_cities.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:maester = { is_alive = no } }
+				desc = agot_filler_free_cities.0002.dead
+			}
+			triggered_desc = {
+				trigger = { scope:maester = { is_imprisoned = yes } }
+				desc = agot_filler_free_cities.0002.imprisoned
+			}
+			desc = agot_filler_free_cities.0002.fallback
+		}
+		desc = agot_filler_free_cities.0002.desc
+		triggered_desc = {
+			trigger = { var:research_score >= 4 }
+			desc = agot_filler_free_cities.0002.save_desc
+		}
+	}
+	theme = court
+
+	left_portrait = {
+		character = root
+		animation = idle
+	}
+	lower_right_portrait = {
+		character = scope:maester
+	}
+
+	immediate = {
+		scope:maester ?= {
+			remove_character_flag = traveling_maester
+		}
+	}
+
+	#For whatever reason the maester is unavailable, if ROOT has invested something, try to salvage anything
+	option = {
+		name = agot_filler_free_cities.0002.save
+		trigger = { var:research_score >= 4 } #ROOT must have made some kind of progress
+		duel = {
+			skill = learning
+			value = high_skill_rating
+			40 = { #Success, small consolation prize
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0002.save_success
+				send_interface_toast = {
+					title = agot_filler_free_cities.0002.save_success
+					capital_province = {
+						add_province_modifier = {
+							modifier = agot_filler_maester_visit_bonus
+							years = 5
+						}
+					}
+				}
+			}
+			60 = { #Failure
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0002.save_fail
+				send_interface_toast = {
+					title = agot_filler_free_cities.0002.save_fail
+					add_prestige = medium_prestige_loss
+					add_stress = major_stress_gain
+				}
+			}
+		}
+
+		stress_impact = {
+			lazy = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = 0.5
+				ai_rationality = 0.25
+			}
+			modifier = {
+				add = 50
+				learning >= 15
+			}
+			modifier = {
+				add = 25
+				learning >= 10
+			}
+			modifier = {
+				add = -40
+				has_trait = lazy
+			}
+		}
+	}
+	option = {
+		name = agot_filler_free_cities.0002.a
+
+		stress_impact = {
+			diligent = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_energy = -0.5
+				ai_rationality = -0.25
+			}
+			modifier = {
+				add = -50
+				learning <10
+			}
+			modifier = {
+				add = 40
+				has_trait = lazy
+			}
+		}
+	}
+}
+
+#Maester decides to leave the court due to lack of support
+agot_filler_free_cities.0003 = {
+	type = character_event
+	title = agot_filler_free_cities.0003.t
+	desc = agot_filler_free_cities.0003.desc
+
+	theme = court
+
+	left_portrait = {
+		character = root
+		animation = eyeroll
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = disapproval
+	}
+
+	option = {
+		name = agot_filler_free_cities.0003.a
+		add_prestige = minor_prestige_loss
+	}
+
+	after = {
+		hidden_effect = {
+			remove_character_flag = no_support_maester_leaves
+			remove_variable = research_score
+			send_traveling_maester_to_citadel = yes
+		}
+	}
+}
+
+#Maester caught stealing from root!
+agot_filler_free_cities.0004 = {
+	type = character_event
+	title = agot_filler_free_cities.0004.t
+	desc = agot_filler_free_cities.0004.desc
+
+	theme = court
+	override_background = {
+		reference = corridor_night
+	}
+	left_portrait = {
+		character = root
+		animation = rage
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = shock
+	}
+
+	option = { #Let him stay, but make sure he pays for his crimes - take his hand
+		name = agot_filler_free_cities.0004.sadistic
+		trigger = {
+			OR = {
+				has_trait = torturer
+				has_trait = sadistic
+				has_trait = callous
+			}
+		}
+		add_dread = medium_dread_gain
+		scope:maester = {
+			add_trait = one_handed
+			add_opinion = {
+				opinion = -75
+				target = root
+				modifier = tortured_me
+			}
+		}
+		custom_tooltip = agot_filler_free_cities.0004.a.tt
+		hidden_effect = {
+			every_courtier_or_guest = {
+				limit = {
+					OR = {
+						has_trait = compassionate
+						has_trait = forgiving
+					}
+				}
+				add_opinion = {
+					opinion = -10
+					target = root
+					modifier = cruelty_opinion
+				}
+			}
+			every_courtier_or_guest = {
+				limit = {
+					OR = {
+						has_trait = torturer
+						has_trait = sadistic
+					}
+				}
+				add_opinion = {
+					opinion = 10
+					target = root
+					modifier = cruelty_opinion
+				}
+			}
+			#Continue chain
+			if = {
+				limit = { has_character_flag = had_event_agot_ffc_0011 }
+				trigger_event = {
+					id = agot_filler_free_cities.0012
+					days = { 365 730 }
+				}
+			}
+			else_if = {
+				limit = { has_character_flag = had_event_agot_ffc_0021 }
+				trigger_event = {
+					id = agot_filler_free_cities.0022
+					days = { 365 730 }
+				}
+			}
+			else_if = {
+				limit = { has_character_flag = had_event_agot_ffc_0031 }
+				trigger_event = {
+					id = agot_filler_free_cities.0032
+					days = { 365 730 }
+				}
+			}
+		}
+
+		stress_impact = {
+			sadistic = major_stress_impact_loss
+			just = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -2
+				ai_rationality = -1.5
+				ai_honor = -1
+			}
+		}
+	}
+	option = { #Execute
+		name = agot_filler_free_cities.0004.a
+		scope:maester = {
+			death = {
+				death_reason = death_execution
+				killer = root
+			}
+		}
+		add_dread = medium_dread_gain
+		custom_tooltip = agot_filler_free_cities.0004.a.tt #reduce tooltip spam
+		hidden_effect = {
+			every_courtier_or_guest = {
+				#custom = all_courtiers_and_guests
+				limit = {
+					OR = {
+						has_trait = compassionate
+						has_trait = forgiving
+					}
+				}
+				add_opinion = {
+					opinion = -10
+					target = root
+					modifier = cruelty_opinion
+				}
+			}
+			every_courtier_or_guest = {
+				#custom = all_courtiers_and_guests
+				limit = {
+					OR = {
+						has_trait = callous
+						has_trait = sadistic
+					}
+				}
+				add_opinion = {
+					opinion = 10
+					target = root
+					modifier = respect_opinion
+				}
+			}
+		}
+		remove_variable = research_score
+
+		stress_impact = {
+			sadistic = medium_stress_impact_loss
+			wrathful = minor_stress_impact_loss
+			callous = minor_stress_impact_loss
+			just = minor_stress_impact_gain
+			compassionate = medium_stress_impact_gain
+			forgiving = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -2
+				ai_rationality = -0.5
+				ai_honor = 0.5
+			}
+		}
+	}
+
+	option = { #Imprison
+		name = agot_filler_free_cities.0004.b
+		rightfully_imprison_character_effect = {
+			TARGET = scope:maester
+			IMPRISONER = root
+		}
+		scope:maester = {
+			remove_character_flag = traveling_maester
+		}
+		remove_variable = research_score
+		custom_tooltip = agot_filler_free_cities.0004.a.tt #reduce tooltip spam, display info more accurately?
+		hidden_effect = {
+			every_courtier_or_guest = {
+				#custom = all_courtiers_and_guests
+				limit = {
+					OR = {
+						has_trait = compassionate
+						has_trait = forgiving
+					}
+				}
+				add_opinion = {
+					opinion = -10
+					target = root
+					modifier = cruelty_opinion
+				}
+			}
+		}
+
+		stress_impact = {
+			compassionate = minor_stress_impact_gain
+			forgiving = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -1
+				ai_rationality = 0.5
+				ai_honor = 0.5
+			}
+		}
+	}
+
+	option = { #Banish
+		name = agot_filler_free_cities.0004.c
+		custom_tooltip = agot_filler_free_cities.0004.c.tt
+		add_dread = minor_dread_loss
+		hidden_effect = {
+			send_traveling_maester_to_citadel = yes
+		}
+		remove_variable = research_score
+		custom_tooltip = agot_filler_free_cities.0004.a.tt #reduce tooltip spam
+		hidden_effect = {
+			every_courtier_or_guest = {
+				limit = {
+					OR = {
+						has_trait = compassionate
+						has_trait = forgiving
+					}
+				}
+				add_opinion = {
+					opinion = 10
+					target = root
+					modifier = respect_opinion
+				}
+			}
+		}
+
+		stress_impact = {
+			sadistic = medium_stress_impact_gain
+			wrathful = minor_stress_impact_gain
+			compassionate = minor_stress_impact_loss
+			forgiving = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = 1
+				ai_rationality = 0.5
+				ai_honor = 0.5
+			}
+		}
+	}
+
+	option = { #Forgive
+		name = agot_filler_free_cities.0004.d
+		add_dread = minor_dread_loss
+		custom_tooltip = agot_filler_free_cities.0004.a.tt
+		hidden_effect = {
+			every_courtier_or_guest = {
+				#custom = all_courtiers_and_guests
+				limit = {
+					OR = {
+						has_trait = compassionate
+						has_trait = forgiving
+					}
+				}
+				add_opinion = {
+					opinion = 10
+					target = root
+					modifier = respect_opinion
+				}
+			}
+			every_courtier_or_guest = {
+				limit = {
+					OR = {
+						has_trait = sadistic
+						has_trait = callous
+						has_trait = just
+					}
+				}
+				add_opinion = {
+					opinion = -10
+					target = root
+					modifier = angry_opinion
+				}
+			}
+			#Continue chain
+			if = {
+				limit = { has_character_flag = had_event_agot_ffc_0011 }
+				trigger_event = {
+					id = agot_filler_free_cities.0012
+					days = { 365 730 }
+				}
+			}
+			else_if = {
+				limit = { has_character_flag = had_event_agot_ffc_0021 }
+				trigger_event = {
+					id = agot_filler_free_cities.0022
+					days = { 365 730 }
+				}
+			}
+			else_if = {
+				limit = { has_character_flag = had_event_agot_ffc_0031 }
+				trigger_event = {
+					id = agot_filler_free_cities.0032
+					days = { 365 730 }
+				}
+			}
+		}
+
+		stress_impact = {
+			sadistic = medium_stress_impact_gain
+			wrathful = medium_stress_impact_gain
+			compassionate = medium_stress_impact_loss
+			forgiving = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = 2
+				ai_rationality = 0.5
+				ai_honor = 0.5
+			}
+		}
+	}
+
+	after = { #Flag cleanup
+		if = {
+			limit = { has_character_flag = had_event_agot_ffc_0011 }
+			remove_character_flag = had_event_agot_ffc_0011
+		}
+		else_if = {
+			limit = { has_character_flag = had_event_agot_ffc_0021 }
+			remove_character_flag = had_event_agot_ffc_0021
+		}
+		else_if = {
+			limit = { has_character_flag = had_event_agot_ffc_0031 }
+			remove_character_flag = had_event_agot_ffc_0031
+		}
+	}
+}
+
+#Convince maester to stay at your court permanently
+agot_filler_free_cities.0005 = {
+	type = character_event
+	title = agot_filler_free_cities.0005.t
+	desc = agot_filler_free_cities.0005.desc
+
+	theme = court
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = idle
+	}
+
+	option = { #Convince maester to stay, diplomacy duel
+		name = agot_filler_free_cities.0005.a
+		duel = {
+			skill = diplomacy
+			value = medium_skill_rating
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2
+					min = -49
+				}
+				modifier = {
+					add = 10
+					scope:maester = { has_trait = gregarious }
+				}
+				modifier = {
+					add = 10
+					scope:maester = { has_trait = fickle }
+				}
+				modifier = {
+					add = 10
+					scope:maester = { has_trait = arbitrary }
+				}
+				modifier = {
+					add = 10
+					scope:maester = { has_trait = disloyal }
+				}
+				modifier = {
+					add = 10
+					scope:maester = { has_trait = ambitious }
+				}
+				custom_tooltip = agot_filler_free_cities.0005.a.tt
+				send_interface_toast = {
+					title = agot_filler_free_cities.0005.a.tt
+					left_icon = scope:maester
+					add_prestige = 50
+					scope:maester = {
+						remove_character_flag = recruit_maester
+						remove_character_flag = traveling_maester
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2
+					min = -49
+				}
+				#Should take lot more convincing to stay
+				modifier = {
+					add = 30
+					scope:maester = { has_trait = temperate }
+				}
+				modifier = {
+					add = 50
+					scope:maester = { has_trait = loyal }
+				}
+				modifier = {
+					add = 50
+					scope:maester = { has_trait = honest }
+				}
+				modifier = {
+					add = 50
+					scope:maester = { has_trait = just }
+				}
+				custom_tooltip = agot_filler_free_cities.0005.b.tt
+				send_interface_toast = {
+					title = agot_filler_free_cities.0005.b.tt
+					dynasty = { add_dynasty_prestige = medium_dynasty_prestige_gain } #maester writes some positive stuff back home
+					hidden_effect = {
+						send_traveling_maester_to_citadel = yes
+					}
+				}
+			}
+		}
+
+		stress_impact = {
+			paranoid = medium_stress_impact_gain
+			shy = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 1.5
+				ai_honor = -2 #Honorable characters shouldn't encourage breaking vows
+				ai_greed = 0.25
+			}
+			modifier = {
+				add = 50
+				scope:maester = {
+					opinion = {
+						target = root
+						value >= high_positive_opinion
+					}
+				}
+			}
+		}
+	}
+	option = { #Nah
+		name = agot_filler_free_cities.0005.b
+		dynasty = { add_dynasty_prestige = medium_dynasty_prestige_gain } #maester writes some positive stuff back home
+		hidden_effect = {
+			send_traveling_maester_to_citadel = yes
+		}
+
+		stress_impact = {
+			gregarious = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = -1.5
+				ai_honor = 1
+				ai_greed = -0.25
+			}
+			modifier = {
+				add = 30
+				has_trait = callous
+			}
+		}
+	}
+}
+
+#Inform heir that the maester left court
+agot_filler_free_cities.0006 = {
+	hidden = yes
+
+	immediate = {
+		send_interface_message = {
+			type = event_generic_neutral
+			title = msg_agot_ffc.0006.t
+			left_icon = scope:traveling_maester
+			custom_tooltip = msg_agot_ffc.0006.desc
+			hidden_effect = {
+				scope:traveling_maester = {
+					global_var:citadel_title.holder = {
+						add_courtier = prev
+					}
+				}
+			}
+		}
+	}
+}
+
+#Tyrosh - The Maester requires rare snails to further his studies
+agot_filler_free_cities.0010 = {
+	type = character_event
+	title = agot_filler_free_cities.0010.t
+	desc = agot_filler_free_cities.0010.desc
+
+	theme = court
+	override_background = {
+		reference = corridor_day
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_learning.dds"
+	}
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = worry
+	}
+
+	trigger = {
+		traveling_maester_available_at_court = yes
+	}
+	on_trigger_fail = {
+		trigger_event = agot_filler_free_cities.0002
+	}
+
+	immediate = {
+		if = {
+			limit = { cp:councillor_admiral ?= { stewardship > 12 } }
+			cp:councillor_admiral = {
+				save_scope_as = admiral
+			}
+		}
+	}
+
+	#Task your admiral to acquire a broad variety of snails of the finest quality only
+	option = {
+		name = agot_filler_free_cities.0010.admiral
+		skill = stewardship
+		trigger = { exists = scope:admiral }
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_success
+		remove_long_term_gold = 150
+		change_variable = {
+			name = research_score
+			add = 5
+		}
+
+		stress_impact = {
+			greedy = major_stress_impact_gain
+			diligent = minor_stress_impact_loss
+			generous = medium_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -2
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 0
+				long_term_gold < 150
+			}
+		}
+	}
+	#Purchase some goods from local merchants
+	option = {
+		name = agot_filler_free_cities.0010.a
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		remove_short_term_gold = 100
+		random_success_chance_roll = yes
+
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+			diligent = miniscule_stress_impact_loss
+			generous = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -2
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 0
+				long_term_gold < 100
+			}
+		}
+	}
+	#Seize merchandise from local markets
+	option = {
+		name = agot_filler_free_cities.0010.b
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		random_success_chance_roll = yes
+		capital_county = {
+			add_county_modifier = {
+				modifier = agot_filler_upset_merchants
+				years = 5
+			}
+		}
+
+		stress_impact = {
+			sadistic = medium_stress_impact_loss
+			arbitrary = miniscule_stress_impact_loss
+			compassionate = medium_stress_impact_gain
+			just = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -2
+				ai_honor = -2
+				ai_energy = 0.25
+				ai_rationality = -0.5
+			}
+		}
+	}
+	#Rely on your own knowledge to guide the maester in his research
+	option = {
+		name = agot_filler_free_cities.0010.c
+		duel = {
+			skill = learning
+			value = medium_skill_rating
+			5 = { #Your help leads to a breakthrough!
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2
+					min = -49
+				}
+				desc = agot_filler_free_cities.0010.c.crit_success
+				custom_tooltip = agot_filler_free_cities.0010.c.tt.crit_success
+				change_variable = {
+					name = research_score
+					add = 5
+				}
+				send_interface_toast = {
+					add_learning_lifestyle_xp = major_lifestyle_xp
+					add_prestige = 150
+					title = agot_filler_free_cities.0010.c.crit_success
+				}
+			}
+			25 = { #Your knowledge is of great help!
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0010.c.high_success
+				custom_tooltip = agot_filler_free_cities.0010.c.tt.high_success
+				change_variable = {
+					name = research_score
+					add = 3
+				}
+				send_interface_toast = {
+					add_learning_lifestyle_xp = medium_lifestyle_xp
+					add_prestige = 75
+					title = agot_filler_free_cities.0010.c.high_success
+				}
+			}
+			45 = { #You offer some valuable insight
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0010.c.low_success
+				custom_tooltip = agot_filler_free_cities.0010.c.tt.low_success
+				change_variable = {
+					name = research_score
+					add = 1
+				}
+				send_interface_toast = {
+					add_learning_lifestyle_xp = minor_lifestyle_xp
+					add_prestige = 25
+					title = agot_filler_free_cities.0010.c.low_success
+				}
+			}
+			15 = { #Your terrible advice misguides the Maester
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0010.c.crit_fail
+				custom_tooltip = agot_filler_free_cities.0010.c.tt.crit_fail
+				change_variable = {
+					name = research_score
+					add = -2
+				}
+				send_interface_toast = {
+					add_prestige = -100
+					title = agot_filler_free_cities.0010.c.crit_fail
+				}
+			}
+		}
+
+		stress_impact = {
+			lazy = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = 1.25
+				ai_rationality = 1.5
+			}
+			modifier = {
+				add = 50
+				learning >= 15
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					has_trait = intellect_good_3
+					has_trait = intellect_good_2
+					has_trait = intellect_good_1
+					has_trait = shrewd
+					has_trait = scholar
+				}
+			}
+		}
+	}
+	#This is too expensive
+	option = {
+		name = agot_filler_free_cities.0010.d
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_fail
+		scope:maester = {
+			add_opinion = {
+				target = root
+				modifier = refusal_opinion
+				opinion = -10
+			}
+		}
+		hidden_effect = {
+			random = { #maester might decide to leave court
+				chance = 15
+				add_character_flag = no_support_maester_leaves
+			}
+		}
+
+		stress_impact = {
+			greedy = medium_stress_impact_loss
+			diligent = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = -0.5
+				ai_rationality = -0.25
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = { has_character_flag = no_support_maester_leaves }
+			trigger_event = agot_filler_free_cities.0003
+		}
+		else = {
+			trigger_event = {
+				id = agot_filler_free_cities.0011
+				days = {735 1095}
+			}
+		}
+	}
+}
+
+#Maester asks for alchemical supplies
+agot_filler_free_cities.0011 = {
+	type = character_event
+	title = agot_filler_free_cities.0011.t
+	desc = agot_filler_free_cities.0011.desc
+
+	theme = learning
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = ecstasy
+	}
+
+	trigger = {
+		traveling_maester_available_at_court = yes
+	}
+	on_trigger_fail = {
+		trigger_event = agot_filler_free_cities.0002
+	}
+
+	immediate = {
+		add_character_flag = had_event_agot_ffc_0011
+	}
+
+	#SCHOLARSHIP
+	option = {
+		name = agot_filler_free_cities.0011.scholar
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_success
+		trigger = {
+			OR = {
+				has_trait = scholar
+				has_trait = intellect_good_2
+				has_trait = intellect_good_3
+			}
+		}
+		remove_short_term_gold = 75
+		change_variable = {
+			name = research_score
+			add = 5
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 10
+				OR = {
+					has_trait = scholar
+					has_trait = intellect_good_2
+					has_trait = intellect_good_3
+				}
+			}
+			modifier = {
+				factor = 0
+				short_term_gold <75
+			}
+		}
+	}
+	#Acquire the supplies at full cost
+	option = {
+		name = agot_filler_free_cities.0011.a
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		remove_short_term_gold = 100
+		random_success_chance_roll = yes
+
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -2
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 0
+				short_term_gold < 100
+			}
+		}
+	}
+	#Perhaps I could strike a deal with the guild...
+	option = {
+		name = agot_filler_free_cities.0011.b
+		duel = {
+			skills = { diplomacy stewardship }
+			value = decent_skill_rating
+			25 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0011.b.huge_success
+				custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+				send_interface_toast = {
+					title = agot_filler_free_cities.0011.b.huge_success
+					add_prestige = medium_prestige_gain
+					remove_short_term_gold = 50
+				}
+				random_success_chance_roll = yes
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0011.b.success
+				custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+				send_interface_toast = {
+					title = agot_filler_free_cities.0011.b.success
+					remove_short_term_gold = 75
+				}
+				random_success_chance_roll = yes
+			}
+			#You anger the guild and the alchemists refuse to sell you supplies!
+			25 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0011.b.failure
+				custom_tooltip = agot_filler_free_cities.0010.tt.crit_fail
+				send_interface_toast = {
+					title = agot_filler_free_cities.0011.b.failure
+					add_prestige = medium_prestige_loss
+				}
+				random_failure_chance_roll = yes
+			}
+		}
+
+		stress_impact = {
+			lazy = medium_stress_impact_gain
+			shy = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -1.5
+				ai_energy = 0.5
+				ai_sociability = 0.5
+			}
+			modifier = {
+				factor = 0
+				short_term_gold < 50
+			}
+		}
+	}
+	#Refuse to pay any more
+	option = {
+		name = agot_filler_free_cities.0011.c
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_fail
+		scope:maester = {
+			add_opinion = {
+				target = root
+				modifier = refusal_opinion
+				opinion = -10
+			}
+		}
+		random_failure_chance_roll = yes
+
+		stress_impact = {
+			diligent = minor_stress_impact_gain
+			generous = medium_stress_impact_gain
+			greedy = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = -0.5
+				ai_rationality = -0.25
+			}
+		}
+	}
+
+	after = {
+		hidden_effect = {
+			random_list = {
+				100 = {
+					remove_character_flag = had_event_agot_ffc_0011
+					trigger_event = {
+						id = agot_filler_free_cities.0012
+						days = { 365 730 }
+					}
+				}
+				0 = { #You catch the Maester stealing from you!
+					modifier = {
+						add = 25
+						traveling_maester_is_greedy = yes
+					}
+					modifier = {
+						factor = 2
+						scope:maester = { ai_greed >= medium_positive_greed }
+					}
+					trigger_event = {
+						id = agot_filler_free_cities.0004
+						days = { 120 240 }
+					}
+				}
+			}
+		}
+	}
+}
+
+#Tyrosh - Research outcome
+agot_filler_free_cities.0012 = {
+	type = character_event
+	title = agot_filler_free_cities.0012.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					var:research_score >=4
+				}
+				desc = agot_filler_free_cities.0012.desc
+			}
+			desc = agot_filler_free_cities.0012.desc_failure
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:research_score >=10 }
+				desc = agot_filler_free_cities.0012.very_high_score
+			}
+			triggered_desc = {
+				trigger = { var:research_score >=6 }
+				desc = agot_filler_free_cities.0012.high_score
+			}
+			triggered_desc = {
+				trigger = { var:research_score >=4 }
+				desc = agot_filler_free_cities.0012.medium_score
+			}
+			triggered_desc = {
+				trigger = { var:research_score <4 }
+				desc = agot_filler_free_cities.0012.low_score
+			}
+		}
+	}
+	theme = court
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_learning.dds"
+	}
+	override_background = {
+		trigger = { var:research_score <4 }
+		reference = study
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { var:research_score <4 }
+			animation = disapproval
+		}
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:maester
+		triggered_animation = {
+			trigger = {
+				root = {
+					has_variable = research_score
+					var:research_score <4
+				}
+			}
+			animation = sadness
+		}
+		animation = ecstasy
+	}
+	artifact = {
+		trigger = { exists = scope:newly_created_artifact }
+		target = scope:newly_created_artifact
+		position = lower_center_portrait
+	}
+
+	trigger = {
+		traveling_maester_available_at_court = yes
+	}
+	on_trigger_fail = {
+		trigger_event = agot_filler_free_cities.0002
+	}
+
+	#Reward outcomes
+	immediate = {
+		if = {
+			limit = {
+				var:research_score >=4
+				scope:maester = {
+					opinion = {
+						target = root
+						value >= medium_positive_opinion
+					}
+					#Very honorable characters should most likely not consider it
+					NOT = { ai_honor >= very_high_positive_ai_value }
+				}
+			}
+			scope:maester = {
+				add_character_flag = recruit_maester
+			}
+		}
+		if = {
+			limit = { var:research_score >=10 }
+			set_artifact_rarity_famed = yes
+			create_artifact = {
+				name = tyroshi_research_book_name
+				description = tyroshi_research_book_famed_desc
+				visuals = book
+				type = miscellaneous
+				modifier = tyroshi_research_book_famed_modifier
+				creator = scope:maester
+				save_scope_as = newly_created_artifact
+				wealth = scope:wealth
+				quality = scope:quality
+				history = {
+					location = root.capital_province
+					actor = scope:maester
+					recipient = root
+					type = given
+				}
+			}
+		}
+		else = {
+			limit = { var:research_score >=6 }
+			set_artifact_rarity_masterwork = yes
+			create_artifact = {
+				name = tyroshi_research_book_name
+				description = tyroshi_research_book_masterwork_desc
+				visuals = book
+				type = miscellaneous
+				modifier = tyroshi_research_book_masterwork_modifier
+				save_scope_as = newly_created_artifact
+				wealth = scope:wealth
+				quality = scope:quality
+				history = {
+					location = root.capital_province
+					actor = scope:maester
+					recipient = root
+					type = given
+				}
+			}
+		}
+	}
+
+	option = {
+		if = {
+			limit = { var:research_score >=4 }
+			capital_county = {
+				add_county_modifier = {
+					modifier = agot_filler_maester_visit_success_bonus
+					years = 10
+				}
+			}
+		}
+		if = {
+			limit = { var:research_score <4 }
+			custom_tooltip = agot_filler_free_cities.0001.b.tt
+		}
+		name = {
+			trigger = { var:research_score <4 }
+			text = agot_filler_free_cities.0012.a
+		}
+		name = {
+			trigger = { var:research_score >=4 }
+			text = agot_filler_free_cities.0012.b
+		}
+	}
+
+	after = {
+		remove_variable = research_score
+		if = {
+			limit = {
+				scope:maester = { has_character_flag = recruit_maester }
+			}
+			trigger_event = agot_filler_free_cities.0005
+		}
+		else = {
+			hidden_effect = {
+				send_traveling_maester_to_citadel = yes
+			}
+		}
+	}
+}
+
+#Lys: Maester wants to study local fauna in search for venom
+agot_filler_free_cities.0020 = {
+	type = character_event
+	title = agot_filler_free_cities.0020.t
+	desc = agot_filler_free_cities.0020.desc
+
+	theme = learning_medicine_focus
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = thinking
+	}
+
+	trigger = {
+		traveling_maester_available_at_court = yes
+	}
+	on_trigger_fail = {
+		trigger_event = agot_filler_free_cities.0002
+	}
+
+	#Mayhaps... an exotic substance would be more... *efficient*
+	option = {
+		name = agot_filler_free_cities.0020.a
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_success
+		remove_long_term_gold = 150
+		random_success_high_chance_roll = yes
+
+		stress_impact = {
+			greedy = major_stress_impact_gain
+			diligent = minor_stress_impact_loss
+			generous = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -2
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 0
+				long_term_gold <150
+			}
+		}
+	}
+	#Sponsor an expedition!
+	option = {
+		name = agot_filler_free_cities.0020.b
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		remove_short_term_gold = 100
+		random_success_chance_roll = yes
+
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+			diligent = minor_stress_impact_loss
+			generous = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -1.5
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 0
+				short_term_gold <100
+			}
+		}
+	}
+	#Share your knowledge on local venomous fauna and where to find it
+	option = {
+		trigger = { has_trait = lifestyle_hunter }
+		name = agot_filler_free_cities.0020.hunter
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		random_success_chance_roll = yes
+		add_character_modifier = {
+			modifier = agot_filler_exotic_collection
+			years = 5
+		}
+		remove_short_term_gold = 75
+
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+			diligent = minor_stress_impact_loss
+			generous = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -1.5
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 10
+				has_trait = lifestyle_hunter
+			}
+			modifier = {
+				factor = 0
+				short_term_gold <75
+			}
+		}
+	}
+	#Perhaps... a local plant would suit the maester's needs?
+	option = {
+		trigger = { has_trait = lifestyle_gardener }
+		name = agot_filler_free_cities.0020.gardener
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		add_character_modifier = {
+			modifier = agot_filler_deadly_gardens
+			years = 5
+		}
+		remove_short_term_gold = 75
+		random_success_chance_roll = yes
+
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+			diligent = minor_stress_impact_loss
+			generous = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -1.5
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 10
+				has_trait = lifestyle_gardener
+			}
+			modifier = {
+				factor = 0
+				short_term_gold <75
+			}
+		}
+	}
+	#Waste of time all of this...
+	option = {
+		name = agot_filler_free_cities.0020.c
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_fail
+		random_failure_chance_roll = yes
+		hidden_effect = {
+			random = {
+				chance = 15
+				add_character_flag = no_support_maester_leaves
+			}
+		}
+
+		stress_impact = {
+			diligent = minor_stress_impact_gain
+			generous = medium_stress_impact_gain
+			greedy = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = 1.5
+				ai_energy = -0.5
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = { has_character_flag = no_support_maester_leaves }
+			trigger_event = agot_filler_free_cities.0003
+		}
+		else = {
+			trigger_event = {
+				id = agot_filler_free_cities.0021
+				days = { 730 1095 }
+			}
+		}
+	}
+}
+
+#Lys: Maester wants to conduct an... *unorthodox* experiment...
+agot_filler_free_cities.0021 = {
+	type = character_event
+	title = agot_filler_free_cities.0021.t
+	desc = agot_filler_free_cities.0021.desc
+
+	theme = learning_medicine_focus
+	override_background = {
+		reference = garden
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = personality_dishonorable
+	}
+	lower_center_portrait = {
+		character = scope:experiment_target
+	}
+
+	trigger = {
+		traveling_maester_available_at_court = yes
+	}
+	on_trigger_fail = {
+		trigger_event = agot_filler_free_cities.0002
+	}
+
+	immediate = {
+		add_character_flag = had_event_agot_ffc_0021
+		if = {
+			limit = {
+				any_prisoner = {
+					is_adult = yes
+					is_imprisoned_by = root
+				}
+			}
+			random_prisoner = {
+				limit = {
+					is_adult = yes
+					is_imprisoned_by = root
+				}
+				save_scope_as = experiment_target
+			}
+		}
+	}
+
+	#Conduct experiment on a prisoner of yours
+	option = {
+		trigger = { exists = scope:experiment_target }
+		name = agot_filler_free_cities.0021.a
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_success
+		change_variable = {
+			name = research_score
+			add = 5
+		}
+		add_dread = major_dread_gain
+		random_list = {
+			70 = {
+				execute_prisoner_effect = {
+					VICTIM = scope:experiment_target
+					EXECUTIONER = scope:maester
+				}
+			}
+			30 = {
+				scope:experiment_target = {
+					add_opinion = {
+						modifier = tortured_me
+						target = root
+					}
+					add_character_modifier = {
+						modifier = recently_tortured
+						years = 5
+					}
+				}
+			}
+		}
+
+		stress_impact = {
+			sadistic = major_stress_impact_loss
+			callous = minor_stress_impact_loss
+			compassionate = major_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -2
+				ai_boldness = 2
+				ai_energy = 0.5
+				ai_honor = -1
+			}
+			modifier = {
+				factor = 2
+				has_trait = torturer
+			}
+		}
+	}
+	#Hire guards to find... suitable... candidates.
+	option = {
+		name = agot_filler_free_cities.0021.b
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		random_success_chance_roll = yes
+		capital_county = {
+			add_county_modifier = {
+				modifier = agot_filler_mysterious_disappearances
+				years = 5
+			}
+		}
+
+		stress_impact = {
+			sadistic = medium_stress_impact_loss
+			callous = miniscule_stress_impact_loss
+			compassionate = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -1.5
+				ai_boldness = 1.5
+				ai_energy = -0.5
+				ai_honor = -1
+			}
+		}
+	}
+	#I won't allow experiments on the living, hire grave robbers to procure bodies.
+	option = {
+		name = agot_filler_free_cities.0021.c
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		random_success_chance_roll = yes
+		capital_county = {
+			add_county_modifier = {
+				modifier = agot_filler_grave_robbers
+				years = 5
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -0.5
+				ai_boldness = 0.5
+				ai_energy = -0.5
+				ai_honor = 1
+			}
+		}
+	}
+	#Out of question, do nothing.
+	option = {
+		name = agot_filler_free_cities.0021.d
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_fail
+		random_failure_chance_roll = yes
+
+		stress_impact = {
+			sadistic = medium_stress_impact_gain
+			diligent = minor_stress_impact_gain
+			compassionate = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = 1
+				ai_boldness = -0.5
+				ai_energy = -0.5
+				ai_honor = 1.5
+			}
+		}
+	}
+
+	after = {
+		hidden_effect = {
+			random_list = {
+				100 = {
+					remove_character_flag = had_event_agot_ffc_0021
+					trigger_event = {
+						id = agot_filler_free_cities.0022
+						days = { 365 730 }
+					}
+				}
+				0 = { #You catch the Maester stealing from you!
+					modifier = {
+						add = 100
+						traveling_maester_is_greedy = yes
+					}
+					modifier = {
+						factor = 2
+						scope:maester = { ai_greed >= medium_positive_greed }
+					}
+					trigger_event = {
+						id = agot_filler_free_cities.0004
+						days = { 120 240 }
+					}
+				}
+			}
+		}
+	}
+}
+
+#Lys: Outcome
+agot_filler_free_cities.0022 = {
+	type = character_event
+	title = agot_filler_free_cities.0022.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					var:research_score >=4
+				}
+				desc = agot_filler_free_cities.0012.desc
+			}
+			desc = agot_filler_free_cities.0012.desc_failure
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:research_score >=10 }
+				desc = agot_filler_free_cities.0022.very_high_score
+			}
+			triggered_desc = {
+				trigger = { var:research_score >=6 }
+				desc = agot_filler_free_cities.0022.high_score
+			}
+			triggered_desc = {
+				trigger = { var:research_score >=4 }
+				desc = agot_filler_free_cities.0022.medium_score
+			}
+			triggered_desc = {
+				trigger = { var:research_score <4 }
+				desc = agot_filler_free_cities.0022.low_score
+			}
+		}
+	}
+
+	theme = court
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_intrigue.dds"
+	}
+	override_background = {
+		trigger = { var:research_score <4 }
+		reference = study
+	}
+
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { var:research_score <4 }
+			animation = disapproval
+		}
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:maester
+		triggered_animation = {
+			trigger = {
+				root = {
+					has_variable = research_score
+					var:research_score <4
+				}
+			}
+			animation = sadness
+		}
+		animation = ecstasy
+	}
+	artifact = {
+		trigger = { exists = scope:lys_research_book }
+		target = scope:lys_research_book
+		position = lower_center_portrait
+	}
+	artifact = {
+		trigger = { exists = scope:lyseni_poison_ring}
+		target = scope:lyseni_poison_ring
+		position = lower_right_portrait
+	}
+
+	trigger = {
+		traveling_maester_available_at_court = yes
+	}
+	on_trigger_fail = {
+		trigger_event = agot_filler_free_cities.0002
+	}
+
+	immediate = {
+		hidden_effect = {
+			if = {
+				limit = {
+					var:research_score >=4
+					scope:maester = {
+						opinion = {
+							target = root
+							value >= medium_positive_opinion
+						}
+						#Very honorable characters should most likely not consider running away from the citadel
+						NOT = { ai_honor >= very_high_positive_ai_value }
+					}
+				}
+				scope:maester = {
+					add_character_flag = recruit_maester
+				}
+			}
+			if = {
+				limit = { #Very high score, ROOT employs an antiquarian, comission a poison ring as reward
+					var:research_score >=10
+					employs_court_position = antiquarian_court_position
+					any_court_position_holder = {
+						type = antiquarian_court_position
+					}
+				}
+				random_court_position_holder = {
+					type = antiquarian_court_position
+					save_scope_as = antiquarian
+				}
+				scope:antiquarian = {
+					set_artifact_rarity_famed = yes
+					create_artifact = {
+						name = lyseni_poison_ring
+						description = lyseni_poison_ring_desc
+						visuals = ring
+						type = miscellaneous
+						modifier = lyseni_poison_ring_modifier
+						creator = scope:antiquarian
+						save_scope_as = lyseni_poison_ring
+						wealth = scope:wealth
+						quality = scope:quality
+					}
+				}
+			}
+			if = { #High score, maester gives a copy of his book detailing his findings about poisons
+				limit = { var:research_score >=6 }
+				scope:maester = {
+					set_artifact_rarity_masterwork = yes
+					create_artifact = {
+						name = lys_research_book
+						description = lys_research_book_desc
+						type = miscellaneous
+						visuals = book
+						modifier = lys_research_book_masterwork_modifier
+						creator = scope:maester
+						save_scope_as = lys_research_book
+						wealth = scope:wealth
+						quality = scope:quality
+					}
+				}
+			}
+		}
+		if = { # Moderate score, gain intrigue lifestyle xp
+			limit = { var:research_score >=4 }
+			add_intrigue_lifestyle_xp = massive_lifestyle_xp
+		}
+	}
+
+	#Has very high score and employs antiquarian, choose the ring
+	option = {
+		trigger = { exists = scope:lyseni_poison_ring }
+		name = agot_filler_free_cities.0022.ring
+		custom_tooltip = agot_filler_free_cities.0022.ring.tt
+		scope:lyseni_poison_ring = {
+			set_owner = root
+		}
+		hidden_effect = {
+			if = {
+				limit = { exists = scope:lys_research_book }
+				destroy_artifact = scope:lys_research_book
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+	#Study the book further
+	option = {
+		trigger = { exists = scope:lys_research_book }
+		name = agot_filler_free_cities.0022.book
+		scope:lys_research_book = {
+			set_owner = root
+		}
+
+		random = {
+			chance = 25
+			#custom_tooltip = agot_filler_free_cities.0022.book.tt.success
+			send_interface_toast = {
+				title = agot_filler_free_cities.0022.book.tt.success
+				add_intrigue_skill = 2
+			}
+		}
+		hidden_effect = {
+			if = {
+				limit = { exists = scope:lyseni_poison_ring }
+				destroy_artifact = scope:lyseni_poison_ring
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+	option = { #No artifacts :(
+		trigger = { var:research_score < 6 }
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { var:research_score >= 4 }
+						desc = agot_filler_free_cities.0022.a
+					}
+					desc = agot_filler_free_cities.0022.b
+				}
+			}
+		}
+	}
+
+	after = {
+		remove_variable = research_score
+		if = {
+			limit = {
+				scope:maester = { has_character_flag = recruit_maester }
+			}
+			trigger_event = agot_filler_free_cities.0005
+		}
+		else = {
+			hidden_effect = {
+				send_traveling_maester_to_citadel = yes
+			}
+		}
+	}
+}
+
+#Myr: Maester requests supplies
+agot_filler_free_cities.0030 = {
+	type = character_event
+	title = agot_filler_free_cities.0030.t
+	desc = agot_filler_free_cities.0030.desc
+
+	theme = learning
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = beg
+	}
+
+	trigger = {
+		traveling_maester_available_at_court = yes
+	}
+	on_trigger_fail = {
+		trigger_event = agot_filler_free_cities.0002
+	}
+
+	#Purchase a rare tome
+	option = {
+		name = agot_filler_free_cities.0030.a
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_success
+		random_success_high_chance_roll = yes
+		remove_long_term_gold = 150
+
+		stress_impact = {
+			diligent = minor_stress_impact_gain
+			generous = medium_stress_impact_gain
+			greedy = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -2
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 0
+				long_term_gold < 150
+			}
+		}
+	}
+	#Purchase some scrolls
+	option = {
+		name = agot_filler_free_cities.0030.b
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		random_success_chance_roll = yes
+		remove_short_term_gold = 100
+
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+			diligent = minor_stress_impact_loss
+			generous = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -1.5
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 0
+				short_term_gold < 100
+			}
+		}
+	}
+	#Waste of time
+	option = {
+		name = agot_filler_free_cities.0030.c
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_fail
+		random_failure_chance_roll = yes
+		hidden_effect = {
+			random = {
+				chance = 15
+				add_character_flag = no_support_maester_leaves
+			}
+		}
+
+		stress_impact = {
+			diligent = minor_stress_impact_gain
+			generous = medium_stress_impact_gain
+			greedy = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = 1.5
+				ai_energy = -0.5
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = { has_character_flag = no_support_maester_leaves }
+			trigger_event = agot_filler_free_cities.0003
+		}
+		else = {
+			trigger_event = {
+				id = agot_filler_free_cities.0031
+				days = { 730 1095 }
+			}
+		}
+	}
+}
+
+#Myr: Build observatory
+agot_filler_free_cities.0031 = {
+	type = character_event
+	title = agot_filler_free_cities.0031.t
+	desc = agot_filler_free_cities.0031.desc
+
+	theme = learning
+	override_background = {
+		reference = corridor_day
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:maester
+		animation = ecstasy
+		outfit_tags = { spectacles_outfit }
+	}
+
+	immediate = {
+		add_character_flag = had_event_agot_ffc_0031
+	}
+	trigger = {
+		traveling_maester_available_at_court = yes
+	}
+	on_trigger_fail = {
+		trigger_event = agot_filler_free_cities.0002
+	}
+
+	#Architect: I will oversee the construction of the observatory personally!
+	option = {
+		name = agot_filler_free_cities.0031.architect
+		trigger = { has_trait = architect }
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_success
+		change_variable = {
+			name = research_score
+			add = 5
+		}
+		random_success_high_chance_roll = yes
+		remove_long_term_gold = 150
+		random = {
+			chance = 25
+			add_stewardship_skill = 1
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 10
+				has_trait = architect
+			}
+			modifier = {
+				factor = 0
+				long_term_gold <150
+			}
+		}
+	}
+	#Scholar: I will make sure it has every instrument needed!
+	option = {
+		name = agot_filler_free_cities.0031.scholar
+		trigger = { has_trait = scholar }
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_success
+		change_variable = {
+			name = research_score
+			add = 5
+		}
+		random_success_high_chance_roll = yes
+		remove_long_term_gold = 150
+		random = {
+			chance = 25
+			add_learning_skill = 1
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 10
+				has_trait = scholar
+			}
+			modifier = {
+				factor = 0
+				long_term_gold <150
+			}
+		}
+	}
+	#Spare no expenses
+	option = {
+		name = agot_filler_free_cities.0031.a
+		custom_tooltip = agot_filler_free_cities.0010.tt.high_success_roll
+		random_success_chance_roll = yes
+		remove_long_term_gold = 150
+
+		stress_impact = {
+			greedy = major_stress_impact_gain
+			diligent = minor_stress_impact_loss
+			generous = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -2
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 0
+				long_term_gold < 150
+			}
+		}
+	}
+	#Modest study
+	option = {
+		name = agot_filler_free_cities.0031.b
+		custom_tooltip = agot_filler_free_cities.0010.tt.success_chance_roll
+		random_success_chance_roll = yes
+		remove_long_term_gold = 100
+
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+			diligent = miniscule_stress_impact_loss
+			generous = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -1.5
+				ai_energy = 0.5
+			}
+			modifier = {
+				factor = 0
+				long_term_gold < 100
+			}
+		}
+	}
+	#Ignore
+	option = {
+		name = agot_filler_free_cities.0031.c
+		custom_tooltip = agot_filler_free_cities.0010.tt.crit_fail
+		random_failure_chance_roll = yes
+
+		stress_impact = {
+			diligent = minor_stress_impact_gain
+			generous = medium_stress_impact_gain
+			greedy = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = -0.5
+				ai_rationality = -0.25
+			}
+		}
+	}
+
+	after = {
+		hidden_effect = {
+			random_list = {
+				100 = {
+					remove_character_flag = had_event_agot_ffc_0031
+					trigger_event = {
+						id = agot_filler_free_cities.0032
+						days = { 365 730 }
+					}
+				}
+				0 = { #You catch the Maester stealing from you!
+					modifier = {
+						add = 100
+						traveling_maester_is_greedy = yes
+					}
+					modifier = {
+						factor = 2
+						scope:maester = { ai_greed >= medium_positive_greed }
+					}
+					trigger_event = {
+						id = agot_filler_free_cities.0004
+						days = { 120 240 }
+					}
+				}
+			}
+		}
+	}
+}
+
+#Myr: Outcome
+agot_filler_free_cities.0032 = {
+	type = character_event
+	title = agot_filler_free_cities.0032.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					var:research_score >=4
+				}
+				desc = agot_filler_free_cities.0032.desc
+			}
+			desc = agot_filler_free_cities.0012.desc_failure
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { var:research_score >=10 }
+				desc = agot_filler_free_cities.0032.very_high_score
+			}
+			triggered_desc = {
+				trigger = { var:research_score >=6 }
+				desc = agot_filler_free_cities.0032.high_score
+			}
+			triggered_desc = {
+				trigger = { var:research_score >=4 }
+				desc = agot_filler_free_cities.0032.medium_score
+			}
+			triggered_desc = {
+				trigger = { var:research_score <4 }
+				desc = agot_filler_free_cities.0032.low_score
+			}
+		}
+	}
+
+	theme = court
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_learning.dds"
+	}
+	override_background = {
+		trigger = { var:research_score <4 }
+		reference = study
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { var:research_score <4 }
+			animation = disapproval
+		}
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:maester
+		triggered_animation = {
+			trigger = {
+				root = {
+					has_variable = research_score
+					var:research_score <4
+				}
+			}
+			animation = sadness
+		}
+		animation = ecstasy
+	}
+	artifact = {
+		trigger = { exists = scope:newly_created_artifact }
+		target = scope:newly_created_artifact
+		position = lower_center_portrait
+	}
+
+	trigger = {
+		traveling_maester_available_at_court = yes
+	}
+	on_trigger_fail = {
+		trigger_event = agot_filler_free_cities.0002
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				var:research_score >=4
+				scope:maester = {
+					opinion = {
+						target = root
+						value >= medium_positive_opinion
+					}
+					#Very honorable characters should most likely not consider it
+					NOT = { ai_honor >= very_high_positive_ai_value }
+				}
+			}
+			scope:maester = {
+				add_character_flag = recruit_maester
+			}
+		}
+		if = { #Very High score, maester shares his knowledge with ROOT
+			limit = { var:research_score >=10 }
+			set_artifact_rarity_famed = yes
+			create_artifact = {
+				name = myr_research_book_name
+				description = myr_research_book_desc
+				visuals = book
+				type = miscellaneous
+				modifier = myr_research_book_famed_modifier
+				creator = scope:maester
+				save_scope_as = newly_created_artifact
+				wealth = scope:wealth
+				quality = scope:quality
+				history = {
+					location = root.capital_province
+					actor = scope:maester
+					recipient = root
+					type = given
+				}
+			}
+		}
+	}
+
+	option = { #High score outcome - study higher mysteries, gain mystic
+		trigger = { var:research_score >= 8}
+		name = agot_filler_free_cities.0032.mystic
+		duel = {
+			skill = learning
+			value = high_skill_rating
+			40 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0032.a.tt.success
+				root = {
+					send_interface_toast = {
+						title = agot_filler_free_cities.0032.a.tt.success
+						if = {
+							limit = {
+								NOT = { has_trait = lifestyle_mystic }
+							}
+							add_trait = lifestyle_mystic
+						}
+						else_if = {
+							limit = {
+								has_trait = lifestyle_mystic
+								has_trait_xp = {
+									trait = lifestyle_mystic
+									value < 100
+								}
+							}
+							add_trait_xp = {
+								trait = lifestyle_mystic
+								value = 15
+							}
+						}
+						else = {
+							add_learning_skill = 1
+							add_learning_lifestyle_perk_points = 1
+						}
+					}
+				}
+			}
+			60 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0032.a.tt.failure
+				root = {
+					send_interface_toast = {
+						title = agot_filler_free_cities.0032.a.tt.failure
+						add_learning_skill = 1
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = 0.5
+				ai_zeal = -1.5
+				ai_rationality = -1
+			}
+			modifier = {
+				add = 100
+				has_trait = lifestyle_mystic
+			}
+		}
+	}
+	option = { #High score outcome - study higher mysteries, gain shrewd
+		trigger = { var:research_score >= 8}
+		name = agot_filler_free_cities.0032.shrewd
+		duel = {
+			skill = learning
+			value = high_skill_rating
+			40 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0032.a.tt.success
+				root = {
+					send_interface_toast = {
+						title = agot_filler_free_cities.0032.a.tt.success
+						if = {
+							limit = {
+								NOT = { has_trait = shrewd }
+							}
+							add_trait = shrewd
+						}
+						else = {
+							add_learning_skill = 1
+							add_learning_lifestyle_perk_points = 1
+						}
+					}
+				}
+			}
+			60 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.0032.a.tt.failure
+				root = {
+					send_interface_toast = {
+						title = agot_filler_free_cities.0032.a.tt.failure
+						add_learning_lifestyle_perk_points = 1
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = 0.5
+				ai_zeal = 1.5
+				ai_rationality = 1
+			}
+		}
+	}
+	option = {
+		if = {
+			#Apply knowledge to the benefit of your holdings
+			limit = { var:research_score >=4 }
+			capital_county = {
+				add_county_modifier = {
+					modifier = agot_filler_maester_visit_success_bonus
+					years = 10
+				}
+			}
+		}
+		name = {
+			trigger = { var:research_score <4 }
+			text = agot_filler_free_cities.0032.a
+		}
+		name = {
+			trigger = { var:research_score >=4 }
+			text = agot_filler_free_cities.0032.b
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = -0.75
+				ai_zeal = 1
+				ai_rationality = 0.25
+			}
+		}
+	}
+
+	after = {
+		remove_variable = research_score
+		if = {
+			limit = {
+				scope:maester = { has_character_flag = recruit_maester }
+			}
+			trigger_event = agot_filler_free_cities.0005
+		}
+		else = {
+			hidden_effect = {
+				send_traveling_maester_to_citadel = yes
+			}
+		}
+	}
+}
+
+#Plunder At Sea: An increasingly dangerous pirate crew pesters ROOT's fleets
+agot_filler_free_cities.1000 = {
+	type = character_event
+	title = agot_filler_free_cities.1000.t
+	desc = agot_filler_free_cities.1000.desc
+
+	theme = corruption
+	override_background = {
+		reference = council_chamber
+	}
+	left_portrait = {
+		character = scope:marshal
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:admiral
+		animation = personality_bold
+	}
+
+	trigger = {
+		is_available_adult = yes
+		is_landed = yes
+		exists = cp:councillor_admiral
+		exists = cp:councillor_marshal
+		capital_county = {
+			is_coastal_county = yes
+			title_province = {
+				OR = {
+					geographical_region = world_stepstones
+					geographical_region = world_essos_tyrosh
+					geographical_region = world_essos_lys
+					geographical_region = world_essos_myr
+					geographical_region = world_essos_disputed_lands
+					geographical_region = world_essos_pentos
+					geographical_region = world_essos_andalos
+				}
+			}
+		}
+		NOT = {
+			has_character_flag = had_event_agot_ffc_1000
+		}
+	}
+
+	immediate = {
+		add_character_flag = {
+			flag = had_event_agot_ffc_1000
+		}
+		cp:councillor_admiral = { save_scope_as = admiral }
+		cp:councillor_marshal = { save_scope_as = marshal }
+		capital_county = { save_scope_as = raided_county }
+	}
+
+	#I will lay an ambush to draw the pirates out and crush them!
+	option = {
+		name = agot_filler_free_cities.1000.strategist
+		trigger = {
+			has_trait = strategist
+		}
+		duel = {
+			skill = martial
+			value = high_skill_rating
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.1000.strategist.tt.success
+				root = {
+					send_interface_toast = {
+						title = agot_filler_free_cities.1000.strategist.tt.success
+						add_gold = 50
+						reverse_add_opinion = {
+							modifier = pleased_opinion
+							target = scope:admiral
+							opinion = 20
+						}
+						reverse_add_opinion = {
+							modifier = pleased_opinion
+							target = scope:marshal
+							opinion = 20
+						}
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				desc = agot_filler_free_cities.1000.strategist.tt.failure
+				scope:raided_county= {
+					add_county_modifier = {
+						modifier = agot_filler_piracy_disrupts_trade
+						years = 3
+					}
+				}
+				root = {
+					send_interface_toast = {
+						title = agot_filler_free_cities.1000.strategist.tt.failure
+						reverse_add_opinion = {
+							modifier = angry_opinion
+							target = scope:admiral
+							opinion = -20
+						}
+						reverse_add_opinion = {
+							modifier = angry_opinion
+							target = scope:marshal
+							opinion = -20
+						}
+					}
+				}
+			}
+		}
+
+		stress_impact = {
+			craven = major_stress_impact_gain
+			lazy = medium_stress_impact_gain
+			brave = medium_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 1000
+		}
+	}
+	#The Admiral is right, I must increase patrols
+	option = {
+		name = agot_filler_free_cities.1000.a
+		reverse_add_opinion = {
+			modifier = pleased_opinion
+			target = scope:admiral
+			opinion = 20
+		}
+		scope:admiral = {
+			duel = {
+				skill = martial
+				value = medium_skill_rating
+				# Success: The patrols are successful
+				50 = {
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = 3.5
+						min = -49
+					}
+					desc = agot_filler_free_cities.1000.a.tt.success
+					root = {
+						send_interface_toast = {
+							title = agot_filler_free_cities.1000.a.tt.success
+							left_icon = scope:admiral
+							# Split some prestige together.
+							add_prestige = minor_prestige_gain
+							scope:admiral = { add_prestige = medium_prestige_gain }
+						}
+					}
+					scope:raided_county = {
+						add_county_modifier = {
+							modifier = agot_filler_safe_shipping_lanes
+							years = 3
+						}
+					}
+				}
+				# Failure: the admiral is unsuccessful
+				50 = {
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = -3.5
+						min = -49
+					}
+					desc = agot_filler_free_cities.1000.a.tt.failure
+					root = {
+						send_interface_toast = {
+							title = agot_filler_free_cities.1000.a.tt.failure
+							left_icon = scope:admiral
+							# Split some prestige together.
+							scope:admiral = { add_prestige = medium_prestige_loss }
+							reverse_add_opinion = {
+								target = scope:marshal
+								modifier = angry_opinion
+								opinion = -20
+							}
+						}
+						scope:raided_county= {
+							add_county_modifier = {
+								modifier = agot_filler_piracy_disrupts_trade
+								years = 3
+							}
+						}
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 10
+			ai_value_modifier = {
+				ai_honor = 0.25
+			}
+			modifier = {
+				add = 50
+				scope:admiral.martial > scope:marshal.diplomacy
+			}
+			modifier = {
+				add = 50
+				scope:admiral.martial > high_skill_rating
+			}
+			modifier = {
+				add = 30
+				scope:admiral.martial > medium_skill_rating
+			}
+			modifier = {
+				add = 10
+				scope:admiral.martial > low_skill_rating
+			}
+			modifier = { #I like them better
+				add = 50
+				opinion = {
+					target = scope:admiral
+					value >= medium_positive_opinion
+				}
+			}
+			modifier = { #I dislike the other councilor
+				add = -50
+				opinion = {
+					target = scope:marshal
+					value <= medium_negative_opinion
+				}
+			}
+		}
+	}
+	#The Marshal could be right... hiring the pirates could be beneficial...
+	option = {
+		name = agot_filler_free_cities.1000.b
+		reverse_add_opinion = {
+			target = scope:marshal
+			modifier = pleased_opinion
+			opinion = 20
+		}
+		scope:marshal = {
+			duel = {
+				skill = diplomacy
+				value = medium_skill_rating
+				# Success: Pirate crews accept to work for you!
+				50 = {
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = 3.5
+						min = -49
+					}
+					desc = agot_filler_free_cities.1000.b.tt.success
+					root = {
+						send_interface_toast = {
+							title = agot_filler_free_cities.1000.b.tt.success
+							left_icon = scope:admiral
+							remove_short_term_gold = 75
+							add_character_modifier = {
+								modifier = agot_filler_employs_pirates
+								years = 3
+							}
+						}
+					}
+				}
+				# Failure: The deal fails
+				50 = {
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = -3.5
+						min = -49
+					}
+					desc = agot_filler_free_cities.1000.b.tt.failure
+					root = {
+						send_interface_toast = {
+							title = agot_filler_free_cities.1000.b.tt.failure
+							left_icon = scope:admiral
+							# Split some prestige together.
+							scope:admiral = { add_prestige = medium_prestige_loss }
+							reverse_add_opinion = {
+								target = scope:marshal
+								modifier = angry_opinion
+								opinion = -20
+							}
+							scope:raided_county = {
+								add_county_modifier = {
+									modifier = agot_filler_piracy_disrupts_trade
+									years = 3
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 10
+			ai_value_modifier = {
+				ai_greed = 0.25
+			}
+			modifier = {
+				add = 50
+				scope:marshal.martial < scope:marshal.diplomacy
+			}
+			modifier = {
+				add = 50
+				scope:marshal.martial > high_skill_rating
+			}
+			modifier = {
+				add = 30
+				scope:marshal.martial > medium_skill_rating
+			}
+			modifier = {
+				add = 10
+				scope:marshal.martial > low_skill_rating
+			}
+			modifier = { #I like them better
+				add = 50
+				opinion = {
+					target = scope:marshal
+					value >= medium_positive_opinion
+				}
+			}
+			modifier = { #I dislike the other councilor
+				add = -50
+				opinion = {
+					target = scope:admiral
+					value <= medium_negative_opinion
+				}
+			}
+		}
+	}
+	#Yet another pirate crew, what of it? Soon they'll go elsewhere
+	option = {
+		name = agot_filler_free_cities.1000.c
+		custom_tooltip = agot_filler_free_cities.1000.c.tt
+
+		hidden_effect = {
+			random_list = { #Outcome randomizer
+				1 = { add_character_flag = agot_ffc_1001_pirates_disband }
+				1 = { add_character_flag = agot_ffc_1001_pirate_loot }
+				1 = { add_character_flag = agot_ffc_1001_local_militia }
+				1 = { add_character_flag = agot_ffc_1001_smugglers_alliance }
+				1 = { add_character_flag = agot_ffc_1001_pirates_attack }
+			}
+			trigger_event = {
+				id = agot_filler_free_cities.1001
+				days = { 60 90 }
+			}
+		}
+
+		stress_impact = {
+			lazy = minor_stress_impact_loss
+			diligent = medium_stress_impact_gain
+			brave = medium_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = -0.5
+			}
+			modifier = { #I don't like any of them
+				add = 50
+				AND = {
+					opinion = {
+						target = scope:admiral
+						value <= medium_negative_opinion
+					}
+					opinion = {
+						target = scope:marshal
+						value <= medium_negative_opinion
+					}
+				}
+			}
+			modifier = {
+				add = -30
+				has_trait = brave
+			}
+			modifier = {
+				add = -30
+				has_trait = diligent
+			}
+			modifier = {
+				add = -50
+				scope:admiral.martial > high_skill_rating
+			}
+			modifier = {
+				add = -50
+				scope:marshal.diplomacy > high_skill_rating
+			}
+		}
+	}
+}
+
+#Plunder At Sea: Situation ignored, determine outcome outcome
+agot_filler_free_cities.1001 = {
+	type = character_event
+	title = {
+		desc = agot_filler_free_cities.1001.t
+		first_valid = {
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_pirates_disband }
+				desc = agot_filler_free_cities.1001.t.disband
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_pirate_loot }
+				desc = agot_filler_free_cities.1001.t.loot
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_local_militia }
+				desc = agot_filler_free_cities.1001.t.militia
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_smugglers_alliance }
+				desc = agot_filler_free_cities.1001.t.smugglers
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_pirates_attack }
+				desc = agot_filler_free_cities.1001.t.attacks
+			}
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_pirates_disband }
+				desc = agot_filler_free_cities.1001.desc.disband
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_pirate_loot }
+				desc = agot_filler_free_cities.1001.desc.loot
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_local_militia }
+				desc = agot_filler_free_cities.1001.militia
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_smugglers_alliance }
+				desc = agot_filler_free_cities.1001.smugglers
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = agot_ffc_1001_pirates_attack }
+				desc = agot_filler_free_cities.1001.attacks
+			}
+		}
+	}
+	theme = corruption
+	left_portrait = {
+		triggered_animation = {
+			trigger = { has_character_flag = agot_ffc_1001_pirate_loot }
+			animation = ecstasy
+		}
+		triggered_animation = {
+			trigger = { has_character_flag = agot_ffc_1001_pirates_disband }
+			animation = happiness
+		}
+		triggered_animation = {
+			trigger = { has_character_flag = agot_ffc_1001_local_militia }
+			animation = personality_rational
+		}
+		animation = worry
+		character = root
+	}
+	immediate = {
+		if = {
+			limit = {
+				OR = {
+					has_character_flag = agot_ffc_1001_local_militia
+					has_character_flag = agot_ffc_1001_smugglers_alliance
+					has_character_flag = agot_ffc_1001_pirates_attack
+				}
+			}
+			scope:admiral ?= {
+				add_opinion = {
+					target = root
+					modifier = angry_opinion
+					opinion = -20
+				}
+			}
+			scope:marshal ?= {
+				add_opinion = {
+					target = root
+					modifier = angry_opinion
+					opinion = -20
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = { has_character_flag = agot_ffc_1001_pirates_disband }
+		name = agot_filler_free_cities.1001.a
+
+		stress_impact = {
+			base = minor_stress_loss
+		}
+	}
+	option = {
+		trigger = { has_character_flag = agot_ffc_1001_pirate_loot }
+		name = agot_filler_free_cities.1001.b
+		add_gold = 40
+
+		stress_impact = {
+			base = minor_stress_loss
+			greedy = minor_stress_impact_loss
+		}
+	}
+	option = {
+		trigger = { has_character_flag = agot_ffc_1001_local_militia }
+		name = agot_filler_free_cities.1001.c
+		scope:raided_county = {
+			add_county_modifier = {
+				modifier = agot_filler_piracy_disrupts_trade
+				years = 5
+			}
+			add_county_modifier = {
+				modifier = agot_filler_local_militia
+				years = 5
+			}
+		}
+		add_prestige = medium_prestige_loss
+
+		stress_impact = {
+			base = minor_stress_gain
+			arrogant = minor_stress_impact_gain
+			craven = medium_stress_impact_gain
+		}
+
+	}
+	option = {
+		trigger = { has_character_flag = agot_ffc_1001_smugglers_alliance }
+		name = agot_filler_free_cities.1001.d
+		scope:raided_county = {
+			add_county_modifier = {
+				modifier = agot_filler_smugglers_alliance
+				years = 5
+			}
+		}
+		add_prestige = medium_prestige_loss
+
+		stress_impact = {
+			base = minor_stress_gain
+			craven = minor_stress_impact_gain
+		}
+	}
+	option = {
+		trigger = { has_character_flag = agot_ffc_1001_pirates_attack }
+		name = agot_filler_free_cities.1001.e
+		scope:raided_county= {
+			add_county_modifier = {
+				modifier = agot_filler_piracy_disrupts_trade
+				years = 5
+			}
+		}
+		add_prestige = major_prestige_loss
+
+		stress_impact = {
+			base = minor_stress_gain
+			craven = medium_stress_impact_gain
+		}
+	}
+
+	after = {
+		remove_character_flag = agot_ffc_1001_pirates_disband
+		remove_character_flag = agot_ffc_1001_pirate_loot
+		remove_character_flag = agot_ffc_1001_local_militia
+		remove_character_flag = agot_ffc_1001_smugglers_alliance
+		remove_character_flag = agot_ffc_1001_pirates_attack
+	}
+}
+#################################
+# DEFINED WINE FILLER 2000-2001 #
+#################################
+# You visit the local market and try a local wine.
+#2000-2001 made by Defined
+agot_filler_free_cities.2000 = {
+	type = character_event
+	title = agot_filler_free_cities.2000.t
+	desc = {
+		desc = agot_filler_free_cities.2000.intro
+		triggered_desc = { #Lys
+			trigger = {
+				capital_province ?= {
+					geographical_region = world_essos_lys
+				}
+			}
+			desc = agot_filler_free_cities.2000.lys
+		}
+		triggered_desc = { #Myr
+			trigger = {
+				capital_province ?= {
+					geographical_region = world_essos_myr
+				}
+			}
+			desc = agot_filler_free_cities.2000.myr
+		}
+		triggered_desc = { #Tyrosh
+			trigger = {
+				capital_province ?= {
+					geographical_region = world_essos_tyrosh
+				}
+			}
+			desc = agot_filler_free_cities.2000.tyrosh
+		}
+		triggered_desc = { #Pentos
+			trigger = {
+				capital_province = {
+					geographical_region = world_essos_pentos
+				}
+			}
+			desc = agot_filler_free_cities.2000.pentos
+		}
+		desc = agot_filler_free_cities.2000.outro
+	}
+
+	theme = stewardship_domain_focus
+	override_background = market_west
+
+	left_portrait = {
+		character = root
+		animation = steward
+	}
+
+	right_portrait = {
+		character = scope:essosi_filler_merchant
+		animation = drink_goblet
+	}
+
+	lower_center_portrait = {
+		character = cp:councillor_steward
+		animation = steward
+	}
+
+	trigger = {
+		is_landed = yes
+		is_available_adult = yes
+		drinks_alcohol_trigger = yes
+		exists = cp:councillor_steward
+		NOT = {
+			has_character_flag = essos_filler_free_cities_2000
+		}
+		capital_province ?= {
+			OR = {
+				geographical_region = world_essos_tyrosh
+				geographical_region = world_essos_lys
+				geographical_region = world_essos_myr
+				geographical_region = world_essos_pentos
+			}
+		}
+	}
+
+	immediate = {
+		cp:councillor_steward ?= { save_scope_as = steward }
+		capital_province ?= { save_scope_as = capital_city_free_city}
+		create_character = {
+			location = root.capital_province
+			gender = male
+			random_faith = {
+				faith:fc_pan_tyrosh = { }
+				faith:fc_pan_lys = { }
+				faith:rhllor_fc = { }
+			}
+			random_culture = {
+				culture:tyroshi = { }
+				culture:myrish = { }
+				culture:lyseni = { }
+				culture:pentoshi = { }
+			}
+			random_traits_list = {
+				count = 1
+				education_stewardship_2 = { weight = { base = 15 } }
+				education_stewardship_3 = { weight = { base = 60 } }
+				education_stewardship_4 = { weight = { base = 25 } }
+			}
+			save_scope_as = essosi_filler_merchant
+		}
+	}
+
+	option = { # I'd like to strike a bargain! (Stewardship option)
+		name = agot_filler_free_cities.2000.s
+		custom_tooltip = agot_filler_free_cities.2000.s_tt
+		add_character_flag = { flag = essos_filler_free_cities_2000 years = 4 }
+		remove_short_term_gold = minor_gold_value
+		capital_county = {
+			add_county_modifier = {
+				modifier = agot_filler_free_cities_wine_steward_bonus
+				years = 2
+			}
+		}
+		trigger = {
+			stewardship >= 15
+		}
+		hidden_effect = {
+			scope:essosi_filler_merchant = {
+				death = {
+					death_reason = death_accident
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -100
+				gold < minor_gold_value
+			}
+			modifier = {
+				add = -20
+				ai_greed >= 50
+			}
+		}
+	}
+	option = { # Sample a local wine - "I'd like another cup!"
+		name = agot_filler_free_cities.2000.a
+		custom_tooltip = agot_filler_free_cities.2000.a_tt
+		remove_short_term_gold = 1
+		add_stress = minor_stress_loss
+		trigger = {
+			NOT = {
+				has_trait = drunkard
+			}
+		}
+		trigger_event = {
+			id = agot_filler_free_cities.2001
+			days = 1
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -100
+				stewardship >= 15
+			}
+			modifier = {
+				add = -100
+				gold < minor_gold_value
+			}
+		}
+	}
+	option = { # Sample a local wine - "Bring me a barrel!" (Drunkard option)
+		name = agot_filler_free_cities.2000.d
+		custom_tooltip = agot_filler_free_cities.2000.d_tt
+		remove_short_term_gold = tiny_gold_value
+		add_stress = medium_stress_loss
+		trigger = {
+			has_trait = drunkard
+		}
+		trigger_event = {
+			id = agot_filler_free_cities.2001
+			days = 1
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -100
+				gold < tiny_gold_value
+			}
+			modifier = {
+				add = -60
+				stewardship >= 15
+			}
+			modifier = {
+				add = -40
+				ai_greed >= 50
+			}
+		}
+	}
+	option = { # Leave the market
+		name = agot_filler_free_cities.2000.b
+		custom_tooltip = agot_filler_free_cities.2000.b_tt
+		add_character_flag = { flag = essos_filler_free_cities_2000 years = 4 }
+		stress_impact = {
+			drunkard = minor_stress_impact_gain
+		}
+		hidden_effect = {
+			scope:essosi_filler_merchant = {
+				death = {
+					death_reason = death_accident
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -100
+				gold >= minor_gold_value
+			}
+			modifier = {
+				add = 50
+				ai_greed >= 50
+			}
+		}
+	}
+}
+
+# You tried the wine and found it delicious, you now have the decision to invest in your local wine industry or not.
+agot_filler_free_cities.2001 = {
+	type = character_event
+	title = agot_filler_free_cities.2001.t
+	desc = {
+		triggered_desc = {
+			trigger = {
+				capital_province ?= {
+					geographical_region = world_essos_lys
+				}
+			}
+			desc = agot_filler_free_cities.2001.lys
+		}
+		triggered_desc = {
+			trigger = {
+				capital_province ?= {
+					geographical_region = world_essos_myr
+				}
+			}
+			desc = agot_filler_free_cities.2001.myr
+		}
+		triggered_desc = {
+			trigger = {
+				capital_province ?= {
+					geographical_region = world_essos_tyrosh
+				}
+			}
+			desc = agot_filler_free_cities.2001.tyrosh
+		}
+		triggered_desc = {
+			trigger = {
+				capital_province ?= {
+					geographical_region = world_essos_pentos
+				}
+			}
+			desc = agot_filler_free_cities.2001.pentos
+		}
+		desc = agot_filler_free_cities.2001.outro
+	}
+
+	theme = stewardship_domain_focus
+	override_background = market_west
+
+	left_portrait = {
+		character = root
+		animation = drink_goblet
+	}
+
+	right_portrait = {
+		character = scope:essosi_filler_merchant
+		animation = steward
+	}
+
+	lower_center_portrait = {
+		character = cp:councillor_steward
+		animation = steward
+	}
+
+	option = { # Heavily invest in the wine industry (Drunkard option)
+		name = agot_filler_free_cities.2001.d
+		custom_tooltip = agot_filler_free_cities.2001.d_tt
+		trigger = {
+			has_trait = drunkard
+		}
+		remove_short_term_gold = major_gold_value
+		capital_county = {
+			add_county_modifier = {
+				modifier = agot_filler_free_cities_wine_drunkard_bonus
+				years = 2
+			}
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -100
+				gold < minor_gold_value
+			}
+			modifier = {
+				add = -30
+				ai_greed >= 50
+			}
+		}
+	}
+	option = { # Invest in the wine industry
+		name = agot_filler_free_cities.2001.a
+		custom_tooltip = agot_filler_free_cities.2001.a_tt
+		trigger = {
+			NOT = {
+				has_trait = drunkard
+			}
+		}
+		remove_short_term_gold = medium_gold_value
+		capital_county = {
+			add_county_modifier = {
+				modifier = agot_filler_free_cities_wine_bonus
+				years = 2
+			}
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				gold >= minor_gold_value
+			}
+			modifier = {
+				add = -20
+				ai_greed >= 50
+			}
+		}
+	}
+	option = { # Do not invest
+		name = agot_filler_free_cities.2001.b
+		custom_tooltip = agot_filler_free_cities.2001.b_tt
+		add_stress = minor_stress_gain
+		cp:councillor_steward = {
+			add_opinion = {
+				target = root
+				modifier = annoyed_opinion
+				opinion = -5
+			}
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -100
+				gold >= minor_gold_value
+			}
+			modifier = {
+				add = 50
+				ai_greed >= 50
+			}
+		}
+	}
+	after = {
+		add_character_flag = { flag = essos_filler_free_cities_2000 years = 4 }
+		hidden_effect = {
+			scope:essosi_filler_merchant = {
+				death = {
+					death_reason = death_accident
+				}
+			}
+		}
+	}
+}

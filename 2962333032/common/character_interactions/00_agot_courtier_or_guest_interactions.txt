@@ -1,0 +1,357 @@
+﻿raise_to_nobility_interaction = {
+	icon = icon_dynasty
+	category = interaction_category_friendly
+	common_interaction = yes
+	interface_priority = 200
+	desc = raise_to_nobility_interaction_desc
+
+	ai_targets = {
+		ai_recipients = scripted_relations
+	}
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+	ai_frequency = 60
+
+	is_shown = {
+		NOT = {
+			scope:recipient = scope:actor
+		}
+
+		scope:actor = {
+			is_human = yes
+			is_landed = yes
+			government_has_flag = government_is_feudal
+		}
+
+		scope:recipient = {
+			is_human = yes
+			is_lowborn = yes
+			is_courtier_of = scope:actor
+			NOT = { has_trait = maester }
+			NOT = { has_trait = septon }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor.gold >= gift_value
+	}
+
+	cost = {
+		prestige = 200
+		gold = 50
+	}
+
+	on_accept = {
+		raise_to_nobility_effect = { ACTOR = scope:actor RECIPIENT = scope:recipient }
+	}
+
+	ai_potential = {
+		is_available_at_peace_ai_adult = yes
+		short_term_gold >= medium_gold_value
+		prestige > 500
+	}
+
+	auto_accept = yes
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 30
+			scope:recipient = {
+				OR = {
+					has_secret_relation_lover = scope:actor
+					has_relation_lover = scope:actor
+					has_relation_soulmate = scope:actor
+					has_relation_friend = scope:actor
+					has_relation_best_friend = scope:actor
+				}
+			}
+		}
+	}
+}
+
+recall_wanderer_interaction = {
+	category = interaction_category_friendly
+
+	desc = recall_wanderer_interaction_desc
+	interface_priority = 50
+	use_diplomatic_range = no
+
+	auto_accept = yes
+
+	is_shown = {
+		scope:actor = {
+			is_ai = no
+			is_human = yes
+			NOT = { scope:actor = scope:recipient }
+		}
+		scope:recipient = {
+			OR = {
+				is_great_grandchild_of = scope:actor
+				is_grandchild_of = scope:actor
+				is_child_of = scope:actor
+			}
+			scope:recipient.house = scope:actor.house
+			is_ruler = no
+			is_human = yes
+			NOT = { in_diplomatic_range = scope:actor }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		can_recruit_character_to_court_trigger = {
+			RECRUITER = scope:actor
+			RECRUITEE = scope:recipient
+		}
+	}
+
+	on_accept = {
+		hidden_effect = {
+			if = {
+				limit = {
+					exists = scope:recipient.liege
+				}
+				scope:recipient.liege = {
+					send_interface_message = {
+						type = event_generic_neutral
+						title = msg_courtier_left_court_interaction_title
+
+						right_icon = scope:recipient
+
+						show_as_tooltip = {
+							remove_courtier_or_guest = scope:recipient
+						}
+					}
+				}
+			}
+		}
+
+		scope:actor = {
+			send_interface_message = {
+				type = event_generic_neutral
+				title = invite_to_court_interaction_notification
+				right_icon = scope:recipient
+
+				scope:recipient = {
+					every_traveling_family_member = {
+						scope:actor = { add_courtier = prev }
+						hidden_effect = {
+							return_to_court = yes
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+force_contraceptives_interaction = {
+	category = interaction_category_friendly
+	icon = child
+
+	desc = force_contraceptives_interaction_desc
+	interface_priority = 40
+	use_diplomatic_range = no
+
+	auto_accept = yes
+	on_accept = {
+		scope:recipient = {
+			add_character_modifier = contraceptives_modifier
+		}
+	}
+	is_shown = {
+		scope:actor = {
+			is_ai = no #player only
+			is_adult = yes #only adults can use
+			NOT = { this = scope:recipient }
+		}
+		scope:recipient = {
+			is_adult = yes
+			NOT = { has_character_modifier = contraceptives_modifier }
+			OR = {
+				is_great_grandchild_of = scope:actor
+				is_grandchild_of = scope:actor
+				is_child_of = scope:actor
+			}
+			scope:recipient.house = scope:actor.house #must be of player's House
+			is_courtier_of = scope:actor
+			trigger_if = {
+				limit = { is_male = yes }
+				NAND = {
+					matrilinear_marriage = yes
+					any_spouse = { NOT = { house = scope:actor.house } }
+				}
+			}
+			trigger_else = {
+				NAND = {
+					patrilinear_marriage = yes
+					any_spouse = { NOT = { house = scope:actor.house } }
+				}
+			}
+		}
+	}
+}
+
+remove_contraceptives_interaction = {
+	category = interaction_category_friendly
+
+	desc = remove_contraceptives_interaction_desc
+	interface_priority = 40
+
+	auto_accept = yes
+	on_accept = {
+		scope:recipient = {
+			remove_character_modifier = contraceptives_modifier
+		}
+	}
+	is_shown = {
+		scope:actor = {
+			is_ai = no
+			NOT = { scope:actor = scope:recipient }
+		}
+		scope:recipient = {
+			scope:recipient.house = scope:actor.house
+			has_character_modifier = contraceptives_modifier
+		}
+	}
+}
+
+agot_landless_pirate_designate_heir = {
+	category = interaction_category_diplomacy
+	use_diplomatic_range = yes
+	icon = heir
+	interface_priority = 1000
+
+	is_shown = {
+		agot_dlc_check_for_landless_pirates = yes
+		scope:actor != scope:recipient
+		scope:actor = {
+			is_landed = no
+			any_held_title = {
+				agot_is_pirate_domicile_title_trigger = yes
+			}
+			NOT = {
+				any_relation = {
+					type = pirate_ship_designated_heir
+				}
+			}
+		}
+		scope:recipient = {
+			is_human = yes
+			NOT = {
+				has_variable = pirate_jank_succession_variable
+			}
+			is_courtier_of = scope:actor
+		}
+	}
+	is_valid_showing_failures_only = {
+		scope:recipient = { agot_can_be_ruler = yes }
+	}
+	cost = {
+		prestige = {
+			value = {
+				if = {
+					limit = {
+						scope:actor = {
+							NOT = {
+								any_relation = {
+									type = pirate_ship_designated_heir
+								}
+							}
+						}
+					}
+					value = 0
+				}
+				else_if = {
+					limit = {
+						scope:recipient = {
+							is_close_or_extended_family_of = scope:actor
+						}
+					}
+					add = 50
+				}
+				else_if = {
+					limit = {
+						exists = scope:actor.house
+						scope:recipient.house ?= scope:actor.house
+					}
+					add = 60
+				}
+				else_if = {
+					limit = {
+						exists = scope:actor.dynasty
+						scope:recipient.dynasty ?= scope:actor.dynasty
+					}
+					add = 75
+				}
+				else = {
+					add = 100
+				}
+			}
+		}
+	}
+	auto_accept = yes
+	on_accept = {
+		scope:actor = {
+			hidden_effect = { set_relation_pirate_ship_designated_heir = scope:recipient }
+			custom_tooltip = agot_landless_pirate_designate_heir_effect_tt
+		}
+	}
+
+	ai_targets = {
+		ai_recipients = courtiers
+		max = 20
+	}
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+	ai_frequency = 12
+	ai_will_do = {
+		base = 100
+	}
+}
+
+agot_remove_landless_pirate_designate_heir = {
+	category = interaction_category_diplomacy
+	use_diplomatic_range = yes
+	icon = heir
+	interface_priority = 1000
+
+	is_shown = {
+		scope:actor = { is_ai = no }
+		scope:actor = {
+			has_variable = appointed_pirate_jank_heir
+			any_held_title = {
+				agot_is_pirate_domicile_title_trigger = yes
+			}
+		}
+		OR = {
+			scope:actor = {
+				has_relation_pirate_ship_designated_heir = scope:recipient
+			}
+			scope:actor = scope:recipient
+		}
+	}
+	auto_accept = yes
+	on_accept = {
+		scope:actor = {
+			hidden_effect = {
+				remove_relation_pirate_ship_designated_heir = scope:actor.var:appointed_pirate_jank_heir
+				if = {
+					limit = {
+						has_variable = appointed_pirate_jank_heir
+					}
+					remove_variable = appointed_pirate_jank_heir
+				}
+
+			}
+			custom_tooltip = agot_remove_landless_pirate_designate_heir_effect_tt
+		}
+	}
+	ai_frequency = 0
+	ai_will_do = {
+		base = 0
+	}
+}

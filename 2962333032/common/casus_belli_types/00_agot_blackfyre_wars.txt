@@ -1,0 +1,290 @@
+﻿agot_blackfyre_claim = {
+	group = civil_war
+	ai_only_against_liege = yes
+	landless_attacker_needs_armies = no
+	target_titles = none
+	allowed_for_character = {
+	}
+
+	allowed_against_character = {
+	}
+
+	white_peace_possible = no
+	allow_hostages = no
+
+	valid_to_start = {
+	}
+
+	on_invalidated_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = { scope:claimant = scope:attacker }
+					scope:claimant = { is_alive = no }
+				}
+				desc = msg_claim_war_invalidated_claimant_unavailable_dead_message
+			}
+			triggered_desc = {
+				trigger = {
+					scope:claimant = {
+						NOT = { this = scope:attacker }
+						OR = {
+							is_vassal_or_below_of = scope:attacker
+							is_courtier_of = scope:attacker
+						}
+					}
+				}
+				desc = msg_claim_war_invalidated_claimant_unavailable_not_vassal_message
+			}
+			desc = msg_claim_war_invalidated_message
+		}
+	}
+
+	should_invalidate = {
+	}
+
+	on_declaration = {
+		on_declared_war = yes
+		blackfyre_war_declared = yes #historical blackfyre loyalists get decisisons - increase number of rebellions by one
+	}
+
+	on_victory_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:attacker = { is_local_player = yes }
+				}
+				desc = agot_faegon_landing_war_victory_desc_attacker
+			}
+			desc = agot_faegon_landing_war_victory_desc
+		}
+	}
+
+	on_victory = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+		#Destroy Blackfyre Host
+		scope:attacker = {
+			if = {
+				limit = { title:e_blackfyre_rebellion.holder ?= scope:attacker }
+				destroy_title = title:e_blackfyre_rebellion
+			}
+		}
+
+		scope:defender = {
+			every_held_title = {
+				limit = {
+					NAND = {
+						tier = tier_barony
+						is_capital_barony = yes
+					}
+				}
+				add_to_list = target_titles
+			}
+		}
+
+		create_title_and_vassal_change = {
+			type = conquest
+			save_scope_as = change
+			add_claim_on_loss = yes
+		}
+
+		#Gab Dragonstone here too
+		if = {
+			limit = {
+				exists = title:k_dragonstone.holder
+				title:k_dragonstone.holder.house ?= scope:defender.house
+			}
+			title:k_dragonstone.holder = {
+				every_held_title = {
+					limit = {
+						NAND = {
+							tier = tier_barony
+							is_capital_barony = yes
+						}
+					}
+					add_to_list = target_titles
+				}
+			}
+		}
+
+		#Grab everything the King holds.
+		every_in_list = {
+			list = target_titles
+			change_title_holder = {
+				holder = scope:attacker
+				change = scope:change
+			}
+		}
+
+		resolve_title_and_vassal_change = scope:change
+
+		hidden_effect = {
+			scope:attacker = {
+				add_truce_both_ways = {
+					character = scope:defender
+					days = 1825
+					war = root.war
+					result = victory
+				}
+				#Move capital to Kings Landing
+				set_realm_capital = title:c_kings_landing
+			}
+		}
+
+		# TODO imprison important characters
+
+		scope:defender = {
+			# If we win the rebellion, our liege loses any legal right to imprison us/banish us/revoke our titles.
+			consume_all_criminal_reasons_effect = {
+				LIEGE = scope:defender
+				CRIMINAL = scope:attacker
+			}
+			# Remove offending HumSac modifiers.
+			hidden_effect = { fp1_remove_humsac_offended_counties_effect = yes }
+			# Then our liege is deposed (but the imprisonment loss remains true for their heir).
+		}
+
+		every_in_list = {
+			list = defenders
+
+			if = { # Imprison them if they aren't imprisoned.
+				limit = {
+					is_imprisoned = no
+					NOT = { this = scope:attacker }
+				}
+				hard_imprison_character_effect = {
+					TARGET = this
+					IMPRISONER = scope:attacker
+				}
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					character:Tall_1 = { is_alive = yes }
+					character:Tall_1 = { has_trait = kingsguard }
+				}
+				title:h_the_iron_throne.holder = {
+					trigger_event = {
+						id = agot_ninepenny.0070
+						days = 1
+					}
+				}
+			}
+		}
+
+		scope:defender = {
+			every_character_artifact = {
+				limit = {
+					OR = {
+						has_variable = dragon_egg
+						artifact_type = dragon_skull
+					}
+				}
+				add_to_list = dragon_drops
+			}
+		}
+		if = {
+			limit = {
+				exists = title:k_dragonstone.holder
+				title:k_dragonstone.holder.house ?= scope:defender.house
+			}
+			title:k_dragonstone.holder = {
+				every_character_artifact = {
+					limit = {
+						OR = {
+							has_variable = dragon_egg
+							artifact_type = dragon_skull
+						}
+					}
+					add_to_list = dragon_drops
+				}
+			}
+		}
+		every_in_list = {
+			list = dragon_drops
+			artifact_owner = { save_scope_as = owner }
+			set_owner = scope:attacker
+		}
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = { }
+
+	on_white_peace = { }
+
+	on_defeat_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:defender = { is_local_player = yes } }
+				desc = agot_faegon_landing_defeat_desc_defender
+			}
+			desc = agot_faegon_landing_defeat_defeat_desc
+		}
+	}
+
+	on_defeat = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+		scope:attacker = {
+			#If Maelys lose all your titles
+			if = {
+				limit = {
+					this = character:Blackfyre_14
+				}
+				maelys_title_distribution_effect = {
+					MAELYS = scope:attacker
+				}
+			}
+			else_if = {
+				limit = { title:e_blackfyre_rebellion.holder ?= scope:attacker }
+				destroy_title = title:e_blackfyre_rebellion
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_claimant_king
+				}
+				remove_character_flag = agot_claimant_king
+			}
+		}
+		scope:defender = {
+			add_dread = medium_dread_gain
+		}
+		scope:attacker = {
+			hard_imprison_character_effect = {
+				TARGET = this
+				IMPRISONER = scope:defender
+			}
+		}
+	}
+
+	on_invalidated_desc = agot_faegon_landing_war_invalidated
+
+	check_attacker_inheritance_validity = yes
+	check_defender_inheritance_validity = no
+
+	on_primary_attacker_death = invalidate
+	on_primary_defender_death = inherit
+
+	transfer_behavior = transfer
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = "BLACKFYRE_WAR_NAME" #Count the number of Blackfyre Rebellions here
+	my_war_name = "BLACKFYRE_WAR_NAME"
+	war_name_base = "BLACKFYRE_WAR_NAME"
+	cb_name = "BLACKFYRE_WAR_NAME"
+
+	interface_priority = 80
+
+	use_de_jure_wargoal_only = yes
+
+	attacker_wargoal_percentage = 0.8
+
+	attacker_score_from_occupation_scale = 50
+	defender_score_from_occupation_scale = 25
+	max_attacker_score_from_battles = 200 #focus more on sieges
+	max_defender_score_from_battles = 300 #focus on battles
+}

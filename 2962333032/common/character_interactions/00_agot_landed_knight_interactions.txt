@@ -1,0 +1,271 @@
+﻿# Liege giving LKs a lordship
+agot_grant_lordship_interaction = {
+	icon = grant_governorship
+	category = interaction_category_vassal
+	common_interaction = yes
+	interface_priority = 59
+	desc = agot_grant_lordship_interaction_desc
+
+	ai_maybe = yes
+	ai_min_reply_days = 1
+	ai_max_reply_days = 3
+	popup_on_receive = yes
+
+	greeting = positive
+	send_name = agot_offer_of_lordship
+	notification_text = AGOT_OFFER_LORDSHIP_NOTIFICATION
+
+	ai_targets = {
+		ai_recipients = vassals
+	}
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+	ai_frequency = 60
+
+	is_shown = {
+		NOT = {
+			scope:recipient = scope:actor
+		}
+
+		scope:actor = {
+			is_human = yes
+			is_landed = yes
+			government_has_flag = government_is_feudal
+			NOT = {
+				vassal_contract_has_flag = has_landed_knight_contract
+			}
+		}
+
+		scope:recipient = {
+			is_human = yes
+			is_vassal_or_below_of = scope:actor
+			vassal_contract_has_flag = has_landed_knight_contract
+		}
+	}
+
+	cost = {
+		prestige = 250
+	}
+
+	on_accept = {
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_neutral
+				title = accepted_lordship_interaction_tt
+				left_icon = scope:actor
+				right_icon = scope:recipient
+			}
+		}
+		scope:recipient = {
+			remove_list_global_variable = {
+				name = historical_landed_knights_list
+				target = scope:recipient
+			}
+			vassal_contract_set_obligation_level = { type = special_contract level = 0 }
+			additional_flavor_check_effect = yes
+			add_opinion = {
+				modifier = grateful_opinion
+				target = scope:actor
+				opinion = 75
+			}
+			create_character_memory = {
+				type = agot_was_granted_a_lordship
+				participants = {
+					LORD = scope:actor
+				}
+			}
+		}
+		scope:recipient.house ?= {
+			change_house_relation_effect = {
+				HOUSE = scope:actor.house
+				VALUE = house_relation_improve_medium_value
+				REASON = elevated_lordship_reason
+				CHAR = scope:actor
+				TARGET_CHAR = scope:recipient
+				TITLE = scope:dummy_gender
+			}
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_neutral
+				title = rejected_lordship_interaction_tt
+				left_icon = scope:actor
+				right_icon = scope:recipient
+			}
+		}
+	}
+
+	ai_potential = {
+		is_available_at_peace_ai_adult = yes
+		prestige > 400
+	}
+
+	auto_accept = {
+		scope:recipient = {
+			is_ai = yes
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 30
+			scope:recipient = {
+				OR = {
+					has_secret_relation_lover = scope:actor
+					has_relation_lover = scope:actor
+					has_relation_soulmate = scope:actor
+					has_relation_friend = scope:actor
+					has_relation_best_friend = scope:actor
+				}
+			}
+		}
+	}
+}
+
+# Requesting a lordship from LP+
+agot_request_lordship_interaction = {
+	icon = contest_appointment_interaction
+	category = interaction_category_vassal
+	common_interaction = yes
+	interface_priority = 200
+	desc = agot_request_lordship_interaction_desc
+
+	greeting = positive
+	send_name = agot_request_for_lordship
+	notification_text = AGOT_REQUEST_FOR_LORDSHIP_NOTIFICATION
+
+	ai_targets = {
+		ai_recipients = vassals
+	}
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+	ai_frequency = 60
+
+	is_shown = {
+		NOT = {
+			scope:recipient = scope:actor
+		}
+
+		scope:actor = {
+			is_human = yes
+			is_landed = yes
+			is_adult = yes
+			government_has_flag = government_is_feudal
+			is_vassal_or_below_of = scope:recipient
+			vassal_contract_has_flag = has_landed_knight_contract
+		}
+
+		scope:recipient = {
+			is_human = yes
+			is_liege_or_above_of = scope:actor
+			NOT = {
+				vassal_contract_has_flag = has_landed_knight_contract
+			}
+		}
+	}
+
+	#Use hook
+	send_options_exclusive = no
+	send_option = {
+		is_valid = {
+			scope:actor = { has_usable_hook = scope:recipient }
+		}
+		flag = hook
+		localization = GENERIC_SPEND_A_HOOK
+	}
+	should_use_extra_icon = {
+		scope:actor = { has_usable_hook = scope:recipient }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	cost = {
+		prestige = 500
+	}
+
+	on_accept = {
+		scope:actor = {
+			remove_list_global_variable = {
+				name = historical_landed_knights_list
+				target = scope:actor
+			}
+			vassal_contract_set_obligation_level = { type = special_contract level = 0 }
+			additional_flavor_check_effect = yes
+			add_opinion = {
+				modifier = grateful_opinion
+				target = scope:recipient
+				opinion = 75
+			}
+			create_character_memory = {
+				type = agot_was_granted_a_lordship
+				participants = {
+					LORD = scope:recipient
+				}
+			}
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = accepted_request_for_lordship_interaction_tt
+				left_icon = scope:actor
+				right_icon = scope:recipient
+			}
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			add_prestige = miniscule_prestige_loss
+			add_opinion = {
+				target = scope:recipient
+				modifier = disappointed_opinion
+				opinion = -15
+			}
+			send_interface_toast = {
+				type = event_toast_effect_bad
+				title = declined_request_for_lordship_interaction_tt
+				left_icon = scope:actor
+				right_icon = scope:recipient
+			}
+		}
+	}
+
+	ai_potential = {
+		is_available_at_peace_ai_adult = yes
+		prestige > 1000
+	}
+
+	can_send_despite_rejection = yes
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 30
+			scope:recipient = {
+				OR = {
+					has_secret_relation_lover = scope:actor
+					has_relation_lover = scope:actor
+					has_relation_soulmate = scope:actor
+					has_relation_friend = scope:actor
+					has_relation_best_friend = scope:actor
+				}
+			}
+		}
+		ai_value_modifier = {
+			who = scope:actor
+			ai_greed = 1
+			ai_boldness = 0.75
+		}
+	}
+
+	ai_accept = {
+		base = -150
+
+		agot_request_lordship_ai_modifier = yes
+	}
+}

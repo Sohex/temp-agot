@@ -1,0 +1,1268 @@
+﻿nw_ranger_story = {
+	on_setup = {
+		story_owner = {
+			if = {
+				limit = { has_character_flag = fr_is_a_lowborn }
+				set_to_lowborn = yes
+			}
+			if = {
+				limit = { NOT = { has_character_flag = nw_ranger_title } }
+				add_character_flag = nw_ranger_title
+			}
+			save_scope_as = new_fr
+			title:d_nw_landless_first_ranger.holder = { save_scope_as = new_first_ranger }
+			title:k_the_wall.holder = { trigger_event = agot_nw_ranger_events.0002 }
+			#Set Up AI Values (Should be applied on the player too in case the AI takes over)
+			set_variable = {
+				name = remaining_contract_counter_nw
+				value = 0
+			}
+			set_variable = {
+				name = remaining_employer_counter_nw
+				value = 0
+			}
+			#Add a ranger to the camp
+			if = {
+				limit = {
+					title:k_the_wall.holder = {
+						any_courtier = {
+							agot_valid_ranger_camper = yes
+						}
+					}
+				}
+				save_scope_as = first_ranger
+				trigger_event = {
+					id = agot_nw_ranger_events.0016
+					days = 1
+				}
+			}
+			#Inform playable house member
+			if = {
+				limit = {
+					has_multiple_players = no
+					has_dlc_feature = landless_playable
+					exists = house
+					house = {
+						any_house_member = {
+							is_playable_character = yes
+							is_ai = no
+						}
+					}
+				}
+				save_scope_as = first_ranger
+				house = {
+					random_house_member = {
+						limit = {
+							is_playable_character = yes
+							is_ai = no
+							agot_can_be_ruler = yes
+						}
+						trigger_event = agot_nw_ranger_events.0020
+					}
+				}
+			}
+			#Add a courtier to avoid crash upon attempting to appoint a councillor
+			agot_nw_ranger_on_creation = yes
+		}
+	}
+
+	on_end = {
+		story_owner = {
+			if = {
+				limit = {
+					is_alive = yes
+					has_character_flag = nw_ranger_title
+				}
+				remove_character_flag = nw_ranger_title
+			}
+		}
+	}
+
+	on_owner_death = {
+		scope:story = { end_story = yes }
+	}
+
+	### DAILY
+	effect_group = {
+		days = 1
+
+		###Affects BOTH THE PLAYER AND THE AI
+
+		#Transfer a ranger event
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					any_courtier = {
+						count <= 7
+						agot_valid_ranger_camper = yes
+					}
+					is_travelling = no
+					NOT = { has_character_flag = new_ranger_arrived }
+					NOT = { has_character_flag = temporary_ranger_invite_blocker }
+					exists = title:k_the_wall.holder
+					NOT = { this = title:k_the_wall.holder }
+				}
+				agot_ranger_beyond_the_wall = no
+				title:k_the_wall.holder = {
+					any_courtier = {
+						agot_valid_ranger_camper = yes
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					trigger_event = agot_nw_ranger_events.0016
+				}
+			}
+		}
+
+		#Transfer a ranger if below 7 courtiers
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					any_courtier = {
+						count <= 7
+						agot_valid_ranger_camper = yes
+					}
+					NOT = { has_character_flag = new_ranger_arrived_quick }
+					NOT = { has_character_flag = temporary_ranger_invite_blocker }
+					exists = title:k_the_wall.holder
+					NOT = { this = title:k_the_wall.holder }
+				}
+				agot_ranger_beyond_the_wall = no
+				title:k_the_wall.holder = {
+					any_courtier = {
+						agot_valid_ranger_camper = yes
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random = {
+						chance = {
+							value = 0
+							if = {
+								limit = {
+									scope:first_ranger = {
+										any_courtier = {
+											count < 2
+											agot_valid_ranger_camper = yes
+										}
+									}
+								}
+								add = 5
+							}
+							else_if = {
+								limit = {
+									scope:first_ranger = {
+										any_courtier = {
+											count < 4
+											agot_valid_ranger_camper = yes
+										}
+									}
+								}
+								add = 3
+							}
+							else_if = {
+								limit = {
+									scope:first_ranger = {
+										any_courtier = {
+											count >= 4
+											agot_valid_ranger_camper = yes
+										}
+									}
+								}
+								add = 1
+							}
+						}
+						agot_nw_laamp_ranger_arrives = yes
+					}
+				}
+			}
+		}
+
+		#Transfer a ranger if below 7 courtiers (rarely happens even when beyond the wall)
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					any_courtier = {
+						count <= 7
+						agot_valid_ranger_camper = yes
+					}
+					NOT = { has_character_flag = new_ranger_arrived_quick }
+					exists = title:k_the_wall.holder
+					NOT = { this = title:k_the_wall.holder }
+				}
+				agot_ranger_beyond_the_wall = yes
+				title:k_the_wall.holder = {
+					any_courtier = {
+						agot_valid_ranger_camper = yes
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random = {
+						chance = {
+							value = 0
+							if = {
+								limit = {
+									scope:first_ranger = {
+										any_courtier = {
+											count < 2
+											agot_valid_ranger_camper = yes
+										}
+									}
+								}
+								add = 2
+							}
+							else_if = {
+								limit = {
+									scope:first_ranger = {
+										any_courtier = {
+											count < 4
+											agot_valid_ranger_camper = yes
+										}
+									}
+								}
+								add = 0.5
+							}
+							else_if = {
+								limit = {
+									scope:first_ranger = {
+										any_courtier = {
+											count >= 4
+											agot_valid_ranger_camper = yes
+										}
+									}
+								}
+								add = 0.1
+							}
+						}
+						agot_nw_laamp_ranger_arrives = yes
+					}
+				}
+			}
+		}
+
+		#First Ranger is back on the Wall - Refill Provisions and Tax
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = no
+				title:d_nw_landless_first_ranger.holder.domicile.domicile_location.county.holder.top_liege ?= title:k_the_wall.holder
+				story_owner = {
+					is_travelling = no
+					location.county.holder.top_liege ?= title:k_the_wall.holder
+					exists = title:k_the_wall.holder
+					NOT = { this = title:k_the_wall.holder }
+				}
+				title:k_the_wall.holder = {
+					has_trait = nightswatch
+					agot_is_independent_ruler = yes
+				}
+			}
+			effect = {
+				#Refill Provisions
+				title:d_nw_landless_first_ranger.holder.domicile ?= { change_provisions = title:d_nw_landless_first_ranger.holder.domicile.max_provisions }
+				#Transfer Gold to the LC
+				story_owner = {
+					save_scope_as = first_ranger
+					if = {
+						limit = { has_character_flag = first_ranger_beyond_the_wall }
+						send_interface_toast = {
+							type = event_generic_good
+							title = agot_nw_fr_provisions_refilled.t
+							left_icon = scope:first_ranger
+							custom_tooltip = agot_nw_fr_provisions_refilled.tt
+						}
+						if = {
+							limit = { NOT = { has_character_flag = recently_arrived_to_the_wall } }
+							trigger_event = agot_nw_ranger_events.0006
+						}
+						remove_character_flag = first_ranger_beyond_the_wall
+					}
+				}
+			}
+		}
+
+		#First Ranger moved beyond the Wall
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					exists = title:k_the_wall.holder
+					NOT = { this = title:k_the_wall.holder }
+				}
+				agot_ranger_beyond_the_wall = yes
+				title:k_the_wall.holder = {
+					has_trait = nightswatch
+					agot_is_independent_ruler = yes
+				}
+			}
+			effect = {
+				story_owner = { add_character_flag = first_ranger_beyond_the_wall }
+			}
+		}
+
+		#Yoink wildlings
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					any_courtier = {
+						is_alive = yes
+						is_adult = yes
+						culture = { agot_is_wildling_culture = yes }
+						OR = {
+							has_trait = nightswatch
+							has_trait = nightswatch_temp
+							has_trait = nightswatch_historical
+						}
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					hidden_effect = {
+						every_courtier = {
+							limit = {
+								is_alive = yes
+								is_adult = yes
+								culture = { agot_is_wildling_culture = yes }
+								OR = {
+									has_trait = nightswatch
+									has_trait = nightswatch_temp
+									has_trait = nightswatch_historical
+								}
+							}
+							if = {
+								limit = { has_trait = nightswatch }
+								remove_trait = nightswatch
+							}
+							else_if = {
+								limit = { has_trait = nightswatch_temp }
+								remove_trait = nightswatch_temp
+							}
+							else = { remove_trait = nightswatch_historical }
+							move_to_pool = yes
+						}
+					}
+				}
+			}
+		}
+
+		#Move wildling children to the Wall
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					any_courtier = {
+						is_alive = yes
+						NOT = { is_adult = yes }
+						culture = { agot_is_wildling_culture = yes }
+						OR = {
+							has_trait = nightswatch
+							has_trait = nightswatch_temp
+							has_trait = nightswatch_historical
+						}
+					}
+					exists = title:k_the_wall.holder
+					NOT = { this = title:k_the_wall.holder }
+				}
+			}
+			effect = {
+				story_owner = {
+					hidden_effect = {
+						every_courtier = {
+							limit = {
+								is_alive = yes
+								NOT = { is_adult = yes }
+								culture = { agot_is_wildling_culture = yes }
+								OR = {
+									has_trait = nightswatch
+									has_trait = nightswatch_temp
+									has_trait = nightswatch_historical
+								}
+							}
+							title:k_the_wall.holder = {
+								add_courtier = prev
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Clear Invalid Contracts From The Ranger
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					any_character_active_contract = {
+						NOR = {
+							has_task_contract_type = ranger_laamp_contract_1101
+							has_task_contract_type = ranger_laamp_contract_1201
+							has_task_contract_type = ranger_laamp_contract_1301
+							has_task_contract_type = ranger_laamp_contract_1401
+							has_task_contract_type = ranger_laamp_contract_1501
+							has_task_contract_type = ranger_laamp_contract_1601
+							has_task_contract_type = ranger_laamp_contract_1701
+							has_task_contract_type = ranger_laamp_contract_1801
+							has_task_contract_type = ranger_laamp_contract_1901
+							has_task_contract_type = ranger_laamp_contract_2001
+							has_task_contract_type = ranger_laamp_contract_2101
+							has_task_contract_type = ranger_laamp_contract_2201
+							has_task_contract_type = ranger_laamp_contract_2301
+						}
+					}
+				}
+			}
+			effect = {
+				story_owner = { agot_nw_ranger_clear_contract = yes }
+			}
+		}
+
+		###Affects ONLY THE PLAYER
+
+		#Populate Contracts for PLAYER
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					is_ai = no
+					is_travelling = no
+					NOT = { has_character_flag = contract_pop_cooldown }
+					any_character_task_contract = {
+						count <= 3
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = nw_ranger
+					agot_nw_ranger_spwan_contracts = {
+						AREA_CHAR = scope:nw_ranger
+						AMOUNT = 1
+					}
+					add_character_flag = {
+						flag = contract_pop_cooldown
+						days = 40
+					}
+				}
+			}
+		}
+
+		#Cannot continue
+		triggered_effect = {
+			trigger = {
+				story_owner = { has_title = title:k_the_wall }
+			}
+			effect = {
+				scope:story = { end_story = yes }
+			}
+		}
+
+		#End Story
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					has_trait = incapable
+				}
+			}
+			effect = {
+				story_owner = { trigger_event = agot_nw_ranger_events.0011 }
+			}
+		}
+
+		#Check if being the First Ranger still makes sense
+		triggered_effect = {
+			trigger = {
+				OR = {
+					NOT = { exists = title:k_the_wall.holder }
+					title:k_the_wall.holder = {
+						NOT = { has_trait = nightswatch }
+						NOT = { has_trait = nightswatch_temp }
+						NOT = { has_trait = nightswatch_historical }
+					}
+					title:k_the_wall.holder = { NOT = { government_has_flag = government_is_nw } }
+				}
+			}
+			effect = {
+				story_owner = { trigger_event = agot_nw_ranger_events.0019 }
+			}
+		}
+	}
+
+	###Affects ONLY THE AI
+	effect_group = {
+		days = 15
+
+		#AI: Move Beyond the Wall
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = no
+				story_owner = {
+					agot_ai_nw_ranger_is_valid = yes
+					is_travelling = no
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = nw_ranger
+					random = {
+						chance = {
+							value = scope:nw_ranger.ai_boldness
+							min = 1
+						}
+						add_character_flag = ranger_from_the_wall
+						agot_ai_nw_ranger_move_effect = yes
+					}
+				}
+			}
+		}
+
+		#AI: No contract, Find a new one
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					agot_ai_nw_ranger_is_valid = yes
+					is_at_war = no
+					is_travelling = no
+					NOT = { has_pending_interaction_of_type = imprison_interaction }
+					var:remaining_contract_counter_nw > 0
+				}
+			}
+			effect = { story_owner = { agot_ai_nw_ranger_find_contract_effect = yes } }
+		}
+
+		#AI: No contract, No contractor, Find a new one
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					agot_ai_nw_ranger_is_valid = yes
+					is_at_war = no
+					is_travelling = no
+					NOT = { has_pending_interaction_of_type = imprison_interaction }
+					var:remaining_contract_counter_nw <= 0
+					var:remaining_employer_counter_nw > 0
+				}
+			}
+			effect = { story_owner = { agot_ai_nw_ranger_find_employer_effect = yes } }
+		}
+
+		#AI: No contract, No contractor, No new one, Move Away
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					agot_ai_nw_ranger_is_valid = yes
+					is_at_war = no
+					is_travelling = no
+					NOT = { has_pending_interaction_of_type = imprison_interaction }
+					var:remaining_contract_counter_nw <= 0
+					var:remaining_employer_counter_nw <= 0
+				}
+			}
+			effect = { story_owner = { agot_ai_nw_ranger_move_effect = yes } }
+		}
+
+		#AI: Hire Court Physician
+		triggered_effect = {
+			trigger = {
+				story_owner ?= {
+					save_temporary_scope_as = ai_fr
+					agot_ai_nw_ranger_is_valid = yes
+					NOT = { employs_court_position = court_physician_court_position }
+					can_employ_court_position_type = court_physician_court_position
+					any_courtier = {
+						scope:ai_fr = { NOT = { is_employer_of = prev } }
+						would_be_valid_for_court_position = {
+							employer = prev
+							court_position = court_physician_court_position
+						}
+						NOT = { has_character_flag = already_used }
+					}
+					NOT = { has_character_flag = employed_pc_recently }
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = ai_fr
+					ordered_courtier = {
+						limit = {
+							scope:ai_fr = { NOT = { is_employer_of = prev } }
+							would_be_valid_for_court_position = {
+								employer = prev
+								court_position = court_physician_court_position
+							}
+							NOT = { has_character_flag = already_used }
+						}
+						order_by = aptitude:court_physician_court_position
+						save_scope_as = officer
+						add_character_flag = {
+							flag = already_used
+							days = 7
+						}
+					}
+					if = {
+						limit = { exists = scope:officer }
+						appoint_court_position = {
+							recipient = scope:officer
+							court_position = court_physician_court_position
+						}
+					}
+					add_character_flag = {
+						flag = employed_pc_recently
+						days = 7
+					}
+				}
+			}
+		}
+		#AI: Hire Caravan Master
+		triggered_effect = {
+			trigger = {
+				story_owner ?= {
+					save_temporary_scope_as = ai_fr
+					agot_ai_nw_ranger_is_valid = yes
+					NOT = { employs_court_position = travel_leader_court_position }
+					can_employ_court_position_type = travel_leader_court_position
+					any_courtier = {
+						scope:ai_fr = { NOT = { is_employer_of = prev } }
+						would_be_valid_for_court_position = {
+							employer = prev
+							court_position = travel_leader_court_position
+						}
+						NOT = { has_character_flag = already_used }
+					}
+					NOT = { has_character_flag = employed_tl_recently }
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = ai_fr
+					ordered_courtier = {
+						limit = {
+							scope:ai_fr = { NOT = { is_employer_of = prev } }
+							would_be_valid_for_court_position = {
+								employer = prev
+								court_position = travel_leader_court_position
+							}
+							NOT = { has_character_flag = already_used }
+						}
+						order_by = aptitude:travel_leader_court_position
+						save_scope_as = officer
+						add_character_flag = {
+							flag = already_used
+							days = 7
+						}
+					}
+					if = {
+						limit = { exists = scope:officer }
+						appoint_court_position = {
+							recipient = scope:officer
+							court_position = travel_leader_court_position
+						}
+					}
+					add_character_flag = {
+						flag = employed_tl_recently
+						days = 7
+					}
+				}
+			}
+		}
+	}
+
+	###Affects BOTH THE PLAYER AND THE AI
+	effect_group = {
+		months = 1
+
+		#RANGER COUNCILLOR EVENTS
+
+		#Scout - Envoy - Wildling's Opinion bonus
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_flag = ranger_council_event_recieved }
+					any_councillor = {
+						has_council_position = councillor_ranger_1
+						is_performing_council_task = ranger_default_1
+						is_ai = yes
+						is_alive = yes
+						is_imprisoned = no
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random_councillor = {
+						limit = {
+							has_council_position = councillor_ranger_1
+							is_performing_council_task = ranger_default_1
+							is_ai = yes
+							is_alive = yes
+							is_imprisoned = no
+						}
+						save_scope_as = my_ranger
+						if = {
+							limit = { exists = scope:my_ranger }
+							random = {
+								chance = {
+									value = scope:my_ranger.ranger_1_default_value
+									divide = 3
+									min = 1
+								}
+								scope:first_ranger = { trigger_event = agot_nw_ranger_events.0021 }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Scout - Wayfinder - Travel Safety Bonus
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_modifier = ep3_well_guided_modifier }
+					NOT = { has_character_modifier = ep3_sketchy_guides_modifier }
+					NOT = { has_character_flag = ranger_council_event_recieved }
+					any_councillor = {
+						has_council_position = councillor_ranger_1
+						is_performing_council_task = ranger_other_1
+						is_ai = yes
+						is_alive = yes
+						is_imprisoned = no
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random_councillor = {
+						limit = {
+							has_council_position = councillor_ranger_1
+							is_performing_council_task = ranger_other_1
+							is_ai = yes
+							is_alive = yes
+							is_imprisoned = no
+						}
+						save_scope_as = my_ranger
+						if = {
+							limit = { exists = scope:my_ranger }
+							random = {
+								chance = {
+									value = scope:my_ranger.ranger_1_other_value
+									divide = 3
+									min = 1
+								}
+								scope:first_ranger = { trigger_event = agot_nw_ranger_events.0022 }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Tracker - Provisioner - Finds Gold in Abandoned Wildling Camp
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_flag = ranger_council_event_recieved }
+					any_councillor = {
+						has_council_position = councillor_ranger_2
+						is_performing_council_task = ranger_default_2
+						is_ai = yes
+						is_alive = yes
+						is_imprisoned = no
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random_councillor = {
+						limit = {
+							has_council_position = councillor_ranger_2
+							is_performing_council_task = ranger_default_2
+							is_ai = yes
+							is_alive = yes
+							is_imprisoned = no
+						}
+						save_scope_as = my_ranger
+						if = {
+							limit = { exists = scope:my_ranger }
+							random = {
+								chance = {
+									value = scope:my_ranger.ranger_2_default_value
+									divide = 3
+									min = 1
+								}
+								scope:first_ranger = { trigger_event = agot_nw_ranger_events.0023 }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Tracker - Forager - Gain Provisions
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_flag = ranger_council_event_recieved }
+					any_councillor = {
+						has_council_position = councillor_ranger_2
+						is_performing_council_task = ranger_other_2
+						is_ai = yes
+						is_alive = yes
+						is_imprisoned = no
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random_councillor = {
+						limit = {
+							has_council_position = councillor_ranger_2
+							is_performing_council_task = ranger_other_2
+							is_ai = yes
+							is_alive = yes
+							is_imprisoned = no
+						}
+						save_scope_as = my_ranger
+						if = {
+							limit = { exists = scope:my_ranger }
+							random = {
+								chance = {
+									value = scope:my_ranger.ranger_2_other_value
+									divide = 2
+									min = 1
+								}
+								scope:first_ranger = { trigger_event = agot_nw_ranger_events.0024 }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Blademaster - Warbrand - Gathers Wood
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_flag = ranger_council_event_recieved }
+					any_councillor = {
+						has_council_position = councillor_ranger_3
+						is_performing_council_task = ranger_default_3
+						is_ai = yes
+						is_alive = yes
+						is_imprisoned = no
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random_councillor = {
+						limit = {
+							has_council_position = councillor_ranger_3
+							is_performing_council_task = ranger_default_3
+							is_ai = yes
+							is_alive = yes
+							is_imprisoned = no
+						}
+						save_scope_as = my_ranger
+						if = {
+							limit = { exists = scope:my_ranger }
+							random = {
+								chance = {
+									value = scope:my_ranger.ranger_3_default_value
+									divide = 3
+									min = 1
+								}
+								scope:first_ranger = { trigger_event = agot_nw_ranger_events.0025 }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Blademaster - Ambusher - Pracitces with You
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_modifier = fought_a_seasoned_warrior }
+					NOT = { has_character_modifier = travel_sore_muscles_modifier }
+					NOT = { has_character_flag = ranger_council_event_recieved }
+					any_councillor = {
+						has_council_position = councillor_ranger_3
+						is_performing_council_task = ranger_other_3
+						is_ai = yes
+						is_alive = yes
+						is_imprisoned = no
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random_councillor = {
+						limit = {
+							has_council_position = councillor_ranger_3
+							is_performing_council_task = ranger_other_3
+							is_ai = yes
+							is_alive = yes
+							is_imprisoned = no
+						}
+						save_scope_as = my_ranger
+						if = {
+							limit = { exists = scope:my_ranger }
+							random = {
+								chance = {
+									value = scope:my_ranger.ranger_3_other_value
+									divide = 3
+									min = 1
+								}
+								scope:first_ranger = { trigger_event = agot_nw_ranger_events.0026 }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Nightguard - Shadow - Spreads Dreadful/Silly Stories About You
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_flag = ranger_council_event_recieved }
+					any_councillor = {
+						has_council_position = councillor_ranger_4
+						is_performing_council_task = ranger_default_4
+						is_ai = yes
+						is_alive = yes
+						is_imprisoned = no
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random_councillor = {
+						limit = {
+							has_council_position = councillor_ranger_4
+							is_performing_council_task = ranger_default_4
+							is_ai = yes
+							is_alive = yes
+							is_imprisoned = no
+						}
+						save_scope_as = my_ranger
+						if = {
+							limit = { exists = scope:my_ranger }
+							random = {
+								chance = {
+									value = scope:my_ranger.ranger_4_default_value
+									divide = 3
+									min = 1
+								}
+								scope:first_ranger = { trigger_event = agot_nw_ranger_events.0027 }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Nightguard - Watcher - Wildling Caught
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_flag = ranger_council_event_recieved }
+					any_councillor = {
+						has_council_position = councillor_ranger_4
+						is_performing_council_task = ranger_other_4
+						is_ai = yes
+						is_alive = yes
+						is_imprisoned = no
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random_councillor = {
+						limit = {
+							has_council_position = councillor_ranger_4
+							is_performing_council_task = ranger_other_4
+							is_ai = yes
+							is_alive = yes
+							is_imprisoned = no
+						}
+						save_scope_as = my_ranger
+						if = {
+							limit = { exists = scope:my_ranger }
+							random = {
+								chance = {
+									value = scope:my_ranger.ranger_4_other_value
+									divide = 3
+									min = 1
+								}
+								scope:first_ranger = { trigger_event = agot_nw_ranger_events.0028 }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#MISC EVENTS
+
+		#One of your ranger becomes a turncloak
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_flag = my_ranger_turncloaked }
+					save_temporary_scope_as = first_ranger
+					any_courtier = {
+						agot_wildling_insane = yes
+						has_trait = nightswatch
+						is_adult = yes
+						save_temporary_opinion_value_as = {
+							name = opinion_of_fr
+							target = scope:first_ranger
+						}
+						scope:opinion_of_fr < -40
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					random_courtier = {
+						limit = {
+							agot_wildling_insane = yes
+							has_trait = nightswatch
+							is_adult = yes
+							save_temporary_opinion_value_as = {
+								name = opinion_of_fr
+								target = scope:first_ranger
+							}
+							scope:opinion_of_fr < -40
+						}
+						save_scope_as = turncloak
+						random = {
+							chance = {
+								value = 0.5
+								if = {
+									limit = { culture = { agot_is_wildling_culture = yes } }
+									add = 0.5
+								}
+								if = {
+									limit = {
+										OR = {
+											has_faith = faith:old_gods_btw_fnf
+											has_faith = faith:old_gods_btw_sas
+											has_faith = faith:old_gods_btw_sni
+											has_faith = faith:old_gods_btw_pnv
+										}
+									}
+									add = 0.50
+								}
+							}
+							scope:first_ranger = { trigger_event = agot_nw_ranger_events.0008 }
+						}
+					}
+				}
+			}
+		}
+
+		#Relation in the Camp
+		triggered_effect = {
+			trigger = {
+				agot_ranger_beyond_the_wall = yes
+				story_owner = {
+					NOT = { has_character_flag = relation_camp_happened }
+					any_courtier = {
+						is_ai = yes
+						is_alive = yes
+						count > 2
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					every_courtier = {
+						limit = {
+							is_ai = yes
+							is_alive = yes
+						}
+						add_to_list = ranger_camp
+					}
+					random_in_list = {
+						list = ranger_camp
+						save_scope_as = ranger_camper_one
+					}
+					random_in_list = {
+						list = ranger_camp
+						limit = {
+							NOT = { this = scope:ranger_camper_one }
+						}
+						save_scope_as = ranger_camper_two
+					}
+					random_list = {
+						5 = { trigger_event = agot_nw_ranger_events.0009 } #Positive
+						5 = { trigger_event = agot_nw_ranger_events.0010 } #Negative
+						90 = { } #Nothing
+					}
+				}
+			}
+		}
+	}
+}
+
+last_ranger_story = {
+	on_setup = {
+		story_owner = {
+			save_scope_as = first_ranger
+			primary_title = {
+				set_variable = post_nw_quest
+				set_title_name = d_nw_landless_first_ranger_broken_nw
+				set_coa = title:d_nw_landless_first_ranger
+			}
+			title:c_castle_black = {
+				set_variable = post_nw_quest_blocker
+				set_variable = {
+					name = agot_last_ranger_cooldown
+					years = 10
+				}
+			}
+		}
+		scope:story = {
+			set_variable = {
+				name = ex_ranger_title
+				value = scope:first_ranger.primary_title
+			}
+		}
+	}
+
+	on_end = {
+		story_owner = {
+			if = {
+				limit = { is_alive = yes }
+				if = {
+					limit = { has_character_flag = already_arrived_to_the_northern_lord }
+					remove_character_flag = already_arrived_to_the_northern_lord
+				}
+				if = {
+					limit = { has_character_flag = agot_nw_ranger_events_0100_cooldown }
+					remove_character_flag = agot_nw_ranger_events_0100_cooldown
+				}
+				if = {
+					limit = { has_character_flag = post_nw_reclaim_quest }
+					remove_character_flag = post_nw_reclaim_quest
+				}
+			}
+			if = {
+				limit = { title:c_castle_black = { has_variable = post_nw_quest_blocker } }
+				title:c_castle_black = { remove_variable = post_nw_quest_blocker }
+			}
+			if = {
+				limit = {
+					exists = primary_title
+					primary_title = { has_variable = post_nw_quest }
+				}
+				destroy_title = primary_title
+			}
+		}
+	}
+
+	on_owner_death = {
+		scope:story = { end_story = yes }
+	}
+
+	### DAILY
+	effect_group = {
+		days = 1
+
+		#Send the event
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					NOT = { has_character_flag = agot_nw_ranger_events_0100_first_event_timer }
+					NOT = { has_character_flag = agot_nw_ranger_events_0100_cooldown }
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = first_ranger
+					trigger_event = agot_nw_ranger_events.0100
+				}
+			}
+		}
+
+		#Refill provisions until arrived
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					NOT = { has_character_flag = last_ranger_provisions }
+					NOT = { has_character_flag = already_arrived_to_the_northern_lord }
+				}
+			}
+			effect = {
+				story_owner = {
+					add_character_flag = last_ranger_provisions
+					domicile = {
+						if = {
+							limit = { provisions < max_provisions }
+							change_provisions = max_provisions
+						}
+					}
+				}
+			}
+		}
+
+		#Check if still valid
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					OR = {
+						trigger_if = {
+							limit = {
+								exists = scope:story.var:ex_ranger_title
+								exists = primary_title
+							}
+							NOT = { primary_title = scope:story.var:ex_ranger_title }
+						}
+						NOT = { is_playable_character = yes }
+					}
+				}
+			}
+			effect = {
+				scope:story = { end_story = yes }
+			}
+		}
+	}
+}
+
+################ PLANS
+# - decision to desert the night's watch DONE
+# 	- decision: balance DONE
+# 	- decision:conversion event DONE
+# - newly elected first ranger's family member notified if they want to keep playing the new first ranger DONE
+# - post-wall: fr becomes a special laamp with the goal to reclaim the night's watch
+#	- cb
+# - event that interacts between rangers and wildling laamps, multiduel?

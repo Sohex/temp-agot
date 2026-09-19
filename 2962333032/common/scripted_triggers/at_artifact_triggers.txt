@@ -1,0 +1,235 @@
+﻿at_can_interact_with_trigger = {
+	NOT = { this = $PARTY$ }
+	in_diplomatic_range = $PARTY$
+	NOT = { is_at_war_with = $PARTY$ }
+	is_imprisoned = no
+}
+
+at_can_sell_artifact_to_trigger = {
+	at_can_interact_with_trigger = { PARTY = $PARTY$ }
+	at_has_aniconist_faith_trigger = no
+	at_short_term_gold_value > 1
+}
+
+at_can_buy_artifact_from_trigger = {
+	at_can_interact_with_trigger = { PARTY = $PARTY$ }
+	at_has_aniconist_faith_trigger = no
+}
+
+at_can_start_interaction_trigger = {
+	is_imprisoned = no
+}
+
+at_can_trade_artifacts_trigger = {
+	at_can_start_interaction_trigger = yes
+	at_has_aniconist_faith_trigger = no
+}
+
+at_has_aniconist_faith_trigger = {
+	faith = {
+		has_doctrine_parameter = destroying_artifacts_is_pious
+	}
+}
+
+at_is_character_poor_trigger = {
+	is_ruler = yes
+	trigger_if = {
+		limit = { ai_has_economical_boom_personality = yes }
+		gold <= medium_gold_value
+	}
+	trigger_else = {
+		gold <= minor_gold_value
+	}
+}
+
+at_is_character_rich_trigger = {
+	is_ruler = yes
+	trigger_if = {
+		limit = { ai_has_economical_boom_personality = yes }
+		at_short_term_gold_value >= massive_gold_value
+	}
+	trigger_else = {
+		at_short_term_gold_value >= major_gold_value
+	}
+}
+
+at_is_worthless_artifact_trigger = {
+	OR = {
+		has_variable = ai_to_ai_destroy_in_sieges
+		AND = {
+			rarity = common
+			artifact_slot_type = miscellaneous
+			artifact_durability <= define:NInventory|ARTIFACT_LOW_DURABILITY
+		}
+	}
+}
+
+at_is_unique_artifact_trigger = {
+	OR = {
+		is_unique = yes
+		has_variable = historical_unique_artifact
+	}
+}
+
+at_can_equip_artifact_trigger = {
+	can_equip_artifact = $ARTIFACT$
+}
+
+at_has_artifact_succession_title_trigger = {
+	exists = $ARTIFACT$.var:artifact_succession_title
+	has_title = $ARTIFACT$.var:artifact_succession_title
+}
+
+at_is_religion_relic_trigger = {
+	exists = $ARTIFACT$.var:relic_religion
+	has_religion = $ARTIFACT$.var:relic_religion
+}
+
+at_can_equip_and_benefit_from_artifact_trigger = {
+	at_can_equip_artifact_trigger = { ARTIFACT = $ARTIFACT$ }
+	can_benefit_from_artifact = $ARTIFACT$
+}
+
+at_is_artifact_equppable_and_beneficial_trigger = {
+	$CHARACTER$ = {
+		at_can_equip_and_benefit_from_artifact_trigger = { ARTIFACT = prev }
+	}
+}
+
+at_is_dynasty_banner_trigger = {
+	exists = $ARTIFACT$.var:banner_dynasty
+	exists = dynasty
+	$ARTIFACT$.var:banner_dynasty = dynasty
+}
+
+at_is_house_banner_trigger = {
+	exists = $ARTIFACT$.var:banner_house
+	exists = house
+	$ARTIFACT$.var:banner_house = house
+}
+
+at_ai_artifact_could_be_traded_trigger = {
+	NOR = {
+		has_variable = unwanted_artifact
+		has_variable = cursed_artifact
+		at_is_worthless_artifact_trigger = yes
+		has_variable = at_artifact_recently_bought
+		has_variable = maesterwork
+	}
+}
+
+at_ai_could_buy_artifact_trigger = {
+	at_can_equip_and_benefit_from_artifact_trigger = { ARTIFACT = $ARTIFACT$ }
+}
+
+at_ai_could_sell_artifact_trigger = {
+	NOR = {
+		at_is_dynasty_banner_trigger = { ARTIFACT = $ARTIFACT$ }
+		at_is_house_banner_trigger = { ARTIFACT = $ARTIFACT$ }
+		at_is_religion_relic_trigger = { ARTIFACT = $ARTIFACT$ }
+		at_has_artifact_succession_title_trigger = { ARTIFACT = $ARTIFACT$ }
+	}
+}
+
+at_artifact_can_be_sold_trigger = {
+	trigger_if = {
+		limit = {
+			artifact_owner = { is_ai = yes }
+		}
+		# AI sellers are not allowed to sell special AGOT artifacts
+		NOR = {
+			agot_is_unique_throne_artifact = yes
+			agot_is_historical_unique_artifact = yes
+			agot_is_valyrian_steel_artifact = yes
+			agot_is_dragon_egg_artifact = yes
+			agot_is_dragon_skull_artifact = yes
+		}
+	}
+	trigger_else = {
+		# Player sellers are not allowed to sell unique AGOT thrones
+		NOR = {
+			agot_is_unique_throne_artifact = yes
+			has_variable = agot_artifact_cannot_gift
+			trigger_if = {
+				limit = {
+					has_variable = dragon_egg
+				}
+				NOT = {
+					has_variable = dud_egg
+				}
+			}
+		}
+	}
+}
+
+at_artifact_can_be_bought_by_trigger = {
+	trigger_if = {
+		limit = {
+			exists = global_var:agot_artifact_keeper
+			$BUYER$ = global_var:agot_artifact_keeper
+		}
+		# The merchant won't buy unwanted, cursed, and worthless artifacts
+		# and also not banners
+		NOR = {
+			has_variable = unwanted_artifact
+			has_variable = cursed_artifact
+			at_is_worthless_artifact_trigger = yes
+			has_variable = banner_dynasty
+			has_variable = banner_house
+		}
+		trigger_if = {
+			limit = {
+				artifact_owner = { is_ai = yes }
+			}
+			# The merchant will only buy certain artifact types from AI sellers if under certain quantity
+			trigger_if = {
+				limit = {
+					OR = {
+						artifact_type = animal_hide
+						artifact_type = animal_hide_big
+						artifact_type = miscellaneous
+					}
+				}
+				$BUYER$ = {
+					any_character_artifact = {
+						OR = {
+							artifact_type = animal_hide
+							artifact_type = animal_hide_big
+							artifact_type = miscellaneous
+						}
+						count < 6
+					}
+				}
+			}
+			# The merchant will only buy common and masterwork artifacts from AI sellers if under certain quantity
+			trigger_if = {
+				limit = {
+					OR = {
+						rarity = common
+						rarity = masterwork
+					}
+				}
+				$BUYER$ = {
+					any_character_artifact = {
+						OR = {
+							rarity = common
+							rarity = masterwork
+						}
+						count < 9
+					}
+				}
+			}
+		}
+	}
+}
+
+at_artifact_can_be_destroyed_trigger = {
+	# Destroying special AGOT artifacts is not allowed
+	NOR = {
+		agot_is_unique_throne_artifact = yes
+		agot_is_historical_unique_artifact = yes
+		agot_is_valyrian_steel_artifact = yes
+		agot_is_dragon_egg_artifact = yes
+		has_variable = maesterwork
+	}
+}

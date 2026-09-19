@@ -1,0 +1,96 @@
+﻿esr_threat_threshold_value = {
+	value = max_military_strength
+	multiply = 1
+}
+
+esr_threat_mid_value = {
+	value = max_military_strength
+	multiply = 1.25
+}
+
+esr_threat_high_value = {
+	value = max_military_strength
+	multiply = 1.5
+}
+
+esr_threat_opinion_value = {
+	value = 0
+	if = {
+		limit = {
+			character_is_realm_neighbor = scope:attacker
+		}
+		add = -10
+	}
+	if = {
+		limit = {
+			OR = {
+				has_relation_rival = scope:attacker
+				has_relation_nemesis = scope:attacker
+			}
+		}
+		add = -5
+	}
+	if = {
+		limit = { save_temporary_scope_as = esr_potentially_threatened_char }
+		scope:attacker = {
+			every_claim = {
+				limit = {
+					exists = holder
+					holder = scope:esr_potentially_threatened_char
+				}
+				if = {
+					limit = { tier < holder.highest_held_title_tier }
+					add = -2
+				}
+				else_if = {
+					limit = {
+						tier = holder.highest_held_title_tier
+					}
+					add = -5
+				}
+				if = {
+					limit = {
+						this = holder.primary_title
+					}
+					add = -5
+				}
+			}
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				has_opinion_modifier = {
+					modifier = declared_war
+					target = scope:attacker
+				}
+				has_opinion_modifier = {
+					modifier = attempted_murder_me_crime
+					target = scope:attacker
+				}
+				has_opinion_modifier = {
+					modifier = murdered_close_family_crime
+					target = scope:attacker
+				}
+			}
+		}
+		add = -10
+	}
+
+	if = {
+		limit = {
+			this.esr_threat_mid_value <= scope:attacker.max_military_strength
+			this.esr_threat_high_value > scope:attacker.max_military_strength
+		}
+		multiply = 1.25
+	}
+
+	else_if = {
+		limit = {
+			this.esr_threat_high_value <= scope:attacker.max_military_strength
+		}
+		multiply = 1.5
+	}
+
+	min = -25
+}

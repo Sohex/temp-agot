@@ -1,0 +1,351 @@
+﻿on_game_start = {
+	on_actions = {
+		on_silent_sister_start
+	}
+}
+
+on_silent_sister_start = {
+	effect = {
+		if = { # Set up silent sisterhood if it doesn't exist
+			limit = {
+				title:d_the_silent_sisterhood = { is_title_created = no }
+			}
+			create_character = {
+				template = silent_sister_character
+				location = title:c_oldtown.title_province
+				after_creation = {
+					get_title = title:d_the_silent_sisterhood
+				}
+			}
+			while = { # Create silent sisters
+				count = 30
+				create_character = {
+					template = silent_sister_character
+					employer = title:d_the_silent_sisterhood.holder
+				}
+			}
+			title:d_the_silent_sisterhood.holder = { # Remove wrong characters
+				change_government = silent_sisterhood_government
+				every_courtier_or_guest = {
+					limit = { NOT = { has_trait = silent_sister } }
+					if = {
+						limit = {
+							is_female = yes
+							is_adult = yes
+							is_human = yes
+							is_married = no
+						}
+						agot_send_to_silent_sisters_effect = {
+							ACTOR = prev
+							SILENT_SISTER_CANDIDATE = this
+						}
+					}
+					else = {
+						title:d_the_silent_sisterhood.holder = {
+							remove_courtier_or_guest = prev
+						}
+					}
+				}
+			}
+			title:d_the_silent_sisterhood = {
+				add_title_law = silent_sisterhood_succession_law
+			}
+		}
+	}
+}
+
+on_title_gain = {
+	on_actions = {
+		on_silent_sister_succession
+	}
+}
+
+#Made to prevent an error
+on_silent_sister_succession = {
+	effect = {}
+	events = {}
+}
+
+#Made to prevent an error
+on_silent_sister_election = {
+	effect = {}
+	events = {}
+}
+
+# character just about to die in root scope
+# if a killer is know, it's set as scope:killer
+#Triggered by code
+on_death = {
+	first_valid_on_action = {
+		on_silent_sister_sm_death
+	}
+}
+
+on_silent_sister_sm_death = {
+	trigger = {
+		has_title = title:d_the_silent_sisterhood
+	}
+
+	effect = {
+		save_scope_as = current_sm
+		every_vassal_or_below = {
+			limit = { has_trait = silent_sister }
+			add_to_list = potential_sm_list
+			every_courtier = {
+				limit = { has_trait = silent_sister }
+				add_to_list = potential_sm
+			}
+		}
+
+		every_courtier = {
+			limit = { has_trait = silent_sister }
+			add_to_list = potential_sm_list
+		}
+
+		random_in_list = {
+			list = potential_sm_list
+			limit = {
+				has_trait = silent_sister
+				is_human = yes
+				NOT = { has_trait = maester }
+				NOT = { has_trait = septon }
+				NOT = { has_trait = nightswatch }
+				NOT = { has_government = republic_government }
+			}
+			weight = {
+				modifier = {
+					factor = 10
+					has_any_court_position = yes
+				}
+				modifier = {
+					factor = 2
+					has_any_court_position = yes
+					has_dynasty = no
+				}
+				modifier = {
+					add = 40
+					has_trait = zealous
+				}
+				modifier = {
+					add = 20
+					has_trait = just
+				}
+				modifier = {
+					add = 20
+					has_trait = diligent
+				}
+				modifier = {
+					add = 20
+					has_trait = temperate
+				}
+				modifier = {
+					add = 20
+					has_trait = humble
+				}
+				modifier = {
+					add = 10
+					has_trait = authoritative
+				}
+				modifier = {
+					add = 5
+					age >= 30
+				}
+				modifier = {
+					add = 5
+					age >= 40
+				}
+				modifier = {
+					add = 10
+					learning > medium_skill_rating
+				}
+				modifier = {
+					add = 20
+					learning > high_skill_rating
+				}
+				modifier = {
+					add = 10
+					stewardship > medium_skill_rating
+				}
+				modifier = {
+					add = 20
+					stewardship > high_skill_rating
+				}
+				modifier = {
+					add = 10
+					diplomacy > medium_skill_rating
+				}
+				modifier = {
+					add = 20
+					diplomacy > high_skill_rating
+				}
+				modifier = {
+					add = 10
+					intrigue > medium_skill_rating
+				}
+				modifier = {
+					add = 20
+					intrigue > high_skill_rating
+				}
+				opinion_modifier = {
+					who = scope:current_sm
+					opinion_target = this
+					multiplier = 0.5
+				}
+				modifier = {
+					add = -10
+					has_dynasty = no
+				}
+				modifier = {
+					add = -5
+					has_dynasty = yes
+					dynasty = { dynasty_prestige_level = 0 }
+				}
+				modifier = {
+					add = 20
+					has_dynasty = yes
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_county
+						}
+					}
+				}
+				modifier = {
+					add = 20
+					has_dynasty = yes
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_duchy
+						}
+					}
+				}
+				modifier = {
+					add = 20
+					has_dynasty = yes
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				modifier = {
+					add = 20
+					has_dynasty = yes
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_empire
+						}
+					}
+				}
+				modifier = {
+					has_dynasty = yes
+					dynasty = { dynasty_prestige_level >= 2 }
+					add = {
+						value = 10
+						if = {
+							limit = {
+								dynasty = { dynasty_prestige_level >= 3 }
+							}
+							add = 5
+						}
+						if = {
+							limit = {
+								dynasty = { dynasty_prestige_level >= 4 }
+							}
+							add = 5
+						}
+						if = {
+							limit = {
+								dynasty = { dynasty_prestige_level >= 5 }
+							}
+							add = 5
+						}
+						if = {
+							limit = {
+								dynasty = { dynasty_prestige_level >= 6 }
+							}
+							add = 5
+						}
+						if = {
+							limit = {
+								dynasty = { dynasty_prestige_level >= 7 }
+							}
+							add = 5
+						}
+						if = {
+							limit = {
+								dynasty = { dynasty_prestige_level >= 8 }
+							}
+							add = 5
+						}
+						if = {
+							limit = {
+								dynasty = { dynasty_prestige_level >= 9 }
+							}
+							add = 5
+						}
+						if = {
+							limit = {
+								dynasty = { dynasty_prestige_level >= 10 }
+							}
+							add = 5
+						}
+					}
+				}
+				modifier = {
+					prestige_level >= 0
+					add = {
+						value = 10
+						if = {
+							limit = {
+								prestige_level >= 1
+							}
+							add = 10
+						}
+						if = {
+							limit = {
+								prestige_level >= 2
+							}
+							add = 10
+						}
+						if = {
+							limit = {
+								prestige_level >= 3
+							}
+							add = 20
+						}
+						if = {
+							limit = {
+								prestige_level >= 4
+							}
+							add = 20
+						}
+						if = {
+							limit = {
+								prestige_level >= 5
+							}
+							add = 20
+						}
+					}
+				}
+			}
+			save_scope_as = silent_sister_new_holder
+		}
+
+		if = {
+			limit = { NOT = { exists = scope:silent_sister_new_holder } }
+			create_character = {
+				location = title:c_oldtown.title_province
+				template = silent_sister_character
+				save_scope_as = silent_sister_new_holder
+			}
+		}
+
+		scope:silent_sister_new_holder = {
+			add_character_flag = {
+				flag = just_inherited_sisterhood # Prevents sisters from being created on inheritance court transfer
+				days = 5
+			}
+			get_title = title:d_the_silent_sisterhood
+		}
+	}
+}

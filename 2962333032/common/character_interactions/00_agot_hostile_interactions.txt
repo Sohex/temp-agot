@@ -1,0 +1,226 @@
+﻿agot_goad_interaction = {
+	category = interaction_category_hostile
+
+	desc = agot_goad_interaction_desc
+	icon = irritable
+	interface_priority = 60
+	use_diplomatic_range = yes
+
+	auto_accept = yes
+
+	cost = {
+		prestige = minor_prestige_value
+		piety = minor_piety_value
+	}
+
+	cooldown = { years = 2 }
+
+	on_accept = {
+
+		scope:actor = {
+			reverse_add_opinion = {
+				modifier = insulted_opinion
+				target = scope:recipient
+				opinion = -15
+			}
+
+			duel = {
+				skill = intrigue
+				target = scope:recipient
+
+				50 = {
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = 2.5
+						min = -35
+					}
+
+					send_interface_toast = {
+						title = goad.success_title
+						scope:recipient = {
+							add_character_modifier = {
+								modifier = agot_goaded
+								years = 3
+							}
+							add_character_flag = {
+								flag = been_goaded
+								years = 5
+							}
+						}
+					}
+				}
+				50 = { #failure
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = -2.5
+						min = -35
+					}
+					send_interface_toast = {
+						title = goad.failure_title
+						add_stress = medium_stress_gain
+						if = {
+							limit = {
+								can_set_relation_potential_rival_trigger = { CHARACTER = scope:recipient }
+							}
+							random = {
+								chance = 25
+								set_relation_potential_rival = scope:recipient
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	ai_frequency = 12
+
+	ai_potential = { always = yes}
+	ai_targets = {
+		ai_recipients = neighboring_rulers
+		ai_recipients = peer_vassals
+		max = 3
+	}
+	is_shown = {
+		scope:actor = {
+			is_adult = yes
+			is_human = yes
+			NOR = {
+				has_trait = honest
+				has_trait = just
+				has_trait = compassionate
+				has_trait = shy
+			}
+			scope:recipient = { NOT = { is_courtier_of = scope:actor } }
+		}
+		scope:recipient = {
+			is_ai = yes
+			is_adult = yes
+			is_human = yes
+			NOT = {
+				has_character_flag = been_goaded
+			}
+		}
+		NOT = { scope:actor = scope:recipient }
+	}
+}
+
+agot_expel_landless_pirate = {
+	icon = icon_combat
+	interface_priority = 90
+	category = interaction_category_hostile
+	desc = agot_expel_landless_pirate_desc
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 60
+		duchy = 60
+		kingdom = 75
+		empire = 100
+		hegemony = 100
+	}
+
+	ai_targets = {
+		ai_recipients = sub_realm_domicile_owners
+		max = 5
+	}
+	cooldown_against_recipient = { years = 5 }
+	cost = { prestige = 600 }
+
+	is_shown = {
+		scope:actor = { is_landed = yes }
+		scope:recipient = {
+			is_landed = no
+			this != scope:actor
+			government_has_flag = government_is_pirate
+			any_held_title = { agot_is_pirate_domicile_title_trigger = yes }
+			domicile.domicile_location ?= {
+				county.holder = scope:actor
+			}
+		}
+		scope:actor = {
+			is_human = yes
+		}
+		scope:recipient = {
+			is_human = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_adult = yes
+			is_imprisoned = no
+			is_at_war = no
+			NOR = {
+				is_spouse_of = scope:recipient
+				has_relation_friend = scope:recipient
+				has_relation_lover = scope:recipient
+			}
+		}
+		scope:recipient = {
+			is_adult = yes
+			is_imprisoned = no
+		}
+	}
+
+	auto_accept = yes
+	on_accept = {
+		custom_tooltip = agot_pirate_will_be_expelled_tt
+		scope:recipient = {
+			add_opinion = {
+				target = scope:actor
+				modifier = demanded_pirate_leave
+			}
+			trigger_event = { id = agot_pirate_events.0200 days = 1 }
+		}
+	}
+
+	ai_potential = {
+		is_at_war = no
+		is_imprisoned = no
+		NOT = { has_trait = incapable }
+	}
+
+	auto_accept = yes
+
+	ai_will_do = {
+		base = -33
+		opinion_modifier = {
+			who = scope:actor
+			opinion_target = scope:recipient
+			multiplier = -0.5
+		}
+		# Factors must got at the bottom.
+		## Don't evict people we can't beat up.
+		modifier = {
+			factor = 0
+			scope:actor.current_military_strength < scope:recipient.military_strength_75_percent_value
+		}
+		modifier = {
+			factor = 0
+			OR = {
+				scope:recipient = {
+					is_allied_to = scope:actor
+				}
+				scope:recipient = {
+					is_allied_in_war = scope:actor
+				}
+			}
+		}
+		first_valid = {
+			modifier = {
+				factor = 0
+				has_any_moderate_good_relationship_with_character_trigger = { CHARACTER = scope:recipient }
+				opinion = {
+					target = scope:recipient
+					value > -30
+				}
+			}
+			modifier = {
+				factor = 0
+				opinion = {
+					target = scope:recipient
+					value > 0
+				}
+			}
+		}
+	}
+}

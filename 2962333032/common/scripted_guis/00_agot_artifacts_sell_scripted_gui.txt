@@ -1,0 +1,236 @@
+﻿# Show / hide artifact market window
+agot_artifact_market_window = {
+	scope = character
+
+	is_shown = {
+		exists = var:agot_artifact_market_window_open
+	}
+
+	effect = {
+		if = {
+			limit = {
+				has_variable = agot_artifact_market_window_open
+			}
+			remove_variable = agot_artifact_market_window_open
+		}
+	}
+}
+
+# Get artifacts owned by the player
+agot_get_owned_artifacts = {
+	scope = character
+
+	is_shown = {
+		any_character_artifact = {
+			count >= 1
+		}
+	}
+
+	effect = {
+		agot_get_owned_artifacts_effect = yes
+	}
+}
+
+# Get artifacts on sale by the artifact keeper
+agot_get_market_artifacts = {
+	scope = character
+
+	effect = {
+		agot_get_market_artifacts_effect = yes
+	}
+}
+
+# Select the artifact to be sold
+agot_select_sell_artifact = {
+	scope = character
+
+	saved_scopes = {
+		agot_selected_artifact
+	}
+
+	is_shown = {
+		trigger_if = {
+			limit = {
+				exists = var:agot_selected_artifact_sell
+			}
+			scope:agot_selected_artifact = var:agot_selected_artifact_sell
+		}
+		trigger_else = {
+			always = no
+		}
+	}
+
+	effect = {
+		scope:agot_selected_artifact = {
+			root = {
+				set_variable = {
+					name = agot_selected_artifact_sell
+					value = prev
+				}
+			}
+		}
+	}
+}
+
+# Select the artifact to be bought
+agot_select_buy_artifact = {
+	scope = character
+
+	saved_scopes = {
+		agot_selected_artifact
+	}
+
+	is_shown = {
+		trigger_if = {
+			limit = {
+				exists = var:agot_selected_artifact_buy
+			}
+			scope:agot_selected_artifact = var:agot_selected_artifact_buy
+		}
+		trigger_else = {
+			always = no
+		}
+	}
+
+	effect = {
+		scope:agot_selected_artifact = {
+			root = {
+				set_variable = {
+					name = agot_selected_artifact_buy
+					value = prev
+				}
+			}
+		}
+	}
+}
+
+# Actually sell an artifact
+agot_sell_artifact = {
+	scope = character
+
+	effect = {
+		if = {
+			limit = {
+				exists = var:agot_selected_artifact_sell
+			}
+			if = {
+				limit = {
+					save_temporary_scope_as = actor
+					global_var:agot_artifact_keeper.gold < var:agot_selected_artifact_sell.agot_artifact_bid_price_value
+				}
+				trigger_event = agot_events_artifacts_sell.0007
+			}
+			else_if = {
+				limit = {
+					var:agot_selected_artifact_sell = {
+						agot_is_dragon_egg_artifact = yes
+					}
+				}
+				trigger_event = agot_events_artifacts_sell.1000
+			}
+			else_if = {
+				limit = {
+					var:agot_selected_artifact_sell = {
+						agot_is_valyrian_steel_artifact = yes
+					}
+				}
+				trigger_event = agot_events_artifacts_sell.1003
+			}
+			else = {
+				agot_sell_artifact_effect = {
+					ARTIFACT = var:agot_selected_artifact_sell
+				}
+				remove_variable = agot_selected_artifact_sell
+			}
+		}
+	}
+}
+
+# Actually buy an artifact
+agot_buy_artifact = {
+	scope = character
+
+	is_valid = {
+		NOT = {
+			faith = { has_doctrine_parameter = cannot_purchase_artifacts }
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				has_variable = agot_selected_artifact_buy
+			}
+			if = {
+				limit = {
+					save_temporary_scope_as = actor
+					gold < var:agot_selected_artifact_buy.agot_artifact_ask_price_value
+				}
+				trigger_event = agot_events_artifacts_sell.0008
+			}
+			else = {
+				agot_buy_artifact_effect = {
+					ARTIFACT = var:agot_selected_artifact_buy
+				}
+				remove_variable = agot_selected_artifact_buy
+			}
+		}
+	}
+}
+
+# Clear artifact sell window variables
+agot_clear_artifact_sell_window_variables = {
+	scope = character
+
+	effect = {
+		if = {
+			limit = {
+				has_variable = agot_selected_artifact_sell
+			}
+			remove_variable = agot_selected_artifact_sell
+		}
+		if = {
+			limit = {
+				has_variable_list = agot_owned_artifacts
+			}
+			clear_variable_list = agot_owned_artifacts
+		}
+	}
+}
+
+# Clear artifact market window variables
+agot_clear_artifact_market_window_variables = {
+	scope = character
+
+	effect = {
+		if = {
+			limit = {
+				has_variable = agot_selected_artifact_buy
+			}
+			remove_variable = agot_selected_artifact_buy
+		}
+		# Note: The list of items for sale is a global variable and does not need to be cleaned up
+	}
+}
+
+agot_check_selected_artifact_buy = {
+	scope = character
+
+	is_shown = {
+		exists = var:agot_selected_artifact_buy
+	}
+}
+
+agot_check_sell_artifacts_cooldown = {
+	scope = character
+
+	is_shown = {
+		has_character_flag = agot_sold_artifact_recently
+	}
+
+	is_valid = {
+		NOT = {
+			has_character_flag = agot_sold_artifact_recently
+		}
+	}
+}

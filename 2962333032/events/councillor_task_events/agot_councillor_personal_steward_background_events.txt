@@ -1,0 +1,142 @@
+﻿
+#Events handling the Spouse Councillor position in the background
+
+namespace = councillor_personal_steward_background
+
+
+#Ongoing event tracking background progress
+councillor_personal_steward_background.0001 = {
+	hidden = yes
+
+	trigger = {
+		is_alive = yes
+		has_council_position = councillor_personal_steward
+		exists = this.cp:councillor_personal_steward
+		this.cp:councillor_personal_steward = root
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				is_landed = no
+				is_capable_adult_ai = yes
+				NOT = { is_performing_council_task = task_personal_steward_default }
+			}
+			#Diplomacy rank up
+			if = {
+				limit = {
+					is_performing_council_task = task_court_politics
+					NOT = { has_trait = august }
+					var:councillor_personal_steward_lifestyle_progress > councillor_personal_steward_lifestyle_rank_up_threshold
+				}
+				agot_councillor_personal_steward_lifestyle_rank_up_effect = {
+					SKILL = diplomacy
+				}
+			}
+			#Martial rank up
+			else_if = {
+				limit = {
+					is_performing_council_task = task_chivalry
+					NOT = { has_trait = strategist }
+					var:councillor_personal_steward_lifestyle_progress > councillor_personal_steward_lifestyle_rank_up_threshold
+				}
+				agot_councillor_personal_steward_lifestyle_rank_up_effect = {
+					SKILL = martial
+				}
+			}
+			#Intrigue rank up
+			else_if = {
+				limit = {
+					is_performing_council_task = task_court_intrigue
+					NOT = { has_trait = schemer }
+					var:councillor_personal_steward_lifestyle_progress > councillor_personal_steward_lifestyle_rank_up_threshold
+				}
+				agot_councillor_personal_steward_lifestyle_rank_up_effect = {
+					SKILL = intrigue
+				}
+			}
+			#Stewardship rank up
+			else_if = {
+				limit = {
+					is_performing_council_task = task_manage_domain
+					NOT = { has_trait = administrator }
+					var:councillor_personal_steward_lifestyle_progress > councillor_personal_steward_lifestyle_rank_up_threshold
+				}
+				agot_councillor_personal_steward_lifestyle_rank_up_effect = {
+					SKILL = stewardship
+				}
+			}
+			#Learning rank up
+			else_if = {
+				limit = {
+					is_performing_council_task = task_patronage
+					NOT = { has_trait = scholar }
+					var:councillor_personal_steward_lifestyle_progress > councillor_personal_steward_lifestyle_rank_up_threshold
+				}
+				agot_councillor_personal_steward_lifestyle_rank_up_effect = {
+					SKILL = learning
+				}
+			}
+			if = {
+				limit = {
+					NOT = { exists = scope:ranked_up }
+					#Prevent further progress from being added once the councillor is at max lifestyle rank:
+					trigger_if = {
+						limit = {
+							is_performing_council_task = task_court_politics
+						}
+						NOT = { has_trait = diplomat }
+					}
+					trigger_else_if = {
+						limit = {
+							is_performing_council_task = task_chivalry
+						}
+						NOT = { has_trait = strategist }
+					}
+					trigger_else_if = {
+						limit = {
+							is_performing_council_task = task_manage_domain
+						}
+						NOT = { has_trait = architect }
+					}
+					trigger_else_if = {
+						limit = {
+							is_performing_council_task = task_patronage
+						}
+						NOT = { has_trait = scholar }
+					}
+					trigger_else_if = {
+						limit = {
+							is_performing_council_task = task_court_intrigue
+						}
+						NOT = { has_trait = schemer }
+					}
+					trigger_else = {
+						always = yes
+					}
+				}
+				if = {
+					limit = {
+						has_variable = councillor_personal_steward_lifestyle_progress
+					}
+					change_variable = {
+						name = councillor_personal_steward_lifestyle_progress
+						add = councillor_personal_steward_lifestyle_progress_increase
+					}
+				}
+				else = {
+					set_variable = {
+						name = councillor_personal_steward_lifestyle_progress
+						value = councillor_personal_steward_lifestyle_progress_increase
+					}
+				}
+			}
+		}
+
+		clear_saved_scope = ranked_up
+		trigger_event = {
+			id = councillor_personal_steward_background.0001
+			months = 6
+		}
+	}
+}

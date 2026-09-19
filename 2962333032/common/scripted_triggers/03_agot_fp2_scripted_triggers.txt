@@ -1,0 +1,168 @@
+﻿fp2_character_any_involvement_btw_struggle_trigger = {
+	has_fp2_dlc_trigger = yes
+	OR = {
+		fp2_character_involved_in_struggle_trigger = yes
+		fp2_character_interloper_in_struggle_trigger = yes
+	}
+}
+
+fp2_character_involved_in_struggle_trigger = {
+	has_fp2_dlc_trigger = yes
+	any_character_struggle = {
+		involvement = involved
+		is_struggle_type = btw_struggle
+	}
+}
+
+fp2_character_interloper_in_struggle_trigger = {
+	has_fp2_dlc_trigger = yes
+	any_character_struggle = {
+		involvement = interloper
+		is_struggle_type = btw_struggle
+	}
+}
+
+fp2_character_uninvolved_in_struggle_trigger = {
+	has_fp2_dlc_trigger = yes
+	exists = struggle:btw_struggle
+	fp2_character_interloper_in_struggle_trigger = no
+	fp2_character_involved_in_struggle_trigger = no
+}
+
+fp2_struggle_ending_hold_de_jure_kingdom_trigger = {
+	any_held_title = {
+		tier = tier_kingdom
+		de_jure_liege = title:e_beyond_the_wall
+		save_temporary_scope_as = wildling_empire
+	}
+	trigger_if = {
+		limit = { exists = scope:wildling_empire }
+		completely_controls = scope:wildling_empire
+		scope:wildling_empire = { any_in_de_jure_hierarchy = { not_settlement_or_wilderness = yes } }
+	}
+	trigger_else = { always = no }
+}
+
+# Checks less than half of BTW owned
+fp2_struggle_ending_percent_btw_trigger = {
+	any_county_in_region = {
+		region = world_westeros_beyond_the_wall
+		percent < fp2_struggle_compromise_owned_percent_decimal_value
+		holder.top_liege = root
+	}
+}
+
+fp2_struggle_ending_other_percent_btw_trigger = {
+	struggle:btw_struggle = {
+		NOT = {
+			any_involved_ruler = {
+				exists = primary_title
+				NOT = { this = root }
+				agot_is_independent_ruler = yes
+				primary_title = { is_mercenary_company = no }
+				any_county_in_region = {
+					region = world_westeros_beyond_the_wall
+					percent > fp2_struggle_compromise_involved_percent_decimal_value
+					holder.top_liege = prev
+					not_settlement_or_wilderness = yes
+				}
+			}
+		}
+	}
+}
+
+fp2_struggle_conciliation_recipient_actor_involved_trigger = {
+	has_global_variable = fp2_struggle_conciliation_ending
+	AND = {
+		scope:actor.capital_province = { geographical_region = world_westeros_beyond_the_wall  }
+		scope:recipient.capital_province = { geographical_region = world_westeros_beyond_the_wall  }
+		# Offer comes from an Involved culture/faith character
+		OR = {
+			#AGOT Disabled
+			# any_in_global_list = {
+			# 	variable = fp2_struggle_ending_faith_list
+			# 	this = scope:actor.faith
+			# }
+			any_in_global_list = {
+				variable = fp2_struggle_ending_culture_list
+				this = scope:actor.culture
+			}
+		}
+		# Recipient is from an Involved culture/faith
+		OR = {
+			#AGOT Disabled
+			# any_in_global_list = {
+			# 	variable = fp2_struggle_ending_faith_list
+			# 	this = scope:recipient.faith
+			# }
+			any_in_global_list = {
+				variable = fp2_struggle_ending_culture_list
+				this = scope:recipient.culture
+			}
+		}
+	}
+}
+
+fp2_struggle_conciliation_scope_uninvolved_trigger = {
+	has_global_variable = fp2_struggle_conciliation_ending
+	OR = {
+		NOR = {
+			any_in_global_list = {
+				variable = fp2_struggle_ending_culture_list
+				this = $SCOPE$.culture
+			}
+		}
+		NOT = {
+			$SCOPE$.capital_province = { geographical_region = world_westeros_beyond_the_wall }
+		}
+	}
+}
+
+fp2_struggle_btw_reclamation_should_vassalize_trigger = {
+	any_character_struggle = { is_struggle_type = btw_struggle }
+	any_held_title = { tier < scope:attacker.primary_title.tier }
+	any_realm_county = {
+		count = all
+		duchy = { is_in_list = target_titles }
+		any_county_struggle = { is_struggle_type = btw_struggle }
+	}
+}
+
+fp2_struggle_any_realm_county_in_hispania_trigger = {
+	any_realm_county = { target_is_de_jure_liege_or_above = title:e_beyond_the_wall }
+}
+
+fp2_btw_reclamation_vassalize_btw_trigger = {
+	tier = tier_county
+	holder = {
+		any_character_struggle = {
+			involvement = involved
+			is_struggle_type = btw_struggle
+		}
+		liege = scope:defender
+		NOT = { this = scope:defender }
+		capital_county = {
+			any_county_struggle = { is_struggle_type = btw_struggle }
+		}
+	}
+}
+
+fp2_btw_reclamation_involved_county_trigger = {
+	any_realm_county = {
+		any_county_struggle = { is_struggle_type = btw_struggle }
+	}
+}
+
+fp2_btw_reclamation_vassalize_vassal_trigger = {
+	primary_title.tier >= tier_county
+	primary_title.tier < scope:attacker.primary_title.tier
+	any_character_struggle = { is_struggle_type = btw_struggle }
+	capital_county = {
+		duchy = { is_in_list = target_titles }
+	}
+	any_sub_realm_county = {
+		count = all
+		duchy = { is_in_list = target_titles }
+		any_county_struggle = { is_struggle_type = btw_struggle }
+	}
+}

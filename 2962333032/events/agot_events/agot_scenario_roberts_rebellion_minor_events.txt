@@ -1,0 +1,3518 @@
+﻿namespace = agot_events_rr_minor
+
+# Trident's aftermath
+# Robert and Rhaegar meet in battle
+agot_events_rr_minor.0001 = {
+	type = character_event
+	title = agot_events_rr_minor.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { this = character:Targaryen_3 }
+				desc = agot_events_rr_minor.0001.desc.a
+			}
+			triggered_desc = {
+				trigger = { this = character:Baratheon_2 }
+				desc = agot_events_rr_minor.0001.desc.b
+			}
+		}
+	}
+
+	#override_background = {
+	#	reference =
+	#}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = scope:duel_attacker
+		#animation =
+	}
+	right_portrait = {
+		character = scope:duel_defender
+		#animation =
+	}
+
+	trigger = {
+		is_alive = yes
+		exists = scope:duel_attacker
+		exists = scope:duel_defender
+		scope:duel_attacker = {
+			is_alive = yes
+		}
+		scope:duel_defender = {
+			is_alive = yes
+		}
+	}
+
+	immediate = {
+		set_global_variable = {
+			name = the_trident_battle_location
+			value = scope:duel_location
+		}
+	}
+
+	option = {
+		name = agot_events_rr_minor.0001.a
+
+		configure_start_single_combat_effect = {
+			SC_INITIATOR = scope:duel_attacker
+			SC_ATTACKER = scope:duel_attacker
+			SC_DEFENDER = scope:duel_defender
+			FATALITY = always
+			FIXED = no
+			LOCALE = terrain_scope
+			OUTPUT_EVENT = agot_events_rr_minor.9000
+			INVALIDATION_EVENT = single_combat.1006	#In a real event, this would obviously be a different even to the output.
+		}
+
+		character:Targaryen_1 = {
+			add_character_flag = had_send_to_dragonstone_event
+			trigger_event = { id = agot_events_rr_minor.0002 days = 3 }
+		}
+
+		title:e_the_iron_islands.holder = {
+			trigger_event = {
+				id = agot_events_rr_minor.0132
+				days = { 5 10 }
+			}
+		}
+
+		if = {
+			limit = {
+				character:Targaryen_3 = { is_alive = no }
+				character:Lannister_1 = { is_alive = yes }
+				title:h_the_iron_throne.holder = {
+					any_character_war = {
+						any_war_participant = {
+							any_owned_story = {
+								story_type = story_agot_mw_crown
+							}
+							this = title:h_the_iron_throne.holder
+						}
+						primary_attacker = title:e_the_stormlands.holder
+						attacker_war_score > 30
+						NOT = {
+							any_war_participant = {
+								this = character:Lannister_1
+							}
+						}
+					}
+				}
+			}
+			scope:story = {
+				set_variable = {
+					name	= agot_rr_tywin_status
+					value	= flag:chose_rebels
+				}
+			}
+			character:Lannister_1 = {
+				trigger_event = agot_events_rr_minor.0100
+			}
+		}
+	}
+}
+
+# Aerys: send Viserys and Rhaella to Dragonstone?
+agot_events_rr_minor.0002 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:duel_location }
+				desc = agot_events_rr_minor.0002.t
+			}
+			desc = agot_events_rr_minor.0002.t.alt
+		}
+	}
+	desc = agot_events_rr_minor.0002.desc
+
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = scope:traitor_scope
+		animation = aggressive_hammer
+	}
+	right_portrait = {
+		character = character:Targaryen_1
+		animation = anger
+	}
+
+	trigger = {
+		character:Targaryen_3 = { is_alive = no }
+	}
+
+	immediate = {
+		character:Targaryen_2 = {
+			save_scope_as = new_dragonstone_holder
+		}
+	}
+
+	option = { # Only Rhaella and Viserys
+		name = agot_events_rr_minor.0002.a
+
+		# Rhaella rules Dragonstone till the war ends #
+		custom_tooltip = {
+			text = AGOT_EVENTS_RR_MINOR_0002_TOOLTIP
+
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+
+			title:c_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:new_dragonstone_holder
+					change = scope:change
+				}
+			}
+			title:d_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:new_dragonstone_holder
+					change = scope:change
+				}
+			}
+			title:k_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:new_dragonstone_holder
+					change = scope:change
+				}
+			}
+
+			title:k_dragonstone = {
+				every_in_de_jure_hierarchy = {
+					limit = {
+						NOT = { this = title:c_dragonstone }
+						tier = tier_county
+						holder.house = root.house
+					}
+
+					change_title_holder_include_vassals = {
+						holder = scope:new_dragonstone_holder
+						change = scope:change
+					}
+				}
+			}
+			resolve_title_and_vassal_change = scope:change
+
+			scope:new_dragonstone_holder = {
+				every_child = {
+					limit = {
+						NOT = { scope:new_dragonstone_holder = { is_employer_of = prev } }
+					}
+
+					set_employer = scope:new_dragonstone_holder
+				}
+			}
+
+			character:Targaryen_3 = {
+				every_child = {
+					limit = {
+						NOT = { root = { is_employer_of = prev } }
+					}
+
+					set_employer = root
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_historic_outcome_2
+			}
+		}
+	}
+
+	option = { # Everyone
+		name = agot_events_rr_minor.0002.b
+
+		# Rhaella rules Dragonstone till the war ends #
+		custom_tooltip = {
+			text = AGOT_EVENTS_RR_MINOR_0002_TOOLTIP
+
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+
+			title:c_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:new_dragonstone_holder
+					change = scope:change
+				}
+			}
+			title:d_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:new_dragonstone_holder
+					change = scope:change
+				}
+			}
+			title:k_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:new_dragonstone_holder
+					change = scope:change
+				}
+			}
+
+			title:k_dragonstone = {
+				every_in_de_jure_hierarchy = {
+					limit = {
+						tier = tier_county
+						holder.house = root.house
+					}
+
+					change_title_holder_include_vassals = {
+						holder = scope:new_dragonstone_holder
+						change = scope:change
+					}
+				}
+			}
+			resolve_title_and_vassal_change = scope:change
+
+			house = {
+				every_house_member = {
+					limit = { is_courtier_of = root }
+
+					set_employer = scope:new_dragonstone_holder
+				}
+			}
+			character:Martell_7 = {
+				set_employer = scope:new_dragonstone_holder
+			}
+		}
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				add = agot_nonhistoric_outcome_2
+			}
+		}
+	}
+
+	after = {
+		character:Targaryen_2 = { add_character_flag = { flag = rhaella_sent_to_dragonstone days = 50 } }
+		character:Darry_3 = {
+			if = {
+				limit = { is_alive = yes }
+				set_employer = scope:new_dragonstone_holder
+			}
+		}
+	}
+}
+
+# Targ dragonstone inheritence now handled through event when heir is of age
+# war is over; resolve Dragonstone matter
+# agot_events_rr_minor.0003 = {
+# 	type = character_event
+# 	title = agot_events_rr_minor.0003.t
+# 	desc = agot_events_rr_minor.0003.desc
+
+# 	#override_background = {
+# 	#	reference =
+# 	#}
+# 	override_icon = {
+# 		reference = "gfx/interface/icons/event_types/type_war.dds"
+# 	}
+# 	theme = war
+# 	left_portrait = {
+# 		character = scope:traitor_scope
+# 		#animation =
+# 	}
+# 	right_portrait = {
+# 		character = scope:aerys_scope
+# 		#animation =
+# 	}
+
+# 	trigger = {
+# 	}
+
+# 	immediate = {
+# 		character:Targaryen_11 = { save_scope_as = new_dragonstone_holder }
+# 	}
+
+# 	option = { # Aegon gets it
+# 		name = agot_events_rr_minor.0003.a
+
+# 		custom_tooltip = {
+# 			text = AGOT_EVENTS_RR_MINOR_0003_TOOLTIP
+
+# 			create_title_and_vassal_change = {
+# 				type = granted
+# 				save_scope_as = change
+# 				add_claim_on_loss = no
+# 			}
+
+# 			title:c_dragonstone = {
+# 				change_title_holder_include_vassals = {
+# 					holder = scope:new_dragonstone_holder
+# 					change = scope:change
+# 				}
+# 			}
+# 			title:d_dragonstone = {
+# 				change_title_holder_include_vassals = {
+# 					holder = scope:new_dragonstone_holder
+# 					change = scope:change
+# 				}
+# 			}
+
+# 			title:d_dragonstone = {
+# 				every_in_de_jure_hierarchy = {
+# 					limit = {
+# 						tier = tier_county
+# 						holder.house = root.house
+# 						NOT = { this = title:c_dragonstone }
+# 					}
+
+# 					change_title_holder_include_vassals = {
+# 						holder = scope:new_dragonstone_holder
+# 						change = scope:change
+# 					}
+# 				}
+# 			}
+# 			resolve_title_and_vassal_change = scope:change
+# 		}
+# 	}
+
+# 	option = { # Fallback, take it yourself?
+# 		name = agot_events_rr_minor.0003.b
+
+# 		custom_tooltip = {
+# 			text = AGOT_EVENTS_RR_MINOR_0003_TOOLTIP
+
+# 			create_title_and_vassal_change = {
+# 				type = granted
+# 				save_scope_as = change
+# 				add_claim_on_loss = no
+# 			}
+
+# 			title:c_dragonstone = {
+# 				change_title_holder_include_vassals = {
+# 					holder = root
+# 					change = scope:change
+# 				}
+# 			}
+# 			title:d_dragonstone = {
+# 				change_title_holder_include_vassals = {
+# 					holder = root
+# 					change = scope:change
+# 				}
+# 			}
+
+# 			title:d_dragonstone = {
+# 				every_in_de_jure_hierarchy = {
+# 					limit = {
+# 						tier = tier_county
+# 						holder.house = root.house
+# 						NOT = { this = title:c_dragonstone }
+# 					}
+
+# 					change_title_holder_include_vassals = {
+# 						holder = root
+# 						change = scope:change
+# 					}
+# 				}
+# 			}
+# 			resolve_title_and_vassal_change = scope:change
+# 		}
+# 	}
+# }
+
+scripted_trigger friendly_free_city_ruler = {
+	highest_held_title_tier >= tier_kingdom
+	OR = {
+		capital_province = { geographical_region = world_essos_andalos }
+		capital_province = { geographical_region = world_essos_myr }
+		capital_province = { geographical_region = world_essos_lys }
+		capital_province = { geographical_region = world_essos_tyrosh }
+		capital_province = { geographical_region = world_essos_braavos }
+	}
+}
+
+scripted_effect targ_exile_claim_generation_effect = {
+	add_pressed_claim = title:h_the_iron_throne
+	add_pressed_claim = title:e_the_crownlands
+	add_pressed_claim = title:k_the_blackwater
+	add_pressed_claim = title:d_kings_landing
+	add_pressed_claim = title:c_kings_landing
+	add_pressed_claim = title:k_dragonstone
+	add_pressed_claim = title:d_dragonstone
+	add_pressed_claim = title:c_dragonstone
+}
+
+# war is over; event for Dragonstone holder if Targaryen; flee into exile
+agot_events_rr_minor.0004 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					is_imprisoned = yes
+				}
+				desc = agot_events_rr_minor.0004.t_defeated_and_imprisoned
+			}
+			triggered_desc = {
+				trigger = {
+					is_imprisoned = no
+				}
+				desc = agot_events_rr_minor.0004.t
+			}
+			desc = agot_events_rr_minor.0004.t # Fallback
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					is_imprisoned = yes
+				}
+				desc = agot_events_rr_minor.0004.desc.imprisoned
+			}
+			triggered_desc = {
+				trigger = {
+					is_imprisoned = no
+				}
+				desc = agot_events_rr_minor.0004.desc
+			}
+			desc = agot_events_rr_minor.0004.desc # Fallback
+		}
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	override_background = { reference = throne_room_scope }
+	left_portrait = { character = scope:iron_throne_ruler animation = war_over_win }
+	right_portrait = { character = root animation = war_over_loss }
+
+	trigger = {
+		title:c_dragonstone.holder.dynasty = character:Targaryen_1.dynasty
+		NOT = { title:h_the_iron_throne.holder.dynasty = character:Targaryen_1.dynasty }
+	}
+
+	immediate = {
+		title:h_the_iron_throne.holder = { save_scope_as = iron_throne_ruler }
+		every_courtier = {
+			limit = {
+				OR = {
+					house = character:Targaryen_1.house
+					has_relation_friend = title:c_dragonstone.holder
+					is_spouse_of = title:c_dragonstone.holder
+					this = character:Darry_3
+					opinion = {
+						target = title:c_dragonstone.holder
+						value >= 0
+					}
+				}
+			}
+			add_to_list = dragonstone_char_list
+		}
+		character:Targaryen_8 = { add_to_list = dragonstone_char_list } # Viserys Targaryen - Viserys is added specifically since he'll always end up in Dragonstone?
+		if = {
+			limit = {
+				NOR = {
+					has_relation_rival = title:c_braavos.holder
+					has_relation_grudge = title:c_braavos.holder
+					is_at_war_with = title:c_braavos.holder
+					title:c_braavos.holder = {
+						has_relation_friend = scope:iron_throne_ruler
+					}
+					title:c_braavos.holder = {
+						has_relation_lover = scope:iron_throne_ruler
+					}
+					title:c_braavos.holder = {
+						is_allied_to = scope:iron_throne_ruler
+					}
+				}
+			}
+			title:c_braavos.holder = {
+				save_scope_as = free_city_ruler
+				capital_province = {
+					save_scope_as = exile_destination
+					kingdom = {
+						save_scope_as = exile_region
+					}
+				}
+			}
+		}
+		else = {
+			random_ruler = {
+				limit = {
+					friendly_free_city_ruler = yes
+				}
+				save_scope_as = free_city_ruler
+				capital_province = {
+					save_scope_as = exile_destination
+					kingdom = {
+						save_scope_as = exile_region
+					}
+				}
+			}
+		}
+		# Add Maester Scopes and Add them to the list
+		if = {
+			limit = {
+				employs_court_position = maester_court_position
+			}
+			random_court_position_holder = {
+				type = maester_court_position
+				save_scope_as = dragonstone_maester
+			}
+			scope:dragonstone_maester = {
+				add_to_list = dragonstone_char_list
+			}
+		}
+	}
+
+
+	## GAIN COUNTY IF THEY ARE NOT DLC OWNER + NOT AI - AI DEFAULTS TO DLC DECISION
+
+	option = { # Flee to Essos - DLC
+		name = agot_events_rr_minor.0004.a
+		custom_tooltip = agot_events_rr_minor.0004.a.tt
+
+		trigger = {
+			any_ruler = { friendly_free_city_ruler = yes }
+			NOT = { is_imprisoned = yes } # Can't run away if Robby B gots you locked up.
+			has_ep3_dlc_trigger = yes
+		}
+		save_scope_as = exile
+		# Lose Dragonstone
+		create_title_and_vassal_change = {
+			type = created
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		title:c_dragonstone = {
+			change_title_holder = {
+				holder = title:h_the_iron_throne.holder
+				change = scope:change
+			}
+		}
+		title:d_dragonstone = {
+			change_title_holder = {
+				holder = title:h_the_iron_throne.holder
+				change = scope:change
+			}
+		}
+		title:k_dragonstone = {
+			change_title_holder = {
+				holder = title:h_the_iron_throne.holder
+				change = scope:change
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+		create_landless_adventurer_title_effect = {
+			REASON = flag:deposition
+			FLAVOR_CHAR = title:h_the_iron_throne.holder
+		}
+		hidden_effect = {
+			primary_title = {
+				save_title_name_change_data = { TRANSFER_VAR = yes }
+				reset_title_prefix = yes
+				set_title_prefix = AGOT_PREFIX_THE
+				set_title_name = targaryen_exiles
+			}
+		}
+		add_realm_law = camp_purpose_legitimists
+		start_travel_plan = {
+			destination = scope:free_city_ruler.capital_province
+			travel_with_domicile = yes
+			return_trip = no
+			players_use_planner = no
+			on_arrival_destinations = last
+			on_arrival_event = agot_events_rr_minor.1000
+		}
+		# Bring over courtiers
+		every_in_list = {
+			list = dragonstone_char_list
+			if = {
+				limit = {
+					house = character:Targaryen_1.house
+				}
+				hidden_effect = { targ_exile_claim_generation_effect = yes } # Hidden so the tooltip isn't HUMONGOUS!
+			}
+			if = {
+				limit = {
+					has_character_flag = is_Targaryen_9
+				}
+				add_character_flag = dany_fled_to_essos
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						NOT = {
+							is_courtier_of = scope:exile
+						}
+					}
+					scope:exile = {
+						add_courtier = prev
+					}
+					if = {
+						limit = {
+							is_away_from_court = yes
+						}
+						return_to_court = yes
+					}
+				}
+			}
+
+			add_character_flag = {
+				years = 50
+				flag = exiled_from_iron_throne
+			}
+		}
+		# Bring Maester Over and Give them the court pos
+		if = {
+			limit = {
+				exists = scope:dragonstone_maester
+				NOT = {
+					employs_court_position = court_physician_court_position
+				}
+			}
+			appoint_court_position = {
+				recipient = scope:dragonstone_maester
+				court_position = court_physician_court_position
+			}
+		}
+		hidden_effect = { targ_exile_claim_generation_effect = yes } # Hidden so the tooltip isn't HUMONGOUS! # Generate it on ROOT
+		add_character_flag = {
+			years = 50
+			flag = exiled_from_iron_throne # Banned from Westeros Tournaments etc
+		}
+		if = {
+			limit = {
+				any_in_list = {
+					list = dragonstone_char_list
+					is_alive = yes
+					this = character:Targaryen_8
+				}
+			}
+		}
+		if = {
+			limit = {
+				this = character:Targaryen_2
+			}
+			set_designated_heir = character:Targaryen_8
+		}
+		agot_appoint_travel_leader_effect = yes
+		if = {
+			limit = {
+				has_game_rule = agot_targaryen_exile_invasion_special_content
+			}
+			create_story = story_agot_targaryen_exile_invasion
+		}
+
+	}
+
+	option = {
+		trigger = {
+			NOT = { is_imprisoned = yes } # Can't run away if Robby B gots you locked up.
+			has_ep3_dlc_trigger = no
+		}
+		# game over - do nothing
+	}
+
+	# We are at the mercy of our captors. AKA Game Over.
+	option = {
+		name = agot_events_rr_minor.0004.c
+		trigger = { is_imprisoned = yes }
+		stress_impact = {
+			base = massive_stress_impact_gain
+		}
+	}
+}
+
+# Rhaella: birth of baby
+agot_events_rr_minor.0005 = {
+	type = character_event
+	title = agot_events_rr_minor.0005.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					this = character:Targaryen_2
+					capital_county ?= title:c_dragonstone
+				}
+				desc = agot_events_rr_minor.0005.desc
+			}
+			triggered_desc = {
+				trigger = {
+					this = character:Targaryen_2
+					NOT = { capital_county ?= title:c_dragonstone }
+				}
+				desc = agot_events_rr_minor.0005.exiled.desc
+			}
+			desc = agot_events_rr_minor.0005.exiled.desc # Fallback
+		}
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = { character = root }
+	right_portrait = { character = scope:baby_stormborn }
+
+	trigger = { }
+
+	immediate = {
+		random = {
+			chance = 0
+
+			save_scope_value_as = {
+				name = rhaella_death
+				value = yes
+			}
+
+			modifier = {
+				add = agot_historic_outcome_2
+			}
+			modifier = {
+				agot_canon_children_enabled_trigger = yes
+				has_game_rule = agot_canon_children_birth_outcomes_everyone_lives
+				NOT = { has_game_rule = agot_story_historical_events_historical_outcomes }
+				factor = 0
+			}
+		}
+		create_character = {
+			age = 0
+			random_traits = no
+			mother = character:Targaryen_2
+			father = character:Targaryen_1
+			employer = character:Targaryen_2.employer
+			gender_female_chance = {
+				value = agot_canon_children_female_female_chance
+			}
+			faith = faith:fots_seven
+			culture = culture:high_valyrian
+			dynasty = father.dynasty
+			save_scope_as = baby_stormborn
+		}
+		hidden_effect = {
+			scope:baby_stormborn = {
+				character:Targaryen_1 = { save_scope_as = father }
+				character:Targaryen_2 = { save_scope_as = mother }
+				agot_canon_children_Targaryen_9_birth_effect = yes
+				set_house = character:Targaryen_2.house
+				give_nickname = nick_agot_historical_stormborn
+				trigger_event = {
+					id = agot_events_generic.0020
+					days = 2500
+				}
+			}
+
+			scope:baby_stormborn.house.house_head ?= {
+				add_hook_no_toast = {
+					type = house_head_hook
+					target = scope:baby_stormborn
+				}
+			}
+		}
+	}
+
+	option = { # Stormborn
+		name = agot_events_rr_minor.0005.a
+
+		character:Targaryen_2 = {
+			remove_trait = pregnant
+			remove_variable = agot_rr_months_of_pregnancy_rhaella
+		}
+		if = {
+			limit = {
+				exists = scope:rhaella_death
+			}
+			if = {
+				limit = {
+					scope:rhaella_death = yes
+				}
+
+				character:Targaryen_2 = {
+					death = { death_reason = death_childbirth }
+				}
+			}
+		}
+	}
+}
+
+### Under a false banner ###
+# march on KL under the Targaryen banner and do the Dolchstoß
+agot_events_rr_minor.0100 = {
+	type = character_event
+	title = agot_events_rr_minor.0100.t
+	desc = agot_events_rr_minor.0100.desc
+
+	#override_background = {
+	#	reference =
+	#}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = scope:traitor_scope
+		animation = scheme
+	}
+	right_portrait = {
+		character = scope:aerys_scope
+		animation = paranoia
+	}
+
+	trigger = {
+		NOT = { has_character_flag = false_banner_flag }
+		is_at_war = no
+		character:Targaryen_1 = { is_alive = yes }
+	}
+
+	immediate = {
+		add_character_flag = false_banner_flag
+
+		random_ruler = { # fetch scope mw_rebel_story
+			limit = {
+				any_owned_story = {
+					story_type = story_agot_mw_rebel
+					var:mw_linked_scenario_story ?= scope:story
+				}
+			}
+			random_owned_story = {
+				limit = {
+					story_type = story_agot_mw_rebel
+					var:mw_linked_scenario_story ?= scope:story
+				}
+
+				save_scope_as = mw_rebel_story
+				var:mw_crown_story_var ?= { save_scope_as = mw_crown_story }
+			}
+		}
+
+		save_scope_as = traitor_scope
+		character:Targaryen_1 = { save_scope_as = aerys_scope }
+		character:Lannister_7 = { save_scope_as = jaime_scope }
+	}
+
+	option = { # Dew it
+		name = agot_events_rr_minor.0100.a
+
+		trigger = {
+			exists = scope:mw_rebel_story
+			exists = scope:mw_crown_story
+		}
+
+		set_variable = { name = rr_story_backup value = scope:story years = 4 }
+
+		if = {
+			limit = {
+				scope:traitor_scope = {
+					is_ai = yes
+				}
+			}
+			scope:aerys_scope = { trigger_event = { id = agot_events_rr_minor.0101 days = { 20 30 } } }
+		}
+		else = {
+			limit = {
+				scope:traitor_scope = {
+					is_ai = no
+				}
+			}
+			agot_mw_join_loyalists_effect = { RULER = character:Lannister_1 CROWN = scope:mw_crown_story.story_owner }
+			custom_tooltip = MarchOnKingsLanding
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_historic_outcome_2
+			}
+		}
+	}
+
+	option = { # Dew it not
+		name = agot_events_rr_minor.0100.b
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				add = agot_nonhistoric_outcome_2
+			}
+		}
+	}
+}
+
+### Under a false banner ###
+# As a Player who has marched on KL
+agot_events_rr_minor.0200 = {
+	type = character_event
+	title = agot_events_rr_minor.0200.t
+	desc = agot_events_rr_minor.0200.desc
+
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = scope:traitor_scope
+		animation = marshal
+		outfit_tags = {
+			war_outfit
+		}
+	}
+	right_portrait = {
+		character = scope:aerys_scope
+		animation = paranoia
+	}
+
+	trigger = {
+		game_start_date = 8282.9.15
+		NOT = { has_character_flag = player_false_banner_flag_at_gates }
+		this = character:Lannister_1
+		character:Lannister_1 = { is_ai = no }
+		character:Targaryen_1 = { is_alive = yes }
+
+		is_commanding_army = yes
+		location = {
+			OR = {
+				this = title:b_landingfield.title_province
+				this = title:b_the_red_keep.title_province
+				this = title:b_hookmarket.title_province
+				this = title:b_visenyas_hill.title_province
+				this = title:b_goldguard_heights.title_province
+				this = title:b_rhaenyss_hill.title_province
+				this = title:b_flea_bottom.title_province
+			}
+		}
+		scope:army.location = {
+			OR = {
+				this = title:b_landingfield.title_province
+				this = title:b_the_red_keep.title_province
+				this = title:b_hookmarket.title_province
+				this = title:b_visenyas_hill.title_province
+				this = title:b_goldguard_heights.title_province
+				this = title:b_rhaenyss_hill.title_province
+				this = title:b_flea_bottom.title_province
+			}
+		}
+
+		any_character_war = {
+			any_war_participant = {
+				any_owned_story = {
+					story_type = story_agot_mw_crown
+				}
+				this = title:h_the_iron_throne.holder
+			}
+			primary_attacker = title:e_the_stormlands.holder
+			is_defender = root
+		}
+	}
+
+	immediate = {
+		add_character_flag = player_false_banner_flag_at_gates
+
+		var:rr_story_backup ?= { save_scope_as = story }
+
+		random_ruler = { # fetch scopes mw_rebel_story, mw_crown_story
+			limit = {
+				any_owned_story = {
+					story_type = story_agot_mw_rebel
+					var:mw_linked_scenario_story ?= scope:story
+				}
+			}
+			random_owned_story = {
+				limit = {
+					story_type = story_agot_mw_rebel
+					var:mw_linked_scenario_story ?= scope:story
+				}
+
+				save_scope_as = mw_rebel_story
+				var:mw_crown_story_var ?= { save_scope_as = mw_crown_story }
+			}
+		}
+		save_scope_as = traitor_scope
+		character:Targaryen_1 = { save_scope_as = aerys_scope }
+		character:Lannister_7 = { save_scope_as = jaime_scope }
+		hidden_effect = {
+			scope:traitor_scope = {
+				every_army = { set_army_location = title:b_landingfield.title_province }
+			}
+		}
+	}
+
+	option = { # Dew it
+		name = agot_events_rr_minor.0200.a
+
+		trigger = {
+			exists = scope:mw_rebel_story
+			exists = scope:mw_crown_story
+		}
+		scope:aerys_scope = { trigger_event = { id = agot_events_rr_minor.0101 } }
+
+		ai_chance = {
+			base = 60
+		}
+	}
+}
+
+# Aerys: army in front of the city, open the gates?
+agot_events_rr_minor.0101 = {
+	type = character_event
+	title = agot_events_rr_minor.0101.t
+	desc = agot_events_rr_minor.0101.desc
+
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = court
+	left_portrait = {
+		character = scope:advisor
+		animation = beg
+	}
+	right_portrait = {
+		character = scope:traitor
+		animation = flirtation
+	}
+	lower_center_portrait = {
+		character = scope:traitor_scope
+		animation = personality_forgiving
+	}
+
+	trigger = {
+		is_at_war = yes
+	}
+
+	immediate = {
+
+		if = { #Varys Advises
+			limit = { character:Eunuch_1 = { is_alive = yes } }
+			character:Eunuch_1 = { save_scope_as = advisor }
+		}
+		else_if = {
+			limit = { exists = cp:councillor_castellan }
+			cp:councillor_castellan = { save_scope_as = advisor  }
+		}
+		else_if = { #Likely JonCon
+			limit = {
+				any_councillor = {
+					opinion = {
+						target = root
+						value >= 0
+					}
+				}
+			}
+			random_councillor = {
+				limit = {
+					any_councillor = {
+						opinion = {
+							target = root
+							value >= 0
+						}
+					}
+				}
+				save_scope_as = advisor
+			}
+		}
+		else = {
+			random_courtier = {
+				save_scope_as = advisor
+			}
+		}
+
+		if = { #Pycelle Betrays
+			limit = {
+				character:Pycelle_1 = { is_alive = yes }
+			}
+			character:Pycelle_1 = { save_scope_as = traitor }
+		}
+		else_if = { #Grab a Hater
+			limit = {
+				any_councillor = {
+					opinion = {
+						target = root
+						value <= -40
+					}
+				}
+			}
+			random_councillor = {
+				limit = {
+					opinion = {
+						target = root
+						value <= -40
+					}
+				}
+				save_scope_as = traitor
+			}
+		}
+		else_if = {
+			limit = {
+				any_courtier = {
+					is_human = yes
+					opinion = {
+						target = root
+						value <= -60
+					}
+					NOR = {
+						has_trait = honest
+						has_trait = just
+					}
+				}
+			}
+			random_courtier = {
+				limit = {
+					is_human = yes
+					opinion = {
+						target = root
+						value <= -60
+					}
+					NOR = {
+						has_trait = honest
+						has_trait = just
+					}
+				}
+				save_scope_as = traitor
+			}
+		}
+
+		hidden_effect = {
+			if = {
+				limit = {
+					scope:traitor_scope = {
+						is_ai = yes
+					}
+				}
+				scope:traitor_scope = {
+					every_army = { set_army_location = title:b_landingfield.title_province }
+				}
+			}
+		}
+
+		every_courtier_or_guest = {
+			limit = { house = scope:aerys_scope.house }
+
+			add_to_list = KL_courtier_list
+		}
+		character:Martell_7 ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					location = province:4151  # b_the_red_keep
+				}
+				add_to_list = KL_courtier_list
+			}
+		}
+	}
+
+	option = { # Open the gates
+		name = agot_events_rr_minor.0101.a
+
+		custom_tooltip = agot_events_rr_minor.0101.a.tt
+
+		scope:traitor_scope = {
+			add_character_flag = KL_gates_opened
+			trigger_event = agot_events_rr_minor.0102
+		}
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				add = agot_historic_outcome_2
+			}
+		}
+	}
+
+	option = { # Keep them closed, just in case...
+		name = agot_events_rr_minor.0101.b
+
+		scope:traitor_scope = {
+			add_character_flag = KL_gates_closed
+			trigger_event = agot_events_rr_minor.0102
+		}
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				add = agot_nonhistoric_outcome_2
+			}
+		}
+	}
+}
+
+# Traitor: Let the sacking begin
+agot_events_rr_minor.0102 = {
+	type = character_event
+	title = agot_events_rr_minor.0102.t
+
+	desc = {
+		triggered_desc = {
+			trigger = { has_character_flag = KL_gates_opened }
+			desc = agot_events_rr_minor.0102.desc.a
+		}
+		triggered_desc = {
+			trigger = { has_character_flag = KL_gates_closed }
+			desc = agot_events_rr_minor.0102.desc.b
+		}
+	}
+
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+
+	theme = war
+
+	left_portrait = {
+		character = scope:traitor_scope
+		#animation =
+	}
+	right_portrait = {
+		character = scope:aerys_scope
+		#animation =
+	}
+
+	trigger = {
+	}
+
+	immediate = {
+		hidden_effect = {
+			scope:traitor_scope = {
+				every_army = { set_army_location = title:b_goldguard_heights.title_province }
+			}
+		}
+		if = { # The plot can only succeed if one of the three pyromancers is alive
+			limit = {
+				agot_has_historical_events_trigger = yes
+				OR = {
+					character:Pyromancer_1 = { is_alive = yes }
+					character:Pyromancer_2 = { is_alive = yes }
+					character:Pyromancer_3 = { is_alive = yes }
+				}
+			}
+			if = { # Rossart
+				limit = { character:Pyromancer_1 = { is_alive = yes } }
+				character:Pyromancer_1 = { save_scope_as = pyromancer_plotter }
+			}
+			else_if = { # Garigus (on my balls)
+				limit = { character:Pyromancer_2 = { is_alive = yes } }
+				character:Pyromancer_2 = { save_scope_as = pyromancer_plotter }
+			}
+			else = { # Belis
+				limit = { character:Pyromancer_3 = { is_alive = yes } }
+				character:Pyromancer_3 = { save_scope_as = pyromancer_plotter }
+			}
+		}
+
+		if = { # historical outcome
+			limit = {
+				agot_has_historical_events_trigger = yes
+				OR = {
+					character:Clegane_3 = { is_alive = yes }
+					character:Lorch_2 = { is_alive = yes }
+				}
+			}
+			if = {
+				limit = { character:Clegane_3 = { is_alive = yes } }
+
+				character:Clegane_3 = { save_scope_as = killer_1 }
+			}
+			else = {
+				random_vassal_or_below = {
+					weight = {
+						base = 1
+						modifier = { # favour certain characters with certain traits
+							OR = {
+								has_trait = lustful
+								has_trait = callous
+								has_trait = sadistic
+								has_trait = arbitrary
+								has_trait = wrathful
+								has_trait = irritable
+								has_trait = vengeful
+							}
+							add = 50
+						}
+					}
+
+					save_scope_as = killer_1
+				}
+			}
+			if = {
+				limit = { character:Lorch_2 = { is_alive = yes } }
+
+				character:Lorch_2 = { save_scope_as = killer_2 }
+			}
+			else = {
+				random_vassal_or_below = {
+					limit = { NOT = { this = scope:killer_1 } }
+
+					weight = {
+						base = 1
+						modifier = { # favour characters with certain traits
+							OR = {
+								has_trait = lustful
+								has_trait = callous
+								has_trait = sadistic
+								has_trait = arbitrary
+								has_trait = wrathful
+								has_trait = irritable
+								has_trait = vengeful
+							}
+							add = 50
+						}
+					}
+
+					save_scope_as = killer_2
+				}
+			}
+		}
+		else = {
+			root = {
+				random_vassal_or_below = {
+					weight = {
+						base = 1
+						modifier = { # favour characters with certain traits
+							OR = {
+								has_trait = lustful
+								has_trait = callous
+								has_trait = sadistic
+								has_trait = arbitrary
+								has_trait = wrathful
+								has_trait = irritable
+								has_trait = vengeful
+							}
+							add = 50
+						}
+					}
+
+					save_scope_as = killer_1
+				}
+				random_vassal_or_below = {
+					limit = { NOT = { this = scope:killer_1 } }
+
+					weight = {
+						base = 1
+						modifier = { # favour characters with certain traits
+							OR = {
+								has_trait = lustful
+								has_trait = callous
+								has_trait = sadistic
+								has_trait = arbitrary
+								has_trait = wrathful
+								has_trait = irritable
+								has_trait = vengeful
+							}
+							add = 50
+						}
+					}
+
+					save_scope_as = killer_2
+				}
+			}
+		}
+	}
+
+	option = { #
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { has_character_flag = KL_gates_opened }
+						desc = agot_events_rr_minor.0102.a
+					}
+					triggered_desc = {
+						trigger = { has_character_flag = KL_gates_closed}
+						desc = agot_events_rr_minor.0102.b
+					}
+				}
+			}
+		}
+
+		agot_mw_join_rebels_effect = { RULER = root REBEL_LEADER = scope:mw_rebel_story.story_owner }
+
+		hidden_effect = {
+			scope:traitor_scope = {
+				random_army = {
+					limit = {
+						location = {
+							OR = {
+								this = title:b_the_red_keep.title_province
+								this = title:b_hookmarket.title_province
+								this = title:b_visenyas_hill.title_province
+								this = title:b_goldguard_heights.title_province
+								this = title:b_rhaenyss_hill.title_province
+								this = title:b_flea_bottom.title_province
+							}
+						}
+					}
+					assign_commander = scope:traitor_scope
+				}
+			}
+		}
+		if = {
+			limit = {
+				has_character_flag = KL_gates_opened
+			}
+
+			random_living_kingsguard = {
+				limit = {
+					NOR = {
+						this = scope:jaime_scope
+						has_character_flag = agot_is_at_unknown_place
+					}
+					location = {
+						OR = {
+							this = title:b_the_red_keep.title_province
+							this = title:b_hookmarket.title_province
+							this = title:b_visenyas_hill.title_province
+							this = title:b_goldguard_heights.title_province
+							this = title:b_rhaenyss_hill.title_province
+							this = title:b_flea_bottom.title_province
+						}
+					}
+					# opinion = {
+					# 	target = scope:aerys_scope
+					# 	value > 0
+					# }
+				}
+				save_scope_as = defending_kingsguard
+			}
+
+			# Jaime can stop this madness
+			if = {
+				limit = { # If Jaime is alive, then he can attempt to stop it!
+					exists = scope:jaime_scope
+					scope:jaime_scope = { # Jaime must be alive and also be in King's Landing
+						AND = {
+							is_alive = yes
+							is_imprisoned = no
+							has_trait = kingsguard #in case he has been yeeted
+							# location = { For now, we can't set his location for historical outcomes, so its ignored
+							# 	this = title:b_the_red_keep.title_province
+							# }
+						}
+					}
+					exists = scope:pyromancer_plotter
+					scope:pyromancer_plotter = { is_alive = yes }
+				}
+				if = {
+					limit = {
+						has_game_rule = agot_story_historical_events_historical_outcomes
+					}
+					scope:aerys_scope = {
+						custom_tooltip = agot_events_rr_minor.0103.ttd
+						trigger_event = agot_events_rr_minor.0103
+					}
+				}
+				else_if = {
+					limit = {
+						exists = scope:defending_kingsguard
+					}
+					scope:jaime_scope = {
+						duel = {
+							skill = prowess
+							target = scope:defending_kingsguard
+
+							70 = {
+								scope:aerys_scope = {
+									custom_tooltip = agot_events_rr_minor.0103.tta
+									trigger_event = agot_events_rr_minor.0103
+								}
+							}
+							30 = {
+								scope:aerys_scope = {
+									custom_tooltip = agot_events_rr_minor.0103.ttb
+									trigger_event = agot_events_rr_minor.0117 #Aerys Wins and blows up!
+								}
+							}
+						}
+					}
+				}
+				else = {
+					scope:aerys_scope = {
+						custom_tooltip = agot_events_rr_minor.0103.ttc
+						trigger_event = agot_events_rr_minor.0103
+					}
+				}
+
+			}
+			else_if = {
+				limit = {
+					exists = scope:pyromancer_plotter
+					scope:pyromancer_plotter = { is_alive = yes }
+				}
+				scope:aerys_scope = {
+					trigger_event = agot_events_rr_minor.0117 #Aerys Wins and blows up!
+				}
+			}
+		}
+	}
+
+	after = {
+		remove_character_flag = KL_gates_opened
+		remove_character_flag = KL_gates_closed
+		#title:c_dragonstone.holder = { trigger_event = agot_events_rr_minor.0004 } # Let Targaryens at Dragonstone flee
+	}
+}
+
+# Aerys: The city is being sacked
+agot_events_rr_minor.0103 = {
+	type = character_event
+	title = agot_events_rr_minor.0103.t
+	desc = agot_events_rr_minor.0103.desc
+
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = scope:traitor_scope
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = scope:aerys_scope
+		animation = lunatic
+	}
+
+	immediate = {
+		scope:traitor_scope = {
+			add_character_flag = single_combat_duel_armor
+		}
+	}
+
+	option = { # Aerys is killed by Jaime
+		name = agot_events_rr_minor.0103.a
+
+		if = { # Kill Aerys
+			limit = { exists = scope:jaime_scope }
+			hidden_effect = {
+				title:d_dummy_empire = {
+					copy_title_history = title:h_the_iron_throne
+				}
+			}
+			death = { death_reason = death_execution killer = scope:jaime_scope }
+			if = { # Check if Rossart, Garigus, Belis are alive
+				limit = {
+					exists = scope:pyromancer_plotter
+					scope:pyromancer_plotter = { is_alive = yes }
+				}
+				scope:pyromancer_plotter = {
+					death = { death_reason = death_execution killer = scope:jaime_scope }
+				}
+				if = { # Kill Garigus
+					limit = {
+						character:Pyromancer_2 = { is_alive = yes }
+					}
+					character:Pyromancer_2 = {
+						death = { death_reason = death_execution killer = scope:jaime_scope }
+					}
+				}
+				if = { # Kill Belis
+					limit = {
+						character:Pyromancer_3 = { is_alive = yes }
+					}
+					character:Pyromancer_3 = {
+						death = { death_reason = death_execution killer = scope:jaime_scope }
+					}
+				}
+				scope:jaime_scope = {
+					give_nickname = nick_agot_historical_the_kingslayer
+				}
+			}
+		}
+
+	}
+
+	after = {
+		scope:traitor_scope = { trigger_event = agot_events_rr_minor.0104 }
+	}
+}
+
+# Traitor: Sacking conclusion
+agot_events_rr_minor.0104 = {
+	type = character_event
+	title = agot_events_rr_minor.0104.t
+	desc = agot_events_rr_minor.0104.desc
+
+	override_background = {
+		reference = alley_night
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = scope:traitor_scope
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = scope:aerys_scope
+		animation = lunatic
+	}
+
+	immediate = {
+		every_in_list = {
+			list = KL_courtier_list
+
+			limit = {
+				is_alive = yes
+				NOT = { has_title = title:h_the_iron_throne }
+			}
+
+			save_scope_as = courtier_list_scope
+
+			if = {
+				limit = { this = character:Targaryen_11 }
+
+				death = { death_reason = death_execution killer = scope:killer_1 }
+				set_global_variable = {
+					name = aegon_vi_killed_in_sack
+					value = yes
+				}
+			}
+			else_if = {
+				limit = { this = character:Targaryen_10 }
+
+				death = { death_reason = death_execution killer = scope:killer_2 }
+			}
+			else = {
+				death = { death_reason = death_execution killer = scope:killer_2 }
+			}
+		}
+
+		#Kill rulers last to not cause cascading successsion
+		every_in_list = {
+			list = KL_courtier_list
+
+			limit = {
+				is_alive = yes
+				has_title = title:h_the_iron_throne
+			}
+
+			hidden_effect = {
+				title:h_the_iron_throne = {
+					copy_title_history = title:d_dummy_empire
+				}
+			}
+
+			if = {
+				limit = { this = character:Targaryen_11 }
+
+				death = { death_reason = death_execution killer = scope:killer_1 }
+				set_global_variable = {
+					name = aegon_vi_killed_in_sack
+					value = yes
+				}
+			}
+			else_if = {
+				limit = { this = character:Targaryen_10 }
+
+				death = { death_reason = death_execution killer = scope:killer_2 }
+			}
+			else = {
+				death = { death_reason = death_execution killer = scope:killer_2 }
+			}
+		}
+	}
+
+	option = { #
+		name = agot_events_rr_minor.0104.a
+
+		random_character_war = {
+			primary_attacker = { save_scope_as = war_rebel_leader }
+		}
+
+		# TODO add blood feuds and opinion modifiers
+
+		if = {
+			limit = { character:Stark_3 = { is_alive = yes } }
+
+			character:Stark_3 = { trigger_event = agot_events_rr_minor.0105 }
+		}
+	}
+
+	after = {
+		scope:traitor_scope = {
+			remove_character_flag = single_combat_duel_armor
+		}
+	}
+}
+
+# war_rebel_leader scope: Arrival at King's Landing;
+agot_events_rr_minor.0105 = {
+	type = character_event
+	title = agot_events_rr_minor.0105.t
+	desc = {
+		first_valid = {
+			triggered_desc = { # Robert Baratheon: Historical
+				trigger = {
+					this = character:Baratheon_2
+				}
+				desc = agot_events_rr_minor.0105.desc.a
+			}
+			triggered_desc = { # Eddard Stark; Historical
+				trigger = {
+					this = character:Stark_3
+					character:Baratheon_2 = { is_alive = yes }
+				}
+				desc = agot_events_rr_minor.0105.desc.b
+			}
+			triggered_desc = { # Tywin Lannister; Historical
+				trigger = {
+					this = character:Lannister_1
+					character:Baratheon_2 = { is_alive = yes }
+				}
+				desc = agot_events_rr_minor.0105.desc.c
+			}
+		}
+	}
+
+	override_background = {
+		reference = alley_day
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = root
+	}
+
+	immediate = {
+		every_army = { set_army_location = title:b_landingfield.title_province }
+	}
+
+	option = {
+		name = agot_events_rr_minor.0105.a
+
+		trigger_event = agot_events_rr_minor.0106
+	}
+}
+
+# Robert and Eddard argue about murder of children
+agot_events_rr_minor.0106 = {
+	type = character_event
+	title = agot_events_rr_minor.0106.t
+	desc = {
+		first_valid = {
+			triggered_desc = { # Robert Baratheon: Historical
+				trigger = {
+					this = character:Baratheon_2
+				}
+				desc = agot_events_rr_minor.0106.desc.a
+			}
+			triggered_desc = { # Eddard Stark; Historical
+				trigger = {
+					this = character:Stark_3
+				}
+				desc = agot_events_rr_minor.0106.desc.b
+			}
+		}
+	}
+
+	override_background = {
+		reference = bp1_relaxing_room_western
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = character:Baratheon_2
+		#animation =
+	}
+	right_portrait = {
+		character = character:Stark_3
+		#animation =
+	}
+
+	trigger = {
+		character:Baratheon_2 = { is_alive = yes }
+		character:Stark_3 = { is_alive = yes }
+		character:Targaryen_10 = { is_alive = no }
+		character:Targaryen_11 = { is_alive = no }
+	}
+
+	immediate = {
+	}
+
+	option = { #
+		name = agot_events_rr_minor.0106.a
+
+		if = {
+			limit = { title:h_the_iron_throne.holder.house = scope:aerys_scope.house }
+			title:h_the_iron_throne.holder = { save_scope_as = temp_scope }
+		}
+		character:Baratheon_2 = {
+			random_character_war = {
+				limit = {
+					primary_defender.house = character:Targaryen_1.house
+				}
+				end_war = attacker
+			}
+		}
+		title:h_the_iron_throne = {
+			every_de_jure_county_holder = {
+				limit = {
+					NOR = { # They have separate event chains
+						this = character:Stark_3
+						this = character:Baratheon_2
+						this = character:Lannister_1
+					}
+				}
+				trigger_event = agot_events_rr_minor.0107
+			}
+		}
+		if = {
+			limit = {
+				title:c_dragonstone.holder = {
+					NOT = { is_employer_of = scope:temp_scope }
+				}
+			}
+			scope:temp_scope = {
+				set_employer = title:c_dragonstone.holder
+			}
+		}
+
+		if = {
+			limit = { this = character:Stark_3 }
+
+			character:Baratheon_2 = {
+				random_owned_story = {
+					limit = { story_type = story_agot_scenario_rr }
+				}
+			}
+		}
+	}
+}
+
+# Notification for realm about Mad King's death and fall of King's Landing
+agot_events_rr_minor.0107 = {
+	type = character_event
+	title = agot_events_rr_minor.0107.t
+	desc = agot_events_rr_minor.0107.desc
+
+	#override_background = {
+	#	reference =
+	#}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = character:Baratheon_2
+		#animation =
+	}
+	right_portrait = {
+		character = character:Targaryen_1
+		#animation =
+	}
+
+	trigger = {
+	}
+
+	immediate = {
+	}
+
+	option = { #
+		name = agot_events_rr_minor.0107.a
+	}
+}
+
+# Siege of Gulltown - Stark
+agot_events_rr_minor.0108 = {
+	type = character_event
+	title = agot_events_rr_minor.0108.t
+	desc = agot_events_rr_minor.0108.desc
+
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = character:Baratheon_2
+		animation = marshal
+	}
+	lower_left_portrait = {
+		character = character:Arryn_3
+		animation = marshal
+	}
+	right_portrait = {
+		character = character:Stark_3
+		animation = marshal
+	}
+
+	immediate = {
+		character:Stark_3 = {
+			spawn_army = {
+				men_at_arms = {
+					type = winter_wolves
+					stacks = 6
+				}
+				men_at_arms = {
+					type = onager
+					stacks = 2
+				}
+				levies = 1000
+				location = province:2441
+				name = event_troop_default_name
+				save_scope_as = starkarmy
+			}
+		}
+	}
+
+	option = { #
+		name = agot_events_rr_minor.0108.a
+		hidden_effect = {
+			scope:starkarmy = {
+				assign_commander = character:Stark_3
+			}
+		}
+	}
+}
+
+# Siege of Gulltown - Baratheon
+agot_events_rr_minor.0109 = {
+	type = character_event
+	title = agot_events_rr_minor.0109.t
+	desc = agot_events_rr_minor.0109.desc
+
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = character:Baratheon_2
+		animation = aggressive_hammer
+	}
+	lower_left_portrait = {
+		character = character:Arryn_3
+		animation = marshal
+	}
+	right_portrait = {
+		character = character:Stark_3
+		animation = marshal
+	}
+
+	immediate = {
+		character:Baratheon_2 = {
+			spawn_army = {
+				men_at_arms = {
+					type = storm_knights
+					stacks = 6
+				}
+				men_at_arms = {
+					type = onager
+					stacks = 6
+				}
+				levies = 5000
+				location = province:2441
+				name = event_troop_default_name
+				save_scope_as = baratheonarmy
+			}
+			hidden_effect = {
+				scope:baratheonarmy ?= {
+					assign_commander = character:Baratheon_2
+				}
+			}
+		}
+		hidden_effect = {
+			if = {
+				limit = {
+					AND = {
+						character:Grafton_1 = { is_ai = yes }
+						character:Grafton_2 = { is_ai = yes }
+						character:Grafton_3 = { is_ai = yes }
+					}
+				}
+				title:b_graftons_holdfast.title_province = {
+					add_province_modifier = {
+						modifier = agot_weakened_walls
+						years = 5
+					}
+				}
+			}
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				add_character_modifier = {
+					modifier = intrigue_speedy_siege_modifier
+					days = 30
+				}
+			}
+		}
+	}
+
+	option = { #
+		name = agot_events_rr_minor.0109.a
+	}
+}
+
+# Siege of Gulltown - Ayyrn
+agot_events_rr_minor.0110 = {
+	type = character_event
+	title = agot_events_rr_minor.0110.t
+	desc = agot_events_rr_minor.0110.desc
+
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = character:Arryn_3
+		animation = idle
+	}
+	lower_left_portrait = {
+		character = character:Baratheon_2
+		animation = marshal
+	}
+	lower_right_portrait = {
+		character = character:Stark_3
+		animation = marshal
+	}
+
+	immediate = {
+		character:Arryn_3 = {
+			spawn_army = {
+				men_at_arms = {
+					type = winged_knights
+					stacks = 8
+				}
+				men_at_arms = {
+					type = onager
+					stacks = 2
+				}
+				levies = 3000
+				location = province:2441
+				name = event_troop_default_name
+				save_scope_as = arrynnarmy
+			}
+			hidden_effect = {
+				scope:arrynnarmy = {
+					assign_commander = character:Arryn_3
+				}
+			}
+			# if = {
+			# 	limit = {
+			# 		is_ai = yes
+			# 	}
+			# 	add_character_modifier = {
+			# 		modifier = intrigue_speedy_siege_modifier
+			# 		days = 30
+			# 	}
+			# }
+		}
+	}
+
+	option = { #
+		name = agot_events_rr_minor.0110.a
+	}
+
+	after = {
+		trigger_event = {
+			id = agot_events_rr_minor.0127
+			days = 15
+		}
+	}
+}
+
+# After the Rebellion - Cersei and Robert Marriage
+agot_events_rr_minor.0111 = {
+	type = character_event
+	title = agot_events_rr_minor.0111.t
+	desc = agot_events_rr_minor.0111.desc
+
+	theme = intrigue
+	left_portrait = {
+		character = character:Lannister_1
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = character:Lannister_6
+		animation = flirtation
+	}
+
+	trigger = {
+		root = character:Lannister_1
+		character:Lannister_1 = { is_alive = yes }
+		character:Baratheon_2 = {
+			is_alive = yes
+			is_married = no
+		}
+		character:Lannister_6 = {
+			is_alive = yes
+			is_married = no
+			is_concubine = no
+		}
+		character:Stark_5 = {
+			is_alive = no
+		}
+		scope:story.var:mw_linked_war_status = flag:rebels_won # only fire if the rebels won!
+	}
+	on_trigger_fail = {
+		agot_rr_remove_cersei_infertility = yes
+	}
+
+	option = { # Offer Cersei
+		name = agot_events_rr_minor.0111.a
+
+		custom_tooltip = {
+			text = agot_events_rr_minor.0111.a.tt
+		}
+
+		character:Baratheon_2 = {
+			trigger_event = {
+				id = agot_events_rr_minor.0112
+				days = 3
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { # Don't offer Cersei
+		name = agot_events_rr_minor.0111.b
+
+		custom_tooltip = {
+			text = agot_events_rr_minor.0111.b.tt
+		}
+
+		hidden_effect = {
+			character:Lannister_6 = {
+				remove_trait = refusing_marriage
+				remove_character_modifier = agot_rr_cersei_infertility
+			}
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+# After the Rebellion - Cersei and Robert Marriage
+agot_events_rr_minor.0112 = {
+	type = character_event
+	title = agot_events_rr_minor.0112.t
+	desc = agot_events_rr_minor.0112.desc
+
+	theme = diplomacy_family_focus
+	left_portrait = {
+		character = character:Baratheon_2
+		animation = grief
+	}
+	right_portrait = {
+		character = character:Lannister_6
+		animation = flirtation
+	}
+
+	option = { # Robert accepts
+		name = agot_events_rr_minor.0112.a
+
+		custom_tooltip = {
+			text = agot_events_rr_minor.0112.a.tt
+		}
+
+		marry = character:Lannister_6
+
+		# Create an alliance
+		character:Lannister_1 = { save_temporary_scope_as = recipient }
+		custom_tooltip = negotiate_alliance_effect_tooltip
+
+		create_alliance = {
+			target = character:Lannister_1
+			allied_through_owner = character:Baratheon_2
+			allied_through_target = character:Lannister_6
+		}
+
+		hidden_effect = {
+			character:Lannister_6 = {
+				remove_trait = refusing_marriage
+				remove_character_modifier = agot_rr_cersei_infertility
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { # Robert refuses
+		name = agot_events_rr_minor.0112.b
+
+		custom_tooltip = {
+			text = agot_events_rr_minor.0112.b.tt
+		}
+
+		hidden_effect = {
+			character:Lannister_6 = {
+				remove_trait = refusing_marriage
+				remove_character_modifier = agot_rr_cersei_infertility
+			}
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+# Robert's Rebellion - Whent picks a side
+agot_events_rr_minor.0114 = {
+	type = character_event
+	title = agot_events_rr_minor.0114.t
+	desc = agot_events_rr_minor.0114.desc
+
+	theme = war
+
+	override_background = {
+		reference = study
+	}
+	left_portrait = {
+		character = character:Whent_4
+		animation = dismissal
+	}
+	right_portrait = {
+		character = character:Whent_5
+		animation = personality_greedy
+	}
+	lower_left_portrait = {
+		character = character:Targaryen_1
+	}
+	lower_right_portrait = {
+		character = character:Baratheon_2
+		animation = marshal
+	}
+
+	immediate = {
+		character:Whent_12 = {
+			save_scope_as = daughter
+		}
+
+		character:Whent_5 = {
+			save_scope_as = brother
+		}
+
+		character:Whent_6 = {
+			save_scope_as = sister
+		}
+
+		character:Targaryen_3 = {
+			save_scope_as = rhaegar
+		}
+
+		title:e_the_riverlands.holder = {
+			save_scope_as = tully
+		}
+	}
+
+	option = { # Join loyalists
+		name = agot_events_rr_minor.0114.a
+		custom_tooltip = agot_events_rr_minor.0114.a.tt
+
+		agot_mw_join_loyalists_effect = { RULER = root CROWN = title:h_the_iron_throne.holder }
+
+		reverse_add_opinion = {
+			target = scope:brother
+			modifier = grateful_opinion
+			opinion = 50
+		}
+
+		reverse_add_opinion = {
+			target = character:Targaryen_3
+			modifier = grateful_opinion
+			opinion = 20
+		}
+
+		reverse_add_opinion = {
+			target = character:Targaryen_1
+			modifier = pleased_opinion
+			opinion = 20
+		}
+
+		ai_chance = {
+			base = 33
+		}
+	}
+
+	option = { # Stay neutral
+		name = agot_events_rr_minor.0114.b
+
+		custom_tooltip = agot_events_rr_minor.0114.b.tt
+
+		title:h_the_iron_throne.holder = {
+			add_courtier ?= character:Whent_10
+		}
+
+		title:e_the_stormlands.holder = {
+			add_courtier ?= character:Whent_11
+		}
+
+		ai_chance = {
+			base = 33
+		}
+	}
+
+	option = { # Join rebels
+		name = agot_events_rr_minor.0114.c
+
+		custom_tooltip = agot_events_rr_minor.0114.c.tt
+
+		agot_mw_join_rebels_effect = { RULER = root REBEL_LEADER = title:e_the_stormlands.holder }
+
+		reverse_add_opinion = {
+			target = title:e_the_riverlands.holder
+			modifier = grateful_opinion
+			opinion = 30
+		}
+
+
+		scope:tully = {
+			remove_opinion = {
+				target = root
+				modifier = mw_is_disloyal_to_me_in_war_opinion
+			}
+		}
+
+		reverse_add_opinion = {
+			target = title:e_the_stormlands.holder
+			modifier = claimant_faction_claimant_opinion
+			opinion = 30
+		}
+
+		reverse_add_opinion = {
+			target = scope:brother
+			modifier = angry_opinion
+			opinion = -50
+		}
+
+		ai_chance = {
+			base = 33
+		}
+	}
+}
+
+# Robert's Rebellion - The Greyjoy Conundrum
+agot_events_rr_minor.0115 = {
+	type = character_event
+	title = agot_events_rr_minor.0115.t
+	desc = agot_events_rr_minor.0115.desc
+
+	theme = reaving
+
+	override_background = {
+		reference = study
+	}
+
+	immediate = {
+		character:Piper_3 = {
+			save_scope_as = piper
+		}
+		character:Greyjoy_5 = {
+			save_scope_as = balon
+		}
+		character:Greyjoy_6 = {
+			save_scope_as = euron
+		}
+		character:Greyjoy_7 = {
+			save_scope_as = victarian
+		}
+		character:Greyjoy_10 = {
+			save_scope_as = robin
+		}
+	}
+
+
+	left_portrait = {
+		character = character:Greyjoy_1
+		animation = stress
+	}
+	right_portrait = {
+		character = character:Piper_3
+		animation = shame
+	}
+
+	lower_left_portrait = {
+		character = character:Greyjoy_5
+	}
+	lower_center_portrait = {
+		character = character:Greyjoy_6
+	}
+	lower_right_portrait = {
+		character = character:Greyjoy_7
+	}
+
+	option = { # We will continue
+		name = agot_events_rr_minor.0115.a
+
+		custom_tooltip = agot_events_rr_minor.0115.a.tt
+
+		add_secret = { type = secret_non_believer }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { # It is time
+		name = agot_events_rr_minor.0115.b
+
+		set_character_faith = faith:fots_drowned
+		character:Piper_3 = {
+			set_character_faith = faith:fots_drowned
+		}
+
+		hidden_effect = {
+			character:Greyjoy_10 = {
+				set_character_faith = faith:fots_drowned
+			}
+
+			set_relation_lover = {
+				target = scope:piper
+			}
+		}
+
+	}
+}
+
+# Event for stormlander loyalists to switch sides
+agot_events_rr_minor.0116 = {
+	type = character_event
+
+	title = agot_events_rr_minor.0116.t
+	desc = agot_events_rr_minor.0116.desc
+
+	#override_background = {
+	#	reference =
+	#}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = war
+	left_portrait = {
+		character = scope:stormlander_lord
+		#animation =
+	}
+	right_portrait = {
+		character = character:Baratheon_2
+		#animation =
+	}
+
+	trigger = {
+		root = character:Baratheon_2
+	}
+
+	immediate = {
+		location = { save_scope_as = location }
+	}
+
+	option = {
+		name = agot_events_rr_minor.0116.a
+
+		if = {
+			limit = {
+				scope:stormlander_lord = title:d_kingswood.holder.primary_heir
+			}
+			agot_mw_join_rebels_effect = { RULER = title:d_kingswood.holder REBEL_LEADER = title:e_the_stormlands.holder }
+		}
+		else = {
+			agot_mw_join_rebels_effect = { RULER = scope:stormlander_lord REBEL_LEADER = title:e_the_stormlands.holder }
+		}
+
+		character:Baratheon_2 = {
+			spawn_army = {
+				men_at_arms = {
+					type = storm_knights
+					stacks = 6
+				}
+				men_at_arms = {
+					type = onager
+					stacks = 2
+				}
+				levies = 2500
+				location = scope:location
+				name = event_troop_default_name
+			}
+			remove_character_flag = treating_with_lord
+		}
+	}
+}
+
+agot_events_rr_minor.0117 = { #Burn, them, All
+	type = character_event
+	title = agot_events_rr_minor.0117.t
+	desc = agot_events_rr_minor.0117.desc
+	theme = intrigue
+	override_background = { #
+		reference = study
+	}
+
+	immediate = {
+		title:h_the_iron_throne.holder = {
+			save_scope_as = mad_king
+		}
+	}
+
+	left_portrait = {
+		character = title:h_the_iron_throne.holder
+		animation = stress
+	}
+
+	option = { # Burn them all!
+		name = agot_events_rr_minor.0117.a
+		#Effects
+		play_music_cue = CK3AGOT_wildfire
+		trigger_event = {
+			id = agot_events_rr_minor.0118
+			days = 1
+		}
+		trigger_event = {
+			id = agot_events_rr_minor.0120
+			days = 1
+		}
+		title:b_hookmarket = { set_variable = agot_KL_is_burning }
+
+		every_living_character = {
+			limit = {
+				exists = location
+				location.county = title:c_kings_landing
+				NOT = {
+					this = scope:mad_king
+					#ToJ Kingsguard stop self-immolating from hundreds of miles away
+					has_character_flag = agot_is_at_unknown_place
+					# Stop Tywin from getting the event twice
+					this = character:Lannister_1
+				}
+			}
+			play_music_cue = CK3AGOT_wildfire
+			trigger_event = {
+				id = agot_events_rr_minor.0119
+				days = 2
+			}
+		}
+		#Fuck Tywin specifically
+		character:Lannister_1 = {
+			play_music_cue = CK3AGOT_wildfire
+			trigger_event = {
+				id = agot_events_rr_minor.0119
+				days = 2
+			}
+		}
+		title:c_ruins.holder = {
+			trigger_event = {
+				id = agot_events_rr_minor.0123
+				days = 7
+			}
+		}
+		every_ruler = {
+			limit = {
+				NOT = {
+					this = title:h_the_iron_throne.holder
+				}
+				exists = location
+				location = {
+					geographical_region = world_westeros
+				}
+			}
+			trigger_event = {
+				id = agot_events_rr_minor.0126
+				days = 3
+			}
+		}
+	}
+}
+
+agot_events_rr_minor.0118 = { #Burn, them, All
+	type = character_event
+	title = agot_events_rr_minor.0118.t
+	desc = agot_events_rr_minor.0119.desc
+	theme = intrigue
+	override_background = {
+		reference = alley_day
+	}
+	widgets = {
+		widget = {
+			gui = "window_particle_kingslandingwildfire_start_widget"
+			container = "custom_widgets_container"
+			controller = default
+			setup_scope = { title:b_hookmarket.title_province = { save_scope_as = Title } }
+		}
+	}
+	immediate = {
+		play_music_cue = CK3AGOT_wildfire
+		title:b_hookmarket.title_province = {
+			add_province_modifier = extra_building_slot
+			add_building = special_kings_landing_hoodmarket_destroyed
+		}
+	}
+	option = {
+		name = agot_events_rr_minor.0118.a
+	}
+}
+
+agot_events_rr_minor.0119 = { #What's that sou
+	type = character_event
+	title = agot_events_rr_minor.0119.t
+	desc = agot_events_rr_minor.0119.desc
+	theme = war
+	override_background = {
+		reference = agot_alley_day_kingslanding_wildfire
+	}
+
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+
+	immediate = {
+		play_music_cue = CK3AGOT_wildfire
+		root = {
+			pan_camera_to_title = title:b_hookmarket
+		}
+	}
+
+	option = {
+		name = agot_events_rr_minor.0119.a
+
+		death = {
+			death_reason = death_wildfire_KL
+			killer = scope:mad_king
+		}
+	}
+}
+
+scripted_effect kill_the_babes = {
+	if = {
+		limit = {
+			primary_heir ?= {
+				exists = location
+				location.county = title:c_kings_landing
+			}
+		}
+		primary_heir = {
+			death = {
+				death_reason = death_wildfire_KL
+				killer = scope:mad_king
+			}
+		}
+	}
+}
+
+agot_events_rr_minor.0120 = { #What's that sou
+	type = character_event
+
+	hidden = yes
+
+	immediate = {
+		scope:mad_king = {
+
+			#Kill heirs that are going to die first so they don't ruin regnal numbers
+			kill_the_babes = yes
+			kill_the_babes = yes
+			kill_the_babes = yes
+			kill_the_babes = yes
+			kill_the_babes = yes
+			kill_the_babes = yes
+			kill_the_babes = yes
+			kill_the_babes = yes
+
+			random_list = {
+				99 = {
+					death = {
+						death_reason = death_wildfire_KL
+					}
+				}
+				1 = {
+					trigger = {
+						NOT = { has_game_rule = agot_story_historical_events_historical_outcomes }
+					}
+					agot_become_the_dragon = yes
+				}
+			}
+		}
+		title:h_the_iron_throne = {
+			set_variable = {
+				name = kingslanding_exploding
+				value = yes
+				days = 55
+			}
+		}
+		title:c_kings_landing = {
+			change_county_control = -80
+			change_development_level = -40
+			change_development_progress_with_overflow = -25
+			add_county_modifier = agot_kings_landing_supply
+			every_county_province = {
+				destroy_random_building_variable_effect = yes
+				destroy_random_building_effect = yes
+				add_province_modifier = {
+					modifier = agot_kings_landing_exploded
+					years = 20
+				}
+			}
+			every_county_province = {
+				destroy_random_building_variable_effect = yes
+				destroy_random_building_effect = yes
+			}
+			every_county_province = {
+				destroy_random_building_variable_effect = yes
+				destroy_random_building_effect = yes
+			}
+		}
+	}
+}
+
+agot_events_rr_minor.0121 = { #Debug
+	type = character_event
+
+	hidden = yes
+
+	immediate = {
+		remove_character_flag = kingslanding_will_resolve_soon
+		#Yes this is jank, do not touch, it stops the wildfire effects from lasting forever or something
+		title:b_hookmarket.title_province = {
+			remove_building = special_kings_landing_hoodmarket_destroyed
+
+			add_building = special_kings_landing_hoodmarket
+			remove_building = special_kings_landing_hoodmarket
+		}
+		# title:c_kings_landing = {
+		# 	every_county_province = {
+		# 		limit = { NOT = { this = title:c_kings_landing.title_province} }
+		# 		agot_KL_RUIN_EFFECT = yes
+		# 	}
+		# }
+		# if = {
+		# 	limit = {
+		# 		game_start_date >= 4000.1.1
+		# 	}
+		# 	title:b_the_red_keep.title_province = {
+		# 		set_holding_type = ruin_holding
+		# 		add_building = large_ruin_01
+		# 		add_building = ruin_renowned_01
+		# 		add_building = ruin_wildfire_01
+		# 	}
+		# 	title:b_the_red_keep = {
+		# 		set_coa = ruins_coa
+		# 	}
+		# }
+	}
+}
+
+agot_events_rr_minor.0122 = { #Debug
+	type = character_event
+	orphan = yes
+	hidden = yes
+
+	immediate = {
+		title:b_hookmarket.title_province = {
+			remove_building = special_kings_landing_hoodmarket
+
+			add_building = special_kings_landing_hoodmarket_destroyed
+		}
+	}
+}
+
+agot_events_rr_minor.0123 = { #Debug
+	type = character_event
+
+	hidden = yes
+
+	immediate = {
+		title:h_the_iron_throne.holder = {
+			title:h_the_iron_throne = {
+				if = {
+					limit = {
+						any_in_de_facto_hierarchy = {
+							this = title:d_dragonstone
+						}
+					}
+					set_capital_county = title:c_dragonstone
+					holder = {
+						set_realm_capital = title:c_dragonstone
+					}
+				}
+				else_if = {
+					limit = {
+						any_in_de_facto_hierarchy = {
+							this = title:c_blackstripe
+						}
+					}
+					set_capital_county = title:c_blackstripe
+				}
+				set_capital_county = title:c_blackstripe
+			}
+			#Temp Disabled
+			#add_character_flag = {
+			#	flag = no_petitioners
+			#	days = 55
+			#}
+			add_character_flag = {
+				flag = no_homage
+				days = 55
+			}
+			add_character_flag = kingslanding_will_resolve_soon
+			trigger_event = {
+				id = agot_events_rr_minor.0121
+				months = { 3 4 }
+			}
+		}
+	}
+}
+
+agot_events_rr_minor.0124 = { #Tywin Intro Event
+	type = character_event
+	title = agot_events_rr_minor.0124.t
+	desc = agot_events_rr_minor.0124.desc
+	theme = realm
+
+	left_portrait = {
+		character = character:Lannister_1
+		animation = personality_cynical
+	}
+
+	lower_right_portrait = {
+		character = character:Baratheon_2
+		animation = personality_bold
+	}
+
+	right_portrait = {
+		character = character:Targaryen_1
+		animation = paranoia
+	}
+
+	option = {
+		name = agot_events_rr_minor.0124.a
+		custom_tooltip = agot_events_rr_minor.0124.a.tt
+	}
+}
+
+agot_events_rr_minor.0125 = { #AI Duel for Bob and Rhaegar
+	type = character_event
+
+	hidden = yes
+
+	left_portrait = character:Baratheon_2
+
+	right_portrait = character:Targaryen_3
+
+	immediate = {
+		if = {
+			limit = {
+				root = character:Baratheon_2
+			}
+			character:Targaryen_3 = {
+				save_scope_as = enemy
+			}
+		}
+		else = {
+			character:Baratheon_2 = {
+				save_scope_as = enemy
+			}
+		}
+		location = { save_scope_as = location }
+		set_global_variable = {
+			name = the_trident_battle_location
+			value = location
+		}
+	}
+
+
+	option = {
+		random_list = {
+			0 = {
+				modifier = {
+					add = agot_nonhistoric_outcome_2
+				}
+				character:Baratheon_2 = {
+					death = {
+						death_reason = death_duel
+						killer = character:Targaryen_3
+					}
+				}
+				character:Targaryen_3 = {
+					trigger_event = agot_events_rr_minor.9000
+				}
+			}
+			0 = {
+				modifier = {
+					add = agot_historic_outcome_2
+				}
+				character:Targaryen_3 = {
+					death = {
+						death_reason = death_duel
+						killer = character:Baratheon_2
+					}
+					save_scope_as = loser
+				}
+				character:Baratheon_2 = {
+					trigger_event = agot_events_rr_minor.9000
+				}
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = {
+				character:Targaryen_3 = { is_alive = no }
+			}
+			title:e_the_iron_islands.holder = {
+				trigger_event = {
+					id = agot_events_rr_minor.0132
+					days = { 5 10 }
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				character:Targaryen_3 = { is_alive = no }
+				character:Lannister_1 = {
+					is_alive = yes
+					is_ai = yes
+				}
+			}
+			scope:story = {
+				set_variable = {
+					name	= agot_rr_tywin_status
+					value	= flag:chose_rebels
+				}
+			}
+			character:Lannister_1 = {
+				trigger_event = agot_events_rr_minor.0100
+			}
+		}
+	}
+}
+
+agot_events_rr_minor.0126 = { #King's Landing Goes Boom!
+	type = character_event
+	title = agot_events_rr_minor.0126.t
+	desc = agot_events_rr_minor.0126.desc
+	theme = realm
+
+	right_portrait = {
+		character = scope:aerys
+		animation = paranoia
+	}
+
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				character:Targaryen_1 = {
+					is_alive = no
+				}
+			}
+			character:Targaryen_1 = { save_scope_as = aerys }
+		}
+	}
+	option = {
+		name = agot_events_rr_minor.0126.a
+		# custom_tooltip = agot_events_rr_minor.0126.a.tt
+		# destroy_title = title:h_the_iron_throne
+	}
+	option = {
+		trigger = {
+			is_ai = no
+			any_owned_story = {
+				story_type = story_agot_mw_rebel
+			}
+		}
+		name = agot_events_rr_minor.0126.b
+		random_character_war = {
+			limit = {
+				primary_defender.house = character:Targaryen_1.house
+			}
+			end_war = invalidated
+		}
+	}
+	after = {
+		play_music_cue = CK3AGOT_wildfire
+		root = {
+			pan_camera_to_title = title:b_hookmarket
+		}
+	}
+}
+
+agot_events_rr_minor.0127 = { #Move Vale Armies to Gulltown
+	type = character_event
+	hidden = yes
+	theme = realm
+
+	trigger = {
+		is_ai = yes
+	}
+
+	immediate = {
+		every_army = {
+			limit = {
+				NOT = { army_commander = root }
+			}
+			set_army_location = title:b_wilmarth.title_province
+		}
+	}
+
+	option = {
+		name = agot_events_rr_minor.0124.a
+		custom_tooltip = agot_events_rr_minor.0124.a.tt
+	}
+}
+
+agot_events_rr_minor.0128 = { #Robert sails to Storm's End #1
+	type = character_event
+	title = agot_events_rr_minor.0128.t
+	desc = agot_events_rr_minor.0128.desc
+
+	theme = war
+
+	left_portrait = {
+		character = root
+	}
+
+	right_portrait = {
+		character = character:Arryn_3
+	}
+
+	trigger = {
+		AND = {
+			is_commanding_army = yes
+			any_army = {
+				army_commander = root
+			}
+			# NOT = {
+			# 	location = { title:b_storms_end.title_province }
+			# }
+		}
+	}
+
+	option = {
+		name = agot_events_rr_minor.0128.a
+		#custom_tooltip = agot_events_rr_minor.0128.a.tt
+
+		trigger_event = {
+			id = agot_events_rr_minor.0129
+		}
+		character:Stark_3 = {
+			trigger_event = {
+				id = agot_events_rr_minor.0131
+			}
+		}
+	}
+}
+
+agot_events_rr_minor.0129 = { #Robert sails to Storm's End #2
+	type = character_event
+	hidden = yes
+	# trigger = {
+	# 	is_ai = yes
+	# }
+
+	immediate = {
+		every_army = {
+			set_army_location = title:b_storms_end.title_province
+		}
+	}
+
+	option = {
+		name = agot_events_rr_minor.0128.a
+		#custom_tooltip = agot_events_rr_minor.0128.a.tt
+	}
+}
+
+#Ned heads back to the north to raise the army!
+
+agot_events_rr_minor.0131 = {
+	type = character_event
+	title = agot_events_rr_minor.0131.t
+	desc = agot_events_rr_minor.0131.desc
+
+	left_portrait = {
+		character = root
+	}
+
+	theme = war
+	override_background = { reference = wilderness_mountains }
+
+	immediate = {
+		hidden_effect = {
+			random_army = {
+				limit = {
+					army_commander = character:Stark_3
+				}
+				set_army_location = title:b_moat_cailin.title_province
+			}
+		}
+	}
+
+	option = {
+		name = agot_events_rr_minor.0131.a
+
+		character:Stark_3 = {
+			random_knight = {
+				save_scope_as = knightcommander
+			}
+			random_army = {
+				limit = {
+					army_commander = character:Stark_3
+				}
+				assign_commander = scope:knightcommander
+				#set_army_location = title:b_moat_cailin.title_province
+			}
+		}
+	}
+
+	# option = {
+	# 	name = agot_events_rr_minor.0131.b
+	# }
+}
+
+#Greyjoys join the war!
+
+agot_events_rr_minor.0132 = {
+	type = letter_event
+	opening = {
+		desc = agot_events_rr_minor.0132.desc_opening
+	}
+	desc = agot_events_rr_minor.0132.desc_body
+	sender = scope:informer
+
+	trigger = {
+		character:Targaryen_3 = { is_alive = no }
+	}
+
+	immediate = {
+		root.primary_heir = { save_scope_as = informer }
+
+		character:Baratheon_2 = {
+			save_scope_as = baratheon
+		}
+
+		character:Targaryen_3 = {
+			save_scope_as = targaryen
+		}
+	}
+
+	#Option A: sorry for the diplomatic blunder - offer repayment
+	option = {
+		name = agot_events_rr_minor.0132.a
+
+		agot_mw_join_rebels_effect = { RULER = root REBEL_LEADER = scope:baratheon }
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_historic_outcome_2
+			}
+		}
+	}
+
+	#Option B: reiterate that their religion is not welcome at your court
+	option = {
+		name = agot_events_rr_minor.0132.b
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_nonhistoric_outcome_2
+			}
+		}
+	}
+}
+
+
+
+#Inform players of the Robert/Rhaegar Duel
+
+### Siege of Storm's End - The Onion Knight ###
+
+agot_events_rr_minor.0400 = { # Siege of Storm's End Begins
+	type = character_event
+	title = agot_events_rr_minor.0400.t
+	desc = agot_events_rr_minor.0400.desc
+	theme = war
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+	override_background = {
+		reference = agot_storms_end
+	}
+
+	hidden = yes
+
+	trigger = {
+		game_start_date = 8282.9.15
+		NOT = { character:Tyrell_8 = { has_character_flag = siege_storms_end } }
+		this = character:Tyrell_8
+		scope:army.location = {
+			OR = {
+				this = title:b_storms_end.title_province
+				this = title:b_castle_seaface.title_province
+				this = title:b_durrans_town.title_province
+				this = title:b_gate_durrandon.title_province
+				this = title:b_elenwatch.title_province
+				this = title:b_sailmight.title_province
+				this = title:b_furycrown.title_province
+			}
+		}
+		character:Seaworth_1 = { #Make sure Davos ain't picked
+			is_alive = yes
+			is_landed = no
+		}
+	}
+	option = {
+		name = agot_events_rr_minor.0400.a
+		add_character_flag = siege_storms_end
+		title:c_storms_end.holder = {
+			trigger_event = {
+				id = agot_events_rr_minor.0401
+				days = 30
+			}
+		}
+	}
+}
+
+agot_events_rr_minor.0401 = { # Knight of Onions
+	type = character_event
+	title = agot_events_rr_minor.0401.t
+	desc = agot_events_rr_minor.0401.desc
+	theme = war
+	right_portrait = {
+		character = character:Seaworth_1
+		animation = personality_compassionate
+		outfit_tags = {
+			northern_commoner
+			generic_legwear
+			ep1_adventurer_cloak
+		}
+	}
+	override_background = {
+		reference = agot_storms_end
+	}
+
+	immediate = {
+		character:Seaworth_1 = {
+			save_scope_as = davos_seaworth
+		}
+	}
+
+	option = {
+		name = agot_events_rr_minor.0401.a # Reward this man
+		scope:davos_seaworth = {
+			give_nickname = nick_agot_historical_the_onion_knight
+			add_trait = knight
+			set_house = house:house_Seaworth
+			every_child = {
+				set_house = house:house_Seaworth
+			}
+		}
+		add_courtier ?= scope:davos_seaworth
+		add_courtier ?= character:Seaworth_rs_1
+		add_courtier ?= character:Seaworth_2
+		add_courtier ?= character:Seaworth_3
+		add_courtier ?= character:Seaworth_4
+		add_courtier ?= character:Seaworth_5
+		ai_chance = {
+			base = 20
+		}
+	}
+	option = {
+		name = agot_events_rr_minor.0401.b # Reward this man, for a price (take hand)
+		scope:davos_seaworth = {
+			give_nickname = nick_agot_historical_the_onion_knight
+			add_trait = one_handed
+			add_trait = knight
+			set_house = house:house_Seaworth
+			every_child = {
+				set_house = house:house_Seaworth
+			}
+		}
+		add_courtier ?= scope:davos_seaworth
+		add_courtier ?= character:Seaworth_rs_1
+		add_courtier ?= character:Seaworth_2
+		add_courtier ?= character:Seaworth_3
+		add_courtier ?= character:Seaworth_4
+		add_courtier ?= character:Seaworth_5
+		ai_chance = {
+			base = 75
+		}
+	}
+	option = {
+		name = agot_events_rr_minor.0401.c # A smuggler deserves only death
+		scope:davos_seaworth = {
+			death = { death_reason = death_execution killer = root }
+		}
+		ai_chance = {
+			base = 5
+		}
+	}
+}
+
+#Hidden Events
+agot_events_rr_minor.9000 = {
+	hidden = yes
+
+	immediate = {
+		global_var:the_trident_battle_location = {
+			save_scope_as = battle_location
+		}
+
+		character:Baratheon_2 = {
+			if = {
+				limit = {
+					is_alive = yes
+					character:Targaryen_3 = { is_alive = no }
+					any_equipped_character_artifact = {
+						artifact_slot_type = primary_armament
+					}
+				}
+				character:Targaryen_3 = { save_scope_as = loser }
+				save_scope_as = owner
+				random_equipped_character_artifact = {
+					limit = {
+						artifact_slot_type = primary_armament
+					}
+					save_scope_as = my_weapon
+					set_artifact_description = bobby_hammer_duel_description
+					add_artifact_modifier = artifact_monthly_dynasty_prestige_1_modifier
+					add_artifact_modifier = artifact_monthly_prestige_1_modifier
+					set_artifact_rarity = famed
+				}
+			}
+		}
+
+		character:Targaryen_3 = {
+			if = {
+				limit = {
+					is_alive = yes
+					character:Baratheon_2 = { is_alive = no }
+					any_equipped_character_artifact = {
+						artifact_slot_type = primary_armament
+					}
+				}
+				character:Baratheon_2 = { save_scope_as = loser }
+				save_scope_as = owner
+				random_equipped_character_artifact = {
+					limit = {
+						artifact_slot_type = primary_armament
+					}
+					save_scope_as = my_weapon
+					set_artifact_description = emoBoy_sword_duel_description
+					add_artifact_modifier = artifact_monthly_dynasty_prestige_1_modifier
+					add_artifact_modifier = artifact_monthly_prestige_1_modifier
+					set_artifact_rarity = famed
+				}
+			}
+		}
+	}
+}
+
+# Targaryens Fled - Targaryen Event
+agot_events_rr_minor.1000 = {
+	type = character_event
+	title = agot_events_rr_minor.1000.t
+	desc = agot_events_rr_minor.1000.desc
+	theme = war
+
+	override_background = {
+		reference = AGOT_rowboat_night_moonlight_strong
+	}
+
+	left_portrait = scope:exile
+	lower_left_portrait = scope:heir
+
+	immediate = {
+		every_in_list = {
+			list = dragonstone_char_list
+			limit = {
+				NOT = {
+					location ?= root.location
+				}
+			}
+			set_location = {
+				location = root.location
+			}
+		}
+		# Re add claims to Targaryen Exiles in case they were not part of the character list before.. e.g. Aegon6 and Rhaenys
+		every_courtier = {
+			limit = {
+				house = character:Targaryen_1.house
+			}
+			hidden_effect = { targ_exile_claim_generation_effect = yes }
+		}
+		root.primary_heir ?= {
+			save_scope_as = heir
+		}
+		title:h_the_iron_throne.holder ?= {
+			save_scope_as = iron_throne_ruler
+		}
+	}
+
+	option = {
+		name = agot_events_rr_minor.1000.a
+		# Set House Head
+		if = {
+			limit = {
+				NOT = { scope:exile.house.house_head = scope:exile }
+			}
+			scope:exile.house = {
+				set_house_head = scope:exile
+			}
+		}
+		# Fire Notification Event
+		title:h_the_iron_throne.holder ?= {
+			trigger_event = agot_events_rr_minor.1001
+		}
+		every_player = {
+			limit = {
+				NOT = {
+					this = scope:exile
+					this = title:h_the_iron_throne.holder
+				}
+			}
+			trigger_event = agot_events_rr_minor.1001
+		}
+	}
+}
+
+# Targaryens Fled - Iron Throne / Player Notification Event
+agot_events_rr_minor.1001 = {
+	type = character_event
+	title = agot_events_rr_minor.1000.t
+	desc = agot_events_rr_minor.1000.desc
+	theme = war
+
+	override_background = {
+		reference = AGOT_rowboat_night_moonlight_strong
+	}
+
+	left_portrait = scope:exile
+	lower_left_portrait = scope:heir
+
+	immediate = {
+	}
+
+	option = {
+		name = agot_events_rr_minor.1000.a
+		if = {
+			limit = {
+				has_title = title:h_the_iron_throne
+				has_title = title:c_dragonstone
+				has_global_variable = baratheons_won_throne
+			}
+			title:e_the_stormlands = { save_scope_as = old_demesne_main_title }
+			save_scope_as = choosing_ruler
+			trigger_event = agot_mega_wars.0505
+		}
+	}
+}

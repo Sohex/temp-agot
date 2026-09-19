@@ -1,0 +1,1377 @@
+﻿agot_create_personal_coa = {
+	save_scope_as = actor
+	add_character_flag = has_personal_coa
+	if = {
+		limit = {
+			scope:actor = {
+				is_playable_character = yes
+			}
+		}
+		create_character = {
+			name = "Dummy"
+			gender = male
+			employer = scope:actor
+			trait = agot_dummy_trait
+			random_traits = no
+			faith = scope:actor.faith
+			culture = scope:actor.culture
+			dynasty = generate
+			save_scope_as = recipient
+		}
+	}
+	else_if = {
+		limit = {
+			scope:actor = {
+				is_playable_character = no
+			}
+		}
+		title:c_ruins.holder = {
+			save_scope_as = ruins
+		}
+		create_character = {
+			name = "Dummy"
+			gender = male
+			employer = scope:ruins
+			trait = agot_dummy_trait
+			random_traits = no
+			faith = scope:actor.faith
+			culture = scope:actor.culture
+			dynasty = generate
+			save_scope_as = recipient
+		}
+	}
+	scope:recipient = {
+		house = {
+			set_house_name = coa_new_name
+			set_variable = hide_in_ledger
+		}
+		dynasty ?= {
+			switch = {
+				trigger = scope:actor.prestige_level
+				0 = {
+					add_dynasty_prestige_level = {
+						subtract = dynasty_prestige_level
+						add = 1
+					}
+				}
+				1 = {
+					add_dynasty_prestige_level = {
+						subtract = dynasty_prestige_level
+						add = 3
+					}
+				}
+				2 = {
+					add_dynasty_prestige_level = {
+						subtract = dynasty_prestige_level
+						add = 5
+					}
+				}
+				3 = {
+					add_dynasty_prestige_level = {
+						subtract = dynasty_prestige_level
+						add = 7
+					}
+				}
+				4 = {
+					add_dynasty_prestige_level = {
+						subtract = dynasty_prestige_level
+						add = 9
+					}
+				}
+				5 = {
+					add_dynasty_prestige_level = {
+						subtract = dynasty_prestige_level
+						add = 10
+					}
+				}
+			}
+		}
+		set_variable = {
+			name = my_coa_belongs_to
+			value = scope:actor
+		}
+	}
+
+	if = {
+		limit = {
+			OR = {
+				scope:pcoa_plain ?= yes
+				scope:pcoa_nickname ?= yes
+				scope:pcoa_ancestral_quartering ?= yes
+				scope:pcoa_religious ?= yes
+				scope:pcoa_fourth_child ?= yes
+				scope:pcoa_random ?= yes
+			}
+		}
+		switch = {
+			trigger = yes
+			scope:pcoa_plain = {
+				if = {
+					limit = {
+						scope:actor = { is_lowborn = no }
+					}
+					scope:recipient.house = { set_coa = scope:actor.house }
+				}
+				else = {
+					scope:recipient.house = { generate_coa = yes }
+				}
+			}
+			scope:pcoa_nickname = {
+				agot_select_personal_coa_based_on_nickname_system = yes
+			}
+			scope:pcoa_ancestral_quartering = {
+				agot_generate_ancestral_quartering_coa = yes
+			}
+			scope:pcoa_religious = {
+				agot_select_special_rhllor_personal_coa = yes
+			}
+			scope:pcoa_fourth_child = {
+				agot_select_personal_coa_based_on_birth_number = yes
+			}
+			scope:pcoa_random = {
+				scope:recipient.house = { generate_coa = yes }
+			}
+		}
+	}
+	else = {
+		if = {
+			limit = {
+				scope:actor = {
+					has_nickname_for_personal_coa_trigger = yes #Using this because black/white/red nickname triggers are including nicknames that has no personal coa attached to.
+				}
+			}
+			agot_select_personal_coa_based_on_nickname_system = yes
+		}
+		else_if = {
+			limit = {
+				scope:actor = {
+					valid_character_for_rhllor_personal_coa_trigger = yes
+				}
+			}
+			if = {
+				limit = { has_specific_rhllor_personal_coa_trigger = yes }
+				agot_select_special_rhllor_personal_coa = yes
+			}
+			else_if = {
+				limit = { has_no_house_rhllor_personal_coa_trigger = yes }
+				agot_select_no_house_rhllor_personal_coa = yes
+				house = {
+					remove_variable = rhllor_coa_holder
+					set_variable = {
+						name = rhllor_coa_holder
+						value = scope:actor
+					}
+				}
+			}
+			else = {
+				agot_select_rhllor_personal_coa = yes
+				house = {
+					remove_variable = rhllor_coa_holder
+					set_variable = {
+						name = rhllor_coa_holder
+						value = scope:actor
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:actor = {
+					can_recieve_fourth_child_personal_coa_trigger = {
+						ACTOR = this
+					}
+				}
+			}
+			agot_select_personal_coa_based_on_birth_number = yes
+		}
+		else_if = {
+			limit = { scope:actor = { has_character_flag = selecting_faction_coa } }
+			if = {
+				limit = {
+					scope:actor = {
+						OR = {
+							AND = {
+								has_character_flag = is_Targaryen_63
+								is_married = yes
+								exists = dynasty:dynn_Velaryon.dynasty_founder.house
+								scope:actor.primary_spouse.house = dynasty:dynn_Velaryon.dynasty_founder.house
+							}
+							has_character_flag = is_Targaryen_65
+						}
+					}
+				}
+				if = {
+					limit = {
+						has_character_flag = is_Targaryen_63
+						is_married = yes
+						exists = dynasty:dynn_Velaryon.dynasty_founder.house
+						scope:actor.primary_spouse.house = dynasty:dynn_Velaryon.dynasty_founder.house
+					}
+					scope:recipient.house = { set_coa = rhaenrya_personal_coa }
+				}
+				else_if = {
+					limit = {
+						has_character_flag = is_Targaryen_65
+					}
+					scope:recipient.house = { set_coa = aegon_ii_personal_arms }
+				}
+			}
+			else = {
+				random_list = {
+					99 = {
+						trigger = {
+							scope:actor = {
+								has_trait = dragonrider
+								any_relation = {
+									type = agot_dragon
+									is_alive = yes
+									can_have_dragon_color_coa = yes
+								}
+							}
+						}
+						scope:recipient = { assign_dragon_color_for_coa = yes }
+						scope:actor = { agot_select_faction_coa = yes }
+						scope:recipient.house = { generate_coa = agot_faction_coa }
+					}
+					1 = {
+						scope:actor = { agot_select_faction_coa = yes }
+						scope:recipient.house = { generate_coa = agot_faction_coa }
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:actor = {
+					is_lowborn = yes
+				}
+			}
+			scope:recipient.house = { generate_coa = yes }
+		}
+		else = {
+			scope:recipient.house = { set_coa = scope:actor.house }
+		}
+	}
+
+	scope:actor = {
+		set_variable = {
+			name = my_personal_coa
+			value = scope:recipient
+		}
+		set_relation_agot_personal_coa_slave = scope:recipient
+		if = {
+			limit = {
+				scope:actor = {
+					is_ai = yes
+				}
+			}
+			scope:recipient = { save_scope_as = exiled_dummy } # Send away the COA Dummy Immediately since the AI won't be editing their own COAs
+			trigger_event = agot_events_personal_coat_of_arms.0001
+		}
+		else = {
+			scope:recipient = { save_scope_as = exiled_dummy } # Send away the COA Dummy a few days after
+			trigger_event = { id = agot_events_personal_coat_of_arms.0001 days = 1 }
+		}
+	}
+}
+
+agot_personal_coa_frame_updater_effect = {
+	var:my_personal_coa.dynasty ?= {
+		switch = {
+			trigger = root.prestige_level
+			0 = {
+				add_dynasty_prestige_level = {
+					subtract = root.var:my_personal_coa.dynasty.dynasty_prestige_level
+					add = 1
+				}
+			}
+			1 = {
+				add_dynasty_prestige_level = {
+					subtract = root.var:my_personal_coa.dynasty.dynasty_prestige_level
+					add = 3
+				}
+			}
+			2 = {
+				add_dynasty_prestige_level = {
+					subtract = root.var:my_personal_coa.dynasty.dynasty_prestige_level
+					add = 5
+				}
+			}
+			3 = {
+				add_dynasty_prestige_level = {
+					subtract = root.var:my_personal_coa.dynasty.dynasty_prestige_level
+					add = 7
+				}
+			}
+			4 = {
+				add_dynasty_prestige_level = {
+					subtract = root.var:my_personal_coa.dynasty.dynasty_prestige_level
+					add = 9
+				}
+			}
+			5 = {
+				add_dynasty_prestige_level = {
+					subtract = root.var:my_personal_coa.dynasty.dynasty_prestige_level
+					add = 10
+				}
+			}
+		}
+	}
+}
+
+agot_generate_ancestral_quartering_coa = {
+	scope:recipient = {
+		dynasty ?= { set_coa = scope:actor.house }
+	}
+	create_character = {
+		location = scope:actor.location
+		faith = scope:actor.faith
+		culture = scope:actor.culture
+		gender = male
+		dynasty = none
+		save_scope_as = new_dummy
+		after_creation = {
+			set_house = scope:recipient.house
+			house = {
+				set_house_head = scope:new_dummy
+			}
+			scope:recipient = {
+				create_dynamic_title = {
+					tier = duchy
+					name = placeholder
+				}
+				create_title_and_vassal_change = {
+					type = created
+					save_scope_as = change
+					add_claim_on_loss = no
+				}
+				scope:new_title = {
+					set_capital_county = title:c_ruins
+					set_landless_title = yes
+					set_destroy_on_gain_same_tier = yes
+					set_no_automatic_claims = yes
+					set_can_be_named_after_dynasty = no
+					change_title_holder = {
+						holder = scope:recipient
+						change = scope:change
+					}
+				}
+				resolve_title_and_vassal_change = scope:change
+				title:c_ruins = {
+					scope:actor = {
+						if = { #Mom
+							limit = {
+								mother ?= {
+									NOT = { dynasty ?= root.dynasty }
+									is_lowborn = no
+								}
+							}
+							prev = { set_coa = root.mother.house }
+						}
+						else_if = { #Dad
+							limit = {
+								father ?= {
+									NOT = { dynasty ?= root.dynasty }
+									is_lowborn = no
+								}
+							}
+							prev = { set_coa = root.father.house }
+						}
+						else_if = { #Father's Father
+							limit = {
+								exists = father
+								father.father ?= {
+									NOT = { dynasty ?= root.dynasty }
+									is_lowborn = no
+								}
+							}
+							prev = { set_coa = root.father.father.house }
+						}
+						else_if = { #Father's Mother
+							limit = {
+								exists = father
+								father.mother ?= {
+									NOT = { dynasty ?= root.dynasty }
+									is_lowborn = no
+								}
+							}
+							prev = { set_coa = root.father.mother.house }
+						}
+						else_if = { #Mother's Father
+							limit = {
+								exists = mother
+								mother.father ?= {
+									NOT = { dynasty ?= root.dynasty }
+									is_lowborn = no
+								}
+							}
+							prev = { set_coa = root.mother.father.house }
+						}
+						else_if = { #Mother's Mother
+							limit = {
+								exists = mother
+								mother.mother ?= {
+									NOT = { dynasty ?= root.dynasty }
+									is_lowborn = no
+								}
+							}
+							prev = { set_coa = root.mother.mother.house }
+						}
+						else_if = { #Spouse
+							limit = {
+								primary_spouse ?= {
+									NOT = { dynasty ?= root.dynasty }
+									is_lowborn = no
+								}
+							}
+							prev = { set_coa = root.primary_spouse.house }
+						}
+					}
+				}
+				create_cadet_branch = {}
+				destroy_title = scope:new_title
+				title:c_ruins = {
+					set_coa = ruins_coa
+				}
+				house = {
+					set_variable = hide_in_ledger
+				}
+				scope:new_dummy = {
+					dynasty ?= { set_variable = hide_in_ledger }
+					death = {
+						death_reason = death_vanished
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_create_personal_coa_for_historical_ai = {
+	$ACTOR$ = {
+		save_scope_as = actor
+		add_character_flag = has_personal_coa
+		title:c_ruins.holder = {
+			save_scope_as = ruins
+		}
+		create_character = {
+			name = "Dummy"
+			gender = male
+			employer = scope:ruins # AI Doesn't need to edit their COA, so send the dummy away immediately.
+			trait = agot_dummy_trait
+			faith = scope:actor.faith
+			culture = scope:actor.culture
+			dynasty = generate
+			save_scope_as = recipient
+		}
+		scope:recipient = {
+			scope:recipient.house = {
+				set_house_name = coa_new_name
+				set_coa = $COA_KEY$
+				set_variable = hide_in_ledger
+			}
+			set_variable = {
+				name = my_coa_belongs_to
+				value = scope:actor
+			}
+		}
+		scope:actor = {
+			set_variable = {
+				name = my_personal_coa
+				value = scope:recipient
+			}
+			set_relation_agot_personal_coa_slave = scope:recipient
+			scope:recipient = { save_scope_as = exiled_dummy } # Send away the COA Dummy Immediately since the AI won't be editing their own COAs
+			trigger_event = agot_events_personal_coat_of_arms.0001
+		}
+	}
+}
+agot_prune_personal_coa = {
+	var:my_personal_coa ?= {
+		add_character_flag = removing_personal_coa
+		death = {
+			death_reason = death_vanished
+		}
+	}
+	remove_variable = my_personal_coa
+	remove_character_flag = has_personal_coa
+}
+agot_set_personal_coa_based_on_house = {
+	#agot_set_personal_coa_based_on_house = { HOUSE_NAME = scope:actor.house } # This effect is reading 'scope:actor.house' itself as the VALUE, not the actual value BEHIND scope:actor.house. It needs something just like 'Lannister' or 'Stark' as it does not evaluate input. D=
+	set_coa = dynn_$HOUSE_NAME$_personal_coa_forth_son
+}
+agot_select_personal_coa_based_on_nickname_system = {
+	switch = {
+		trigger = house
+		dynasty:dynn_Lannister.dynasty_founder.house = {
+			scope:actor = {
+				switch = {
+					trigger = has_nickname
+					nick_agot_the_black_lion = { scope:recipient.house = { set_coa = dynn_Lannister_black_lion_personal_coa } }
+					nick_agot_the_white_lion = { scope:recipient.house = { set_coa = dynn_Lannister_white_lion_personal_coa } }
+					nick_agot_the_red_lion = { scope:recipient.house = { set_coa = dynn_Lannister_red_lion_personal_coa } }
+				}
+			}
+		}
+		dynasty:dynn_Stark.dynasty_founder.house = {
+			scope:actor = {
+				switch = {
+					trigger = has_nickname
+					nick_agot_the_black_wolf = { scope:recipient.house = { set_coa = dynn_Stark_black_wolf_personal_coa } }
+					nick_agot_the_white_wolf = { scope:recipient.house = { set_coa = dynn_Stark_white_wolf_personal_coa } }
+					nick_agot_the_red_wolf = { scope:recipient.house = { set_coa = dynn_Stark_red_wolf_personal_coa } }
+				}
+			}
+		}
+		dynasty:dynn_Targaryen.dynasty_founder.house = {
+			scope:actor = {
+				switch = {
+					trigger = has_nickname
+					nick_agot_the_white_dragon = { scope:recipient.house = { set_coa = dynn_Targaryen_white_dragon_personal_coa } }
+				}
+			}
+		}
+		dynasty:dynn_Baratheon.dynasty_founder.house = {
+			scope:actor = {
+				switch = {
+					trigger = has_nickname
+					nick_agot_the_white_stag = { scope:recipient.house = { set_coa = dynn_Baratheon_white_stag_personal_coa } }
+					nick_agot_the_red_stag = { scope:recipient.house = { set_coa = dynn_Baratheon_red_stag_personal_coa  } }
+				}
+			}
+		}
+		dynasty:dynn_Tyrell.dynasty_founder.house = {
+			scope:actor = {
+				switch = {
+					trigger = has_nickname
+					nick_agot_the_black_rose = { scope:recipient.house = { set_coa = dynn_Tyrell_black_rose_personal_coa } }
+					nick_agot_the_white_rose = { scope:recipient.house = { set_coa = dynn_Tyrell_white_rose_personal_coa  } }
+					nick_agot_the_red_rose = { scope:recipient.house = { set_coa = dynn_Tyrell_red_rose_personal_coa  } }
+				}
+			}
+		}
+		dynasty:dynn_Greyjoy.dynasty_founder.house = {
+			scope:actor = {
+				switch = {
+					trigger = has_nickname
+					nick_agot_the_white_squid = { scope:recipient.house = { set_coa = dynn_Greyjoy_white_squid_personal_coa } }
+					nick_agot_the_red_squid = { scope:recipient.house = { set_coa = dynn_Greyjoy_red_squid_personal_coa  } }
+				}
+			}
+		}
+		dynasty:dynn_Tully.dynasty_founder.house = {
+			scope:actor = {
+				switch = {
+					trigger = has_nickname
+					nick_agot_the_white_fish = { scope:recipient.house = { set_coa = dynn_Tully_white_fish_personal_coa } }
+					nick_agot_the_red_fish = { scope:recipient.house = { set_coa = dynn_Tully_red_fish_personal_coa  } }
+					nick_agot_the_black_fish = { scope:recipient.house = { set_coa = bryden_blackfish_tully_personal_coa  } }
+				}
+			}
+		}
+		dynasty:dynn_Arryn.dynasty_founder.house = {
+			scope:actor = {
+				switch = {
+					trigger = has_nickname
+					nick_agot_the_black_falcon = { scope:recipient.house = { set_coa = dynn_Arryn_black_falcon_personal_coa } }
+					nick_agot_the_red_falcon = { scope:recipient.house = { set_coa = dynn_Arryn_red_falcon_personal_coa  } }
+				}
+			}
+		}
+	}
+}
+
+agot_select_personal_coa_based_on_birth_number = {
+	scope:recipient = {
+		dynasty ?= { set_coa = scope:actor.house }
+	}
+	create_character = {
+		location = scope:actor.location
+		faith = scope:actor.faith
+		culture = scope:actor.culture
+		gender = male
+		dynasty = none
+		save_scope_as = new_dummy
+		after_creation = {
+			set_house = scope:recipient.house
+			house = {
+				set_house_head = scope:new_dummy
+			}
+			scope:recipient = {
+				create_dynamic_title = {
+					tier = duchy
+					name = placeholder
+				}
+				create_title_and_vassal_change = {
+					type = created
+					save_scope_as = change
+					add_claim_on_loss = no
+				}
+				scope:new_title = {
+					set_capital_county = title:c_ruins
+					set_landless_title = yes
+					set_destroy_on_gain_same_tier = yes
+					set_no_automatic_claims = yes
+					set_can_be_named_after_dynasty = no
+					change_title_holder = {
+						holder = scope:recipient
+						change = scope:change
+					}
+				}
+				resolve_title_and_vassal_change = scope:change
+				title:c_ruins = {
+					set_coa = scope:actor.house
+				}
+				create_cadet_branch = {}
+				destroy_title = scope:new_title
+				title:c_ruins = {
+					set_coa = ruins_coa
+				}
+				house = {
+					set_variable = hide_in_ledger
+				}
+				scope:new_dummy = {
+					dynasty ?= { set_variable = hide_in_ledger }
+					death = {
+						death_reason = death_vanished
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_select_rhllor_personal_coa = {
+	switch = {
+		trigger = house
+		dynasty:dynn_Stark.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Stark_rhllor_personal_coa }
+		}
+		dynasty:dynn_Bolton.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Bolton_rhllor_personal_coa }
+		}
+		dynasty:dynn_Glover.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Glover_rhllor_personal_coa }
+		}
+		dynasty:dynn_Ryswell.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Ryswell_rhllor_personal_coa }
+		}
+		house:house_Karstark = {
+			scope:recipient.house = { set_coa = Karstark_rhllor_personal_coa }
+		}
+		dynasty:dynn_Tully.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Tully_rhllor_personal_coa }
+		}
+		dynasty:dynn_Blackwood.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Blackwood_rhllor_personal_coa }
+		}
+		dynasty:dynn_Bracken.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Bracken_rhllor_personal_coa }
+		}
+		dynasty:dynn_Frey.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Frey_rhllor_personal_coa }
+		}
+		dynasty:dynn_Arryn.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Arryn_rhllor_personal_coa }
+		}
+		dynasty:dynn_Redfort.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Redfort_rhllor_personal_coa }
+		}
+		dynasty:dynn_Corbray.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Corbray_rhllor_personal_coa }
+		}
+		dynasty:dynn_Royce.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Royce_rhllor_personal_coa }
+		}
+		dynasty:dynn_Greyjoy.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Greyjoy_rhllor_personal_coa }
+		}
+		dynasty:dynn_Harlaw.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Harlaw_rhllor_personal_coa }
+		}
+		dynasty:dynn_Drumm.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Drumm_rhllor_personal_coa }
+		}
+		dynasty:dynn_Saltcliffe.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Saltcliffe_rhllor_personal_coa }
+		}
+		dynasty:dynn_Targaryen.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Targaryen_rhllor_personal_coa }
+		}
+		house:house_Blackfyre = {
+			scope:recipient.house = { set_coa = Blackfyre_rhllor_personal_coa }
+		}
+		dynasty:dynn_Velaryon.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Velaryon_rhllor_personal_coa }
+		}
+		dynasty:dynn_Celtigar.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Celtigar_rhllor_personal_coa }
+		}
+		dynasty:dynn_Baratheon.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Baratheon_rhllor_personal_coa }
+		}
+		dynasty:dynn_Dondarrion.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Dondarrion_rhllor_personal_coa }
+		}
+		dynasty:dynn_Estermont.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Estermont_rhllor_personal_coa }
+		}
+		dynasty:dynn_Selmy.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Selmy_rhllor_personal_coa }
+		}
+		dynasty:dynn_Lannister.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Lannister_rhllor_personal_coa }
+		}
+		dynasty:dynn_Reyne.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Reyne_rhllor_personal_coa }
+		}
+		dynasty:dynn_Brax.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Brax_rhllor_personal_coa }
+		}
+		dynasty:dynn_Tyrell.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Tyrell_rhllor_personal_coa }
+		}
+		dynasty:dynn_Hightower.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Hightower_rhllor_personal_coa }
+		}
+		dynasty:dynn_Florent.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Florent_rhllor_personal_coa }
+		}
+		dynasty:dynn_Rowan.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Rowan_rhllor_personal_coa }
+		}
+		house:house_Martell = {
+			scope:recipient.house = { set_coa = Martell_rhllor_personal_coa }
+		}
+		dynasty:dynn_Dayne.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Dayne_rhllor_personal_coa }
+		}
+		dynasty:dynn_Toland.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Toland_rhllor_personal_coa }
+		}
+		dynasty:dynn_Yronwood.dynasty_founder.house = {
+			scope:recipient.house = { set_coa = Yronwood_rhllor_personal_coa }
+		}
+	}
+}
+
+agot_select_no_house_rhllor_personal_coa = {
+	switch = {
+		trigger = dynasty
+		dynasty:dynn_Clegane = {
+			scope:recipient.house = { set_coa = Clegane_rhllor_personal_coa }
+		}
+	}
+}
+
+agot_select_special_rhllor_personal_coa = {
+	switch = {
+		trigger = this
+		character:Stark_7 = {
+			scope:recipient.house = { set_coa = Jonsnow_rhllor_personal_coa }
+		}
+		character:Targaryen_96 = {
+			scope:recipient.house = { set_coa = Bloodraven_rhllor_personal_coa }
+		}
+		character:Targaryen_95 = {
+			scope:recipient.house = { set_coa = Bittersteel_rhllor_personal_coa }
+		}
+	}
+}
+
+agot_select_faction_coa = {
+	switch = {
+		trigger = dynasty
+		dynasty:dynn_Alderdice = { scope:recipient = { add_character_flag = dynn_Alderdice_flag } }
+		dynasty:dynn_Algood = { scope:recipient = { add_character_flag = dynn_Algood_flag } }
+		dynasty:dynn_Allyrion = { scope:recipient = { add_character_flag = dynn_Allyrion_flag } }
+		dynasty:dynn_Altger = { scope:recipient = { add_character_flag = dynn_Altger_flag } }
+		dynasty:dynn_Amber = { scope:recipient = { add_character_flag = dynn_Amber_flag } }
+		dynasty:dynn_Ambrose = { scope:recipient = { add_character_flag = dynn_Ambrose_flag } }
+		dynasty:dynn_Appleton = { scope:recipient = { add_character_flag = dynn_Appleton_flag } }
+		dynasty:dynn_Arryn = { scope:recipient = { add_character_flag = dynn_Arryn_flag } }
+		dynasty:dynn_Ashford = { scope:recipient = { add_character_flag = dynn_Ashford_flag } }
+		dynasty:dynn_Ashwood = { scope:recipient = { add_character_flag = dynn_Ashwood_flag } }
+		dynasty:dynn_Auldryn = { scope:recipient = { add_character_flag = dynn_Auldryn_flag } }
+		dynasty:dynn_Averdyre = { scope:recipient = { add_character_flag = dynn_Averdyre_flag } }
+		dynasty:dynn_Back = { scope:recipient = { add_character_flag = dynn_Back_flag } }
+		dynasty:dynn_Badics = { scope:recipient = { add_character_flag = dynn_Badics_flag } }
+		dynasty:dynn_Baelish = { scope:recipient = { add_character_flag = dynn_Baelish_flag } }
+		dynasty:dynn_Ball = { scope:recipient = { add_character_flag = dynn_Ball_flag } }
+		dynasty:dynn_Banefort = { scope:recipient = { add_character_flag = dynn_Banefort_flag } }
+		dynasty:dynn_Bar_Emmon = { scope:recipient = { add_character_flag = dynn_Bar_Emmon_flag } }
+		dynasty:dynn_Baratheon = { scope:recipient = { add_character_flag = dynn_Baratheon_flag } }
+		dynasty:dynn_Barrett = { scope:recipient = { add_character_flag = dynn_Barrett_flag } }
+		dynasty:dynn_Beale = { scope:recipient = { add_character_flag = dynn_Beale_flag } }
+		dynasty:dynn_Bean = { scope:recipient = { add_character_flag = dynn_Bean_flag } }
+		dynasty:dynn_Beesbury = { scope:recipient = { add_character_flag = dynn_Beesbury_flag } }
+		dynasty:dynn_Belgrave = { scope:recipient = { add_character_flag = dynn_Belgrave_flag } }
+		dynasty:dynn_Bellamy = { scope:recipient = { add_character_flag = dynn_Bellamy_flag } }
+		dynasty:dynn_Belmore = { scope:recipient = { add_character_flag = dynn_Belmore_flag } }
+		dynasty:dynn_Bentley = { scope:recipient = { add_character_flag = dynn_Bentley_flag } }
+		dynasty:dynn_Bettencer = { scope:recipient = { add_character_flag = dynn_Bettencer_flag } }
+		dynasty:dynn_Bettley = { scope:recipient = { add_character_flag = dynn_Bettley_flag } }
+		dynasty:dynn_Bigglestone = { scope:recipient = { add_character_flag = dynn_Bigglestone_flag } }
+		dynasty:dynn_Blackbar = { scope:recipient = { add_character_flag = dynn_Blackbar_flag } }
+		dynasty:dynn_Blackberry = { scope:recipient = { add_character_flag = dynn_Blackberry_flag } }
+		dynasty:dynn_Blackbrow = { scope:recipient = { add_character_flag = dynn_Blackbrow_flag } }
+		dynasty:dynn_Blackmont = { scope:recipient = { add_character_flag = dynn_Blackmont_flag } }
+		dynasty:dynn_Blackmyre = { scope:recipient = { add_character_flag = dynn_Blackmyre_flag } }
+		dynasty:dynn_Blacktyde = { scope:recipient = { add_character_flag = dynn_Blacktyde_flag } }
+		dynasty:dynn_Blackwater = { scope:recipient = { add_character_flag = dynn_Blackwater_flag } }
+		dynasty:dynn_Blackwood = { scope:recipient = { add_character_flag = dynn_Blackwood_flag } }
+		dynasty:dynn_Blanetree = { scope:recipient = { add_character_flag = dynn_Blanetree_flag } }
+		dynasty:dynn_Bleaker = { scope:recipient = { add_character_flag = dynn_Bleaker_flag } }
+		dynasty:dynn_Blount = { scope:recipient = { add_character_flag = dynn_Blount_flag } }
+		dynasty:dynn_Boddy = { scope:recipient = { add_character_flag = dynn_Boddy_flag } }
+		dynasty:dynn_Boggs = { scope:recipient = { add_character_flag = dynn_Boggs_flag } }
+		dynasty:dynn_Bole = { scope:recipient = { add_character_flag = dynn_Bole_flag } }
+		dynasty:dynn_Bolton = { scope:recipient = { add_character_flag = dynn_Bolton_flag } }
+		dynasty:dynn_Bommenstone = { scope:recipient = { add_character_flag = dynn_Bommenstone_flag } }
+		dynasty:dynn_Borrell = { scope:recipient = { add_character_flag = dynn_Borrell_flag } }
+		dynasty:dynn_Botley = { scope:recipient = { add_character_flag = dynn_Botley_flag } }
+		dynasty:dynn_Bourney = { scope:recipient = { add_character_flag = dynn_Bourney_flag } }
+		dynasty:dynn_Bowles = { scope:recipient = { add_character_flag = dynn_Bowles_flag } }
+		dynasty:dynn_Bracken = { scope:recipient = { add_character_flag = dynn_Bracken_flag } }
+		dynasty:dynn_Branch = { scope:recipient = { add_character_flag = dynn_Branch_flag } }
+		dynasty:dynn_Branfield = { scope:recipient = { add_character_flag = dynn_Branfield_flag } }
+		dynasty:dynn_Brask = { scope:recipient = { add_character_flag = dynn_Brask_flag } }
+		dynasty:dynn_Brax = { scope:recipient = { add_character_flag = dynn_Brax_flag } }
+		dynasty:dynn_Breakstone = { scope:recipient = { add_character_flag = dynn_Breakstone_flag } }
+		dynasty:dynn_Bretherick = { scope:recipient = { add_character_flag = dynn_Bretherick_flag } }
+		dynasty:dynn_Briar = { scope:recipient = { add_character_flag = dynn_Briar_flag } }
+		dynasty:dynn_Bridges = { scope:recipient = { add_character_flag = dynn_Bridges_flag } }
+		dynasty:dynn_Brightstone = { scope:recipient = { add_character_flag = dynn_Brightstone_flag } }
+		dynasty:dynn_Brook = { scope:recipient = { add_character_flag = dynn_Brook_flag } }
+		dynasty:dynn_Broome = { scope:recipient = { add_character_flag = dynn_Broome_flag } }
+		dynasty:dynn_Brownbarrow = { scope:recipient = { add_character_flag = dynn_Brownbarrow_flag } }
+		dynasty:dynn_Brownhill = { scope:recipient = { add_character_flag = dynn_Brownhill_flag } }
+		dynasty:dynn_Brune = { scope:recipient = { add_character_flag = dynn_Brune_flag } }
+		dynasty:dynn_Buckler = { scope:recipient = { add_character_flag = dynn_Buckler_flag } }
+		dynasty:dynn_Buckwell = { scope:recipient = { add_character_flag = dynn_Buckwell_flag } }
+		dynasty:dynn_Bullock = { scope:recipient = { add_character_flag = dynn_Bullock_flag } }
+		dynasty:dynn_Bulwer = { scope:recipient = { add_character_flag = dynn_Bulwer_flag } }
+		dynasty:dynn_Burley = { scope:recipient = { add_character_flag = dynn_Burley_flag } }
+		dynasty:dynn_Bush = { scope:recipient = { add_character_flag = dynn_Bush_flag } }
+		dynasty:dynn_Bushy = { scope:recipient = { add_character_flag = dynn_Bushy_flag } }
+		dynasty:dynn_Butterwell = { scope:recipient = { add_character_flag = dynn_Butterwell_flag } }
+		dynasty:dynn_Byrch = { scope:recipient = { add_character_flag = dynn_Byrch_flag } }
+		dynasty:dynn_Byrne = { scope:recipient = { add_character_flag = dynn_Byrne_flag } }
+		dynasty:dynn_Bywater = { scope:recipient = { add_character_flag = dynn_Bywater_flag } }
+		dynasty:dynn_Cafferen = { scope:recipient = { add_character_flag = dynn_Cafferen_flag } }
+		dynasty:dynn_Cargyll = { scope:recipient = { add_character_flag = dynn_Cargyll_flag } }
+		dynasty:dynn_Carian = { scope:recipient = { add_character_flag = dynn_Carian_flag } }
+		dynasty:dynn_Caron = { scope:recipient = { add_character_flag = dynn_Caron_flag } }
+		dynasty:dynn_Casterly = { scope:recipient = { add_character_flag = dynn_Casterly_flag } }
+		dynasty:dynn_Caswell = { scope:recipient = { add_character_flag = dynn_Caswell_flag } }
+		dynasty:dynn_Caulfield = { scope:recipient = { add_character_flag = dynn_Caulfield_flag } }
+		dynasty:dynn_Cave = { scope:recipient = { add_character_flag = dynn_Cave_flag } }
+		dynasty:dynn_Celtigar = { scope:recipient = { add_character_flag = dynn_Celtigar_flag } }
+		dynasty:dynn_Cerwyn = { scope:recipient = { add_character_flag = dynn_Cerwyn_flag } }
+		dynasty:dynn_Chambers = { scope:recipient = { add_character_flag = dynn_Chambers_flag } }
+		dynasty:dynn_Charlton = { scope:recipient = { add_character_flag = dynn_Charlton_flag } }
+		dynasty:dynn_Chase = { scope:recipient = { add_character_flag = dynn_Chase_flag } }
+		dynasty:dynn_Chaynes = { scope:recipient = { add_character_flag = dynn_Chaynes_flag } }
+		dynasty:dynn_Chelsted = { scope:recipient = { add_character_flag = dynn_Chelsted_flag } }
+		dynasty:dynn_Chester = { scope:recipient = { add_character_flag = dynn_Chester_flag } }
+		dynasty:dynn_Chyttering = { scope:recipient = { add_character_flag = dynn_Chyttering_flag } }
+		dynasty:dynn_Clare = { scope:recipient = { add_character_flag = dynn_Clare_flag } }
+		dynasty:dynn_Clegane = { scope:recipient = { add_character_flag = dynn_Clegane_flag } }
+		dynasty:dynn_Clifton = { scope:recipient = { add_character_flag = dynn_Clifton_flag } }
+		dynasty:dynn_Cobb = { scope:recipient = { add_character_flag = dynn_Cobb_flag } }
+		dynasty:dynn_Cockshaw = { scope:recipient = { add_character_flag = dynn_Cockshaw_flag } }
+		dynasty:dynn_Codd = { scope:recipient = { add_character_flag = dynn_Codd_flag } }
+		dynasty:dynn_Coldwater = { scope:recipient = { add_character_flag = dynn_Coldwater_flag } }
+		dynasty:dynn_Cole = { scope:recipient = { add_character_flag = dynn_Cole_flag } }
+		dynasty:dynn_Condon = { scope:recipient = { add_character_flag = dynn_Condon_flag } }
+		dynasty:dynn_Conklyn = { scope:recipient = { add_character_flag = dynn_Conklyn_flag } }
+		dynasty:dynn_Connington = { scope:recipient = { add_character_flag = dynn_Connington_flag } }
+		dynasty:dynn_Converlon = { scope:recipient = { add_character_flag = dynn_Converlon_flag } }
+		dynasty:dynn_Corbray = { scope:recipient = { add_character_flag = dynn_Corbray_flag } }
+		dynasty:dynn_Cordwayner = { scope:recipient = { add_character_flag = dynn_Cordwayner_flag } }
+		dynasty:dynn_Corne = { scope:recipient = { add_character_flag = dynn_Corne_flag } }
+		dynasty:dynn_Correy = { scope:recipient = { add_character_flag = dynn_Correy_flag } }
+		dynasty:dynn_Costayne = { scope:recipient = { add_character_flag = dynn_Costayne_flag } }
+		dynasty:dynn_Cox = { scope:recipient = { add_character_flag = dynn_Cox_flag } }
+		dynasty:dynn_Crabb = { scope:recipient = { add_character_flag = dynn_Crabb_flag } }
+		dynasty:dynn_Crakehall = { scope:recipient = { add_character_flag = dynn_Crakehall_flag } }
+		dynasty:dynn_Crane = { scope:recipient = { add_character_flag = dynn_Crane_flag } }
+		dynasty:dynn_Cray = { scope:recipient = { add_character_flag = dynn_Cray_flag } }
+		dynasty:dynn_Crayne = { scope:recipient = { add_character_flag = dynn_Crayne_flag } }
+		dynasty:dynn_Cressey = { scope:recipient = { add_character_flag = dynn_Cressey_flag } }
+		dynasty:dynn_Crews = { scope:recipient = { add_character_flag = dynn_Crews_flag } }
+		dynasty:dynn_Crowell = { scope:recipient = { add_character_flag = dynn_Crowell_flag } }
+		dynasty:dynn_Crowl = { scope:recipient = { add_character_flag = dynn_Crowl_flag } }
+		dynasty:dynn_Cullimore = { scope:recipient = { add_character_flag = dynn_Cullimore_flag } }
+		dynasty:dynn_Cupps = { scope:recipient = { add_character_flag = dynn_Cupps_flag } }
+		dynasty:dynn_Cuy = { scope:recipient = { add_character_flag = dynn_Cuy_flag } }
+		dynasty:dynn_Dabell = { scope:recipient = { add_character_flag = dynn_Dabell_flag } }
+		dynasty:dynn_Dalt = { scope:recipient = { add_character_flag = dynn_Dalt_flag } }
+		dynasty:dynn_Dannett = { scope:recipient = { add_character_flag = dynn_Dannett_flag } }
+		dynasty:dynn_Darkholme = { scope:recipient = { add_character_flag = dynn_Darkholme_flag } }
+		dynasty:dynn_Darklyn = { scope:recipient = { add_character_flag = dynn_Darklyn_flag } }
+		dynasty:dynn_Darry = { scope:recipient = { add_character_flag = dynn_Darry_flag } }
+		dynasty:dynn_Dayne = { scope:recipient = { add_character_flag = dynn_Dayne_flag } }
+		dynasty:dynn_Deadsing = { scope:recipient = { add_character_flag = dynn_Deadsing_flag } }
+		dynasty:dynn_Deddings = { scope:recipient = { add_character_flag = dynn_Deddings_flag } }
+		dynasty:dynn_Degore = { scope:recipient = { add_character_flag = dynn_Degore_flag } }
+		dynasty:dynn_Den_Brove = { scope:recipient = { add_character_flag = dynn_Den_Brove_flag } }
+		dynasty:dynn_Dennecent = { scope:recipient = { add_character_flag = dynn_Dennecent_flag } }
+		dynasty:dynn_Densmore = { scope:recipient = { add_character_flag = dynn_Densmore_flag } }
+		dynasty:dynn_Devener = { scope:recipient = { add_character_flag = dynn_Devener_flag } }
+		dynasty:dynn_Doggett = { scope:recipient = { add_character_flag = dynn_Doggett_flag } }
+		dynasty:dynn_Dondarrion = { scope:recipient = { add_character_flag = dynn_Dondarrion_flag } }
+		dynasty:dynn_Donnerly = { scope:recipient = { add_character_flag = dynn_Donnerly_flag } }
+		dynasty:dynn_Donniger = { scope:recipient = { add_character_flag = dynn_Donniger_flag } }
+		dynasty:dynn_Dormand = { scope:recipient = { add_character_flag = dynn_Dormand_flag } }
+		dynasty:dynn_Drinkwater = { scope:recipient = { add_character_flag = dynn_Drinkwater_flag } }
+		dynasty:dynn_Driscoll = { scope:recipient = { add_character_flag = dynn_Driscoll_flag } }
+		dynasty:dynn_Drox = { scope:recipient = { add_character_flag = dynn_Drox_flag } }
+		dynasty:dynn_Drumm = { scope:recipient = { add_character_flag = dynn_Drumm_flag } }
+		dynasty:dynn_Dryside = { scope:recipient = { add_character_flag = dynn_Dryside_flag } }
+		dynasty:dynn_Dulver = { scope:recipient = { add_character_flag = dynn_Dulver_flag } }
+		dynasty:dynn_Dunn = { scope:recipient = { add_character_flag = dynn_Dunn_flag } }
+		dynasty:dynn_Dunstable = { scope:recipient = { add_character_flag = dynn_Dunstable_flag } }
+		dynasty:dynn_Durrandon = { scope:recipient = { add_character_flag = dynn_Durrandon_flag } }
+		dynasty:dynn_Durwell = { scope:recipient = { add_character_flag = dynn_Durwell_flag } }
+		dynasty:dynn_Dustin = { scope:recipient = { add_character_flag = dynn_Dustin_flag } }
+		dynasty:dynn_Dutton = { scope:recipient = { add_character_flag = dynn_Dutton_flag } }
+		dynasty:dynn_Edgerton = { scope:recipient = { add_character_flag = dynn_Edgerton_flag } }
+		dynasty:dynn_Egen = { scope:recipient = { add_character_flag = dynn_Egen_flag } }
+		dynasty:dynn_Elesham = { scope:recipient = { add_character_flag = dynn_Elesham_flag } }
+		dynasty:dynn_Elliver = { scope:recipient = { add_character_flag = dynn_Elliver_flag } }
+		dynasty:dynn_Erdtree = { scope:recipient = { add_character_flag = dynn_Erdtree_flag } }
+		dynasty:dynn_Erenford = { scope:recipient = { add_character_flag = dynn_Erenford_flag } }
+		dynasty:dynn_Errol = { scope:recipient = { add_character_flag = dynn_Errol_flag } }
+		dynasty:dynn_Estermont = { scope:recipient = { add_character_flag = dynn_Estermont_flag } }
+		dynasty:dynn_Estren = { scope:recipient = { add_character_flag = dynn_Estren_flag } }
+		dynasty:dynn_Everran = { scope:recipient = { add_character_flag = dynn_Everran_flag } }
+		dynasty:dynn_Falwell = { scope:recipient = { add_character_flag = dynn_Falwell_flag } }
+		dynasty:dynn_Farman = { scope:recipient = { add_character_flag = dynn_Farman_flag } }
+		dynasty:dynn_Farring = { scope:recipient = { add_character_flag = dynn_Farring_flag } }
+		dynasty:dynn_Farrow = { scope:recipient = { add_character_flag = dynn_Farrow_flag } }
+		dynasty:dynn_Farseed = { scope:recipient = { add_character_flag = dynn_Farseed_flag } }
+		dynasty:dynn_Farwynd = { scope:recipient = { add_character_flag = dynn_Farwynd_flag } }
+		dynasty:dynn_Fell = { scope:recipient = { add_character_flag = dynn_Fell_flag } }
+		dynasty:dynn_Fenn = { scope:recipient = { add_character_flag = dynn_Fenn_flag } }
+		dynasty:dynn_Ferren = { scope:recipient = { add_character_flag = dynn_Ferren_flag } }
+		dynasty:dynn_Fisher = { scope:recipient = { add_character_flag = dynn_Fisher_flag } }
+		dynasty:dynn_Flattery = { scope:recipient = { add_character_flag = dynn_Flattery_flag } }
+		dynasty:dynn_Fletcher = { scope:recipient = { add_character_flag = dynn_Fletcher_flag } }
+		dynasty:dynn_Flint = { scope:recipient = { add_character_flag = dynn_Flint_flag } }
+		dynasty:dynn_Florent = { scope:recipient = { add_character_flag = dynn_Florent_flag } }
+		dynasty:dynn_Follard = { scope:recipient = { add_character_flag = dynn_Follard_flag } }
+		dynasty:dynn_Foote = { scope:recipient = { add_character_flag = dynn_Foote_flag } }
+		dynasty:dynn_Footly = { scope:recipient = { add_character_flag = dynn_Footly_flag } }
+		dynasty:dynn_Forrester = { scope:recipient = { add_character_flag = dynn_Forrester_flag } }
+		dynasty:dynn_Forthe = { scope:recipient = { add_character_flag = dynn_Forthe_flag } }
+		dynasty:dynn_Fossoway = { scope:recipient = { add_character_flag = dynn_Fossoway_flag } }
+		dynasty:dynn_Fowler = { scope:recipient = { add_character_flag = dynn_Fowler_flag } }
+		dynasty:dynn_Foxglove = { scope:recipient = { add_character_flag = dynn_Foxglove_flag } }
+		dynasty:dynn_Freeborn = { scope:recipient = { add_character_flag = dynn_Freeborn_flag } }
+		dynasty:dynn_Frey = { scope:recipient = { add_character_flag = dynn_Frey_flag } }
+		dynasty:dynn_Frost = { scope:recipient = { add_character_flag = dynn_Frost_flag } }
+		dynasty:dynn_Gardener = { scope:recipient = { add_character_flag = dynn_Gardener_flag } }
+		dynasty:dynn_Gargalen = { scope:recipient = { add_character_flag = dynn_Gargalen_flag } }
+		dynasty:dynn_Garner = { scope:recipient = { add_character_flag = dynn_Garner_flag } }
+		dynasty:dynn_Garnett = { scope:recipient = { add_character_flag = dynn_Garnett_flag } }
+		dynasty:dynn_Garrish = { scope:recipient = { add_character_flag = dynn_Garrish_flag } }
+		dynasty:dynn_Gaunt = { scope:recipient = { add_character_flag = dynn_Gaunt_flag } }
+		dynasty:dynn_Gillmore = { scope:recipient = { add_character_flag = dynn_Gillmore_flag } }
+		dynasty:dynn_Ginett = { scope:recipient = { add_character_flag = dynn_Ginett_flag } }
+		dynasty:dynn_Gleaner = { scope:recipient = { add_character_flag = dynn_Gleaner_flag } }
+		dynasty:dynn_Glenmore = { scope:recipient = { add_character_flag = dynn_Glenmore_flag } }
+		dynasty:dynn_Glover = { scope:recipient = { add_character_flag = dynn_Glover_flag } }
+		dynasty:dynn_Goodbrook = { scope:recipient = { add_character_flag = dynn_Goodbrook_flag } }
+		dynasty:dynn_Goodbrother = { scope:recipient = { add_character_flag = dynn_Goodbrother_flag } }
+		dynasty:dynn_Goode = { scope:recipient = { add_character_flag = dynn_Goode_flag } }
+		dynasty:dynn_Goodman = { scope:recipient = { add_character_flag = dynn_Goodman_flag } }
+		dynasty:dynn_Gore = { scope:recipient = { add_character_flag = dynn_Gore_flag } }
+		dynasty:dynn_Gorse = { scope:recipient = { add_character_flag = dynn_Gorse_flag } }
+		dynasty:dynn_Gower = { scope:recipient = { add_character_flag = dynn_Gower_flag } }
+		dynasty:dynn_Graceford = { scope:recipient = { add_character_flag = dynn_Graceford_flag } }
+		dynasty:dynn_Grafton = { scope:recipient = { add_character_flag = dynn_Grafton_flag } }
+		dynasty:dynn_Grandison = { scope:recipient = { add_character_flag = dynn_Grandison_flag } }
+		dynasty:dynn_Graves = { scope:recipient = { add_character_flag = dynn_Graves_flag } }
+		dynasty:dynn_Grayson = { scope:recipient = { add_character_flag = dynn_Grayson_flag } }
+		dynasty:dynn_Greenfield = { scope:recipient = { add_character_flag = dynn_Greenfield_flag } }
+		dynasty:dynn_Greenhill = { scope:recipient = { add_character_flag = dynn_Greenhill_flag } }
+		dynasty:dynn_Greenleaf = { scope:recipient = { add_character_flag = dynn_Greenleaf_flag } }
+		dynasty:dynn_Greenwood = { scope:recipient = { add_character_flag = dynn_Greenwood_flag } }
+		dynasty:dynn_Grell = { scope:recipient = { add_character_flag = dynn_Grell_flag } }
+		dynasty:dynn_Grey = { scope:recipient = { add_character_flag = dynn_Grey_flag } }
+		dynasty:dynn_Greyiron = { scope:recipient = { add_character_flag = dynn_Greyiron_flag } }
+		dynasty:dynn_Greyjoy = { scope:recipient = { add_character_flag = dynn_Greyjoy_flag } }
+		dynasty:dynn_Greysteel = { scope:recipient = { add_character_flag = dynn_Greysteel_flag } }
+		dynasty:dynn_Grimm = { scope:recipient = { add_character_flag = dynn_Grimm_flag } }
+		dynasty:dynn_Grimsby = { scope:recipient = { add_character_flag = dynn_Grimsby_flag } }
+		dynasty:dynn_Grolt = { scope:recipient = { add_character_flag = dynn_Grolt_flag } }
+		dynasty:dynn_Groves = { scope:recipient = { add_character_flag = dynn_Groves_flag } }
+		dynasty:dynn_Haigh = { scope:recipient = { add_character_flag = dynn_Haigh_flag } }
+		dynasty:dynn_Halcott = { scope:recipient = { add_character_flag = dynn_Halcott_flag } }
+		dynasty:dynn_Hall = { scope:recipient = { add_character_flag = dynn_Hall_flag } }
+		dynasty:dynn_Hamell = { scope:recipient = { add_character_flag = dynn_Hamell_flag } }
+		dynasty:dynn_Hammer = { scope:recipient = { add_character_flag = dynn_Hammer_flag } }
+		dynasty:dynn_Harclay = { scope:recipient = { add_character_flag = dynn_Harclay_flag } }
+		dynasty:dynn_Hardy = { scope:recipient = { add_character_flag = dynn_Hardy_flag } }
+		dynasty:dynn_Hardyng = { scope:recipient = { add_character_flag = dynn_Hardyng_flag } }
+		dynasty:dynn_Harlaw = { scope:recipient = { add_character_flag = dynn_Harlaw_flag } }
+		dynasty:dynn_Harlton = { scope:recipient = { add_character_flag = dynn_Harlton_flag } }
+		dynasty:dynn_Harme = { scope:recipient = { add_character_flag = dynn_Harme_flag } }
+		dynasty:dynn_Harrow = { scope:recipient = { add_character_flag = dynn_Harrow_flag } }
+		dynasty:dynn_Harroway = { scope:recipient = { add_character_flag = dynn_Harroway_flag } }
+		dynasty:dynn_Harte = { scope:recipient = { add_character_flag = dynn_Harte_flag } }
+		dynasty:dynn_Hastwyck = { scope:recipient = { add_character_flag = dynn_Hastwyck_flag } }
+		dynasty:dynn_Hasty = { scope:recipient = { add_character_flag = dynn_Hasty_flag } }
+		dynasty:dynn_Hawick = { scope:recipient = { add_character_flag = dynn_Hawick_flag } }
+		dynasty:dynn_Hawthorne = { scope:recipient = { add_character_flag = dynn_Hawthorne_flag } }
+		dynasty:dynn_Reaves = { scope:recipient = { add_character_flag = dynn_Reaves_flag } }
+		dynasty:dynn_Hayford = { scope:recipient = { add_character_flag = dynn_Hayford_flag } }
+		dynasty:dynn_Haynes = { scope:recipient = { add_character_flag = dynn_Haynes_flag } }
+		dynasty:dynn_Heddle = { scope:recipient = { add_character_flag = dynn_Heddle_flag } }
+		dynasty:dynn_Helney = { scope:recipient = { add_character_flag = dynn_Helney_flag } }
+		dynasty:dynn_Herston = { scope:recipient = { add_character_flag = dynn_Herston_flag } }
+		dynasty:dynn_Hersy = { scope:recipient = { add_character_flag = dynn_Hersy_flag } }
+		dynasty:dynn_Hetherspoon = { scope:recipient = { add_character_flag = dynn_Hetherspoon_flag } }
+		dynasty:dynn_Hewett = { scope:recipient = { add_character_flag = dynn_Hewett_flag } }
+		dynasty:dynn_Hickory = { scope:recipient = { add_character_flag = dynn_Hickory_flag } }
+		dynasty:dynn_Hightower = { scope:recipient = { add_character_flag = dynn_Hightower_flag } }
+		dynasty:dynn_Hildreath = { scope:recipient = { add_character_flag = dynn_Hildreath_flag } }
+		dynasty:dynn_Hoare = { scope:recipient = { add_character_flag = dynn_Hoare_flag } }
+		dynasty:dynn_Hogg = { scope:recipient = { add_character_flag = dynn_Hogg_flag } }
+		dynasty:dynn_Hollard = { scope:recipient = { add_character_flag = dynn_Hollard_flag } }
+		dynasty:dynn_Holt = { scope:recipient = { add_character_flag = dynn_Holt_flag } }
+		dynasty:dynn_Hood = { scope:recipient = { add_character_flag = dynn_Hood_flag } }
+		dynasty:dynn_Hornwood = { scope:recipient = { add_character_flag = dynn_Hornwood_flag } }
+		dynasty:dynn_Horpe = { scope:recipient = { add_character_flag = dynn_Horpe_flag } }
+		dynasty:dynn_Hull = { scope:recipient = { add_character_flag = dynn_Hull_flag } }
+		dynasty:dynn_Humble = { scope:recipient = { add_character_flag = dynn_Humble_flag } }
+		dynasty:dynn_Hungerford = { scope:recipient = { add_character_flag = dynn_Hungerford_flag } }
+		dynasty:dynn_Hunt = { scope:recipient = { add_character_flag = dynn_Hunt_flag } }
+		dynasty:dynn_Hunter = { scope:recipient = { add_character_flag = dynn_Hunter_flag } }
+		dynasty:dynn_Hutcheson = { scope:recipient = { add_character_flag = dynn_Hutcheson_flag } }
+		dynasty:dynn_Inchfield = { scope:recipient = { add_character_flag = dynn_Inchfield_flag } }
+		dynasty:dynn_Ironmaker = { scope:recipient = { add_character_flag = dynn_Ironmaker_flag } }
+		dynasty:dynn_Ironsmith = { scope:recipient = { add_character_flag = dynn_Ironsmith_flag } }
+		dynasty:dynn_Jast = { scope:recipient = { add_character_flag = dynn_Jast_flag } }
+		dynasty:dynn_Jesper = { scope:recipient = { add_character_flag = dynn_Jesper_flag } }
+		dynasty:dynn_Jordayne = { scope:recipient = { add_character_flag = dynn_Jordayne_flag } }
+		dynasty:dynn_Justman = { scope:recipient = { add_character_flag = dynn_Justman_flag } }
+		dynasty:dynn_Keath = { scope:recipient = { add_character_flag = dynn_Keath_flag } }
+		dynasty:dynn_Kellington = { scope:recipient = { add_character_flag = dynn_Kellington_flag } }
+		dynasty:dynn_Kemble = { scope:recipient = { add_character_flag = dynn_Kemble_flag } }
+		dynasty:dynn_Kenning = { scope:recipient = { add_character_flag = dynn_Kenning_flag } }
+		dynasty:dynn_Kern = { scope:recipient = { add_character_flag = dynn_Kern_flag } }
+		dynasty:dynn_Kettleblack = { scope:recipient = { add_character_flag = dynn_Kettleblack_flag } }
+		dynasty:dynn_Kidwell = { scope:recipient = { add_character_flag = dynn_Kidwell_flag } }
+		dynasty:dynn_Kinnear = { scope:recipient = { add_character_flag = dynn_Kinnear_flag } }
+		dynasty:dynn_Knott = { scope:recipient = { add_character_flag = dynn_Knott_flag } }
+		dynasty:dynn_Kurrigan = { scope:recipient = { add_character_flag = dynn_Kurrigan_flag } }
+		dynasty:dynn_Kyndall = { scope:recipient = { add_character_flag = dynn_Kyndall_flag } }
+		dynasty:dynn_Kytley = { scope:recipient = { add_character_flag = dynn_Kytley_flag } }
+		dynasty:dynn_Ladybright = { scope:recipient = { add_character_flag = dynn_Ladybright_flag } }
+		dynasty:dynn_Lake = { scope:recipient = { add_character_flag = dynn_Lake_flag } }
+		dynasty:dynn_Lambert = { scope:recipient = { add_character_flag = dynn_Lambert_flag } }
+		dynasty:dynn_Langward = { scope:recipient = { add_character_flag = dynn_Langward_flag } }
+		dynasty:dynn_Lannister = { scope:recipient = { add_character_flag = dynn_Lannister_flag } }
+		dynasty:dynn_Lansdale = { scope:recipient = { add_character_flag = dynn_Lansdale_flag } }
+		dynasty:dynn_Lanster = { scope:recipient = { add_character_flag = dynn_Lanster_flag } }
+		dynasty:dynn_Largent = { scope:recipient = { add_character_flag = dynn_Largent_flag } }
+		dynasty:dynn_Leek = { scope:recipient = { add_character_flag = dynn_Leek_flag } }
+		dynasty:dynn_Lefford = { scope:recipient = { add_character_flag = dynn_Lefford_flag } }
+		dynasty:dynn_Leygood = { scope:recipient = { add_character_flag = dynn_Leygood_flag } }
+		dynasty:dynn_Liddle = { scope:recipient = { add_character_flag = dynn_Liddle_flag } }
+		dynasty:dynn_Lightfoot = { scope:recipient = { add_character_flag = dynn_Lightfoot_flag } }
+		dynasty:dynn_Lipps = { scope:recipient = { add_character_flag = dynn_Lipps_flag } }
+		dynasty:dynn_Locke = { scope:recipient = { add_character_flag = dynn_Locke_flag } }
+		dynasty:dynn_Lolliston = { scope:recipient = { add_character_flag = dynn_Lolliston_flag } }
+		dynasty:dynn_Long = { scope:recipient = { add_character_flag = dynn_Long_flag } }
+		dynasty:dynn_Longthorpe = { scope:recipient = { add_character_flag = dynn_Longthorpe_flag } }
+		dynasty:dynn_Lonmouth = { scope:recipient = { add_character_flag = dynn_Lonmouth_flag } }
+		dynasty:dynn_Lorch = { scope:recipient = { add_character_flag = dynn_Lorch_flag } }
+		dynasty:dynn_Lothston = { scope:recipient = { add_character_flag = dynn_Lothston_flag } }
+		dynasty:dynn_Loux = { scope:recipient = { add_character_flag = dynn_Loux_flag } }
+		dynasty:dynn_Lowther = { scope:recipient = { add_character_flag = dynn_Lowther_flag } }
+		dynasty:dynn_Lush = { scope:recipient = { add_character_flag = dynn_Lush_flag } }
+		dynasty:dynn_Barnaby = { scope:recipient = { add_character_flag = dynn_Barnaby_flag } }
+		dynasty:dynn_Lyberr = { scope:recipient = { add_character_flag = dynn_Lyberr_flag } }
+		dynasty:dynn_Lychester = { scope:recipient = { add_character_flag = dynn_Lychester_flag } }
+		dynasty:dynn_Lydden = { scope:recipient = { add_character_flag = dynn_Lydden_flag } }
+		dynasty:dynn_Lynderly = { scope:recipient = { add_character_flag = dynn_Lynderly_flag } }
+		dynasty:dynn_Magnar = { scope:recipient = { add_character_flag = dynn_Magnar_flag } }
+		dynasty:dynn_Mallery = { scope:recipient = { add_character_flag = dynn_Mallery_flag } }
+		dynasty:dynn_Mallister = { scope:recipient = { add_character_flag = dynn_Mallister_flag } }
+		dynasty:dynn_Manderly = { scope:recipient = { add_character_flag = dynn_Manderly_flag } }
+		dynasty:dynn_Manning = { scope:recipient = { add_character_flag = dynn_Manning_flag } }
+		dynasty:dynn_Manwoody = { scope:recipient = { add_character_flag = dynn_Manwoody_flag } }
+		dynasty:dynn_Marbrand = { scope:recipient = { add_character_flag = dynn_Marbrand_flag } }
+		dynasty:dynn_Marks = { scope:recipient = { add_character_flag = dynn_Marks_flag } }
+		dynasty:dynn_Marsh = { scope:recipient = { add_character_flag = dynn_Marsh_flag } }
+		dynasty:dynn_Marsten = { scope:recipient = { add_character_flag = dynn_Marsten_flag } }
+		dynasty:dynn_Martell = { scope:recipient = { add_character_flag = dynn_Martell_flag } }
+		dynasty:dynn_Mason = { scope:recipient = { add_character_flag = dynn_Mason_flag } }
+		dynasty:dynn_Massey = { scope:recipient = { add_character_flag = dynn_Massey_flag } }
+		dynasty:dynn_Meadows = { scope:recipient = { add_character_flag = dynn_Meadows_flag } }
+		dynasty:dynn_Melcolm = { scope:recipient = { add_character_flag = dynn_Melcolm_flag } }
+		dynasty:dynn_Mercer = { scope:recipient = { add_character_flag = dynn_Mercer_flag } }
+		dynasty:dynn_Merchant = { scope:recipient = { add_character_flag = dynn_Merchant_flag } }
+		dynasty:dynn_Merlyn = { scope:recipient = { add_character_flag = dynn_Merlyn_flag } }
+		dynasty:dynn_Merryweather = { scope:recipient = { add_character_flag = dynn_Merryweather_flag } }
+		dynasty:dynn_Mertyns = { scope:recipient = { add_character_flag = dynn_Mertyns_flag } }
+		dynasty:dynn_Middlebury = { scope:recipient = { add_character_flag = dynn_Middlebury_flag } }
+		dynasty:dynn_Miller = { scope:recipient = { add_character_flag = dynn_Miller_flag } }
+		dynasty:dynn_Mollen = { scope:recipient = { add_character_flag = dynn_Mollen_flag } }
+		dynasty:dynn_Moore = { scope:recipient = { add_character_flag = dynn_Moore_flag } }
+		dynasty:dynn_Mooton = { scope:recipient = { add_character_flag = dynn_Mooton_flag } }
+		dynasty:dynn_Moreland = { scope:recipient = { add_character_flag = dynn_Moreland_flag } }
+		dynasty:dynn_Whitaker = { scope:recipient = { add_character_flag = dynn_Whitaker_flag } }
+		dynasty:dynn_Morgryn = { scope:recipient = { add_character_flag = dynn_Morgryn_flag } }
+		dynasty:dynn_Mormont = { scope:recipient = { add_character_flag = dynn_Mormont_flag } }
+		dynasty:dynn_Morrigen = { scope:recipient = { add_character_flag = dynn_Morrigen_flag } }
+		dynasty:dynn_Morris = { scope:recipient = { add_character_flag = dynn_Morris_flag } }
+		dynasty:dynn_Morrison = { scope:recipient = { add_character_flag = dynn_Morrison_flag } }
+		dynasty:dynn_Moss = { scope:recipient = { add_character_flag = dynn_Moss_flag } }
+		dynasty:dynn_Mudd = { scope:recipient = { add_character_flag = dynn_Mudd_flag } }
+		dynasty:dynn_Mullendore = { scope:recipient = { add_character_flag = dynn_Mullendore_flag } }
+		dynasty:dynn_Mullyn = { scope:recipient = { add_character_flag = dynn_Mullyn_flag } }
+		dynasty:dynn_Murrandy = { scope:recipient = { add_character_flag = dynn_Murrandy_flag } }
+		dynasty:dynn_Musgood = { scope:recipient = { add_character_flag = dynn_Musgood_flag } }
+		dynasty:dynn_Myatt = { scope:recipient = { add_character_flag = dynn_Myatt_flag } }
+		dynasty:dynn_Myre = { scope:recipient = { add_character_flag = dynn_Myre_flag } }
+		dynasty:dynn_Nayland = { scope:recipient = { add_character_flag = dynn_Nayland_flag } }
+		dynasty:dynn_Netley = { scope:recipient = { add_character_flag = dynn_Netley_flag } }
+		dynasty:dynn_Norcross = { scope:recipient = { add_character_flag = dynn_Norcross_flag } }
+		dynasty:dynn_Norrey = { scope:recipient = { add_character_flag = dynn_Norrey_flag } }
+		dynasty:dynn_Norridge = { scope:recipient = { add_character_flag = dynn_Norridge_flag } }
+		dynasty:dynn_Nutt = { scope:recipient = { add_character_flag = dynn_Nutt_flag } }
+		dynasty:dynn_Nymeros = { scope:recipient = { add_character_flag = dynn_Nymeros_flag } }
+		dynasty:dynn_Oakheart = { scope:recipient = { add_character_flag = dynn_Oakheart_flag } }
+		dynasty:dynn_Offal = { scope:recipient = { add_character_flag = dynn_Offal_flag } }
+		dynasty:dynn_Orimund = { scope:recipient = { add_character_flag = dynn_Orimund_flag } }
+		dynasty:dynn_Orkwood = { scope:recipient = { add_character_flag = dynn_Orkwood_flag } }
+		dynasty:dynn_Orme = { scope:recipient = { add_character_flag = dynn_Orme_flag } }
+		dynasty:dynn_Osgrey = { scope:recipient = { add_character_flag = dynn_Osgrey_flag } }
+		dynasty:dynn_Overton = { scope:recipient = { add_character_flag = dynn_Overton_flag } }
+		dynasty:dynn_Paege = { scope:recipient = { add_character_flag = dynn_Paege_flag } }
+		dynasty:dynn_Parren = { scope:recipient = { add_character_flag = dynn_Parren_flag } }
+		dynasty:dynn_Payne = { scope:recipient = { add_character_flag = dynn_Payne_flag } }
+		dynasty:dynn_Peake = { scope:recipient = { add_character_flag = dynn_Peake_flag } }
+		dynasty:dynn_Peasebury = { scope:recipient = { add_character_flag = dynn_Peasebury_flag } }
+		dynasty:dynn_Peat = { scope:recipient = { add_character_flag = dynn_Peat_flag } }
+		dynasty:dynn_Peck = { scope:recipient = { add_character_flag = dynn_Peck_flag } }
+		dynasty:dynn_Peckledon = { scope:recipient = { add_character_flag = dynn_Peckledon_flag } }
+		dynasty:dynn_Pemford = { scope:recipient = { add_character_flag = dynn_Pemford_flag } }
+		dynasty:dynn_Penny = { scope:recipient = { add_character_flag = dynn_Penny_flag } }
+		dynasty:dynn_Penrose = { scope:recipient = { add_character_flag = dynn_Penrose_flag } }
+		dynasty:dynn_Percy = { scope:recipient = { add_character_flag = dynn_Percy_flag } }
+		dynasty:dynn_Perryn = { scope:recipient = { add_character_flag = dynn_Perryn_flag } }
+		dynasty:dynn_Pimm = { scope:recipient = { add_character_flag = dynn_Pimm_flag } }
+		dynasty:dynn_Piper = { scope:recipient = { add_character_flag = dynn_Piper_flag } }
+		dynasty:dynn_Plumm = { scope:recipient = { add_character_flag = dynn_Plumm_flag } }
+		dynasty:dynn_Pommingham = { scope:recipient = { add_character_flag = dynn_Pommingham_flag } }
+		dynasty:dynn_Pond = { scope:recipient = { add_character_flag = dynn_Pond_flag } }
+		dynasty:dynn_Poole = { scope:recipient = { add_character_flag = dynn_Poole_flag } }
+		dynasty:dynn_Potter = { scope:recipient = { add_character_flag = dynn_Potter_flag } }
+		dynasty:dynn_Prester = { scope:recipient = { add_character_flag = dynn_Prester_flag } }
+		dynasty:dynn_Pryor = { scope:recipient = { add_character_flag = dynn_Pryor_flag } }
+		dynasty:dynn_Pyle = { scope:recipient = { add_character_flag = dynn_Pyle_flag } }
+		dynasty:dynn_Pyne = { scope:recipient = { add_character_flag = dynn_Pyne_flag } }
+		dynasty:dynn_Qoherys = { scope:recipient = { add_character_flag = dynn_Qoherys_flag } }
+		dynasty:dynn_Qorgyle = { scope:recipient = { add_character_flag = dynn_Qorgyle_flag } }
+		dynasty:dynn_Quagg = { scope:recipient = { add_character_flag = dynn_Quagg_flag } }
+		dynasty:dynn_Quince = { scope:recipient = { add_character_flag = dynn_Quince_flag } }
+		dynasty:dynn_Rambton = { scope:recipient = { add_character_flag = dynn_Rambton_flag } }
+		dynasty:dynn_Ran_Cammon = { scope:recipient = { add_character_flag = dynn_Ran_Cammon_flag } }
+		dynasty:dynn_Rankenfell = { scope:recipient = { add_character_flag = dynn_Rankenfell_flag } }
+		dynasty:dynn_Ravencroft = { scope:recipient = { add_character_flag = dynn_Ravencroft_flag } }
+		dynasty:dynn_Redding = { scope:recipient = { add_character_flag = dynn_Redding_flag } }
+		dynasty:dynn_Redfort = { scope:recipient = { add_character_flag = dynn_Redfort_flag } }
+		dynasty:dynn_Redwyne = { scope:recipient = { add_character_flag = dynn_Redwyne_flag } }
+		dynasty:dynn_Reed = { scope:recipient = { add_character_flag = dynn_Reed_flag } }
+		dynasty:dynn_Renn = { scope:recipient = { add_character_flag = dynn_Renn_flag } }
+		dynasty:dynn_Revere = { scope:recipient = { add_character_flag = dynn_Revere_flag } }
+		dynasty:dynn_Reyne = { scope:recipient = { add_character_flag = dynn_Reyne_flag } }
+		dynasty:dynn_Rhysling = { scope:recipient = { add_character_flag = dynn_Rhysling_flag } }
+		dynasty:dynn_Risley = { scope:recipient = { add_character_flag = dynn_Risley_flag } }
+		dynasty:dynn_Rodden = { scope:recipient = { add_character_flag = dynn_Rodden_flag } }
+		dynasty:dynn_Rogers = { scope:recipient = { add_character_flag = dynn_Rogers_flag } }
+		dynasty:dynn_Rollingford = { scope:recipient = { add_character_flag = dynn_Rollingford_flag } }
+		dynasty:dynn_Ronning = { scope:recipient = { add_character_flag = dynn_Ronning_flag } }
+		dynasty:dynn_Rooke = { scope:recipient = { add_character_flag = dynn_Rooke_flag } }
+		dynasty:dynn_Roote = { scope:recipient = { add_character_flag = dynn_Roote_flag } }
+		dynasty:dynn_Rosby = { scope:recipient = { add_character_flag = dynn_Rosby_flag } }
+		dynasty:dynn_Rowan = { scope:recipient = { add_character_flag = dynn_Rowan_flag } }
+		dynasty:dynn_Roxton = { scope:recipient = { add_character_flag = dynn_Roxton_flag } }
+		dynasty:dynn_Royce = { scope:recipient = { add_character_flag = dynn_Royce_flag } }
+		dynasty:dynn_Runny = { scope:recipient = { add_character_flag = dynn_Runny_flag } }
+		dynasty:dynn_Rushmoor = { scope:recipient = { add_character_flag = dynn_Rushmoor_flag } }
+		dynasty:dynn_Ruskyn = { scope:recipient = { add_character_flag = dynn_Ruskyn_flag } }
+		dynasty:dynn_Ruthermont = { scope:recipient = { add_character_flag = dynn_Ruthermont_flag } }
+		dynasty:dynn_Rutley = { scope:recipient = { add_character_flag = dynn_Rutley_flag } }
+		dynasty:dynn_Ruttiger = { scope:recipient = { add_character_flag = dynn_Ruttiger_flag } }
+		dynasty:dynn_Rychard = { scope:recipient = { add_character_flag = dynn_Rychard_flag } }
+		dynasty:dynn_Ryder = { scope:recipient = { add_character_flag = dynn_Ryder_flag } }
+		dynasty:dynn_Ryger = { scope:recipient = { add_character_flag = dynn_Ryger_flag } }
+		dynasty:dynn_Rykker = { scope:recipient = { add_character_flag = dynn_Rykker_flag } }
+		dynasty:dynn_Ryn = { scope:recipient = { add_character_flag = dynn_Ryn_flag } }
+		dynasty:dynn_Ryswell = { scope:recipient = { add_character_flag = dynn_Ryswell_flag } }
+		dynasty:dynn_Saltcliffe = { scope:recipient = { add_character_flag = dynn_Saltcliffe_flag } }
+		dynasty:dynn_Santagar = { scope:recipient = { add_character_flag = dynn_Santagar_flag } }
+		dynasty:dynn_Sarsfield = { scope:recipient = { add_character_flag = dynn_Sarsfield_flag } }
+		dynasty:dynn_Sarwyck = { scope:recipient = { add_character_flag = dynn_Sarwyck_flag } }
+		dynasty:dynn_Saul = { scope:recipient = { add_character_flag = dynn_Saul_flag } }
+		dynasty:dynn_Sawyer = { scope:recipient = { add_character_flag = dynn_Sawyer_flag } }
+		dynasty:dynn_Saerygan = { scope:recipient = { add_character_flag = dynn_Scales_flag } }
+		dynasty:dynn_Seasons = { scope:recipient = { add_character_flag = dynn_Seasons_flag } }
+		dynasty:dynn_Seaworth = { scope:recipient = { add_character_flag = dynn_Seaworth_flag } }
+		dynasty:dynn_Seldon = { scope:recipient = { add_character_flag = dynn_Seldon_flag } }
+		dynasty:dynn_Selmy = { scope:recipient = { add_character_flag = dynn_Selmy_flag } }
+		dynasty:dynn_Serrett = { scope:recipient = { add_character_flag = dynn_Serrett_flag } }
+		dynasty:dynn_Serry = { scope:recipient = { add_character_flag = dynn_Serry_flag } }
+		dynasty:dynn_Severyn = { scope:recipient = { add_character_flag = dynn_Severyn_flag } }
+		dynasty:dynn_Shanin = { scope:recipient = { add_character_flag = dynn_Shanin_flag } }
+		dynasty:dynn_Sharp = { scope:recipient = { add_character_flag = dynn_Sharp_flag } }
+		dynasty:dynn_Shaw = { scope:recipient = { add_character_flag = dynn_Shaw_flag } }
+		dynasty:dynn_Shawney = { scope:recipient = { add_character_flag = dynn_Shawney_flag } }
+		dynasty:dynn_Shell_Dorne = { scope:recipient = { add_character_flag = dynn_Shell_Dorne_flag } }
+		dynasty:dynn_Shelldrake = { scope:recipient = { add_character_flag = dynn_Shelldrake_flag } }
+		dynasty:dynn_Shepherd = { scope:recipient = { add_character_flag = dynn_Shepherd_flag } }
+		dynasty:dynn_Shermer = { scope:recipient = { add_character_flag = dynn_Shermer_flag } }
+		dynasty:dynn_Shett = { scope:recipient = { add_character_flag = dynn_Shett_flag } }
+		dynasty:dynn_Sillinger = { scope:recipient = { add_character_flag = dynn_Sillinger_flag } }
+		dynasty:dynn_Silverfield = { scope:recipient = { add_character_flag = dynn_Silverfield_flag } }
+		dynasty:dynn_Slate = { scope:recipient = { add_character_flag = dynn_Slate_flag } }
+		dynasty:dynn_Sloane = { scope:recipient = { add_character_flag = dynn_Sloane_flag } }
+		dynasty:dynn_Slynt = { scope:recipient = { add_character_flag = dynn_Slynt_flag } }
+		dynasty:dynn_Smallwood = { scope:recipient = { add_character_flag = dynn_Smallwood_flag } }
+		dynasty:dynn_Sorley = { scope:recipient = { add_character_flag = dynn_Sorley_flag } }
+		dynasty:dynn_Sparr = { scope:recipient = { add_character_flag = dynn_Sparr_flag } }
+		dynasty:dynn_Spicer = { scope:recipient = { add_character_flag = dynn_Spicer_flag } }
+		dynasty:dynn_Spurn = { scope:recipient = { add_character_flag = dynn_Spurn_flag } }
+		dynasty:dynn_Stackhouse = { scope:recipient = { add_character_flag = dynn_Stackhouse_flag } }
+		dynasty:dynn_Stackspear = { scope:recipient = { add_character_flag = dynn_Stackspear_flag } }
+		dynasty:dynn_Staedmon = { scope:recipient = { add_character_flag = dynn_Staedmon_flag } }
+		dynasty:dynn_Stafford = { scope:recipient = { add_character_flag = dynn_Stafford_flag } }
+		dynasty:dynn_Staines = { scope:recipient = { add_character_flag = dynn_Staines_flag } }
+		dynasty:dynn_Stane = { scope:recipient = { add_character_flag = dynn_Stane_flag } }
+		dynasty:dynn_Stark = { scope:recipient = { add_character_flag = dynn_Stark_flag } }
+		dynasty:dynn_Staunton = { scope:recipient = { add_character_flag = dynn_Staunton_flag } }
+		dynasty:dynn_Stewart = { scope:recipient = { add_character_flag = dynn_Stewart_flag } }
+		dynasty:dynn_Stillman = { scope:recipient = { add_character_flag = dynn_Stillman_flag } }
+		dynasty:dynn_Stilwood = { scope:recipient = { add_character_flag = dynn_Stilwood_flag } }
+		dynasty:dynn_Stokeworth = { scope:recipient = { add_character_flag = dynn_Stokeworth_flag } }
+		dynasty:dynn_Stonecrab = { scope:recipient = { add_character_flag = dynn_Stonecrab_flag } }
+		dynasty:dynn_Stonehouse = { scope:recipient = { add_character_flag = dynn_Stonehouse_flag } }
+		dynasty:dynn_Stout = { scope:recipient = { add_character_flag = dynn_Stout_flag } }
+		dynasty:dynn_Straw = { scope:recipient = { add_character_flag = dynn_Straw_flag } }
+		dynasty:dynn_Strickland = { scope:recipient = { add_character_flag = dynn_Strickland_flag } }
+		dynasty:dynn_Strong = { scope:recipient = { add_character_flag = dynn_Strong_flag } }
+		dynasty:dynn_Suggs = { scope:recipient = { add_character_flag = dynn_Suggs_flag } }
+		dynasty:dynn_Summerchild = { scope:recipient = { add_character_flag = dynn_Summerchild_flag } }
+		dynasty:dynn_Sunderland = { scope:recipient = { add_character_flag = dynn_Sunderland_flag } }
+		dynasty:dynn_Sunderly = { scope:recipient = { add_character_flag = dynn_Sunderly_flag } }
+		dynasty:dynn_Sunglass = { scope:recipient = { add_character_flag = dynn_Sunglass_flag } }
+		dynasty:dynn_Swann = { scope:recipient = { add_character_flag = dynn_Swann_flag } }
+		dynasty:dynn_Sweet = { scope:recipient = { add_character_flag = dynn_Sweet_flag } }
+		dynasty:dynn_Swyft = { scope:recipient = { add_character_flag = dynn_Swyft_flag } }
+		dynasty:dynn_Swygert = { scope:recipient = { add_character_flag = dynn_Swygert_flag } }
+		dynasty:dynn_Sylvas = { scope:recipient = { add_character_flag = dynn_Sylvas_flag } }
+		dynasty:dynn_Symes = { scope:recipient = { add_character_flag = dynn_Symes_flag } }
+		dynasty:dynn_Tall = { scope:recipient = { add_character_flag = dynn_Tall_flag } }
+		dynasty:dynn_Tallhart = { scope:recipient = { add_character_flag = dynn_Tallhart_flag } }
+		dynasty:dynn_Tarbeck = { scope:recipient = { add_character_flag = dynn_Tarbeck_flag } }
+		dynasty:dynn_Targaryen = { scope:recipient = { add_character_flag = dynn_Targaryen_flag } }
+		dynasty:dynn_Tarly = { scope:recipient = { add_character_flag = dynn_Tarly_flag } }
+		dynasty:dynn_Tarth = { scope:recipient = { add_character_flag = dynn_Tarth_flag } }
+		dynasty:dynn_Tarwick = { scope:recipient = { add_character_flag = dynn_Tarwick_flag } }
+		dynasty:dynn_Taves = { scope:recipient = { add_character_flag = dynn_Taves_flag } }
+		dynasty:dynn_Tawney = { scope:recipient = { add_character_flag = dynn_Tawney_flag } }
+		dynasty:dynn_Teague = { scope:recipient = { add_character_flag = dynn_Teague_flag } }
+		dynasty:dynn_Terrick = { scope:recipient = { add_character_flag = dynn_Terrick_flag } }
+		dynasty:dynn_Thorne = { scope:recipient = { add_character_flag = dynn_Thorne_flag } }
+		dynasty:dynn_Thornton = { scope:recipient = { add_character_flag = dynn_Thornton_flag } }
+		dynasty:dynn_Tidewood = { scope:recipient = { add_character_flag = dynn_Tidewood_flag } }
+		dynasty:dynn_Toland = { scope:recipient = { add_character_flag = dynn_Toland_flag } }
+		dynasty:dynn_Tollett = { scope:recipient = { add_character_flag = dynn_Tollett_flag } }
+		dynasty:dynn_Topp = { scope:recipient = { add_character_flag = dynn_Topp_flag } }
+		dynasty:dynn_Torrent = { scope:recipient = { add_character_flag = dynn_Torrent_flag } }
+		dynasty:dynn_Towers = { scope:recipient = { add_character_flag = dynn_Towers_flag } }
+		dynasty:dynn_Toyne = { scope:recipient = { add_character_flag = dynn_Toyne_flag } }
+		dynasty:dynn_Trackand = { scope:recipient = { add_character_flag = dynn_Trackand_flag } }
+		dynasty:dynn_Trant = { scope:recipient = { add_character_flag = dynn_Trant_flag } }
+		dynasty:dynn_Trevanion = { scope:recipient = { add_character_flag = dynn_Trevanion_flag } }
+		dynasty:dynn_Truefyre = { scope:recipient = { add_character_flag = dynn_Truefyre_flag } }
+		dynasty:dynn_Tudbury = { scope:recipient = { add_character_flag = dynn_Tudbury_flag } }
+		dynasty:dynn_Tully = { scope:recipient = { add_character_flag = dynn_Tully_flag } }
+		dynasty:dynn_Turnberry = { scope:recipient = { add_character_flag = dynn_Turnberry_flag } }
+		dynasty:dynn_Tuttle = { scope:recipient = { add_character_flag = dynn_Tuttle_flag } }
+		dynasty:dynn_Tyrell = { scope:recipient = { add_character_flag = dynn_Tyrell_flag } }
+		dynasty:dynn_Uffering = { scope:recipient = { add_character_flag = dynn_Uffering_flag } }
+		dynasty:dynn_Uller = { scope:recipient = { add_character_flag = dynn_Uller_flag } }
+		dynasty:dynn_Umber = { scope:recipient = { add_character_flag = dynn_Umber_flag } }
+		dynasty:dynn_Underleaf = { scope:recipient = { add_character_flag = dynn_Underleaf_flag } }
+		dynasty:dynn_Upcliff = { scope:recipient = { add_character_flag = dynn_Upcliff_flag } }
+		dynasty:dynn_Vaith = { scope:recipient = { add_character_flag = dynn_Vaith_flag } }
+		dynasty:dynn_Vance = { scope:recipient = { add_character_flag = dynn_Vance_flag } }
+		dynasty:dynn_Varezys = { scope:recipient = { add_character_flag = dynn_Varezys_flag } }
+		dynasty:dynn_Varner = { scope:recipient = { add_character_flag = dynn_Varner_flag } }
+		dynasty:dynn_Vearnon = { scope:recipient = { add_character_flag = dynn_Vearnon_flag } }
+		dynasty:dynn_Veckryn = { scope:recipient = { add_character_flag = dynn_Veckryn_flag } }
+		dynasty:dynn_Velaryon = { scope:recipient = { add_character_flag = dynn_Velaryon_flag } }
+		dynasty:dynn_Verlayn = { scope:recipient = { add_character_flag = dynn_Verlayn_flag } }
+		dynasty:dynn_Volmark = { scope:recipient = { add_character_flag = dynn_Volmark_flag } }
+		dynasty:dynn_Vypren = { scope:recipient = { add_character_flag = dynn_Vypren_flag } }
+		dynasty:dynn_Vyrwel = { scope:recipient = { add_character_flag = dynn_Vyrwel_flag } }
+		dynasty:dynn_Wade = { scope:recipient = { add_character_flag = dynn_Wade_flag } }
+		dynasty:dynn_Wagstaff = { scope:recipient = { add_character_flag = dynn_Wagstaff_flag } }
+		dynasty:dynn_Warl = { scope:recipient = { add_character_flag = dynn_Warl_flag } }
+		dynasty:dynn_Warrick = { scope:recipient = { add_character_flag = dynn_Warrick_flag } }
+		dynasty:dynn_Waterman = { scope:recipient = { add_character_flag = dynn_Waterman_flag } }
+		dynasty:dynn_Waxley = { scope:recipient = { add_character_flag = dynn_Waxley_flag } }
+		dynasty:dynn_Wayn = { scope:recipient = { add_character_flag = dynn_Wayn_flag } }
+		dynasty:dynn_Waynwood = { scope:recipient = { add_character_flag = dynn_Waynwood_flag } }
+		dynasty:dynn_Weatherwax = { scope:recipient = { add_character_flag = dynn_Weatherwax_flag } }
+		dynasty:dynn_Weaver = { scope:recipient = { add_character_flag = dynn_Weaver_flag } }
+		dynasty:dynn_Webber = { scope:recipient = { add_character_flag = dynn_Webber_flag } }
+		dynasty:dynn_Upshall = { scope:recipient = { add_character_flag = dynn_Upshall_flag } }
+		dynasty:dynn_Weight = { scope:recipient = { add_character_flag = dynn_Weight_flag } }
+		dynasty:dynn_Weller = { scope:recipient = { add_character_flag = dynn_Weller_flag } }
+		dynasty:dynn_Wells = { scope:recipient = { add_character_flag = dynn_Wells_flag } }
+		dynasty:dynn_Wendwater = { scope:recipient = { add_character_flag = dynn_Wendwater_flag } }
+		dynasty:dynn_Westbrook = { scope:recipient = { add_character_flag = dynn_Westbrook_flag } }
+		dynasty:dynn_Westerling = { scope:recipient = { add_character_flag = dynn_Westerling_flag } }
+		dynasty:dynn_Westford = { scope:recipient = { add_character_flag = dynn_Westford_flag } }
+		dynasty:dynn_Wheaton = { scope:recipient = { add_character_flag = dynn_Wheaton_flag } }
+		dynasty:dynn_Whent = { scope:recipient = { add_character_flag = dynn_Whent_flag } }
+		dynasty:dynn_Whickett = { scope:recipient = { add_character_flag = dynn_Whickett_flag } }
+		dynasty:dynn_Whistler = { scope:recipient = { add_character_flag = dynn_Whistler_flag } }
+		dynasty:dynn_White = { scope:recipient = { add_character_flag = dynn_White_flag } }
+		dynasty:dynn_Whitehead = { scope:recipient = { add_character_flag = dynn_Whitehead_flag } }
+		dynasty:dynn_Whitehill = { scope:recipient = { add_character_flag = dynn_Whitehill_flag } }
+		dynasty:dynn_Whitewater = { scope:recipient = { add_character_flag = dynn_Whitewater_flag } }
+		dynasty:dynn_Whitfield = { scope:recipient = { add_character_flag = dynn_Whitfield_flag } }
+		dynasty:dynn_Wibberley = { scope:recipient = { add_character_flag = dynn_Wibberley_flag } }
+		dynasty:dynn_Willum = { scope:recipient = { add_character_flag = dynn_Willum_flag } }
+		dynasty:dynn_Wiltwood = { scope:recipient = { add_character_flag = dynn_Wiltwood_flag } }
+		dynasty:dynn_Witt = { scope:recipient = { add_character_flag = dynn_Witt_flag } }
+		dynasty:dynn_Wode = { scope:recipient = { add_character_flag = dynn_Wode_flag } }
+		dynasty:dynn_Woodfoot = { scope:recipient = { add_character_flag = dynn_Woodfoot_flag } }
+		dynasty:dynn_Woodhull = { scope:recipient = { add_character_flag = dynn_Woodhull_flag } }
+		dynasty:dynn_Woods = { scope:recipient = { add_character_flag = dynn_Woods_flag } }
+		dynasty:dynn_Woodwright = { scope:recipient = { add_character_flag = dynn_Woodwright_flag } }
+		dynasty:dynn_Woolfield = { scope:recipient = { add_character_flag = dynn_Woolfield_flag } }
+		dynasty:dynn_Wormwood = { scope:recipient = { add_character_flag = dynn_Wormwood_flag } }
+		dynasty:dynn_Wrexley = { scope:recipient = { add_character_flag = dynn_Wrexley_flag } }
+		dynasty:dynn_Wull = { scope:recipient = { add_character_flag = dynn_Wull_flag } }
+		dynasty:dynn_Wydman = { scope:recipient = { add_character_flag = dynn_Wydman_flag } }
+		dynasty:dynn_Wyl = { scope:recipient = { add_character_flag = dynn_Wyl_flag } }
+		dynasty:dynn_Wylde = { scope:recipient = { add_character_flag = dynn_Wylde_flag } }
+		dynasty:dynn_Wynch = { scope:recipient = { add_character_flag = dynn_Wynch_flag } }
+		dynasty:dynn_Wythers = { scope:recipient = { add_character_flag = dynn_Wythers_flag } }
+		dynasty:dynn_Yarwyck = { scope:recipient = { add_character_flag = dynn_Yarwyck_flag } }
+		dynasty:dynn_Yelshire = { scope:recipient = { add_character_flag = dynn_Yelshire_flag } }
+		dynasty:dynn_Yew = { scope:recipient = { add_character_flag = dynn_Yew_flag } }
+		dynasty:dynn_Yore = { scope:recipient = { add_character_flag = dynn_Yore_flag } }
+		dynasty:dynn_Yronwood = { scope:recipient = { add_character_flag = dynn_Yronwood_flag } }
+	}
+}

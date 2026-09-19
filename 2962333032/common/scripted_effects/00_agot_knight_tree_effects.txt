@@ -1,0 +1,467 @@
+﻿###########################
+### Knight Tree Effects ###
+###########################
+
+agot_knight_tree_on_start = {
+	if = {
+		limit = { NOT = { has_global_variable = knight_trees_destroyed } }
+		set_global_variable = {
+			name = knight_trees_destroyed
+			value = 0
+		}
+	}
+}
+
+agot_knight_tree_purge = {
+	$PLAYER$ = { save_scope_as = player }
+	if = { # Search and destroy
+		limit = {
+			any_in_global_list = {
+				variable = known_knight_trees
+				NOR = {
+					var:knight_tree_founder ?= {
+						OR = {
+							is_close_or_extended_family_of = scope:player
+							this = scope:player
+						}
+					}
+					has_variable = historical_tree
+					any_in_list = {
+						variable = teacher_story_container
+						OR = {
+							var:this_teacher ?= {
+								OR = {
+									is_close_or_extended_family_of = scope:player
+									this = scope:player
+								}
+							}
+							any_in_list = {
+								variable = student_container
+								OR = {
+									is_close_or_extended_family_of = scope:player
+									this = scope:player
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		every_in_global_list = {
+			variable = known_knight_trees
+			limit = {
+				NOR = {
+					var:knight_tree_founder ?= {
+						OR = {
+							is_close_or_extended_family_of = scope:player
+							this = scope:player
+						}
+					}
+					has_variable = historical_tree
+					any_in_list = {
+						variable = teacher_story_container
+						OR = {
+							var:this_teacher ?= {
+								OR = {
+									is_close_or_extended_family_of = scope:player
+									this = scope:player
+								}
+							}
+							any_in_list = {
+								variable = student_container
+								OR = {
+									is_close_or_extended_family_of = scope:player
+									this = scope:player
+								}
+							}
+						}
+					}
+				}
+			}
+			every_in_list = {
+				variable = teacher_story_container
+				end_story = yes
+			}
+			change_global_variable = {
+				name = knight_trees_destroyed
+				add = 1
+			}
+			remove_list_global_variable = {
+				name = known_knight_trees
+				target = this
+			}
+			end_story = yes
+		}
+	}
+}
+
+agot_add_to_knight_tree = {
+	$KNIGHT$ = { save_scope_as = knight }
+	$SQUIRE$ = { save_scope_as = squire }
+
+	if = {
+		limit = {
+			scope:knight = {
+				trigger_if = { # No lowbies
+					limit = { is_lowborn = no }
+				}
+				trigger_else = { # Unless KG
+					is_lowborn = yes
+					has_trait = kingsguard
+				}
+			}
+		}
+		if = { # the knight already has a tree story
+			limit = {
+				title:c_ruins.holder = {
+					any_owned_story = {
+						story_type = agot_knight_tree_structure
+						has_variable_list = knight_tree_gui
+						any_in_list = {
+							variable = teacher_story_container
+							OR = {
+								var:this_teacher ?= scope:knight
+								any_in_list = {
+									variable = student_container
+									this = scope:knight
+								}
+							}
+						}
+						save_temporary_scope_as = tree_story
+					}
+				}
+			}
+			if = { # the knight already has a teacher story
+				limit = {
+					title:c_ruins.holder = {
+						any_owned_story = {
+							story_type = agot_knight_tree_teacher
+							var:this_teacher ?= scope:knight
+						}
+					}
+				}
+				# Add this squire to the existing list of squires
+				title:c_ruins.holder = {
+					random_owned_story = {
+						limit = {
+							story_type = agot_knight_tree_teacher
+							var:this_teacher = scope:knight
+						}
+						add_to_variable_list = {
+							name = student_container
+							target = scope:squire
+						}
+					}
+				}
+				# Tree story variable, easier on triggers for living characters
+				scope:squire ?= {
+					if = {
+						limit = {
+							is_alive = yes
+							NOT = { has_variable = my_knight_tree }
+						}
+						set_variable = {
+							name = my_knight_tree
+							value = scope:tree_story
+						}
+					}
+				}
+			}
+			else = { # the knight does not have a teacher story yet
+				title:c_ruins.holder = {
+					set_variable = {
+						name = knight_teacher
+						value = scope:knight
+					}
+					create_story = {
+						type = agot_knight_tree_teacher
+						save_scope_as = teacher_story
+					}
+				}
+				# Create list of squires and add this squire to it
+				scope:teacher_story ?= {
+					add_to_variable_list = {
+						name = student_container
+						target = scope:squire
+					}
+				}
+				# Add teacher story to tree story
+				title:c_ruins.holder = {
+					random_owned_story = {
+						limit = {
+							story_type = agot_knight_tree_structure
+							any_in_list = {
+								variable = teacher_story_container
+								any_in_list = {
+									variable = student_container
+									this = scope:knight
+								}
+							}
+						}
+						add_to_variable_list = {
+							name = teacher_story_container
+							target = scope:teacher_story
+						}
+					}
+				}
+				# Tree story variable, easier on triggers for living characters
+				scope:squire ?= {
+					if = {
+						limit = {
+							is_alive = yes
+							NOT = { has_variable = my_knight_tree }
+						}
+						set_variable = {
+							name = my_knight_tree
+							value = scope:tree_story
+						}
+					}
+				}
+			}
+		}
+		else = { # the knight does not have a tree story
+			title:c_ruins.holder = {
+				set_variable = { # Passthrough
+					name = knight_teacher
+					value = scope:knight
+				}
+				create_story = { # Create teacher story
+					type = agot_knight_tree_teacher
+					save_scope_as = teacher_story
+				}
+				create_story = { # Create tree story
+					type = agot_knight_tree_structure
+					save_scope_as = tree_story
+				}
+			}
+			# Create list of squires and add this squire to it
+			scope:teacher_story ?= {
+				add_to_variable_list = {
+					name = student_container
+					target = scope:squire
+				}
+			}
+			# Assign founder position for the tree
+			scope:tree_story ?= {
+				set_variable = {
+					name = knight_tree_founder
+					value = scope:knight
+				}
+				if = {
+					limit = { scope:historical_squire ?= scope:squire }
+					set_variable = historical_tree
+				}
+				add_to_variable_list = { # Contains the teacher story for this tree
+					name = teacher_story_container
+					target = scope:teacher_story
+				}
+				add_to_variable_list = { # Checked for in GUI datamodel
+					name = knight_tree_gui
+					target = scope:knight
+				}
+				add_to_global_variable_list = {
+					name = known_knight_trees
+					target = this
+				}
+			}
+			# Tree story variables, easier on triggers for living characters
+			scope:knight ?= {
+				if = {
+					limit = { is_alive = yes }
+					set_variable = {
+						name = my_knight_tree
+						value = scope:tree_story
+					}
+				}
+			}
+			scope:squire ?= {
+				if = {
+					limit = { is_alive = yes }
+					set_variable = {
+						name = my_knight_tree
+						value = scope:tree_story
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_add_to_historical_knight_tree = {
+	$KNIGHT$ = { save_scope_as = knight }
+	$SQUIRE$ = { save_scope_as = squire }
+
+	if = { # the knight already has a tree story
+		limit = {
+			title:c_ruins.holder = {
+				any_owned_story = {
+					story_type = agot_knight_tree_structure
+					has_variable_list = knight_tree_gui
+					any_in_list = {
+						variable = teacher_story_container
+						OR = {
+							var:this_teacher ?= scope:knight
+							any_in_list = {
+								variable = student_container
+								this = scope:knight
+							}
+						}
+					}
+					save_temporary_scope_as = tree_story
+				}
+			}
+		}
+		if = { # the knight already has a teacher story
+			limit = {
+				title:c_ruins.holder = {
+					any_owned_story = {
+						story_type = agot_knight_tree_teacher
+						var:this_teacher ?= scope:knight
+					}
+				}
+			}
+			# Add this squire to the existing list of squires
+			title:c_ruins.holder = {
+				random_owned_story = {
+					limit = {
+						story_type = agot_knight_tree_teacher
+						var:this_teacher = scope:knight
+					}
+					add_to_variable_list = {
+						name = student_container
+						target = scope:squire
+					}
+				}
+			}
+			# Tree story variable, easier on triggers for living characters
+			scope:squire ?= {
+				if = {
+					limit = {
+						is_alive = yes
+						NOT = { has_variable = my_knight_tree }
+					}
+					set_variable = {
+						name = my_knight_tree
+						value = scope:tree_story
+					}
+				}
+			}
+		}
+		else = { # the knight does not have a teacher story yet
+			title:c_ruins.holder = {
+				set_variable = {
+					name = knight_teacher
+					value = scope:knight
+				}
+				create_story = {
+					type = agot_knight_tree_teacher
+					save_scope_as = teacher_story
+				}
+			}
+			# Create list of squires and add this squire to it
+			scope:teacher_story ?= {
+				add_to_variable_list = {
+					name = student_container
+					target = scope:squire
+				}
+			}
+			# Add teacher story to tree story
+			title:c_ruins.holder = {
+				random_owned_story = {
+					limit = {
+						story_type = agot_knight_tree_structure
+						any_in_list = {
+							variable = teacher_story_container
+							any_in_list = {
+								variable = student_container
+								this = scope:knight
+							}
+						}
+					}
+					add_to_variable_list = {
+						name = teacher_story_container
+						target = scope:teacher_story
+					}
+				}
+			}
+			# Tree story variable, easier on triggers for living characters
+			scope:squire ?= {
+				if = {
+					limit = {
+						is_alive = yes
+						NOT = { has_variable = my_knight_tree }
+					}
+					set_variable = {
+						name = my_knight_tree
+						value = scope:tree_story
+					}
+				}
+			}
+		}
+	}
+	else = { # the knight does not have a tree story
+		title:c_ruins.holder = {
+			set_variable = { # Passthrough
+				name = knight_teacher
+				value = scope:knight
+			}
+			create_story = { # Create teacher story
+				type = agot_knight_tree_teacher
+				save_scope_as = teacher_story
+			}
+			create_story = { # Create tree story
+				type = agot_knight_tree_structure
+				save_scope_as = tree_story
+			}
+		}
+		# Create list of squires and add this squire to it
+		scope:teacher_story ?= {
+			add_to_variable_list = {
+				name = student_container
+				target = scope:squire
+			}
+		}
+		# Assign founder position for the tree
+		scope:tree_story ?= {
+			set_variable = {
+				name = knight_tree_founder
+				value = scope:knight
+			}
+			if = {
+				limit = { scope:historical_squire ?= scope:squire }
+				set_variable = historical_tree
+			}
+			add_to_variable_list = { # Contains the teacher story for this tree
+				name = teacher_story_container
+				target = scope:teacher_story
+			}
+			add_to_variable_list = { # Checked for in GUI datamodel
+				name = knight_tree_gui
+				target = scope:knight
+			}
+			add_to_global_variable_list = {
+				name = known_knight_trees
+				target = this
+			}
+		}
+		# Tree story variables, easier on triggers for living characters
+		scope:knight ?= {
+			if = {
+				limit = { is_alive = yes }
+				set_variable = {
+					name = my_knight_tree
+					value = scope:tree_story
+				}
+			}
+		}
+		scope:squire ?= {
+			if = {
+				limit = { is_alive = yes }
+				set_variable = {
+					name = my_knight_tree
+					value = scope:tree_story
+				}
+			}
+		}
+	}
+}

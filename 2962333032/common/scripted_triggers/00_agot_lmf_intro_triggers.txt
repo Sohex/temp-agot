@@ -1,0 +1,263 @@
+﻿# used in marriage introductions
+is_within_introduction_range = {
+	trigger_if = {
+		limit = { is_in_the_same_court_as = $PROPOSER$ }
+		always = yes
+	}
+	trigger_else = {
+		in_diplomatic_range = $PROPOSER$
+	}
+}
+
+resides_in_court_of_actor = {
+	OR = {
+		AND = {
+			exists = host
+			host = scope:actor
+		}
+		this = scope:actor
+	}
+}
+
+# these are used to check whether a target is available for marriage, and include Refuses to Wed trait holders with the story
+can_be_introduced_common_trigger = {
+	save_temporary_scope_as = willing_marriage
+	can_marry_common_trigger = yes
+}
+
+introduction_interaction_can_be_picked_trigger = {
+	save_temporary_scope_as = willing_marriage
+	can_marry_trigger = yes
+	is_imprisoned = no
+	is_hostage = no
+	is_concubine = no
+}
+
+can_be_introduced_character_trigger = {
+	save_temporary_scope_as = willing_marriage
+
+	is_concubine = no
+	$CHARACTER$ = { is_concubine = no }
+
+	can_marry_trigger = yes
+	$CHARACTER$ = { can_marry_trigger = yes }
+
+	could_marry_character_trigger = { CHARACTER = $CHARACTER$ } #Gender, recent divorce, allowed to marry, no illegal incest etc.
+}
+
+# used in the character interaction to determine a valid target
+introduction_interaction_valid_target_trigger = {
+	# Clergy cannot marry if their faith doesn't allow it
+	trigger_if = {
+		limit = {
+			scope:secondary_actor = {
+				OR = {
+					is_clergy = yes
+					agot_has_clergy_trait = yes
+				}
+				NOT = {
+					faith = { has_doctrine_parameter = clergy_can_marry }
+				}
+			}
+		}
+		custom_description = {
+			text = character_is_clergy_and_cannot_marry
+			subject = scope:secondary_actor
+			object = scope:secondary_recipient
+			scope:secondary_actor = {
+				is_clergy = no
+				agot_has_clergy_trait = no
+			}
+		}
+	}
+	trigger_else_if = {
+		limit = {
+			scope:secondary_recipient = {
+				OR = {
+					is_clergy = yes
+					agot_has_clergy_trait = yes
+				}
+				NOT = {
+					faith = { has_doctrine_parameter = clergy_can_marry }
+				}
+			}
+		}
+		custom_description = {
+			text = character_is_clergy_and_cannot_marry
+			subject = scope:secondary_recipient
+			object = scope:secondary_actor
+			scope:secondary_recipient = {
+				is_clergy = no
+				agot_has_clergy_trait = no
+			}
+		}
+	}
+	#Marriage
+	trigger_else_if = {
+		limit = {
+			scope:secondary_actor = { is_adult = yes }
+			scope:secondary_recipient = { is_adult = yes }
+		}
+		scope:secondary_actor = {
+			custom_description = {
+				text = "can_marry_check_secondary_actor"
+				subject = scope:secondary_actor
+				object = scope:secondary_recipient
+				can_be_introduced_character_trigger = { CHARACTER = scope:secondary_recipient } #Checks marriage status, betrothed, gender, consanguinity, faith hostility etc.
+			}
+		}
+	}
+	#Betrothal
+	trigger_else = {
+		scope:secondary_actor = {
+			custom_description = {
+				text = "can_betroth_check_secondary_actor"
+				subject = scope:secondary_actor
+				object = scope:secondary_recipient
+				can_be_introduced_character_trigger = { CHARACTER = scope:secondary_recipient } #Checks marriage status, betrothed, gender, consanguinity, faith hostility etc.
+			}
+		}
+	}
+
+	# If the actor is ai they will not pick a character already considered for concubinage
+	trigger_if = {
+		limit = {
+			scope:actor = { is_ai = yes }
+		}
+		NOR = {
+			scope:secondary_actor = { has_character_flag = has_been_offered_as_concubine }
+			scope:secondary_recipient = { has_character_flag = has_been_offered_as_concubine }
+		}
+	}
+
+	#AGOT Added; LMF
+	scope:secondary_recipient = { agot_has_religious_order_trait = no }
+	scope:secondary_actor = { agot_has_religious_order_trait = no }
+	# Prevents AI from ignoring marriage AI modifiers
+	trigger_if = {
+		limit = {
+			scope:actor = { is_ai = yes }
+			scope:recipient = { is_ai = yes }
+		}
+		ai_marriage_restrictions_trigger = yes
+	}
+}
+
+# evaluating whether SUITOR is seen as an attractive marriage candidate by CHARACTER, THRESHOLD is normally 0 (so looking for a positive number)
+is_pleased_by_suitor_trigger = {
+	$SUITOR$ = { save_temporary_scope_as = candidate }
+
+	$CHARACTER$ = {
+		save_temporary_opinion_value_as = {
+			name = match_opinion
+			target = scope:candidate
+		}
+		save_temporary_scope_as = match
+	}
+
+	$SUITOR$.introduction_candidate_interest_value > $THRESHOLD$
+}
+
+# used for heir introductions
+heir_match_is_matrilineal = {
+	# male heirs always patrilineal match
+	trigger_if = {
+		limit = {
+			$HEIR$ = { is_male = yes }
+		}
+		always = no
+	}
+	# always matrilineal against lowborn match
+	trigger_else_if = {
+		limit = {
+			$MATCH$ = { is_lowborn = yes }
+		}
+		always = yes
+	}
+	# content or humble female heir otherwise always patrilineal
+	trigger_else_if = {
+		limit = {
+			$HEIR$ = {
+				OR = {
+					has_trait = content
+					has_trait = humble
+				}
+			}
+		}
+		always = no
+	}
+	# assuming none of the above, female heir gaining titles is matrilineal
+	trigger_else_if = {
+		limit = {
+			$HEIR$ = {
+				any_heir_title = {}
+				# provided game rules allow it
+				trigger_if = {
+					limit = { has_game_rule = matrilineal_marriages_never }
+					OR = {
+						host = { has_realm_law = female_only_law }
+						host = { has_realm_law = female_preference_law }
+						faith = { has_doctrine_parameter = female_dominated_law }
+					}
+				}
+				trigger_if = {
+					limit = { has_game_rule = matrilineal_marriages_female_and_equal }
+					OR = {
+						host = { has_realm_law = female_only_law }
+						host = { has_realm_law = female_preference_law }
+						host = { has_realm_law = equal_law }
+						faith = { has_doctrine_parameter = female_dominated_law }
+					}
+				}
+			}
+		}
+		always = yes
+	}
+	# female heirs not gaining titles are still matrilineal against certain matches
+	trigger_else_if = {
+		limit = {
+			$MATCH$ = {
+				OR = {
+					# they have no liege
+					is_pool_character = yes
+					# they are a courtier with no important family and no titles to come
+					AND = {
+						is_courtier = yes
+						NOR = {
+							any_heir_title = {}
+							any_close_or_extended_family_member = { is_ruler = yes }
+						}
+					}
+					# they are a baron or mayor
+					AND = {
+						is_ruler = yes
+						highest_held_title_tier = tier_barony
+					}
+				}
+			}
+			# provided game rules allow it
+			trigger_if = {
+				limit = { has_game_rule = matrilineal_marriages_never }
+				OR = {
+					$HEIR$.host = { has_realm_law = female_only_law }
+					$HEIR$.host = { has_realm_law = female_preference_law }
+					$HEIR$.faith = { has_doctrine_parameter = female_dominated_law }
+				}
+			}
+			trigger_if = {
+				limit = { has_game_rule = matrilineal_marriages_female_and_equal }
+				OR = {
+					$HEIR$.host = { has_realm_law = female_only_law }
+					$HEIR$.host = { has_realm_law = female_preference_law }
+					$HEIR$.host = { has_realm_law = equal_law }
+					$HEIR$.faith = { has_doctrine_parameter = female_dominated_law }
+				}
+			}
+		}
+		always = yes
+	}
+	# otherwise, always patrilineal
+	trigger_else = {
+		always = no
+	}
+}

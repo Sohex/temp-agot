@@ -1,0 +1,78 @@
+﻿# These are for the "fake" introduce_to_marry_interaction_ai character interaction
+# The interaction_marriage_notification_window GUI has been edited so that there are certain elements that only appear if the AI sender has the use_introduction set on them
+# This allows the regular marriage info to still appear, while the "accept" and "refuse" buttons, in that case, run these effects instead of the normal on_accept/on_decline functions
+# (This is to prevent the interaction from automatically marrying/betrothing the two candidates upon acceptance)
+# Both buttons then "refuse" the interaction (which does nothing, since the fake interaction has an empty on_decline) to close the interface
+
+use_introduction_gui_check = {
+	scope = character
+
+	is_valid = {
+		has_variable = use_introduction
+		var:recip = { is_ai = no }
+	}
+}
+
+start_introduction_gui_effect = {
+	scope = character
+
+	effect = {
+		var:secactor = { save_scope_as = secondary_actor }
+		var:secrecip = { save_scope_as = secondary_recipient }
+		var:recip = { save_scope_as = recipient }
+		var:root_actor = { save_scope_as = actor }
+		save_scope_value_as = { name = matrilineal value = no }
+		save_scope_value_as = { name = hook value = no }
+		save_scope_value_as = { name = grand_wedding_promise value = no }
+		save_scope_value_as = { name = influence_send_option value = no }
+		save_scope_value_as = { name = herd_send_option value = no }
+		scope:actor = { trigger_event = lmf_interaction.1301 } # Secondary Actor reacts to your choice of suitor
+		scope:recipient = { trigger_event = lmf_interaction.1302 } # Secondary Recipient reacts to coming visit
+
+		remove_variable = use_introduction
+		remove_variable = secactor
+		remove_variable = secrecip
+		remove_variable = recip
+		remove_variable = root_actor
+	}
+}
+
+refuse_introduction_gui_effect = {
+	scope = character
+
+	effect = {
+		var:secactor = { save_scope_as = secondary_actor }
+		var:secrecip = { save_scope_as = secondary_recipient }
+		var:recip = { save_scope_as = recipient }
+		var:root_actor = { save_scope_as = actor }
+		save_scope_value_as = { name = matrilineal value = no }
+		save_scope_value_as = { name = hook value = no }
+		save_scope_value_as = { name = grand_wedding_promise value = no }
+		save_scope_value_as = { name = influence_send_option value = no }
+		save_scope_value_as = { name = herd_send_option value = no }
+
+		scope:actor = {
+			trigger_event = lmf_interaction.1300
+			if = {
+				limit = { has_variable = grand_wedding_promise_pending }
+				remove_variable = grand_wedding_promise_pending
+			}
+		}
+
+		# If we're a clan this interaction affects unity
+		add_clan_unity_interaction_effect = {
+			CHARACTER = scope:actor
+			TARGET = scope:recipient
+			VALUE = medium_unity_loss
+			DESC = clan_unity_marry_off_decline.desc
+			REVERSE_NON_HOUSE_TARGET = no
+		}
+
+
+		remove_variable = use_introduction
+		remove_variable = secactor
+		remove_variable = secrecip
+		remove_variable = recip
+		remove_variable = root_actor
+	}
+}

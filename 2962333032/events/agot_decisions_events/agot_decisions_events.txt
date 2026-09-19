@@ -1,0 +1,2625 @@
+﻿namespace = agot_decisions_events
+
+#	Founder event
+agot_decisions_events.0001 = {
+	type = character_event
+	title = agot_decisions_events.0001.t
+	desc = agot_decisions_events.0001.desc
+	theme = war
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_war_declared"
+		# Apply effects
+		scope:founder = {
+			create_title_and_vassal_change = {
+				type = created
+				save_scope_as = title_change
+			}
+			title:k_disputed_lands = {
+				change_title_holder = {
+					holder = scope:founder
+					change = scope:title_change
+				}
+			}
+			resolve_title_and_vassal_change = scope:title_change
+		}
+
+		title:k_disputed_lands = { set_title_name = k_undisputed_lands }
+	}
+
+	option = {
+		name = agot_decisions_events.0001.a
+
+		# Add a unique nickname.
+		give_nickname = nick_agot_the_undisputed
+
+		# No stress impact necessary.
+		ai_chance = {
+			# AI should always choose this option.
+			base = 100
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.0001.b
+
+		# Minor stress loss for turning down the nickname.
+		add_stress = minor_stress_loss
+
+		# No stress impact necessary.
+		ai_chance = {
+			# AI should, if it somehow makes it here, never opt out of the nickname.
+			base = 0
+		}
+	}
+}
+
+#	Vassal notification event
+agot_decisions_events.0002 = {
+	type = character_event
+	title = agot_decisions_events.0002.t
+	desc = agot_decisions_events.0002.desc
+	theme = war
+	left_portrait = {
+		character = scope:founder
+		animation = personality_honorable
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_war_declared"
+		# Apply effects
+		scope:founder = {
+			show_as_tooltip = {
+				create_title_and_vassal_change = {
+					type = created
+					save_scope_as = title_change
+				}
+				title:k_disputed_lands = {
+					change_title_holder = {
+						holder = scope:founder
+						change = scope:title_change
+					}
+				}
+				resolve_title_and_vassal_change = scope:title_change
+			}
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.0002.a
+	}
+
+	option = {
+		name = agot_decisions_events.0002.b
+	}
+}
+
+#	Three Sisters Notification Event
+agot_decisions_events.0003 = {
+	type = character_event
+	title = agot_decisions_events.0003.t
+	desc = agot_decisions_events.0003.desc
+	theme = war
+	left_portrait = {
+		character = scope:founder
+		animation = personality_honorable
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_war_declared"
+		# Apply effects
+		scope:founder = {
+			show_as_tooltip = {
+				create_title_and_vassal_change = {
+					type = created
+					save_scope_as = title_change
+				}
+				title:k_disputed_lands = {
+					change_title_holder = {
+						holder = scope:founder
+						change = scope:title_change
+					}
+				}
+				resolve_title_and_vassal_change = scope:title_change
+			}
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.0003.a
+	}
+
+	option = {
+		name = agot_decisions_events.0003.b
+	}
+
+	option = {
+		name = agot_decisions_events.0003.c
+	}
+}
+
+#################################
+# Dragon Horn Binding 0100-0110	#
+#################################
+# This file looked lonely
+scripted_effect bind_horn = {
+	# Required Inputs
+	# $BIND_STRENGTH$
+	$NEW_BINDER$ = { save_scope_as = new_binder }
+
+	# Assumed Scopes
+	# root - dragon_horn artifact
+	if = {
+		limit = {
+			var:binder ?= { is_alive = yes }
+		}
+		var:binder = {
+			remove_list_variable = {
+				name = bound_horns
+				target = scope:dragon_horn
+			}
+		}
+
+		if = {
+			limit = {
+				NOT = { has_variable_list = tamed_dragons }
+			}
+
+			# Move the old binder down
+			add_to_variable_list = {
+				name = attempted_binding
+				target = var:binder
+			}
+		}
+	}
+	else = {
+		# If the binder is dead, we should free any dragons
+		# We already cover variable storage on the dragon yearly
+		# Just need to clear the list
+		clear_variable_list = tamed_dragons # The idea is to prevent triggering breaking events
+	}
+
+	# On a successful binding, all dragons tamed with it break free
+	if = {
+		limit = {
+			has_variable_list = tamed_dragons
+		}
+
+		every_in_list = {
+			variable = tamed_dragons
+			trigger_event = agot_decisions_events.0108
+		}
+		clear_variable_list = tamed_dragons
+	}
+
+	set_variable = {
+		name = binder
+		value = scope:new_binder
+	}
+	set_variable = {
+		name = binding_strength
+		value = $BIND_STRENGTH$
+	}
+
+	# We want to keep track of which horns the binder is bound to
+	scope:new_binder = {
+		add_to_variable_list = {
+			name = bound_horns
+			target = prev
+		}
+	}
+}
+
+# Start ritual
+agot_decisions_events.0100 = {
+	type = character_event
+	title = agot_decisions_events.0100.t
+	desc = agot_decisions_events.0100.desc
+	theme = dragon
+	override_background = { reference = bp1_bonfire }
+
+	left_portrait = {
+		character = scope:ritualist
+		animation = chaplain
+	}
+
+	right_portrait = {
+		character = root
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				OR = {
+					any_courtier = {
+						has_relation_soulmate = root
+						save_temporary_scope_as = soulmate_temp
+					}
+					any_prisoner = { # Rude
+						has_relation_soulmate = root
+						save_temporary_scope_as = soulmate_temp
+					}
+				}
+			}
+			scope:soulmate_temp ?= {
+				save_scope_as = soulmate
+			}
+		}
+	}
+
+	option = { # A sacrifice and a cut
+		trigger = {
+			custom_tooltip = { # Something weird was happeneing in error log without
+				text = agot_decisions_events.0100.hidden
+				any_prisoner = {
+					is_available_prisoner_for_sacrifice = yes
+					NOT = { is_close_family_of = root }
+					NOT = { scope:soulmate ?= this }
+				}
+			}
+		}
+
+		name = agot_decisions_events.0100.a
+		flavor = agot_decisions_events.0100.a.tt
+
+		add_character_flag = binding_sacrifice_prisoner
+
+		stress_impact = {
+			compassionate = minor_stress_impact_gain
+		}
+
+		trigger_event = agot_decisions_events.0101
+
+		ai_chance = {
+			base = 25
+
+			ai_value_modifier = {
+				ai_greed = -1
+				ai_rationality = -0.5
+			}
+		}
+	}
+
+	option = { # A Close Relative and a cut
+		trigger = {
+			custom_tooltip = { # Something weird was happeneing in error log without
+				text = agot_decisions_events.0100.hidden
+				agot_any_available_family_for_sacrifice = yes
+			}
+		}
+		name = agot_decisions_events.0100.b
+		flavor = agot_decisions_events.0100.b.tt
+
+		add_character_flag = binding_sacrifice_relative
+
+		stress_impact = {
+			compassionate = minor_stress_impact_gain
+		}
+
+		trigger_event = agot_decisions_events.0101
+
+		ai_chance = {
+			base = 50
+
+			ai_value_modifier = {
+				ai_greed = 0.5
+				ai_compassion = -0.5
+			}
+		}
+	}
+
+	option = { # Your blood, deep wound
+		name = agot_decisions_events.0100.c
+		flavor = agot_decisions_events.0100.c.tt
+
+		trigger = {
+			NOR = {
+				has_trait = wounded_1
+				has_trait = wounded_2
+				has_trait = wounded_3
+			}
+		}
+
+		show_as_unavailable = {
+			has_trait = wounded_1
+			has_trait = wounded_2
+			has_trait = wounded_3
+		}
+
+		add_character_flag = binding_bleed_self
+		trigger_event = agot_decisions_events.0102
+
+		stress_impact = {
+			craven = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 25
+
+			ai_value_modifier = {
+				ai_greed = -0.25
+				ai_boldness = 0.25
+				ai_rationality = -0.75
+			}
+		}
+	}
+
+	option = { # Nissa Nissa... and a cut
+		name = agot_decisions_events.0100.soulmate
+		flavor = agot_decisions_events.0100.soulmate.tt
+
+		trigger = {
+			exists = scope:soulmate
+		}
+		scope:soulmate ?= {
+			save_scope_as = sacrifice
+		}
+
+		add_character_flag = binding_sacrifice_soulmate
+		trigger_event = agot_decisions_events.0102
+
+		stress_impact = {
+			compassionate = major_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 0
+			ai_value_modifier = {
+				ai_greed = 1
+				ai_compassion = -2
+			}
+		}
+	}
+
+	option = { # Cancel
+		name = agot_decisions_events.0100.d
+		hidden_effect = {
+			remove_decision_cooldown = bind_dragon_horn_decision
+		}
+
+		# Ai won't cancel
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+# Selection event for sacrifice
+# Ai will pick out the first in an ordered list based on coded value
+agot_decisions_events.0101 = {
+	type = character_event
+	title = agot_decisions_events.0101.t
+	desc = agot_decisions_events.0101.desc
+	theme = dragon
+	override_background = { reference = bp1_bonfire }
+
+	left_portrait = {
+		character = scope:ritualist
+		animation = chaplain
+	}
+
+	right_portrait = {
+		character = root
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		# For both human and ai we add everyone applicable to the possible characters list
+		# For ai, we order them in a desired way and pick the top
+
+		if = {
+			limit = {
+				has_character_flag = binding_sacrifice_prisoner
+			}
+
+			every_prisoner = {
+				limit = {
+					is_available_prisoner_for_sacrifice = yes
+					NOT = { is_close_family_of = root }
+					NOT = { scope:soulmate ?= this }
+				}
+
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_character_flag = binding_sacrifice_relative
+			}
+
+			every_courtier = {
+				limit = {
+					is_available_ai = yes
+					is_close_family_of = root
+					NOT = { scope:soulmate ?= this }
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+			every_prisoner = {
+				limit = {
+					is_ai = yes
+					is_human = yes
+					is_close_family_of = root
+					NOT = { scope:soulmate ?= this }
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+
+
+		set_local_variable = {
+			name = count
+			value = -1
+		}
+
+		every_in_list = {
+			variable = possible_characters
+			change_local_variable = {
+				name = count
+				add = 1
+			}
+		}
+
+		# Pick by default your least favorite person
+		ordered_in_list = {
+			variable = possible_characters
+			order_by = opinion_of_this
+			position = local_var:count
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = sacrifice
+		}
+
+		# If it's a prisoner, the code above already selects the target
+		# For family we have to be more careful
+		if = {
+			limit = {
+				is_ai = yes
+				has_character_flag = binding_sacrifice_relative
+			}
+
+			# Verified
+			ordered_in_list = {
+				variable = possible_characters
+				order_by = {
+					value = opinion_of_this
+					if = {
+						limit = {
+							is_child_of = root
+						}
+						multiply = 0.25
+					}
+					else_if = {
+						limit = {
+							is_sibling_of = root
+						}
+						multiply = 0.5
+					}
+					else_if = {
+						limit = {
+							is_parent_of = root
+						}
+						multiply = 0.75
+					}
+					else_if = {
+						limit = {
+							is_grandparent_of = root
+						}
+						multiply = 1
+					}
+				}
+				position = local_var:count
+				save_scope_as = sacrifice
+			}
+
+		}
+		remove_local_variable = count
+
+	}
+
+	option = { # Confirm
+		name = agot_decisions_events.0101.a
+		var:si_selected_character ?= {
+			save_scope_as = sacrifice
+		}
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+		trigger_event = agot_decisions_events.0102
+
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = { # Cancel
+		name = agot_decisions_events.0101.c
+
+		var:si_selected_character ?= {
+			save_scope_as = sacrifice
+		}
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+
+		remove_character_flag = binding_sacrifice_prisoner
+		remove_character_flag = binding_sacrifice_relative
+		remove_character_flag = binding_bleed_self
+		remove_character_flag = binding_sacrifice_soulmate
+		hidden_effect = {
+			remove_decision_cooldown = bind_dragon_horn_decision
+		}
+		#Once here, ai won't back down
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+# Finish the Ritual
+agot_decisions_events.0102 = {
+	type = character_event
+	title = agot_decisions_events.0102.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:sacrifice ?= scope:ritualist
+				}
+				desc = agot_decisions_events.0102.intro.sacrifice_ritualist
+			}
+			triggered_desc = {
+				trigger = {
+					has_character_flag = binding_sacrifice_prisoner
+				}
+				desc = agot_decisions_events.0102.intro.sacrifice_prisoner
+			}
+			triggered_desc = {
+				trigger = {
+					any_child = {
+						scope:sacrifice ?= this
+					}
+				}
+				desc = agot_decisions_events.0102.intro.sacrifice_child
+			}
+			triggered_desc = {
+				trigger = {
+					has_character_flag = binding_sacrifice_relative
+				}
+				desc = agot_decisions_events.0102.intro.sacrifice_kin
+			}
+			triggered_desc = {
+				trigger = {
+					has_character_flag = binding_sacrifice_soulmate
+				}
+				desc = agot_decisions_events.0102.intro.sacrifice_soulmate
+			}
+			desc = agot_decisions_events.0102.intro.bleed_self
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					has_character_flag = binding_bleed_self
+				}
+				desc = agot_decisions_events.0102.desc.blood_self
+			}
+			desc = agot_decisions_events.0102.desc.blood_sacrifice
+		}
+		desc = agot_decisions_events.0102.desc.fire
+	}
+
+
+	theme = dragon
+	override_background = { reference = bp1_bonfire }
+
+	left_portrait = {
+		character = scope:ritualist
+		animation = chaplain
+	}
+
+	right_portrait = {
+		character = root
+	}
+
+	lower_center_portrait = {
+		trigger = {
+			NOT = {
+				scope:sacrifice ?= scope:ritualist
+			}
+		}
+		character = scope:sacrifice
+	}
+
+	immediate = {
+
+		# Some quick clean up
+		scope:dragon_horn = {
+			every_in_list = {
+				limit = { is_alive = no }
+				variable = attempted_binding
+				save_scope_as = dead_binder
+				remove_list_variable = {
+					name = attempted_binding
+					target = scope:dead_binder
+				}
+			}
+
+			every_in_list = {
+				limit = { is_alive = no }
+				variable = tamed_dragons
+				save_scope_as = dead_dragon
+				remove_list_variable = {
+					name = tamed_dragons
+					target = scope:dead_dragon
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				exists = scope:sacrifice
+			}
+
+			scope:sacrifice = {
+				death = {
+					death_reason = death_sacrificed
+					killer = root
+				}
+			}
+
+			add_trait = murderer
+			add_kinslayer_trait_or_nothing_effect = { VICTIM = scope:sacrifice }
+		}
+
+
+		if = {
+			limit = {
+				has_character_flag = binding_bleed_self
+			}
+			# We checked this earlier
+			add_trait = wounded_3
+			scope:dragon_horn = {
+				random_list = {
+					90 = {
+						bind_horn = { NEW_BINDER = root BIND_STRENGTH = 75 }
+					}
+					10 = {
+						add_to_variable_list = {
+							name = attempted_binding
+							target = root
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_character_flag = binding_sacrifice_relative
+			}
+			scope:dragon_horn = {
+				random_list = {
+					50 = {
+						bind_horn = { NEW_BINDER = root BIND_STRENGTH = 50 }
+					}
+					50 = {
+						add_to_variable_list = {
+							name = attempted_binding
+							target = root
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_character_flag = binding_sacrifice_soulmate
+			}
+			scope:dragon_horn = {
+				bind_horn = { NEW_BINDER = root BIND_STRENGTH = 100 }
+			}
+			send_interface_toast = {
+				title = agot_decisions_events.0102.toast.soulmate
+				left_icon = scope:soulmate
+				right_icon = scope:dragon_horn
+			}
+		}
+		else = {
+			scope:dragon_horn = {
+				random_list = {
+					10 = {
+						bind_horn = { NEW_BINDER = root BIND_STRENGTH = 10 }
+					}
+					90 = {
+						add_to_variable_list = {
+							name = attempted_binding
+							target = root
+						}
+					}
+				}
+			}
+		}
+
+	}
+
+	option = { # Is it done?
+		name = agot_decisions_events.0102.a
+		flavor = agot_decisions_events.0102.tt
+
+		if = {
+			limit = { # In case root did something stupid like pawn the artifact off between events
+				any_character_artifact = {
+					scope:dragon_horn ?= this
+				}
+			}
+			scope:dragon_horn = {
+				equip_artifact_to_owner_replace = yes
+			}
+		}
+
+		if = {
+			limit = {
+				is_available_ai_adult = yes
+			}
+			trigger_event = agot_decisions_events.0103
+		}
+	}
+
+	after = {
+		remove_character_flag = binding_sacrifice_prisoner
+		remove_character_flag = binding_sacrifice_relative
+		remove_character_flag = binding_sacrifice_soulmate
+		remove_character_flag = binding_bleed_self
+	}
+}
+
+# Makes AI tame dragon with horn
+agot_decisions_events.0103 = {
+	hidden = yes
+
+	trigger = {
+		any_courtier = {
+			has_trait = dragon
+			NOT = {
+				has_character_flag = owned_dragon
+			}
+		}
+		# Requirements for the tame dragon interaction
+		any_relation = {
+			type = agot_dragon
+			count = 0
+		}
+		OR = {
+			any_prisoner = {
+				is_available_prisoner_for_sacrifice = yes
+			}
+			any_courtier = {
+				is_available_ai_adult = yes
+			}
+		}
+	}
+
+	immediate = {
+		random_in_global_list = {
+			variable = living_dragons
+			limit = {
+				is_courtier_of = root
+				NOT = {
+					has_character_flag = owned_dragon
+				}
+			}
+			save_scope_as = dragon
+		}
+		trigger_event = dragon_taming_events.0300
+	}
+}
+
+# Handler for binding strength of horn
+agot_decisions_events.0104 = {
+	hidden = yes
+
+	trigger = {
+		is_alive = yes
+		has_variable = horn_binder
+		has_variable = binding_strength
+		NOT = { has_character_flag = recently_rebound }
+	}
+
+	immediate = {
+		# First make sure the binder is still alive
+		if = {
+			limit = {
+				var:horn_binder = { is_alive = no }
+			}
+
+			remove_variable = horn_binder
+			remove_variable = binding_strength
+			remove_variable = rebind_count
+		}
+		else = {
+			save_scope_as = dragon
+
+			# The objective:
+			#	- Strong willed dragons should break away faster
+			#	- More temporate willed dragons stay longer
+			#	- Cannibal and Balaerion should decay fast - about 2/3 years
+			#	- Average goal is 5 years
+			#	- Longest maybe 10, with in very rare cases bonding at the end
+			#	- should slow bonding
+			save_scope_value_as = {
+				name = binding_strength_change
+				value = {
+					value = 10
+
+					add = {
+						value = temperament
+						divide = -5
+						min = -5
+						max = 5
+					}
+
+					add = { # Draconic dread goes up with size so only using this
+						value = draconic_dread
+						divide = 20
+					}
+
+					if = {
+						limit = {
+							var:horn_binder = {
+								has_trait_xp = {
+									trait = dragonrider
+									track = dragon_training
+									value > 50
+								}
+							}
+						}
+						add = {
+							value = 1
+							multiply = -1
+						}
+					}
+
+					min = 5
+					max = 100
+				}
+			}
+
+			change_variable = {
+				name = binding_strength
+				subtract = scope:binding_strength_change
+			}
+			save_scope_value_as = {
+				name = next_value
+				value = {
+					value = var:binding_strength
+					subtract = scope:binding_strength_change
+				}
+			}
+
+			if = { # If it has fallen below zero it's time to break up
+				limit = {
+					var:binding_strength <= 0
+				}
+
+				if = {
+					limit = {
+						var:binding_strength <= -20
+					}
+
+					# Something catastrophic happens
+					var:horn_binder = {
+						trigger_event = agot_decisions_events.0107
+					}
+				}
+				else = {
+					var:horn_binder = {
+						trigger_event = agot_decisions_events.0106
+					}
+				}
+			}
+			else_if = { # Else we should see if the binding strength has gotten low enough to be concerning
+				limit = {
+					var:binding_strength < scope:binding_strength_change
+					NOT = {
+						# Make sure we haven't already informed the owner of this
+						var:horn_binder = {
+							any_in_list = {
+								variable = imminent_release
+								this = root
+							}
+						}
+					}
+				}
+
+				var:horn_binder = {
+					trigger_event = agot_decisions_events.0105
+				}
+			}
+			# Else it's just Tuesday
+
+		}
+	}
+
+}
+
+# The dragon is going to break free soon
+agot_decisions_events.0105 = {
+	type = character_event
+	title = agot_decisions_events.0105.t
+	window = agot_dragon_character_event
+	desc = {
+		desc = agot_decisions_events.0105.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:binding_strength_change < -20
+				}
+				desc = agot_decisions_events.0105.desc.imminent_shatter
+			}
+			desc = agot_decisions_events.0105.desc.imminent_break
+		}
+	}
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	trigger = {
+		scope:dragon = {
+			is_alive = yes
+			NOT = { has_character_flag = recently_rebound } # To avoid issues with blowing midyear
+		}
+	}
+
+	immediate = {
+		add_to_variable_list = { # Was designed incase we wanted multiple bound dragons
+			name = imminent_release
+			target = scope:dragon
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.0105.a
+	}
+}
+
+# The dragon breaks control
+agot_decisions_events.0106 = {
+	type = character_event
+	title = agot_decisions_events.0106.t
+	window = agot_dragon_character_event
+	desc = agot_decisions_events.0106.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	trigger = {
+		scope:dragon = {
+			is_alive = yes
+			exists = var:binding_strength
+			var:binding_strength <= 0
+		}
+	}
+
+	immediate = {
+		remove_list_variable = {
+			name = imminent_release
+			target = scope:dragon
+		}
+	}
+
+	option = {
+		trigger = {
+			any_equipped_character_artifact = {
+				artifact_type = dragon_horn
+			}
+		}
+		name = agot_decisions_events.0106.a
+		flavor = agot_decisions_events.0106.a.tt
+		scope:dragon = { # No cheating out this one
+			save_scope_as = leaving_dragon
+		}
+		trigger_event = dragon_taming_events.0304
+
+		ai_chance = { # Ai will always retame if they can
+			base = 1
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.0106.b
+		custom_tooltip = {
+			text = agot_decisions_events.0106.dragon_flee
+
+			agot_untame_dragon = { OWNER = root DRAGON = scope:dragon }
+			if = {
+				limit = {
+					NOT = { scope:dragon = { has_character_flag = in_dragonpit } }
+				}
+				scope:dragon = {
+					agot_free_dragon = yes
+					agot_dragon_flees_province = yes
+				}
+			}
+		}
+
+		random_in_list = { # Dragon is no longer bound to the old horn
+			limit = {
+				is_target_in_variable_list = {
+					name = tamed_dragons
+					target = scope:dragon
+				}
+			}
+			variable = bound_horns
+			remove_list_variable = {
+				name = tamed_dragons
+				target = scope:dragon
+			}
+		}
+
+		scope:dragon = {
+			remove_variable = horn_binder
+			remove_variable = binding_strength
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+# The dragon breaks control violently
+agot_decisions_events.0107 = {
+	type = character_event
+	title = agot_decisions_events.0107.t
+	window = agot_dragon_character_event
+	desc = agot_decisions_events.0107.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = fear
+		camera = camera_human_back_to_camera
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_facing_human
+
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_ten_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5  }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_nine_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5  }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_eight_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5  }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_seven_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5 }
+		}
+		triggered_outfit = { # VHAGAR
+			trigger = {
+				scope:dragon = { level_six_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_five_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.0 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_four_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.9 }
+		}
+		triggered_outfit = { # MELEYS
+			trigger = {
+				scope:dragon = { level_three_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.8 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_two_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.5 }
+		}
+		triggered_outfit = { # SYRAX
+			trigger = {
+				scope:dragon = { level_one_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.4 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_zero_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.7 }
+		}
+		#End Dynamic Camera Zoom
+	}
+
+	trigger = {
+		scope:dragon = {
+			is_alive = yes
+			exists = var:binding_strength
+			var:binding_strength <= 0
+		}
+	}
+
+	immediate = {
+		remove_list_variable = {
+			name = imminent_release
+			target = scope:dragon
+		}
+	}
+
+	option = {
+		trigger = {
+			any_equipped_character_artifact = {
+				artifact_type = dragon_horn
+			}
+		}
+
+		scope:dragon = { # No cheating out this one
+			save_scope_as = viscious_leaving_dragon
+		}
+
+		name = agot_decisions_events.0107.a
+		flavor = agot_decisions_events.0106.a.tt
+		save_scope_as = rider
+		trigger_event = dragon_taming_events.0304
+
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = {
+		name = {
+			trigger = { knows_language = language_agot_valyrian }
+			text = agot_decisions_events.0107.b.valyrian
+		}
+		name = {
+			trigger = { NOT = { knows_language = language_agot_valyrian } }
+			text = agot_decisions_events.0107.b
+		}
+		death = {
+			death_reason = death_dragon_ate
+			killer = scope:dragon
+		}
+
+		random_in_list = { # Dragon is no longer bound to the old horn
+			limit = {
+				is_target_in_variable_list = {
+					name = tamed_dragons
+					target = scope:dragon
+				}
+			}
+			variable = bound_horns
+			remove_list_variable = {
+				name = tamed_dragons
+				target = scope:dragon
+			}
+		}
+
+		scope:dragon = {
+			remove_variable = horn_binder
+			remove_variable = binding_strength
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+# Someone else has blown the horn while dragons are bound - Handler
+agot_decisions_events.0108 = {
+	hidden = yes
+	# root is dragon
+	immediate = {
+		save_scope_as = dragon
+		if = {
+			limit = {
+				exists = var:horn_binder
+			}
+			if = {
+				limit = {
+					var:current_rider ?= var:horn_binder
+				}
+
+				var:horn_binder = {
+					trigger_event = agot_decisions_events.0109
+				}
+
+			}
+			# I had an event for owned but not tamed dragons but it doesn't make sense
+			# as we either wild or lock up dragons now
+			# Perhaps if other dragons were locked away due to a horn they could try to break out
+			# in this case?
+		}
+	}
+}
+
+# Someone has blown the horn I used to bind this dragon - this dragon is tamed and kills
+agot_decisions_events.0109 = {
+	type = character_event
+	title = agot_decisions_events.0109.t
+	window = agot_dragon_character_event
+	desc = agot_decisions_events.0109.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = fear
+		camera = camera_human_back_to_camera
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_facing_human
+
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_ten_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5  }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_nine_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5  }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_eight_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5  }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_seven_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5 }
+		}
+		triggered_outfit = { # VHAGAR
+			trigger = {
+				scope:dragon = { level_six_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_five_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.0 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_four_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.9 }
+		}
+		triggered_outfit = { # MELEYS
+			trigger = {
+				scope:dragon = { level_three_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.8 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_two_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.5 }
+		}
+		triggered_outfit = { # SYRAX
+			trigger = {
+				scope:dragon = { level_one_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.4 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_zero_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.7 }
+		}
+		#End Dynamic Camera Zoom
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_decisions_events.0109.a
+		death = {
+			death_reason = death_dragon_ate
+			killer = scope:dragon
+		}
+
+		scope:dragon = {
+			if = {
+				limit = {
+					NOT = { has_character_flag = in_dragonpit }
+				}
+				agot_dragon_flees_province = yes
+			}
+			remove_variable = horn_binder
+			remove_variable = binding_strength
+		}
+	}
+}
+
+agot_decisions_events.0200 = {
+	type = character_event
+	title = agot_decisions_events.0200.t
+	desc = agot_decisions_events.0200.desc
+
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	right_portrait = {
+		character = title:c_princes_quarter.holder
+		animation = chancellor
+	}
+	immediate = {}
+	option = {
+		name = agot_decisions_events.0200.a
+		custom_tooltip = agot_decisions_events.0200.a_tt
+		stress_impact = {
+			base = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 60
+		}
+	}
+	option = {
+		name = agot_decisions_events.0200.b
+		trigger = {
+			trigger_if = {
+				limit = {
+					is_ai = yes
+				}
+				is_available_ai_adult = yes
+			}
+			trigger_else = {
+				always = yes
+			}
+		}
+		start_war = {
+			casus_belli = reinstate_braavos_pentos_treaty
+			target = title:k_pentos.holder
+		}
+		stress_impact = {
+			base = medium_stress_impact_gain
+			vengeful = major_stress_impact_loss
+		}
+		ai_chance = {
+			base = 40
+			modifier = {
+				ai_has_warlike_personality = yes
+				factor = 1.5
+			}
+		}
+	}
+}
+
+agot_decisions_events.0201 = {
+	type = character_event
+	title = agot_decisions_events.0201.t
+	desc = agot_decisions_events.0201.desc
+
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = throne_room_cheer_1
+	}
+	right_portrait = {
+		character = title:c_princes_quarter.holder
+		animation = chancellor
+	}
+	immediate = {
+		show_as_tooltip = {
+			remove_character_modifier = agot_pentos_braavos_treaty
+		}
+	}
+	option = {
+		name = agot_decisions_events.0201.a
+	}
+}
+
+agot_decisions_events.0202 = {
+	type = character_event
+	title = agot_decisions_events.0202.t
+	desc = agot_decisions_events.0202.desc
+
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = throne_room_cheer_1
+	}
+	immediate = {
+		show_as_tooltip = {
+			remove_character_modifier = agot_pentos_braavos_treaty
+		}
+	}
+	option = {
+		name = agot_decisions_events.0202.a
+	}
+}
+
+agot_decisions_events.0203 = {
+	type = character_event
+	title = agot_decisions_events.0203.t
+	desc = agot_decisions_events.0203.desc
+
+	theme = war
+
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	immediate = {
+		show_as_tooltip = {
+			add_character_modifier = agot_pentos_braavos_treaty
+		}
+	}
+	option = {
+		name = agot_decisions_events.0203.a
+	}
+}
+agot_decisions_events.0204 = {
+	type = character_event
+	title = agot_decisions_events.0204.t
+	desc = agot_decisions_events.0204.desc
+
+	theme = war
+
+	left_portrait = {
+		character = root
+		animation = throne_room_cheer_1
+	}
+	right_portrait = {
+		character = scope:defender
+		animation = grief
+	}
+	immediate = {
+		show_as_tooltip = {
+			title:k_pentos.holder = {
+				add_character_modifier = agot_pentos_braavos_treaty
+			}
+		}
+	}
+	option = {
+		name = agot_decisions_events.0204.a
+	}
+}
+agot_decisions_events.0205 = {
+	type = character_event
+	title = agot_decisions_events.0205.t
+	desc = agot_decisions_events.0205.desc
+	left_portrait = {
+		character = title:k_braavos.holder
+		animation = throne_room_cheer_1
+	}
+	right_portrait = {
+		character = title:k_pentos.holder
+		animation = grief
+	}
+	theme = war
+
+	option = {
+		name = {
+			trigger = {
+				OR = {
+					has_title = title:k_braavos
+					any_liege_or_above = {
+						this = title:k_braavos.holder
+					}
+				}
+			}
+			text = agot_decisions_events.0205.a
+		}
+		name = {
+			trigger = {
+				OR = {
+					has_title = title:k_pentos
+					any_liege_or_above = {
+						this = title:k_pentos.holder
+					}
+				}
+			}
+			text = agot_decisions_events.0205.a_pentos_pov
+		}
+		show_as_tooltip = {
+			if = {
+				limit = {
+					OR = {
+						has_title = title:k_pentos
+						any_liege_or_above = {
+							this = title:k_pentos.holder
+						}
+					}
+				}
+				remove_character_modifier = agot_pentos_braavos_treaty
+			}
+		}
+	}
+}
+agot_decisions_events.0206 = {
+	type = character_event
+	title = agot_decisions_events.0206.t
+	desc = agot_decisions_events.0206.desc
+	left_portrait = {
+		character = title:k_braavos.holder
+		animation = disbelief
+	}
+	right_portrait = {
+		trigger = {
+			exists = title:k_pentos.holder
+		}
+		character = title:k_pentos.holder
+		animation = personality_bold
+	}
+	theme = war
+
+	immediate = {
+		if = {
+			limit = {
+				title:k_pentos.holder = {
+					agot_is_independent_ruler = yes
+				}
+			}
+			set_global_variable = {
+				name = braavos_treaty_broken
+				value = yes
+				years = 15
+			}
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.0206.a
+	}
+
+	option = {
+		name = agot_decisions_events.0206.b
+		custom_tooltip = agot_decisions_events.0200.a_tt
+		trigger = {
+			title:k_pentos.holder = {
+				agot_is_independent_ruler = yes
+				primary_title = title:k_pentos
+			}
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.0200.b
+		trigger = {
+			title:k_pentos.holder = {
+				agot_is_independent_ruler = yes
+				primary_title = title:k_pentos
+			}
+			trigger_if = {
+				limit = {
+					is_ai = yes
+				}
+				is_available_ai_adult = yes
+			}
+			trigger_else = {
+				always = yes
+			}
+		}
+		start_war = {
+			casus_belli = reinstate_braavos_pentos_treaty
+			target = title:k_pentos.holder
+		}
+		stress_impact = {
+			base = medium_stress_impact_gain
+			vengeful = major_stress_impact_loss
+		}
+		ai_chance = {
+			base = 40
+			modifier = {
+				ai_has_warlike_personality = yes
+				factor = 1.5
+			}
+		}
+	}
+}
+
+#Artifacts
+#Rhaenys Circlet
+agot_decisions_events.1000 = {
+	type = character_event
+	title = agot_decisions_events.1000.t
+	desc = {
+		desc = agot_decisions_events.1000.desc
+		triggered_desc = {
+			trigger = { exists = scope:targ_heir }
+			desc = agot_decisions_events.1000.desc_targs
+		}
+	}
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:targ_heir
+		animation = disapproval
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_left_portrait
+	}
+	lower_right_portrait = scope:rhaenys
+
+	immediate = {
+		agot_rediscover_rhaenys_circlet_effect = { OWNER = root }
+	}
+	option = {
+		name = agot_decisions_events.1000.a
+		scope:targ_heir ?= {
+			trigger_event = agot_decisions_events.1001
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -1
+				ai_honor = -1
+				ai_vengefulness = 0.5
+				ai_greed = 0.5
+			}
+		}
+	}
+	option = {
+		name = agot_decisions_events.1000.b
+		trigger = { exists = scope:targ_heir }
+		show_as_tooltip = {
+			scope:newly_created_artifact = { set_owner = scope:targ_heir }
+		}
+		scope:targ_heir = {
+			trigger_event = agot_decisions_events.1002
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = 1
+				ai_honor = 1
+				ai_vengefulness = -0.5
+				ai_greed = -0.5
+			}
+		}
+	}
+}
+
+#Denied
+agot_decisions_events.1001 = {
+	type = character_event
+	title = agot_decisions_events.1001.t
+	desc = agot_decisions_events.1001.desc
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:current_uller
+		animation = personality_callous
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_left_portrait
+	}
+	lower_right_portrait = scope:rhaenys
+
+	option = {
+		name = agot_decisions_events.1001.a
+		if = {
+			limit = {
+				valid_for_feud_events_with_target_trigger = { TARGET = scope:current_uller }
+			}
+			house_feud_start_effect = {
+				# Feuding House Head
+				ACTOR = root
+				# Target House Head
+				TARGET = scope:current_uller
+				# Feud Reason
+				REASON = head_rivalry
+				# House Member attacker if relevant
+				ATTACKER = root
+				# House Member victim if relevant
+				VICTIM = root
+			}
+		}
+		add_opinion = {
+			target = scope:current_uller
+			modifier = hate_opinion
+			opinion = -25
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_vengefulness = 1
+				ai_boldness = 1
+			}
+		}
+	}
+	option = {
+		name = agot_decisions_events.1001.b
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_vengefulness = -1
+				ai_boldness = -1
+			}
+		}
+	}
+}
+
+#Gifted
+agot_decisions_events.1002 = {
+	type = character_event
+	title = agot_decisions_events.1002.t
+	desc = agot_decisions_events.1002.desc
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+	right_portrait = {
+		character = scope:current_uller
+		animation = personality_compassionate
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_left_portrait
+	}
+	lower_right_portrait = scope:rhaenys
+
+	immediate = {
+		scope:newly_created_artifact = {
+			set_owner = scope:targ_heir
+		}
+		add_opinion = {
+			target = scope:current_uller
+			modifier = grateful_opinion
+			opinion = 50
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.1002.a
+	}
+}
+
+#Blackfyre
+agot_decisions_events.1010 = {
+	type = character_event
+	title = agot_decisions_events.1010.t
+	desc = {
+		desc = agot_decisions_events.1010.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:targ_heir
+					exists = scope:blackfyre_heir
+				}
+				desc = agot_decisions_events.1010.desc.both
+			}
+			triggered_desc = {
+				trigger = { exists = scope:targ_heir }
+				desc = agot_decisions_events.1010.desc.targs
+			}
+			triggered_desc = {
+				trigger = { exists = scope:blackfyre_heir }
+				desc = agot_decisions_events.1010.desc.blackfyres
+			}
+		}
+	}
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_center_portrait
+	}
+	lower_left_portrait = scope:targ_heir
+	lower_right_portrait = scope:blackfyre_heir
+
+	immediate = {
+		agot_rediscover_blackfyre_effect = { OWNER = root }
+	}
+
+	option = {
+		name = agot_decisions_events.1010.a
+		scope:targ_heir ?= {
+			trigger_event = agot_decisions_events.1011
+		}
+		scope:blackfyre_heir ?= {
+			trigger_event = agot_decisions_events.1013
+		}
+	}
+	option = {
+		name = agot_decisions_events.1010.b
+		trigger = { exists = scope:targ_heir }
+		show_as_tooltip = {
+			scope:newly_created_artifact = { set_owner = scope:targ_heir }
+		}
+		scope:targ_heir = {
+			trigger_event = agot_decisions_events.1012
+		}
+		scope:blackfyre_heir ?= {
+			trigger_event = {
+				id = agot_decisions_events.1013
+				days = 1
+			}
+		}
+	}
+	option = {
+		name = agot_decisions_events.1010.c
+		trigger = { exists = scope:blackfyre_heir }
+		show_as_tooltip = {
+			scope:newly_created_artifact = { set_owner = scope:blackfyre_heir }
+		}
+		scope:blackfyre_heir = {
+			trigger_event = agot_decisions_events.1014
+		}
+		scope:targ_heir ?= {
+			trigger_event = {
+				id = agot_decisions_events.1011
+				days = 1
+			}
+		}
+	}
+}
+
+#Targs Denied
+agot_decisions_events.1011 = {
+	type = character_event
+	title = agot_decisions_events.1011.t
+	desc = {
+		desc = agot_decisions_events.1011.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:newly_created_artifact.artifact_owner = scope:current_mopatis
+				}
+				desc = agot_decisions_events.1011.desc_keep
+			}
+			desc = agot_decisions_events.1011.desc_blackfyre
+		}
+	}
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:current_mopatis
+		animation = personality_callous
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_right_portrait
+	}
+	lower_left_portrait = scope:blackfyre_portrait
+
+	immediate = {
+		if = {
+			limit = {
+				exists = scope:blackfyre_heir
+				scope:newly_created_artifact.artifact_owner = scope:blackfyre_heir
+			}
+			scope:blackfyre_heir = { save_scope_as = blackfyre_portrait }
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.1011.a
+		if = {
+			limit = {
+				valid_for_feud_events_with_target_trigger = { TARGET = scope:current_mopatis }
+			}
+			house_feud_start_effect = {
+				# Feuding House Head
+				ACTOR = root
+				# Target House Head
+				TARGET = scope:current_mopatis
+				# Feud Reason
+				REASON = head_rivalry
+				# House Member attacker if relevant
+				ATTACKER = root
+				# House Member victim if relevant
+				VICTIM = root
+			}
+		}
+		add_opinion = {
+			target = scope:current_mopatis
+			modifier = hate_opinion
+			opinion = -25
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_vengefulness = 1
+				ai_boldness = 1
+			}
+		}
+	}
+	option = {
+		name = agot_decisions_events.1011.b
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_vengefulness = -1
+				ai_boldness = -1
+			}
+		}
+	}
+}
+
+#Targs Gifted
+agot_decisions_events.1012 = {
+	type = character_event
+	title = agot_decisions_events.1012.t
+	desc = agot_decisions_events.1012.desc
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+	right_portrait = {
+		character = scope:current_mopatis
+		animation = personality_compassionate
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_center_portrait
+	}
+
+	immediate = {
+		scope:newly_created_artifact = {
+			set_owner = scope:targ_heir
+		}
+		add_opinion = {
+			target = scope:current_mopatis
+			modifier = grateful_opinion
+			opinion = 50
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.1012.a
+	}
+}
+
+#Blackfyres Denied
+agot_decisions_events.1013 = {
+	type = character_event
+	title = agot_decisions_events.1013.t
+	desc = {
+		desc = agot_decisions_events.1013.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:newly_created_artifact.artifact_owner = scope:current_mopatis
+				}
+				desc = agot_decisions_events.1013.desc_keep
+			}
+			desc = agot_decisions_events.1013.desc_blackfyre
+		}
+	}
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:current_mopatis
+		animation = personality_callous
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_right_portrait
+	}
+	lower_left_portrait = scope:targ_portrait
+
+	immediate = {
+		if = {
+			limit = {
+				exists = scope:targ_heir
+				scope:newly_created_artifact.artifact_owner = scope:targ_heir
+			}
+			scope:targ_heir = { save_scope_as = targ_portrait }
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.1013.a
+		if = {
+			limit = {
+				valid_for_feud_events_with_target_trigger = { TARGET = scope:current_mopatis }
+			}
+			house_feud_start_effect = {
+				# Feuding House Head
+				ACTOR = root
+				# Target House Head
+				TARGET = scope:current_mopatis
+				# Feud Reason
+				REASON = head_rivalry
+				# House Member attacker if relevant
+				ATTACKER = root
+				# House Member victim if relevant
+				VICTIM = root
+			}
+		}
+		add_opinion = {
+			target = scope:current_mopatis
+			modifier = hate_opinion
+			opinion = -25
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_vengefulness = 1
+				ai_boldness = 1
+			}
+		}
+	}
+	option = {
+		name = agot_decisions_events.1013.b
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_vengefulness = -1
+				ai_boldness = -1
+			}
+		}
+	}
+}
+
+#Blackfyres Gifted
+agot_decisions_events.1014 = {
+	type = character_event
+	title = agot_decisions_events.1014.t
+	desc = agot_decisions_events.1014.desc
+
+	theme = secret
+
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+	right_portrait = {
+		character = scope:current_mopatis
+		animation = personality_compassionate
+	}
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_center_portrait
+	}
+
+	immediate = {
+		scope:newly_created_artifact = {
+			set_owner = scope:blackfyre_heir
+		}
+		add_opinion = {
+			target = scope:current_mopatis
+			modifier = grateful_opinion
+			opinion = 50
+		}
+	}
+
+	option = {
+		name = agot_decisions_events.1014.a
+	}
+}
+
+agot_decisions_events.1100 = {
+	type = character_event
+	title = petition_liege.0101.t.title_paramount
+	desc = {
+		desc = petition_liege.0101.desc
+		desc = petition_liege.0101.desc.title_paramount
+	}
+
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+	right_portrait = {
+		character = scope:petition_vassal
+		animation = personality_compassionate
+	}
+	immediate = {
+		save_scope_as = petition_liege
+	}
+	option = {
+		name = petition_liege.0101.accept.title_paramount
+		hidden_effect = { agot_petition_liege_0101_paramount_effect = yes }
+		custom_tooltip = petition_liege.0101.accept.title_paramount.tt
+		remove_character_flag = agot_dealing_with_paramountcy_ai_request
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 25
+				var:legitimate_house ?= scope:petition_vassal.house
+				NOT = {
+					scope:petition_paramount = {
+						any_past_holder_reversed = {
+							house = scope:petition_vassal.house
+							count >= 3
+						}
+					}
+				}
+			}
+			modifier = {
+				add = 10
+				is_allied_to = scope:petition_vassal
+			}
+		}
+	}
+	option = {
+		name = agot_decisions_events.1100_this_is_my_title
+		custom_tooltip = agot_decisions_events.1100_this_is_my_title_tt
+		custom_tooltip = agot_decisions_events.1100_this_is_my_title_opinion_tt
+		remove_character_flag = agot_dealing_with_paramountcy_ai_request
+		trigger = {
+			is_ai = no
+		}
+
+		if = {
+			limit = {
+				scope:petition_vassal = {
+					is_powerful_vassal = yes
+				}
+			}
+			scope:petition_vassal = {
+				add_opinion = {
+					target = root
+					modifier = ignored_demands_opinion
+					opinion = -50
+				}
+			}
+		}
+		else = {
+			scope:petition_vassal = {
+				add_opinion = {
+					target = root
+					modifier = ignored_demands_opinion
+					opinion = -25
+				}
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_claim_on = scope:petition_paramount
+				}
+			}
+			add_legitimacy = medium_legitimacy_loss
+		}
+		add_to_variable_list = {
+			name = hoarding_paramountcies_list
+			target = scope:petition_paramount
+		}
+		hidden_effect = {
+			scope:petition_paramount = {
+				every_dejure_vassal_title_holder = {
+					limit = {
+						this != root
+						is_adult = yes
+						liege = root
+					}
+					add_opinion = {
+						modifier = agot_hoarding_paramountcies
+						target = root
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = petition_liege.0101.refusal.title_paramount
+		custom_tooltip = petition_liege.0101.refusal.title_paramount_tt
+		remove_character_flag = agot_dealing_with_paramountcy_ai_request
+		add_to_variable_list = {
+			name = temp_paramountcy_cd_list
+			target = scope:petition_paramount
+			years = 1
+		}
+		if = {
+			limit = {
+				scope:petition_vassal = {
+					is_powerful_vassal = yes
+				}
+			}
+			scope:petition_vassal = {
+				add_opinion = {
+					target = root
+					modifier = ignored_demands_opinion
+					opinion = -50
+				}
+			}
+		}
+		else = {
+			scope:petition_vassal = {
+				add_opinion = {
+					target = root
+					modifier = ignored_demands_opinion
+					opinion = -25
+				}
+			}
+		}
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 100
+				OR = {
+					has_relation_rival = scope:petition_vassal
+					has_relation_nemesis = scope:petition_vassal
+					scope:petition_vassal = {
+						house_has_feud_relation_with_trigger = { TARGET = scope:petition_liege }
+					}
+				}
+			}
+			modifier = {
+				add = 50
+				scope:petition_paramount = {
+					any_past_holder_reversed = {
+						house = scope:petition_vassal.house
+						count >= 3
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = petition_liege.0101.bribe_favor.title_paramount
+		custom_tooltip = agot_decisions_events.1100.character_must_respond_to_demands_tt
+		show_as_tooltip = {
+			add_hook = {
+				type = favor_hook
+				target = scope:petition_vassal
+				years = 10
+			}
+		}
+		set_variable = {
+			name = 1100_paramountcy_cost
+			value = flag:hook
+		}
+		scope:petition_vassal = {
+			trigger_event = agot_decisions_events.1101
+		}
+		ai_chance = {
+			base = 10
+			modifier = {
+				has_trait = just
+				factor = 0
+			}
+		}
+	}
+	option = {
+		name = petition_liege.0101.bribe_gold.title_paramount
+		custom_tooltip = agot_decisions_events.1100.character_must_respond_to_demands_tt
+		trigger = {
+			scope:petition_vassal.short_term_gold >= major_gold_value
+		}
+		show_as_tooltip = {
+			scope:petition_vassal = {
+				pay_short_term_gold = {
+					target = scope:petition_liege
+					gold = major_gold_value
+				}
+			}
+		}
+		set_variable = {
+			name = 1100_paramountcy_cost
+			value = flag:gold
+		}
+		scope:petition_vassal = {
+			trigger_event = { id = agot_decisions_events.1101 days = 1 }
+		}
+		ai_chance = {
+			base = 20
+			modifier = {
+				has_trait = just
+				factor = 0
+			}
+		}
+	}
+	option = {
+		name = petition_liege.0101.bribe_contract.title_paramount
+		custom_tooltip = agot_decisions_events.1100.character_must_respond_to_demands_tt
+		trigger = {
+			scope:petition_vassal = {
+				vassal_contract_has_modifiable_obligations = yes
+				OR = {
+					vassal_contract_obligation_level_can_be_increased = feudal_government_taxes
+					vassal_contract_obligation_level_can_be_increased = feudal_government_levies
+				}
+			}
+		}
+		show_as_tooltip = {
+			scope:petition_vassal = { petition_liege_0101_petitioner_contract_increase_effect = yes }
+		}
+		set_variable = {
+			name = 1100_paramountcy_cost
+			value = flag:contract
+		}
+		scope:petition_vassal = {
+			trigger_event = agot_decisions_events.1101
+		}
+		ai_chance = {
+			base = 10
+			modifier = {
+				has_trait = just
+				factor = 0
+			}
+		}
+	}
+}
+
+agot_decisions_events.1101 = {
+	type = character_event
+	title = petition_liege.0205.t
+	desc = {
+		desc = petition_liege.0205.desc.intro
+		desc = petition_liege.0201.desc.title_paramount
+		desc = 	petition_liege.0205.desc.bridge
+	}
+
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+	right_portrait = {
+		character = scope:petition_liege
+		animation = personality_compassionate
+	}
+	immediate = {}
+	option = {
+		name = petition_liege.0205.counter
+		duel = {
+			 skill = diplomacy
+			 value = very_high_skill_rating
+
+			 50 = {
+				compare_modifier = {
+					 value = scope:duel_value
+					 multiplier = 3.5
+					 min = -49
+				}
+				desc = agot_decision_events.1101_success
+				scope:petition_liege = {
+					send_interface_toast = {
+						title = agot_decision_events.1101_success
+						left_icon = scope:petition_vassal
+						hidden_effect = { agot_petition_liege_0101_paramount_effect = yes }
+						custom_tooltip = petition_liege.0101.accept.title_paramount.tt
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				desc = agot_decision_events.1101_failure
+				scope:petition_liege = {
+					send_interface_toast = {
+						title = agot_decision_events.1101_failure
+						left_icon = scope:petition_vassal
+						add_opinion = {
+							target = scope:petition_vassal
+							modifier = annoyed_opinion
+							opinion = -25
+						}
+					}
+				}
+			}
+
+		}
+		ai_chance = {
+			base = 15
+			modifier = {
+				add = 20
+				has_trait = ambitious
+			}
+		}
+	}
+	option = {
+		name = petition_liege.0205.a
+		if = {
+			limit = {
+				scope:petition_liege.var:1100_paramountcy_cost = flag:hook
+			}
+			liege = {
+				add_hook = {
+					type = favor_hook
+					target = root
+					years = 10
+				}
+			}
+			scope:petition_liege = {
+				send_interface_toast = {
+					title = petition_liege.0101.t.title_paramount
+					left_icon = scope:petition_vassal
+					hidden_effect = { agot_petition_liege_0101_paramount_effect = yes }
+					custom_tooltip = petition_liege.0101.accept.title_paramount.tt
+					show_as_tooltip = {
+						add_hook = {
+							type = favor_hook
+							target = root
+							years = 10
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:petition_liege.var:1100_paramountcy_cost = flag:gold
+			}
+			pay_short_term_gold = {
+				target = scope:petition_liege
+				gold = major_gold_value
+			}
+			scope:petition_liege = {
+				send_interface_toast = {
+					title = petition_liege.0101.t.title_paramount
+					left_icon = scope:petition_vassal
+					hidden_effect = { agot_petition_liege_0101_paramount_effect = yes }
+					custom_tooltip = petition_liege.0101.accept.title_paramount.tt
+					show_as_tooltip = {
+						scope:petition_vassal = {
+							pay_short_term_gold = {
+								target = scope:petition_liege
+								gold = major_gold_value
+							}
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				scope:petition_liege.var:1100_paramountcy_cost = flag:contract
+			}
+			petition_liege_0101_petitioner_contract_increase_effect = yes
+			scope:petition_liege = {
+				send_interface_toast = {
+					title = petition_liege.0101.t.title_paramount
+					left_icon = scope:petition_vassal
+					hidden_effect = { agot_petition_liege_0101_paramount_effect = yes }
+					custom_tooltip = petition_liege.0101.accept.title_paramount.tt
+					show_as_tooltip = {
+						scope:petition_vassal = { petition_liege_0101_petitioner_contract_increase_effect = yes }
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 80
+		}
+	}
+	option = {
+		name = petition_liege.0205.b
+		liege = {
+			send_interface_toast = {
+				title = agot_decisions_events.1101_vassal_said_no_to_counter_offer
+				left_icon = scope:petition_vassal
+				scope:petition_vassal = {
+					add_opinion = {
+						target = scope:petition_liege
+						modifier = annoyed_opinion
+						opinion = -25
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 5
+		}
+	}
+	after = {
+		liege = {
+			remove_character_flag = agot_dealing_with_paramountcy_ai_request
+			remove_variable = 1100_paramountcy_cost
+		}
+	}
+}

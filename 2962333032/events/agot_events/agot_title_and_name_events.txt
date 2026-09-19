@@ -1,0 +1,449 @@
+﻿namespace = agot_title_and_name_events
+
+# Birth Event
+agot_title_and_name_events.0001 = {
+	type = character_event
+	title = agot_title_and_name_events.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:child_3 }
+				desc = agot_title_and_name_events.0001.desc.triplets
+			}
+			triggered_desc = {
+				trigger = { exists = scope:child_2 }
+				desc = agot_title_and_name_events.0001.desc.twins
+			}
+			desc = agot_title_and_name_events.0001.desc
+		}
+	}
+	theme = pregnancy
+	override_background = { reference = bedchamber }
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:mother
+		animation = newborn
+		outfit_tags = { nightgown }
+	}
+	lower_left_portrait = scope:child
+	lower_center_portrait = scope:child_2
+	lower_right_portrait = scope:spouse_of_mother
+
+	trigger = {
+		ruler_is_royal = yes
+		NOR = {
+			scope:child ?= { is_royal_scion = yes }
+			scope:child ?= { has_trait = bastard }
+		}
+		NOR = {
+			is_target_in_variable_list = {
+				name = temp_child_list
+				target = scope:child
+			}
+			scope:child = {
+				any_sibling = {
+					even_if_dead = yes
+					is_twin_of = scope:child
+					scope:scoped_royal ?= {
+						is_target_in_variable_list = {
+							name = temp_child_list
+							target = prev
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		play_music_cue_once = { TRACK = mx_cue_birth }
+		add_to_variable_list = {
+			name = temp_child_list
+			target = scope:child
+		}
+		scope:child = {
+			if = {
+				limit = {
+					exists = scope:child_2
+					any_sibling = {
+						even_if_dead = yes
+						is_twin_of = scope:child
+						NOT = { this = scope:child_2 }
+					}
+				}
+				random_sibling = {
+					even_if_dead = yes
+					limit = {
+						is_twin_of = scope:child
+						NOT = { this = scope:child_2 }
+					}
+					save_scope_as = child_3
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:mother.primary_spouse
+			}
+			scope:mother.primary_spouse = {
+				save_scope_as = spouse_of_mother
+			}
+		}
+		else_if = {
+			limit = { exists = scope:child.father }
+			scope:child.father = { save_scope_as = spouse_of_mother }
+		}
+	}
+
+	option = {
+		name = agot_title_and_name_events.0001.a
+		agot_bestow_scion_status_effect = {
+			SCOPE = scope:child
+			SCOPED_ROYAL = root
+			SCOPED_TITLE = root.primary_title
+			OPINION = yes
+		}
+		scope:child = {
+			every_sibling = {
+				even_if_dead = yes
+				limit = { is_twin_of = scope:child }
+				save_temporary_scope_as = temp_sibling
+				agot_bestow_scion_status_effect = {
+					SCOPE = scope:temp_sibling
+					SCOPED_ROYAL = root
+					SCOPED_TITLE = root.primary_title
+					OPINION = yes
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				always = yes
+				add = {
+					value = 12
+					subtract = "scope:scoped_royal.primary_title.place_in_line_of_succession(scope:scoped_relative)"
+				}
+			}
+			modifier = {
+				scope:child = {
+					is_grandchild_of = scope:scoped_royal
+					any_parent = {
+						even_if_dead = yes
+						is_primary_heir_of = scope:scoped_royal
+					}
+				}
+				factor = 2
+			}
+			modifier = {
+				scope:child = { is_great_grandchild_of = scope:scoped_royal }
+				factor = 1.2
+			}
+			modifier = {
+				scope:child = { is_nibling_of = scope:scoped_royal }
+				factor = 1.15
+			}
+			modifier = {
+				scope:child = { is_cousin_of = scope:scoped_royal }
+				factor = 1.05
+			}
+			modifier = {
+				scope:scoped_relative = { is_cousin_of = scope:scoped_royal }
+				factor = 1.05
+			}
+			modifier = {
+				scope:scoped_royal = {
+					has_opinion_modifier = {
+						modifier = elopement_opinion
+						target = scope:scoped_relative
+					}
+				}
+				factor = 0
+			}
+		}
+	}
+
+	option = {
+		name = agot_title_and_name_events.0001.b
+		flavor = agot_title_and_name_events.0001.b.flavor
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	after = {
+		remove_list_variable = {
+			name = temp_child_list
+			target = scope:child
+		}
+	}
+}
+
+# Acsession Event
+agot_title_and_name_events.0002 = {
+	type = character_event
+	title = agot_title_and_name_events.0001.t
+	desc = agot_title_and_name_events.0002.desc
+	theme = dynasty
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	lower_right_portrait = {
+		trigger = { exists = scope:lower_right_portrait }
+		character = scope:lower_right_portrait
+	}
+	lower_center_portrait = {
+		trigger = { exists = scope:lower_center_portrait }
+		character = scope:lower_center_portrait
+	}
+	lower_left_portrait = {
+		trigger = { exists = scope:lower_left_portrait }
+		character = scope:lower_left_portrait
+	}
+	cooldown = { days = 1 }
+
+	trigger = {
+		ruler_is_royal = yes
+		historical_independent_ruler = yes
+		OR = {
+			any_sibling = {
+				even_if_dead = yes
+				house ?= root.house
+				is_royal_scion = no
+				is_alive = yes
+				NOR = {
+					has_trait = bastard
+					has_trait = bastard_founder
+				}
+			}
+			any_close_or_extended_family_member = {
+				even_if_dead = yes
+				house ?= root.house
+				is_nibling_of = root
+				is_royal_scion = no
+				is_alive = yes
+				NOR = {
+					has_trait = bastard
+					has_trait = bastard_founder
+				}
+			}
+			any_close_family_member = {
+				even_if_dead = yes
+				house ?= root.house
+				is_grandchild_of = root
+				any_child = {
+					even_if_dead = yes
+					house ?= root.house
+					is_royal_scion = no
+					is_alive = yes
+					NOR = {
+						has_trait = bastard
+						has_trait = bastard_founder
+					}
+				}
+			}
+		}
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_multi_character_selection"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				any_sibling = {
+					even_if_dead = yes
+					house ?= root.house
+					is_royal_scion = no
+					is_alive = yes
+					NOR = {
+						has_trait = bastard
+						has_trait = bastard_founder
+					}
+				}
+			}
+			every_sibling = {
+				even_if_dead = yes
+				limit = {
+					house ?= root.house
+					is_royal_scion = no
+					is_alive = yes
+					NOR = {
+						has_trait = bastard
+						has_trait = bastard_founder
+					}
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				any_close_or_extended_family_member = {
+					even_if_dead = yes
+					house ?= root.house
+					is_nibling_of = root
+					is_royal_scion = no
+					is_alive = yes
+					NOR = {
+						has_trait = bastard
+						has_trait = bastard_founder
+					}
+				}
+			}
+			every_close_or_extended_family_member = {
+				even_if_dead = yes
+				limit = {
+					house ?= root.house
+					is_nibling_of = root
+					is_royal_scion = no
+					is_alive = yes
+					NOR = {
+						has_trait = bastard
+						has_trait = bastard_founder
+					}
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				any_close_family_member = {
+					even_if_dead = yes
+					house ?= root.house
+					is_grandchild_of = root
+					any_child = {
+						even_if_dead = yes
+						house ?= root.house
+						is_royal_scion = no
+						is_alive = yes
+						NOR = {
+							has_trait = bastard
+							has_trait = bastard_founder
+						}
+					}
+				}
+			}
+			every_close_family_member = {
+				even_if_dead = yes
+				limit = {
+					house ?= root.house
+					is_grandchild_of = root
+					any_child = {
+						even_if_dead = yes
+						house ?= root.house
+						is_royal_scion = no
+						is_alive = yes
+						NOR = {
+							has_trait = bastard
+							has_trait = bastard_founder
+						}
+					}
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+
+		random_in_list = {
+			variable = possible_characters
+			save_scope_as = lower_right_portrait
+		}
+		random_in_list = {
+			variable = possible_characters
+			limit = { NOT = { this = scope:lower_right_portrait } }
+			save_scope_as = lower_center_portrait
+		}
+		random_in_list = {
+			variable = possible_characters
+			limit = {
+				NOR = {
+					this = scope:lower_right_portrait
+					this = scope:lower_center_portrait
+				}
+			}
+			save_scope_as = lower_left_portrait
+		}
+
+
+		every_in_list = {
+			variable = possible_characters
+			limit = {
+				OR = {
+					is_sibling_of = root
+					is_nibling_of = root
+					is_great_grandchild_of = root
+				}
+			}
+			root = {
+				add_to_variable_list = {
+					name = selected_characters_list
+					target = prev
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_title_and_name_events.0001.a
+		every_in_list = {
+			variable = selected_characters_list
+			limit = { is_alive = yes }
+			save_temporary_scope_as = temp_scion
+			agot_bestow_scion_status_effect = {
+				SCOPE = scope:temp_scion
+				SCOPED_ROYAL = root
+				SCOPED_TITLE = root.primary_title
+				OPINION = yes
+			}
+		}
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_sociability = 0.1
+				ai_greed = -0.1
+			}
+		}
+	}
+
+	option = {
+		name = agot_title_and_name_events.0001.b
+		flavor = agot_title_and_name_events.0001.b.flavor
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	after = {
+		clear_variable_list = possible_characters
+		clear_variable_list = selected_characters_list
+	}
+}

@@ -1,0 +1,153 @@
+﻿###############
+# Dragon Tree #
+###############
+
+agot_dragon_tree_top = {
+	scope = character
+
+	is_shown = {
+		has_variable = dragon_tree_stump
+	}
+}
+
+agot_dragon_tree_child = {
+	scope = character
+	saved_scopes = { tree_story }
+
+	is_shown = {
+		scope:tree_story = {
+			any_in_list = {
+				variable = parent_story_container
+				var:this_parent ?= root
+			}
+		}
+	}
+}
+
+agot_dragon_tree_check = {
+	scope = character
+
+	is_shown = {
+		any_in_global_list = {
+			variable = known_dragon_trees
+			any_in_list = {
+				variable = parent_story_container
+				OR = {
+					var:this_parent ?= root
+					any_in_list = {
+						variable = child_container
+						this = root
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_open_dragon_tree = {
+	scope = character
+	saved_scopes = { opened_character }
+
+	effect = { # Applies variables to use for the tree
+		if = {
+			limit = {
+				any_in_global_list = {
+					variable = known_dragon_trees
+					OR = {
+						var:dragon_tree_founder ?= scope:opened_character
+						any_in_list = {
+							variable = parent_story_container
+							any_in_list = {
+								variable = child_container
+								this = scope:opened_character
+							}
+						}
+					}
+				}
+			}
+			random_in_global_list = {
+				variable = known_dragon_trees
+				limit = {
+					OR = {
+						var:dragon_tree_founder ?= scope:opened_character
+						any_in_list = {
+							variable = parent_story_container
+							any_in_list = {
+								variable = child_container
+								this = scope:opened_character
+							}
+						}
+					}
+				}
+				root = {
+					set_variable = {
+						name = dragon_tree_being_shown
+						value = prev
+					}
+				}
+			}
+		}
+		var:dragon_tree_being_shown ?= {
+			ordered_in_list = {
+				variable = parent_story_container
+				position = 0
+				save_scope_as = dragon_tree_stump
+			}
+		}
+		set_variable = {
+			name = dragon_tree_stump
+			value = scope:dragon_tree_stump
+		}
+		set_variable = {
+			name = total_dragon_tree_members
+			value = dragon_tree_members_count
+		}
+		set_variable = {
+			name = total_dragon_tree_alive
+			value = dragon_tree_members_alive_count
+		}
+		if = {
+			limit = { debug_only = yes }
+			set_variable = {
+				name = total_dragon_trees
+				value = dragon_tree_count
+			}
+			set_variable = {
+				name = total_dragon_tree_parents
+				value = dragon_tree_teacher_count
+			}
+		}
+	}
+}
+
+agot_close_dragon_tree = { # Clear variables from memory so you don't always open the same tree
+	scope = character
+
+	effect = {
+		if = {
+			limit = {
+				debug_only = yes
+				has_variable = total_dragon_trees
+				has_variable = total_dragon_tree_parents
+			}
+			remove_variable = total_dragon_trees
+			remove_variable = total_dragon_tree_parents
+		}
+		if = {
+			limit = { has_variable = dragon_tree_stump }
+			remove_variable = dragon_tree_stump
+		}
+		if = {
+			limit = { has_variable = dragon_tree_being_shown }
+			remove_variable = dragon_tree_being_shown
+		}
+		if = {
+			limit = { has_variable = total_dragon_tree_members }
+			remove_variable = total_dragon_tree_members
+		}
+		if = {
+			limit = { has_variable = total_dragon_tree_alive }
+			remove_variable = total_dragon_tree_alive
+		}
+	}
+}

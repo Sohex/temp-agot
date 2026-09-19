@@ -1,0 +1,378 @@
+﻿multi_duel_leader_story = {
+	on_setup = {
+		story_owner = {
+			if = {
+				limit = {
+					has_variable = duelist_side
+					var:duelist_side = flag:side_a
+				}
+				add_character_flag = {
+					flag = duel_starting_soon
+					days = 5
+				}
+			}
+			else = { add_character_flag = duel_starting_soon }
+		}
+	}
+
+	on_end = {
+		story_owner = {
+			if = {
+				limit = {
+					is_alive = yes
+					has_character_flag = last_man_standing
+				}
+				remove_character_flag = last_man_standing
+			}
+			if = {
+				limit = {
+					is_alive = yes
+					has_character_flag = duel_starting_soon
+				}
+				remove_character_flag = duel_starting_soon
+			}
+			if = {
+				limit = {
+					has_character_flag = multi_duelist_plot_armor
+				}
+				remove_character_flag = multi_duelist_plot_armor
+			}
+		}
+	}
+
+	on_owner_death = {
+		if = {
+			limit = {
+				NOT = { exists = var:duelist_heir }
+				exists = var:match_rule
+				var:match_rule = flag:dead_every
+			}
+			var:opponent_multi_duel_leader = { save_scope_as = opponent_multi_duel_leader }
+			scope:opponent_multi_duel_leader = {
+				add_character_flag = {
+					flag = dead_every_note
+					days = 3
+				}
+				trigger_event = {
+					id = agot_multi_duel.0100
+					days = 1
+				}
+			}
+			scope:story = { end_story = yes }
+		}
+		else_if = {
+			limit = {
+				exists = var:match_rule
+				var:match_rule = flag:dead_leader
+			}
+			var:opponent_multi_duel_leader = { save_scope_as = opponent_multi_duel_leader }
+			scope:opponent_multi_duel_leader = {
+				trigger_event = {
+					id = agot_multi_duel.0100
+					days = 1
+				}
+			}
+			scope:story = { end_story = yes }
+		}
+	}
+
+	### DAILY
+	effect_group = {
+		days = 1
+
+		#Next Duel
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					exists = var:duelist_side
+					var:duelist_side = flag:side_a
+					NOT = { has_character_flag = duel_starting_soon }
+				}
+			}
+			effect = {
+				story_owner = { save_scope_as = side_a_leader }
+				scope:side_a_leader.var:opponent_multi_duel_leader = { save_scope_as = side_b_leader }
+
+				if = {
+					limit = {
+						scope:side_a_leader = {
+							any_owned_story = {
+								story_type = multi_duel_leader_story
+								has_variable_list = side_a_duelists
+								any_in_list = {
+									variable = side_a_duelists
+									NOT = { agot_multi_duelist_cant_continue = yes }
+									NOT = { has_character_flag = in_multi_duel }
+									NOT = { has_character_flag = idle_in_multi_duel }
+								}
+							}
+						}
+						scope:side_b_leader = {
+							any_owned_story = {
+								story_type = multi_duel_leader_story
+								has_variable_list = side_b_duelists
+								any_in_list = {
+									variable = side_b_duelists
+									NOT = { agot_multi_duelist_cant_continue = yes }
+									NOT = { has_character_flag = in_multi_duel }
+									NOT = { has_character_flag = idle_in_multi_duel }
+								}
+							}
+						}
+					}
+					scope:side_a_leader = { multi_duel_battle_theme_effect = yes }
+				}
+			}
+		}
+
+		#MATCH RULE - DEAD EVERY
+		#Select duelist heir
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					exists = var:match_rule
+					var:match_rule = flag:dead_every
+					exists = var:duelist_side
+					OR = {
+						var:duelist_side = flag:side_a
+						var:duelist_side = flag:side_b
+					}
+					NOT = { has_character_flag = has_duelist_heir }
+					NOT = { has_character_flag = duelist_heir_blocker }
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = leader_looking_for_heir
+					if = {
+						limit = {
+							exists = var:duelist_side
+							var:duelist_side = flag:side_a
+							any_owned_story = {
+								story_type = multi_duel_leader_story
+								has_variable_list = side_a_duelists
+								any_in_list = {
+									variable = side_a_duelists
+									NOT = { agot_multi_duelist_cant_continue = yes }
+									NOT = { this = scope:leader_looking_for_heir }
+								}
+							}
+						}
+						save_scope_as = side_a_leader
+						random_owned_story = {
+							limit = { story_type = multi_duel_leader_story }
+							random_in_list = {
+								variable = side_a_duelists
+								limit = {
+									NOT = { agot_multi_duelist_cant_continue = yes }
+									NOT = { this = scope:leader_looking_for_heir }
+								}
+								save_scope_as = duelist_heir
+							}
+						}
+						scope:duelist_heir = {
+							set_variable = {
+								name = duelist_liege
+								value = scope:side_a_leader
+							}
+						}
+						scope:side_a_leader = {
+							add_character_flag = has_duelist_heir
+							set_variable = {
+								name = duelist_heir
+								value = scope:duelist_heir
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							exists = var:duelist_side
+							var:duelist_side = flag:side_b
+							any_owned_story = {
+								story_type = multi_duel_leader_story
+								has_variable_list = side_b_duelists
+								any_in_list = {
+									variable = side_b_duelists
+									NOT = { agot_multi_duelist_cant_continue = yes }
+									NOT = { this = scope:leader_looking_for_heir }
+								}
+							}
+						}
+						save_scope_as = side_b_leader
+						random_owned_story = {
+							limit = { story_type = multi_duel_leader_story }
+							random_in_list = {
+								variable = side_b_duelists
+								limit = {
+									NOT = { agot_multi_duelist_cant_continue = yes }
+									NOT = { this = scope:leader_looking_for_heir }
+								}
+								save_scope_as = duelist_heir
+							}
+						}
+						scope:duelist_heir = {
+							set_variable = {
+								name = duelist_liege
+								value = scope:side_b_leader
+							}
+						}
+						scope:side_b_leader = {
+							add_character_flag = has_duelist_heir
+							set_variable = {
+								name = duelist_heir
+								value = scope:duelist_heir
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							exists = var:match_rule
+							var:match_rule = flag:dead_every
+						}
+						add_character_flag = last_man_standing
+					}
+				}
+			}
+		}
+
+		#Duelist heir died, set a new one
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					exists = var:match_rule
+					var:match_rule = flag:dead_every
+					has_character_flag = has_duelist_heir
+					exists = var:duelist_heir
+					var:duelist_heir = { agot_multi_duelist_cant_continue = yes }
+				}
+			}
+			effect = {
+				story_owner = {
+					remove_variable = duelist_heir
+					remove_character_flag = has_duelist_heir
+				}
+			}
+		}
+
+		#Opponent Leader's sudden death (Unrelated to MultiDuel)
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					exists = var:opponent_multi_side_leader
+					var:opponent_multi_side_leader = { NOT = { is_alive = yes } }
+					NOT = { has_character_flag = check_if_multi_duel_still_valid }
+					NOT = { has_character_flag = multi_duel_should_invalidate }
+				}
+			}
+			effect = {
+				story_owner = {
+					add_character_flag = {
+						flag = check_if_multi_duel_still_valid
+						days = 7
+					}
+					add_character_flag = multi_duel_should_invalidate
+				}
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					exists = var:opponent_multi_side_leader
+					var:opponent_multi_side_leader = { NOT = { is_alive = yes } }
+					has_character_flag = multi_duel_should_invalidate
+					NOT = { has_character_flag = check_if_multi_duel_still_valid }
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = the_final_leader
+					trigger_event = agot_multi_duel.1005
+				}
+			}
+		}
+	}
+}
+
+multi_duel_duelist_story = {
+	on_setup = {
+		story_owner = {
+			agot_multi_duel_add_martial_flags = yes
+		}
+	}
+
+	on_end = {
+		story_owner = {
+			if = {
+				limit = { is_alive = yes }
+				agot_multi_duel_remove_martial_flags = yes
+				if = {
+					limit = {
+						has_character_flag = multi_duelist_plot_armor
+					}
+					remove_character_flag = multi_duelist_plot_armor
+				}
+			}
+			# Might become incapable
+			if = {
+				limit = {
+					is_alive = yes
+					OR = {
+						has_trait = wounded_1
+						has_trait = wounded_2
+						has_trait = wounded_3
+					}
+				}
+				random_list = {
+					1 = {
+						modifier = {
+							add = 4
+							has_trait = wounded_1
+						}
+						modifier = {
+							add = 24
+							has_trait = wounded_2
+						}
+						modifier = {
+							add = 49
+							has_trait = wounded_3
+						}
+						add_trait = incapable
+					}
+					5000 = {
+						# Nothing
+					}
+				}
+			}
+		}
+	}
+
+	on_owner_death = {
+		story_owner = { save_scope_as = dead_story_owner }
+		scope:dead_story_owner = { remove_duelist_effect = yes }
+		scope:story = { end_story = yes }
+	}
+
+	### DAILY
+	effect_group = {
+		days = 1
+
+		#MATCH RULE - DEAD LEADER
+		#End Story if leader is dead
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					exists = var:duelist_side
+					OR = {
+						var:my_multi_side_leader = { has_character_flag = end_story_note }
+						var:opponent_multi_side_leader = { has_character_flag = end_story_note }
+						var:my_multi_side_leader = { has_character_flag = end_story_note_safe }
+						var:opponent_multi_side_leader = { has_character_flag = end_story_note_safe }
+					}
+				}
+			}
+			effect = {
+				story_owner = { remove_duelist_on_leader_death_effect = yes }
+			}
+		}
+	}
+}

@@ -1,0 +1,1703 @@
+﻿############################
+### First Ranger Effects ###
+############################
+
+#Firest Ranger setup (used every time there is a new First Ranger)
+agot_nw_laamp_start_effect = {
+	save_scope_as = nw_laamp_holder
+	scope:nw_laamp_holder = { create_story = nw_ranger_story }
+	every_councillor = {
+		if = {
+			limit = {
+				NOR = {
+					has_council_position = councillor_court_chaplain
+					has_council_position = councillor_spouse
+				}
+			}
+			scope:nw_laamp_holder = {
+				fire_councillor = prev
+			}
+			remove_opinion = {
+				modifier = fired_from_council_opinion
+				target = scope:nw_laamp_holder
+			}
+		}
+		else_if = {
+			limit = {
+				NOR = {
+					is_close_or_extended_family_of = scope:nw_laamp_holder
+					has_relation_lover = scope:nw_laamp_holder
+					has_relation_friend = scope:nw_laamp_holder
+					is_consort_of = scope:nw_laamp_holder
+					has_council_position = councillor_spouse
+				}
+			}
+			death = {
+				death_reason = death_vanished
+			}
+		}
+	}
+	#Move randos to the street
+	every_courtier = {
+		limit = {
+			NOR = {
+				is_close_or_extended_family_of = scope:nw_laamp_holder
+				has_relation_lover = scope:nw_laamp_holder
+				has_relation_friend = scope:nw_laamp_holder
+				is_consort_of = scope:nw_laamp_holder
+			}
+		}
+		move_to_pool = yes
+	}
+	#Save non-randos
+	every_courtier = {
+		limit = {
+			OR = {
+				is_close_or_extended_family_of = scope:nw_laamp_holder
+				has_relation_lover = scope:nw_laamp_holder
+				has_relation_friend = scope:nw_laamp_holder
+				is_consort_of = scope:nw_laamp_holder
+			}
+		}
+		add_to_list = friends_and_family
+	}
+	#Move non-randos to house head
+	if = {
+		limit = {
+			exists = house
+			house.house_head = {
+				is_playable_character = yes
+				agot_can_be_ruler = yes
+			}
+		}
+		house.house_head = {
+			save_scope_as = a_lord
+			every_in_list = {
+				list = friends_and_family
+				limit = { NOT = { is_courtier_of = scope:a_lord } }
+				scope:a_lord = { add_courtier = prev }
+			}
+		}
+	}
+	#Move non-randos to another family member
+	else_if = {
+		limit = {
+			exists = house
+			house = {
+				any_house_member = {
+					is_playable_character = yes
+					agot_can_be_ruler = yes
+				}
+			}
+		}
+		house = {
+			random_house_member = {
+				limit = {
+					is_playable_character = yes
+					agot_can_be_ruler = yes
+				}
+				save_scope_as = a_lord
+				every_in_list = {
+					list = friends_and_family
+					limit = { NOT = { is_courtier_of = scope:a_lord } }
+					scope:a_lord = { add_courtier = prev }
+				}
+			}
+		}
+	}
+	#Move non-randos to someone else
+	else = {
+		random_ruler = {
+			limit = {
+				faith = scope:nw_laamp_holder.faith
+				has_culture = scope:nw_laamp_holder.culture
+				is_playable_character = yes
+				agot_can_be_ruler = yes
+			}
+			save_scope_as = a_lord
+			every_in_list = {
+				list = friends_and_family
+				limit = { NOT = { is_courtier_of = scope:a_lord } }
+				scope:a_lord = { add_courtier = prev }
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			any_maa_regiment = {
+				count > 0
+			}
+		}
+		every_maa_regiment = {
+			destroy_maa_regiment = yes
+		}
+	}
+	create_maa_regiment = {
+		type = nw_rangers
+		check_can_recruit = no
+		size = 1
+	}
+
+	if = {
+		limit = {
+			NOT = { government_has_flag = government_is_first_ranger }
+		}
+		change_government = first_ranger_government
+	}
+	if = {
+		limit = {
+			NOT = { has_realm_law = nights_watch_realm_succession_law }
+		}
+		add_realm_law_skip_effects = nights_watch_realm_succession_law
+	}
+
+	if = {
+		limit = { NOT = { has_character_flag = recently_ambushed_by_wildlings } }
+		add_character_flag = {
+			flag = recently_ambushed_by_wildlings
+			years = { 1 3 }
+		}
+	}
+
+	add_character_flag = {
+		flag = temporary_ranger_invite_blocker
+		days = 30
+	}
+
+	if = {
+		limit = { NOT = { has_character_flag = cannot_be_knight_and_commander } }
+		add_character_flag = cannot_be_knight_and_commander
+	}
+}
+
+#Add a courtier to avoid crash upon attempting to appoint a councillor
+agot_nw_ranger_on_creation = {
+	title:d_nw_landless_first_ranger ?= {
+		holder ?= {
+			if = {
+				limit = {
+					exists = title:k_the_wall.holder
+					title:k_the_wall.holder = {
+						any_courtier = {
+							agot_valid_ranger_camper = yes
+						}
+					}
+				}
+				save_scope_as = first_ranger
+				agot_nw_laamp_ranger_arrives = yes
+			}
+			else = {
+				save_scope_as = first_ranger
+				create_character = {
+					age = { 18 40 }
+					dynasty = none
+					culture = culture:northman
+					faith = faith:old_gods_wnw
+					location = scope:first_ranger.location
+					gender = male
+					trait = nightswatch
+					trait = lifestyle_nw_ranger
+					save_scope_as = a_new_ranger
+					after_creation = {
+						add_trait_xp = {
+							trait = nightswatch
+							value = 100
+						}
+						scope:first_ranger = {
+							add_courtier = scope:a_new_ranger
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+#Ranger moved from the wall to the First Ranger
+agot_nw_laamp_ranger_arrives = {
+	save_scope_as = nw_laamp_holder
+	title:k_the_wall.holder = {
+		if = {
+			limit = {
+				any_courtier = {
+					agot_valid_ranger_camper = yes
+				}
+			}
+			random_courtier = {
+				limit = {
+					agot_valid_ranger_camper = yes
+				}
+				save_scope_as = ranger_candidate
+				scope:nw_laamp_holder = {
+					add_courtier = scope:ranger_candidate
+					send_interface_toast = {
+						type = event_generic_good
+						title = agot_nw_fr_new_ranger_arrives.t
+						left_icon = scope:ranger_candidate
+						custom_tooltip = agot_nw_fr_new_ranger_arrives.tt
+					}
+					add_character_flag = {
+						flag = new_ranger_arrived_quick
+						days = 15
+					}
+				}
+				title:k_the_wall.holder = {
+					send_interface_toast = {
+						type = event_generic_good
+						title = agot_nw_fr_new_ranger_left.t
+						left_icon = scope:ranger_candidate
+						right_icon = scope:first_ranger
+						custom_tooltip = agot_nw_fr_new_ranger_left.tt
+					}
+				}
+			}
+		}
+	}
+}
+
+#Populate Ranger Mission
+agot_nw_ranger_spwan_contracts = {
+	if = {
+		limit = {
+			agot_is_landless_nw_character = yes
+		}
+		populate_task_contracts_for_area = {
+			location = $AREA_CHAR$.capital_province
+			amount = $AMOUNT$
+			group = { agot_nw_ranger_group }
+		}
+	}
+}
+
+#Save the current Ranger Mission
+agot_nw_ranger_save_contract = {
+	set_variable = {
+		name = my_ranger_contract
+		value = scope:task_contract
+	}
+}
+
+#Clear the current Ranger Mission
+agot_nw_ranger_clear_contract = {
+	if = {
+		limit = { has_variable = my_ranger_contract  }
+		remove_variable = my_ranger_contract
+	}
+}
+
+#Ranger Mission random outcome - Skill
+agot_nw_contract_challenge = {
+	duel = {
+		skill = $SKILL$
+		target = scope:$TARGET_CHAR$
+		# Victory!
+		50 = {
+			compare_modifier = {
+				value = scope:duel_value
+				multiplier = 3.5
+				min = -49
+			}
+			min = 5
+			desc = agot_nw_ranger_event_success
+			send_interface_toast = {
+				type = event_generic_good
+				title = agot_nw_ranger_event_success
+				left_icon = scope:$TARGET_CHAR$
+				custom_tooltip = agot_nw_ranger_events_$EVENT_ID$.$OPTION$.tt.win
+				trigger_event = agot_nw_ranger_events.$WIN_EVENT_ID$
+			}
+		}
+		# Defeat.
+		50 = {
+			compare_modifier = {
+				value = scope:duel_value
+				multiplier = -3.5
+				min = -49
+			}
+			min = 10
+			desc = agot_nw_ranger_event_failure
+			send_interface_toast = {
+				type = event_generic_bad
+				title = agot_nw_ranger_event_failure
+				left_icon = scope:$TARGET_CHAR$
+				custom_tooltip = agot_nw_ranger_events_$EVENT_ID$.$OPTION$.tt.lose
+				trigger_event = agot_nw_ranger_events.$LOSE_EVENT_ID$
+			}
+		}
+	}
+}
+
+#Ranger Mission random outcome - Random
+agot_nw_contract_challenge_random = {
+	if = {
+		#No Errors Pls - should be always true
+		limit = {
+			OR = {
+				scope:quest_path = flag:cave_a
+				scope:quest_path = flag:cave_b
+				scope:quest_path = flag:cave_c
+				scope:quest_path = flag:woods_a
+				scope:quest_path = flag:woods_b
+				scope:quest_path = flag:woods_c
+				scope:quest_path = flag:hill_a
+				scope:quest_path = flag:hill_b
+				scope:quest_path = flag:hill_c
+			}
+		}
+		random_list = {
+			# Victory!
+			50 = {
+				compare_modifier = {
+					value = scope:win_value
+					multiplier = 3.5
+					min = -49
+				}
+				min = 5
+				desc = agot_nw_ranger_event_success
+				send_interface_toast = {
+					type = event_generic_good
+					title = agot_nw_ranger_event_success
+					custom_tooltip = agot_nw_ranger_events_$EVENT_ID$.$OPTION$.tt.win.$SCENARIO$
+					trigger_event = agot_nw_ranger_events.$WIN_EVENT_ID$
+				}
+			}
+			# Defeat.
+			50 = {
+				compare_modifier = {
+					value = scope:lose_value
+					multiplier = -3.5
+					min = -49
+				}
+				min = 10
+				desc = agot_nw_ranger_event_failure
+				send_interface_toast = {
+					type = event_generic_bad
+					title = agot_nw_ranger_event_failure
+					custom_tooltip = agot_nw_ranger_events_$EVENT_ID$.$OPTION$.tt.lose.$SCENARIO$
+					trigger_event = agot_nw_ranger_events.$LOSE_EVENT_ID$
+				}
+			}
+		}
+	}
+}
+
+#Cooldown for councillor events
+ranger_council_event_cooldown = {
+	add_character_flag = {
+		flag = ranger_council_event_recieved
+		months = 5
+	}
+}
+
+#End Ranger Story
+end_ranger_story = {
+	create_title_and_vassal_change = {
+		type = revoked
+		save_scope_as = change
+		add_claim_on_loss = no
+	}
+
+	title:d_nw_landless_first_ranger = {
+		change_title_holder_include_vassals = {
+			holder = title:k_the_wall.holder
+			change = scope:change
+		}
+	}
+	resolve_title_and_vassal_change = scope:change
+
+	random_owned_story = {
+		limit = { story_type = nw_ranger_story }
+		end_story = yes
+	}
+
+	if = {
+		limit = { is_alive = yes }
+		if = {
+			limit = { has_variable = remaining_contract_counter_nw }
+			remove_variable = remaining_contract_counter_nw
+		}
+		if = {
+			limit = { has_variable = remaining_employer_counter_nw }
+			remove_variable = remaining_employer_counter_nw
+		}
+		if = {
+			limit = { has_variable = my_ranger_contract }
+			remove_variable = my_ranger_contract
+		}
+		if = {
+			limit = { has_character_flag = first_ranger_beyond_the_wall }
+			remove_character_flag = first_ranger_beyond_the_wall
+		}
+		if = {
+			limit = { has_character_flag = cannot_be_knight_and_commander }
+			remove_character_flag = cannot_be_knight_and_commander
+		}
+	}
+}
+
+#Destroy Ranger Title
+destroy_ranger_title = {
+	destroy_title = title:d_nw_landless_first_ranger
+
+	random_owned_story = {
+		limit = { story_type = nw_ranger_story }
+		end_story = yes
+	}
+
+	if = {
+		limit = { is_alive = yes }
+		if = {
+			limit = { has_variable = remaining_contract_counter_nw }
+			remove_variable = remaining_contract_counter_nw
+		}
+		if = {
+			limit = { has_variable = remaining_employer_counter_nw }
+			remove_variable = remaining_employer_counter_nw
+		}
+		if = {
+			limit = { has_variable = my_ranger_contract }
+			remove_variable = my_ranger_contract
+		}
+		if = {
+			limit = { has_character_flag = first_ranger_beyond_the_wall }
+			remove_character_flag = first_ranger_beyond_the_wall
+		}
+		if = {
+			limit = { has_character_flag = cannot_be_knight_and_commander }
+			remove_character_flag = cannot_be_knight_and_commander
+		}
+	}
+}
+
+agot_deserter_defeated = {
+	scope:attacker = {
+		if = {
+			limit = {
+				is_alive = yes
+				has_character_flag = deserter_attack
+			}
+			remove_character_flag = deserter_attack
+			remove_variable = culture_and_faith
+			if = {
+				limit = { exists = var:my_possible_liege }
+				remove_variable = my_possible_liege
+			}
+			if = {
+				limit = { exists = var:my_possible_liege_heir }
+				remove_variable = my_possible_liege_heir
+			}
+		}
+	}
+}
+
+### FIRST RANGER AI EFFECTS ###
+
+#AI Moves Domicile Main
+agot_ai_nw_ranger_move_effect = {
+	save_scope_as = ai_ranger
+	title:k_the_wall = { save_scope_as = the_wall }
+	title:d_the_wall = { save_scope_as = the_wall_duchy }
+	if = {
+		limit = { has_character_flag = ranger_from_the_wall }
+		scope:the_wall_duchy = {
+			random_title_to_title_neighboring_and_across_water_duchy = {
+				limit = { any_de_jure_county = { title_province = { geographical_region = world_westeros_beyond_the_wall } } }
+				save_scope_as = new_duchy
+			}
+		}
+		if = {
+			limit = { exists = scope:new_duchy }
+			scope:new_duchy = {
+				random_de_jure_county = {
+					title_province = { save_scope_as = destination_province }
+				}
+			}
+			if = {
+				limit = { exists = scope:destination_province }
+				scope:ai_ranger = {
+					start_travel_plan = {
+						destination = scope:destination_province
+						travel_with_domicile = yes
+						return_trip = no
+						on_arrival_on_action = on_adventurer_ai_new_kingdom_arrival
+						on_arrival_destinations = last
+					}
+				}
+			}
+			scope:ai_ranger = {
+				set_variable = {
+					name = remaining_employer_counter_nw
+					value = {
+						integer_range = {
+							min = 1
+							max = 3
+						}
+					}
+				}
+			}
+		}
+		remove_character_flag = ranger_from_the_wall
+	}
+	else = {
+		#You are well equipped, move further
+		if = {
+			limit = { domicile.provisions > 1250 }
+			agot_ai_nw_ranger_quick_move_further = yes
+		}
+		#You are getting low on food, consider if you want to move further
+		else_if = {
+			limit = { domicile.provisions > 750 }
+			#You are overly confident
+			if = {
+				limit = {
+					ai_boldness >= 50
+					ai_rationality <= 0
+				}
+				#Let's GO
+				agot_ai_nw_ranger_quick_move_further = yes
+			}
+			#You are somewhat confident
+			else_if = {
+				limit = {
+					OR = {
+						ai_boldness >= 50
+						ai_rationality <= 0
+					}
+				}
+				random_list = {
+					#Let's GO
+					60 = { agot_ai_nw_ranger_quick_move_further = yes }
+					#Let's Go Home
+					40 = { agot_ai_nw_ranger_quick_move_home = yes }
+				}
+			}
+			#You are feeling lucky
+			else_if = {
+				limit = {
+					OR = {
+						ai_boldness > 0
+						ai_rationality <= 25
+					}
+				}
+				random_list = {
+					#Let's GO
+					30 = { agot_ai_nw_ranger_quick_move_further = yes }
+					#Let's Go Home
+					70 = { agot_ai_nw_ranger_quick_move_home = yes }
+				}
+			}
+			#You are feeling somewhat lucky
+			else_if = {
+				limit = {
+					OR = {
+						ai_boldness > -80
+						ai_rationality <= 35
+					}
+				}
+				random_list = {
+					#Let's GO
+					15 = { agot_ai_nw_ranger_quick_move_further = yes }
+					#Let's Go Home
+					85 = { agot_ai_nw_ranger_quick_move_home = yes }
+				}
+			}
+			#You want to go home
+			else = { agot_ai_nw_ranger_quick_move_home = yes }
+		}
+		#You are almost starving, really consider if you want to move further
+		else_if = {
+			limit = { domicile.provisions > 500 }
+			#You are overly confident
+			if = {
+				limit = {
+					ai_boldness >= 50
+					ai_rationality <= 0
+				}
+				random_list = {
+					#Let's GO
+					60 = { agot_ai_nw_ranger_quick_move_further = yes }
+					#Let's Go Home
+					40 = { agot_ai_nw_ranger_quick_move_home = yes }
+				}
+			}
+			#You are somewhat confident
+			else_if = {
+				limit = {
+					OR = {
+						ai_boldness >= 50
+						ai_rationality <= 0
+					}
+				}
+				random_list = {
+					#Let's GO
+					30 = { agot_ai_nw_ranger_quick_move_further = yes }
+					#Let's Go Home
+					70 = { agot_ai_nw_ranger_quick_move_home = yes }
+				}
+			}
+			#You are feeling lucky
+			else_if = {
+				limit = {
+					OR = {
+						ai_boldness > 0
+						ai_rationality <= 25
+					}
+				}
+				random_list = {
+					#Let's GO
+					15 = { agot_ai_nw_ranger_quick_move_further = yes }
+					#Let's Go Home
+					85 = { agot_ai_nw_ranger_quick_move_home = yes }
+				}
+			}
+			#You want to go home
+			else = { agot_ai_nw_ranger_quick_move_home = yes }
+		}
+		#You are starving! What are you doing? Go home!
+		else = {
+			#You are overly confident
+			if = {
+				limit = {
+					ai_boldness >= 50
+					ai_rationality <= 0
+				}
+				random_list = {
+					#Let's GO
+					30 = { agot_ai_nw_ranger_quick_move_further = yes }
+					#Let's Go Home
+					70 = { agot_ai_nw_ranger_quick_move_home = yes }
+				}
+			}
+			#You are somewhat confident
+			else_if = {
+				limit = {
+					OR = {
+						ai_boldness >= 50
+						ai_rationality <= 0
+					}
+				}
+				random_list = {
+					#Let's GO
+					15 = { agot_ai_nw_ranger_quick_move_further = yes }
+					#Let's Go Home
+					85 = { agot_ai_nw_ranger_quick_move_home = yes }
+				}
+			}
+			#You want to go home
+			else = { agot_ai_nw_ranger_quick_move_home = yes }
+		}
+	}
+}
+
+set_anim_flags = {
+	random_list = {
+		1 = { add_character_flag = anim_a_1 }
+		1 = { add_character_flag = anim_a_2 }
+		1 = { add_character_flag = anim_a_3 }
+		1 = { add_character_flag = anim_a_4 }
+		1 = { add_character_flag = anim_a_5 }
+		1 = { add_character_flag = anim_a_6 }
+		1 = { add_character_flag = anim_a_7 }
+		1 = { add_character_flag = anim_a_8 }
+		1 = { add_character_flag = anim_a_9 }
+		1 = { add_character_flag = anim_a_10 }
+	}
+	random_list = {
+		1 = { trigger = { NOT = { has_character_flag = anim_a_1 } } add_character_flag = anim_b_1 }
+		1 = { trigger = { NOT = { has_character_flag = anim_a_2 } } add_character_flag = anim_b_2 }
+		1 = { trigger = { NOT = { has_character_flag = anim_a_3 } } add_character_flag = anim_b_3 }
+		1 = { trigger = { NOT = { has_character_flag = anim_a_4 } } add_character_flag = anim_b_4 }
+		1 = { trigger = { NOT = { has_character_flag = anim_a_5 } } add_character_flag = anim_b_5 }
+		1 = { trigger = { NOT = { has_character_flag = anim_a_6 } } add_character_flag = anim_b_6 }
+		1 = { trigger = { NOT = { has_character_flag = anim_a_7 } } add_character_flag = anim_b_7 }
+		1 = { trigger = { NOT = { has_character_flag = anim_a_8 } } add_character_flag = anim_b_8 }
+		1 = { trigger = { NOT = { has_character_flag = anim_a_9 } } add_character_flag = anim_b_9 }
+		1 = { trigger = { NOT = { has_character_flag = anim_a_10 } } add_character_flag = anim_b_10 }
+	}
+}
+
+remove_anim_flags = {
+	if = {
+		limit = { has_character_flag = anim_a_1 }
+		remove_character_flag = anim_a_1
+	}
+	else_if = {
+		limit = { has_character_flag = anim_a_2 }
+		remove_character_flag = anim_a_2
+	}
+	else_if = {
+		limit = { has_character_flag = anim_a_3 }
+		remove_character_flag = anim_a_3
+	}
+	else_if = {
+		limit = { has_character_flag = anim_a_4 }
+		remove_character_flag = anim_a_4
+	}
+	else_if = {
+		limit = { has_character_flag = anim_a_5 }
+		remove_character_flag = anim_a_5
+	}
+	else_if = {
+		limit = { has_character_flag = anim_a_6 }
+		remove_character_flag = anim_a_6
+	}
+	else_if = {
+		limit = { has_character_flag = anim_a_7 }
+		remove_character_flag = anim_a_7
+	}
+	else_if = {
+		limit = { has_character_flag = anim_a_8 }
+		remove_character_flag = anim_a_8
+	}
+	else_if = {
+		limit = { has_character_flag = anim_a_9 }
+		remove_character_flag = anim_a_9
+	}
+	else_if = {
+		limit = { has_character_flag = anim_a_10 }
+		remove_character_flag = anim_a_10
+	}
+
+	if = {
+		limit = { has_character_flag = anim_b_1 }
+		remove_character_flag = anim_b_1
+	}
+	else_if = {
+		limit = { has_character_flag = anim_b_2 }
+		remove_character_flag = anim_b_2
+	}
+	else_if = {
+		limit = { has_character_flag = anim_b_3 }
+		remove_character_flag = anim_b_3
+	}
+	else_if = {
+		limit = { has_character_flag = anim_b_4 }
+		remove_character_flag = anim_b_4
+	}
+	else_if = {
+		limit = { has_character_flag = anim_b_5 }
+		remove_character_flag = anim_b_5
+	}
+	else_if = {
+		limit = { has_character_flag = anim_b_6 }
+		remove_character_flag = anim_b_6
+	}
+	else_if = {
+		limit = { has_character_flag = anim_b_7 }
+		remove_character_flag = anim_b_7
+	}
+	else_if = {
+		limit = { has_character_flag = anim_b_8 }
+		remove_character_flag = anim_b_8
+	}
+	else_if = {
+		limit = { has_character_flag = anim_b_9 }
+		remove_character_flag = anim_b_9
+	}
+	else_if = {
+		limit = { has_character_flag = anim_b_10 }
+		remove_character_flag = anim_b_10
+	}
+}
+
+ranger_travel_gold_compensation = {
+	add_gold = {
+		value = scope:travel_leader.stewardship
+		min = 2
+		max = 10
+	}
+}
+
+#AI Moves Domicile Further
+agot_ai_nw_ranger_quick_move_further = {
+	domicile.domicile_location.duchy = { save_scope_as = current_duchy }
+	scope:current_duchy = {
+		random_title_to_title_neighboring_and_across_water_duchy = {
+			limit = {
+				any_de_jure_county = { title_province = { geographical_region = world_westeros_beyond_the_wall } }
+			}
+			save_scope_as = new_duchy
+		}
+	}
+	if = {
+		limit = { exists = scope:new_duchy }
+		scope:new_duchy = {
+			random_de_jure_county = {
+				title_province = { save_scope_as = destination_province }
+			}
+		}
+		if = {
+			limit = { exists = scope:destination_province }
+			scope:ai_ranger = {
+				start_travel_plan = {
+					destination = scope:destination_province
+					travel_with_domicile = yes
+					return_trip = no
+					on_arrival_on_action = on_adventurer_ai_new_kingdom_arrival
+					on_arrival_destinations = last
+				}
+			}
+		}
+		scope:ai_ranger = {
+			set_variable = {
+				name = remaining_employer_counter_nw
+				value = {
+					integer_range = {
+						min = 1
+						max = 3
+					}
+				}
+			}
+		}
+	}
+}
+
+#AI Moves Domicile Home
+agot_ai_nw_ranger_quick_move_home = {
+	title:k_the_wall.holder.capital_county.title_province = { save_scope_as = destination_province }
+	scope:ai_ranger = {
+		start_travel_plan = {
+			destination = scope:destination_province
+			travel_with_domicile = yes
+			return_trip = no
+			on_arrival_on_action = on_adventurer_ai_new_kingdom_arrival
+			on_arrival_destinations = last
+		}
+	}
+}
+
+#AI Finds New Employer
+agot_ai_nw_ranger_find_employer_effect = {
+	save_scope_as = ai_ranger
+	domicile.domicile_location.duchy = { save_scope_as = current_duchy }
+	scope:current_duchy = {
+		random_de_jure_county_holder = {
+			limit = {
+				save_temporary_scope_as = new_employer_temp
+				NOR = {
+					is_at_war_with = scope:ai_ranger
+					any_liege_or_above = { is_at_war_with = scope:ai_ranger }
+				}
+			}
+			save_scope_as = new_employer
+		}
+	}
+	if = {
+		limit = { exists = scope:new_employer }
+		set_variable = {
+			name = remaining_contract_counter_nw
+			value = 1
+		}
+		change_variable = {
+			name = remaining_employer_counter_nw
+			add = -1
+		}
+		scope:ai_ranger = {
+			if = { # Travel
+				limit = { location != scope:new_employer.capital_province }
+				save_scope_value_as = { # Approx provisions for journey
+					name = lammp_travel_provisions
+					value = {
+						value = "location.squared_distance(scope:new_employer.capital_province)"
+						divide = 300
+					}
+				}
+				#You are well equipped, let's go to the employer
+				if = {
+					limit = { domicile.provisions >= scope:lammp_travel_provisions }
+					start_travel_plan = {
+						destination = scope:new_employer.capital_province
+						travel_with_domicile = yes
+						return_trip = no
+						on_arrival_on_action = on_adventurer_ai_new_employer_arrival
+						on_arrival_destinations = last
+					}
+				}
+				#You are NOT well equipped, do you want to go to the employer?
+				else_if = {
+					limit = {
+						domicile.provisions < scope:lammp_travel_provisions
+						OR = {
+							ai_boldness >= 50
+							ai_rationality <= 0
+						}
+					}
+					start_travel_plan = {
+						destination = scope:new_employer.capital_province
+						travel_with_domicile = yes
+						return_trip = no
+						on_arrival_on_action = on_adventurer_ai_new_employer_arrival
+						on_arrival_destinations = last
+					}
+				}
+				else = {
+					change_variable = {
+						name = remaining_contract_counter_nw
+						add = -1
+					}
+				}
+			}
+		}
+	}
+	else = {
+		set_variable = {
+			name = remaining_contract_counter_nw
+			value = 0
+		}
+		set_variable = {
+			name = remaining_employer_counter_nw
+			value = 0
+		}
+	}
+}
+
+#AI Finds New Contract
+agot_ai_nw_ranger_find_contract_effect = {
+	save_scope_as = ai_ranger
+	scope:ai_ranger = {
+		location.barony.de_jure_liege.holder ?= { save_scope_as = new_employer }
+		if = {
+			limit = { exists = scope:new_employer }
+			random_list = {
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_1101
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_1101
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_1201
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_1201
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_1301
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_1301
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_1401
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_1401
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_1501
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_1501
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_1601
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_1601
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_1701
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_1701
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_1801
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_1801
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_1901
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_1901
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_2001
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_2001
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_2101
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_2101
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_2201
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_2201
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+				10 = {
+					trigger = {
+						can_create_task_contract = {
+							type_name = ranger_laamp_contract_2301
+							employer = scope:new_employer
+						}
+					}
+					create_task_contract = {
+						task_contract_type = ranger_laamp_contract_2301
+						task_contract_tier = scope:new_employer.task_contract_tier_value
+						location = scope:new_employer.capital_province
+						task_contract_employer = scope:new_employer
+					}
+				}
+			}
+			random_available_task_contract = { save_scope_as = contract }
+		}
+	}
+	if = {
+		limit = { exists = scope:contract }
+		scope:ai_ranger = { accept_task_contract = scope:contract }
+	}
+	change_variable = {
+		name = remaining_contract_counter_nw
+		add = -1
+	}
+}
+
+agot_nw_reclamation_scopes_effect = {
+	# Castle Black
+	if = {
+		limit = {
+			title:c_castle_black.holder = {
+				culture = { agot_is_wildling_culture = yes }
+				NOT = { government_has_flag = government_is_nw }
+				is_independent_ruler = yes
+			}
+		}
+		title:c_castle_black.holder = { save_scope_as = castle_black_ruler }
+	}
+	else_if = {
+		limit = {
+			title:c_castle_black.holder.top_liege = {
+				culture = { agot_is_wildling_culture = yes }
+				NOT = { government_has_flag = government_is_nw }
+			}
+		}
+		title:c_castle_black.holder.top_liege = { save_scope_as = castle_black_ruler }
+	}
+	# Eastwatch
+	if = {
+		limit = {
+			title:c_eastwatch.holder = {
+				culture = { agot_is_wildling_culture = yes }
+				NOT = { government_has_flag = government_is_nw }
+				is_independent_ruler = yes
+			}
+		}
+		title:c_eastwatch.holder = { save_scope_as = eastwatch_ruler }
+	}
+	else_if = {
+		limit = {
+			title:c_eastwatch.holder.top_liege = {
+				culture = { agot_is_wildling_culture = yes }
+				NOT = { government_has_flag = government_is_nw }
+			}
+		}
+		title:c_eastwatch.holder.top_liege = { save_scope_as = eastwatch_ruler }
+	}
+	# Nightfort
+	if = {
+		limit = {
+			title:c_the_nightfort.holder = {
+				culture = { agot_is_wildling_culture = yes }
+				NOT = { government_has_flag = government_is_nw }
+				is_independent_ruler = yes
+			}
+		}
+		title:c_the_nightfort.holder = { save_scope_as = nightfort_ruler }
+	}
+	else_if = {
+		limit = {
+			title:c_the_nightfort.holder.top_liege = {
+				culture = { agot_is_wildling_culture = yes }
+				NOT = { government_has_flag = government_is_nw }
+			}
+		}
+		title:c_the_nightfort.holder.top_liege = { save_scope_as = nightfort_ruler }
+	}
+	# Shadow Tower
+	if = {
+		limit = {
+			title:c_the_shadow_tower.holder = {
+				culture = { agot_is_wildling_culture = yes }
+				NOT = { government_has_flag = government_is_nw }
+				is_independent_ruler = yes
+			}
+		}
+		title:c_the_shadow_tower.holder = { save_scope_as = shadow_tower_ruler }
+	}
+	else_if = {
+		limit = {
+			title:c_the_shadow_tower.holder.top_liege = {
+				culture = { agot_is_wildling_culture = yes }
+				NOT = { government_has_flag = government_is_nw }
+			}
+		}
+		title:c_the_shadow_tower.holder.top_liege = { save_scope_as = shadow_tower_ruler }
+	}
+}
+
+agot_post_nw_reclamation_lord_commander_effect = {
+	$NEW_LC$ = { save_scope_as = nightswatch_candidate }
+	if = {
+		limit = { has_character_flag = blocked_from_leaving }
+		remove_character_flag = blocked_from_leaving
+	}
+	if = {
+		limit = {
+			has_variable = current_dragon
+		}
+		var:current_dragon = { save_scope_as = dragon }
+		agot_untame_dragon = {
+			OWNER = scope:nightswatch_candidate
+			DRAGON = scope:dragon
+		}
+	}
+	else_if = {
+		limit = {
+			any_relation = { type = agot_dragon }
+		}
+		every_relation = {
+			type = agot_dragon
+			save_scope_as = dragon
+			agot_unbond_dragon = {
+				OWNER = scope:nightswatch_candidate
+				DRAGON = scope:dragon
+			}
+		}
+	}
+	if = {
+		limit = {
+			any_scheme = {
+				scheme_type = bond_with_dragon_scheme
+			}
+		}
+		every_scheme = {
+			limit = { scheme_type = bond_with_dragon_scheme }
+			end_scheme = yes
+		}
+	}
+	if = {
+		limit = {
+			has_trait = kingsguard
+		}
+		agot_remove_kingsguard_effect = { KINGSGUARD = scope:nightswatch_candidate }
+	}
+	if = {
+		limit = {
+			has_trait = order_member
+		}
+		remove_trait = order_member
+	}
+	if = {
+		limit = {
+			has_trait = devoted
+		}
+		remove_trait = devoted
+	}
+	if = {
+		limit = { is_imprisoned = yes }
+
+		release_from_prison = yes
+	}
+	if = {
+		limit = { faith = faith:old_gods_wnw }
+		add_piety_level = 1
+	}
+
+	loan_inheritance = yes
+
+	if = {
+		limit = {
+			has_variable = IB_Shares
+			var:IB_Shares > 0
+		}
+		if = {
+			limit = {
+				exists = primary_heir
+			}
+
+			save_scope_as = parent_shareholder
+
+			primary_heir = {
+				if = {
+					limit = {
+						has_variable = IB_Shares
+					}
+					change_variable = {
+						name = IB_Shares
+						add = scope:parent_shareholder.var:IB_Shares
+					}
+				}
+				else = {
+					set_variable = {
+						name = IB_Shares
+						value = scope:parent_shareholder.var:IB_Shares
+					}
+					add_to_global_variable_list = {
+						name = IB_Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:IB_location
+					}
+				}
+			}
+			remove_list_global_variable = {
+				name = IB_Shareholder
+				target = this
+			}
+			set_variable = {
+				name = IB_Shares
+				value = 0
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_variable = bank1_Shares
+			var:bank1_Shares > 0
+		}
+		if = {
+			limit = {
+				exists = primary_heir
+			}
+
+			save_scope_as = parent_shareholder
+
+			primary_heir = {
+				if = {
+					limit = {
+						has_variable = bank1_Shares
+					}
+					change_variable = {
+						name = bank1_Shares
+						add = scope:parent_shareholder.var:bank1_Shares
+					}
+				}
+				else = {
+					set_variable = {
+						name = bank1_Shares
+						value = scope:parent_shareholder.var:bank1_Shares
+					}
+					add_to_global_variable_list = {
+						name = bank1_Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:bank1_location
+					}
+				}
+			}
+			remove_list_global_variable = {
+				name = bank1_Shareholder
+				target = this
+			}
+			set_variable = {
+				name = bank1_Shares
+				value = 0
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_variable = bank2_Shares
+			var:bank2_Shares > 0
+		}
+		if = {
+			limit = {
+				exists = primary_heir
+			}
+
+			save_scope_as = parent_shareholder
+
+			primary_heir = {
+				if = {
+					limit = {
+						has_variable = bank2_Shares
+					}
+					change_variable = {
+						name = bank2_Shares
+						add = scope:parent_shareholder.var:bank2_Shares
+					}
+				}
+				else = {
+					set_variable = {
+						name = bank2_Shares
+						value = scope:parent_shareholder.var:bank2_Shares
+					}
+					add_to_global_variable_list = {
+						name = bank2_Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:bank2_location
+					}
+				}
+			}
+			remove_list_global_variable = {
+				name = bank2_Shareholder
+				target = this
+			}
+			set_variable = {
+				name = bank2_Shares
+				value = 0
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_variable = bank3_Shares
+			var:bank3_Shares > 0
+		}
+		if = {
+			limit = {
+				exists = primary_heir
+			}
+
+			save_scope_as = parent_shareholder
+
+			primary_heir = {
+				if = {
+					limit = {
+						has_variable = bank3_Shares
+					}
+					change_variable = {
+						name = bank3_Shares
+						add = scope:parent_shareholder.var:bank3_Shares
+					}
+				}
+				else = {
+					set_variable = {
+						name = bank3_Shares
+						value = scope:parent_shareholder.var:bank3_Shares
+					}
+					add_to_global_variable_list = {
+						name = bank3_Shareholder
+						target = this
+					}
+					set_variable = {
+						name = BankName
+						value = global_var:bank3_location
+					}
+				}
+			}
+			remove_list_global_variable = {
+				name = bank3_Shareholder
+				target = this
+			}
+			set_variable = {
+				name = bank3_Shares
+				value = 0
+			}
+		}
+	}
+
+	hidden_effect = { #messy tooltip
+		if = {
+			limit = {
+				exists = house
+				is_house_head = yes
+				house = {
+					any_house_member = {
+						count > 1
+					}
+				}
+			}
+			if = {
+				limit = {
+					exists = primary_heir
+					house = primary_heir.house
+				}
+				primary_heir = { save_scope_as = new_house_head }
+				house = { set_house_head = scope:new_house_head }
+			}
+			else_if = {
+				limit = {
+					house = {
+						any_house_member = {
+							is_ruler = yes
+							NOT = { this = scope:nightswatch_candidate }
+						}
+					}
+				}
+				house = {
+					ordered_house_member = {
+						limit = {
+							is_ruler = yes
+							NOT = { this = scope:nightswatch_candidate }
+						}
+						order_by = primary_title.tier
+						save_scope_as = new_house_head
+					}
+				}
+				house = { set_house_head = scope:new_house_head }
+			}
+			else = {
+				house = {
+					random_house_member = {
+						limit = {
+							NOT = { this = scope:nightswatch_candidate }
+						}
+						save_scope_as = new_house_head
+					}
+				}
+				house = { set_house_head = scope:new_house_head }
+			}
+		}
+	}
+	if = {
+		limit = { has_inactive_trait = grandmaester }
+		hidden_effect = {
+			agot_expel_appropriate_maester_effect = yes
+		}
+	}
+	if = {
+		limit = {
+			is_married = yes
+		}
+		every_spouse = {
+			divorce = scope:nightswatch_candidate
+		}
+	}
+	if = {
+		limit = {
+			exists = betrothed
+		}
+		if = {
+			limit = {
+				has_been_promised_grand_wedding = yes
+			}
+			break_grand_wedding_betrothal_effect = yes
+		}
+		else = {
+			break_betrothal = betrothed
+		}
+	}
+	if = {
+		limit = {
+			any_relation = {
+				type = guardian
+				exists = this
+			}
+		}
+		every_relation = {
+			type = guardian
+			scope:nightswatch_candidate = {
+				remove_relation_guardian = prev
+			}
+		}
+	}
+	if = {
+		limit = {
+			any_relation = {
+				type = ward
+				exists = this
+			}
+		}
+		every_relation = {
+			type = ward
+			remove_relation_guardian = prev
+		}
+	}
+	if = {
+		limit = {
+			is_concubine = yes
+		}
+		this.concubinist = {
+			remove_concubine = scope:nightswatch_candidate
+		}
+	}
+	if = {
+		limit = {
+			number_of_concubines > 0
+		}
+		every_concubine = {
+			scope:nightswatch_candidate = {
+				remove_concubine = prev
+			}
+		}
+	}
+	if = {
+		limit = {
+			has_trait = refusing_marriage
+		}
+		remove_trait = refusing_marriage
+	}
+	if = {
+		limit = {
+			has_character_modifier = training_for_kingsguard
+		}
+		remove_character_modifier = training_for_kingsguard
+	}
+	every_claim = {
+		prev = {
+			remove_claim = prev
+		}
+	}
+}
+
+agot_last_ranger_effect = {
+	if = {
+		limit = { agot_eligible_to_restore_nw_trigger = yes }
+		random = {
+			chance = ai_honor
+			trigger_event = {
+				id = agot_nw_ranger_events.0109
+				months = { 3 24 }
+			}
+		}
+	}
+}
+
+agot_ranger_deserts_pre_effect = {
+	if = {
+		limit = {
+			any_close_or_extended_family_member = {
+				is_playable_character = no
+				exists = liege
+			}
+		}
+		every_close_or_extended_family_member = {
+			limit = {
+				is_playable_character = no
+				exists = liege
+			}
+			set_variable = {
+				name = my_real_liege
+				value = liege
+				days = 3
+			}
+		}
+	}
+}
+
+agot_ranger_deserts_post_effect = {
+	hidden_effect = {
+		if = {
+			limit = {
+				any_close_or_extended_family_member = {
+					is_playable_character = no
+					exists = liege
+					has_variable = my_real_liege
+				}
+			}
+			every_close_or_extended_family_member = {
+				limit = {
+					is_playable_character = no
+					exists = liege
+					has_variable = my_real_liege
+				}
+				if = {
+					limit = { NOT = { is_courtier_of = var:my_real_liege } }
+				}
+				var:my_real_liege = { add_courtier = prev }
+			}
+		}
+	}
+}

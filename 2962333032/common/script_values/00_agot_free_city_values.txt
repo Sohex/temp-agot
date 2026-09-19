@@ -1,0 +1,872 @@
+﻿candidate_score_value = { # Irritatingly, we can't just add the votes for an individual character because it would be add = number_of_election_votes = { scope:term_limit_country } and we can't have the two equals
+	value = 0
+	save_temporary_scope_as = candidate
+	scope:term_limit_country = {
+		every_elector = {
+			save_temporary_scope_as = person
+			if = {
+				limit = { scope:candidate = { has_election_vote_of = { who = scope:person title = scope:term_limit_country } } }
+				add = gold # Since gold is the vote power of each elector, we just add that
+			}
+		}
+	}
+}
+
+reverse_gold = {
+	value = gold
+	multiply = -1
+	add = 5000
+}
+
+war_vote_declaration = {
+	value = 0
+	add = {
+		value = ai_boldness
+	}
+	add = {
+		value = ai_energy
+		multiply = 0.5
+	}
+	if = {
+		limit = {
+			opinion = {
+				target = scope:recipient
+				value = { 50 100 }
+			}
+		}
+		subtract = 50
+	}
+	else_if = {
+		limit = {
+			opinion = {
+				target = scope:recipient
+				value = { 0 50 }
+			}
+		}
+		subtract = 25
+	}
+	else_if = {
+		limit = {
+			opinion = {
+				target = scope:recipient
+				value = { -50 0 }
+			}
+		}
+		add = 25
+	}
+	else = {
+		add = 50
+	}
+	if = {
+		limit = {
+			opinion = {
+				target = scope:actor
+				value = { 50 100 }
+			}
+		}
+		add = 50
+	}
+	else_if = {
+		limit = {
+			opinion = {
+				target = scope:actor
+				value = { 0 50 }
+			}
+		}
+		add = 25
+	}
+	else_if = {
+		limit = {
+			opinion = {
+				target = scope:actor
+				value = { -50 0 }
+			}
+		}
+		subtract = 25
+	}
+	else = {
+		subtract = 50
+	}
+	if = {
+		limit = {
+			scope:actor.current_military_strength >= scope:recipient.current_military_strength
+		}
+		add = 50
+	}
+	else = {
+		subtract = 50
+	}
+	if = {
+		limit = {
+			scope:actor.max_military_strength >= scope:recipient.max_military_strength
+		}
+		add = 50
+	}
+	else = {
+		subtract = 50
+	}
+}
+
+populist_support_multiplier = {
+	root.top_liege ?= {
+		if = {
+			limit = { has_realm_law = franchise_democratic_full }
+			value = 5
+		}
+		else_if = {
+			limit = { has_realm_law = franchise_lean_democratic }
+			value = 2
+		}
+		else_if = {
+			limit = { has_realm_law = franchise_aristocratic_full }
+			value = 0.25
+		}
+		else = {
+			value = 1
+		}
+	}
+}
+
+aristocratic_support_multiplier = {
+	root.top_liege ?= {
+		if = {
+			limit = { has_realm_law = franchise_aristocratic_full }
+			value = 5
+		}
+		else_if = {
+			limit = { has_realm_law = franchise_lean_aristocratic }
+			value = 2
+		}
+		else_if = {
+			limit = { has_realm_law = franchise_democratic_full }
+			value = 0.25
+		}
+		else = {
+			value = 1
+		}
+	}
+}
+
+mercantile_support_multiplier = {
+	root.top_liege ?= {
+		if = {
+			limit = { has_realm_law = policy_mercantile_full }
+			value = 5
+		}
+		else_if = {
+			limit = { has_realm_law = policy_lean_mercantile }
+			value = 2
+		}
+		else_if = {
+			limit = { has_realm_law = policy_militaristic_full }
+			value = 0.25
+		}
+		else = {
+			value = 1
+		}
+	}
+}
+
+military_support_multiplier = {
+	root.top_liege ?= {
+		if = {
+			limit = { has_realm_law = policy_militaristic_full }
+			value = 5
+		}
+		else_if = {
+			limit = { has_realm_law = policy_lean_militaristic }
+			value = 2
+		}
+		else_if = {
+			limit = { has_realm_law = policy_mercantile_full }
+			value = 0.25
+		}
+		else = {
+			value = 1
+		}
+	}
+}
+
+free_city_term_length = {
+	value = 0
+
+	#Historical Terms
+	if = {
+		limit = { holder = { has_realm_law = term_length_historical } }
+		switch = {
+			trigger = this
+			title:e_narrow_sea = { value = 3 }
+			title:e_daoryrdembos = { value = 7 }
+			title:k_lys = { value = 4 }
+			title:k_myr = { value = 6 }
+			title:k_tyrosh = { value = 9 }
+			title:k_braavos = { value = -1 }
+			title:k_pentos = { value = -1 }
+			title:k_norvos = { value = 10 }
+			title:k_lorath = { value = 7 }
+			title:k_qohor = { value = 13 }
+			fallback = { value = 5 } # If you somehow get the historical law and weren't supposed to; fallback to 5
+		}
+	}
+	#Short Terms
+	if = {
+		limit = { holder = { has_realm_law = term_length_short } }
+		value = 5
+	}
+	#Long Terms
+	if = {
+		limit = { holder = { has_realm_law = term_length_long } }
+		value = 10
+	}
+	#Life Terms
+	if = {
+		limit = {
+			holder = { has_realm_law = term_length_life }
+		}
+		value = -1
+	}
+	#Dictatorship
+	else_if = {
+		limit = {
+			has_title_law = dictatorship_succession_law
+		}
+		value = -3
+	}
+	# Delayed Due to War
+	else_if = {
+		limit = { holder = { has_character_flag = election_delayed_till_war_ends } }
+		value = -2
+	}
+}
+
+free_city_election_progress = {
+	if = {
+		limit = {
+			exists = var:years_since_election
+		}
+		value = var:years_since_election
+		divide = free_city_term_length  # Calculate the progress towards the term length
+		multiply = 100  # To get the percentage
+	}
+	else = {
+		value = 0
+	}
+}
+
+free_city_election_progress_loc = {
+	value = free_city_term_length
+	subtract = var:years_since_election
+}
+
+agot_lorath_harvest_prince_election_score = {
+
+	# Characters in close proximity to the First Magister will naturally have more political capital ( 0 - 40 )
+	if = {
+		limit = { is_councillor_of = title:k_lorath.holder }
+		add = 25
+	}
+	if = {
+		limit = {
+			any_court_position_employer = {
+				this = title:k_lorath.holder
+			}
+		}
+		add = 15
+	}
+
+	# Stewardship valued the most for Harvest Prince, land holder vote ( 0 - 40 )
+	add = {
+		value = stewardship
+		multiply = 1.5
+		max = 40
+	}
+
+	# Other stats valued, representative of candidate caliber ( 0 - 30 )
+	add = {
+		value = diplomacy
+		max = 15
+	}
+	add = {
+		value = learning
+		max = 15
+	}
+
+	# Relevant lifestyle traits / life experience ( 0 - 60)
+	if = {
+		limit = { has_trait = administrator }
+		add = {
+			value = 15
+		}
+	}
+	else_if = {
+		limit = { has_trait = overseer }
+		add = {
+			value = 15
+		}
+	}
+	else_if = {
+		limit = { has_trait = lifestyle_surveyor }
+		add = {
+			value = 15
+		}
+	}
+	else_if = {
+		limit = { has_trait = architect }
+		add = {
+			value = 15
+		}
+	}
+
+	# Free City Education ( 0 - 50 )
+	if = {
+		limit = { has_trait = education_republican_knowledge_1 }
+		add = {
+			value = 10
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_2 }
+		add = {
+			value = 20
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_3 }
+		add = {
+			value = 30
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_4 }
+		add = {
+			value = 40
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_5 }
+		add = {
+			value = 50
+		}
+	}
+
+	# Personality Traits ( +10 Positive, -10 Negative )
+	if = {
+		limit = { has_trait = diligent }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = honest }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = just }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = authoritative }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = lazy }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = arbitrary }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = fickle }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = greedy }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = uncouth }
+		add = -10
+	}
+
+	# Prestige level (-10 - 40)
+	add = {
+		value = prestige_level
+		multiply = 10
+		add = -10
+	}
+
+	# Dynasty (-20 if lowborn)
+	if = {
+		limit = { has_dynasty = no }
+		add = -20
+	}
+	else = {
+		add = {
+			# Dynasty prestige level (-5 - 45)
+			value = dynasty.dynasty_prestige_level
+			multiply = 5
+			add = -5
+
+			# Dynasty highest held title tier (0 - 40)
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_county
+						}
+					}
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_duchy
+						}
+					}
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_empire
+						}
+					}
+				}
+				add = 10
+			}
+		}
+	}
+}
+
+agot_lorath_fisher_prince_election_score = {
+
+	# Characters in close proximity to the First Magister will naturally have more political capital ( 0 - 40 )
+	if = {
+		limit = { is_councillor_of = title:k_lorath.holder }
+		add = 25
+	}
+	if = {
+		limit = {
+			any_court_position_employer = {
+				this = title:k_lorath.holder
+			}
+		}
+		add = 15
+	}
+
+	# Martial valued the most for Fisher Prince, ship owner vote ( 0 - 40 )
+	add = {
+		value = martial
+		multiply = 1.5
+		max = 40
+	}
+
+	# Other stats valued, representative of candidate caliber ( 0 - 30 )
+	add = {
+		value = diplomacy
+		max = 15
+	}
+	add = {
+		value = stewardship
+		max = 15
+	}
+
+	# Relevant lifestyle traits / life experience ( 0 - 30 )
+	if = {
+		limit = { has_trait = lifestyle_voyager }
+		add = {
+			value = 15
+		}
+	}
+	else_if = {
+		limit = { has_trait = lifestyle_wayfarer }
+		add = {
+			value = 15
+		}
+	}
+
+	# Free City Education ( 0 - 50 )
+	if = {
+		limit = { has_trait = education_republican_knowledge_1 }
+		add = {
+			value = 10
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_2 }
+		add = {
+			value = 20
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_3 }
+		add = {
+			value = 30
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_4 }
+		add = {
+			value = 40
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_5 }
+		add = {
+			value = 50
+		}
+	}
+
+	# Personality Traits ( +10 Positive, -10 Negative )
+	if = {
+		limit = { has_trait = diligent }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = honest }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = just }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = authoritative }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = lazy }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = arbitrary }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = fickle }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = greedy }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = uncouth }
+		add = -10
+	}
+
+	# Prestige level (-10 - 40)
+	add = {
+		value = prestige_level
+		multiply = 10
+		add = -10
+	}
+
+	# Dynasty (-20 if lowborn)
+	if = {
+		limit = { has_dynasty = no }
+		add = -20
+	}
+	else = {
+		add = {
+			# Dynasty prestige level (-5 - 45)
+			value = dynasty.dynasty_prestige_level
+			multiply = 5
+			add = -5
+
+			# Dynasty highest held title tier (0 - 40)
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_county
+						}
+					}
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_duchy
+						}
+					}
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_empire
+						}
+					}
+				}
+				add = 10
+			}
+		}
+	}
+}
+
+agot_lorath_prince_of_streets_election_score = {
+
+	# Characters in close proximity to the First Magister will naturally have more political capital ( 0 - 40 )
+	if = {
+		limit = { is_councillor_of = title:k_lorath.holder }
+		add = 25
+	}
+	if = {
+		limit = {
+			any_court_position_employer = {
+				this = title:k_lorath.holder
+			}
+		}
+		add = 15
+	}
+
+	# Diplomacy valued the most for Prince of Streets, popular vote ( 0 - 40 )
+	add = {
+		value = diplomacy
+		multiply = 1.5
+		max = 40
+	}
+
+	# Other stats valued, representative of candidate caliber ( 0 - 30 )
+	add = {
+		value = learning
+		max = 15
+	}
+	add = {
+		value = stewardship
+		max = 15
+	}
+
+	# Relevant lifestyle traits / life experience ( 0 - 60 )
+	if = {
+		limit = { has_trait = diplomat }
+		add = {
+			value = 15
+		}
+	}
+	else_if = {
+		limit = { has_trait = august }
+		add = {
+			value = 15
+		}
+	}
+	else_if = {
+		limit = { has_trait = gallant }
+		add = {
+			value = 15
+		}
+	}
+	else_if = {
+		limit = { has_trait = scholar }
+		add = {
+			value = 15
+		}
+	}
+
+	# Free City Education ( 0 - 50 )
+	if = {
+		limit = { has_trait = education_republican_knowledge_1 }
+		add = {
+			value = 10
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_2 }
+		add = {
+			value = 20
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_3 }
+		add = {
+			value = 30
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_4 }
+		add = {
+			value = 40
+		}
+	}
+	else_if = {
+		limit = { has_trait = education_republican_knowledge_5 }
+		add = {
+			value = 50
+		}
+	}
+
+	# Personality Traits ( +10 Positive, -10 Negative )
+	if = {
+		limit = { has_trait = diligent }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = honest }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = just }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = authoritative }
+		add = 10
+	}
+	if = {
+		limit = { has_trait = lazy }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = arbitrary }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = fickle }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = greedy }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = uncouth }
+		add = -10
+	}
+
+	# Prestige level (-10 - 40)
+	add = {
+		value = prestige_level
+		multiply = 10
+		add = -10
+	}
+
+	# Dynasty (-20 if lowborn)
+	if = {
+		limit = { has_dynasty = no }
+		add = -20
+	}
+	else = {
+		add = {
+			# Dynasty prestige level (-5 - 45)
+			value = dynasty.dynasty_prestige_level
+			multiply = 5
+			add = -5
+
+			# Dynasty highest held title tier (0 - 40)
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_county
+						}
+					}
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_duchy
+						}
+					}
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_kingdom
+						}
+					}
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					dynasty = {
+						any_dynasty_member = {
+							highest_held_title_tier >= tier_empire
+						}
+					}
+				}
+				add = 10
+			}
+		}
+	}
+}
+
+norvos_pv_overthrow_threshold_value = {
+	value = 0
+	# Grab our sum total of powerful vassals.
+	root = {
+		every_powerful_vassal = { add = 1 }
+		every_powerful_family = {
+			limit = {
+				house_head ?= { is_powerful_vassal = no }
+			}
+			add = 1
+		}
+	}
+	# Halve it.
+	multiply = 0.5
+	# Now round down to even us out.
+	floor = yes
+	# And add +1 to get a simple majority.
+	add = 1
+}
+
+norvos_pv_overthrow_tally_value = {
+	value = 0
+	every_in_list = {
+		variable = coup_pv_supporters_list
+		limit = {
+			OR = {
+				is_powerful_vassal_of = root.liege
+				house ?= { is_powerful_family = yes }
+			}
+			is_alive = yes
+		}
+		add = 1
+	}
+}
+
+# Display versions of the values
+norvos_pv_overthrow_threshold_display_value = {
+	value = norvos_pv_overthrow_threshold_value
+}
+
+norvos_pv_overthrow_tally_display_value = {
+	value = norvos_pv_overthrow_tally_value
+}
+
+norvos_diarchy_swing_value_required_for_coup = 35

@@ -1,0 +1,1258 @@
+﻿agot_mw_switch_sides_modifier = {
+	modifier = {
+		add = -50
+		trigger = {
+			scope:mega_war_switch_sides ?= yes
+		}
+		desc = "SWITCH_SIDES_NEGATIVE_REASON"
+	}
+	modifier = {
+		add = 20
+		trigger = {
+			scope:mega_war_switch_sides ?= yes
+		}
+		primary_heir = { is_imprisoned = yes }
+		desc = "SWITCH_SIDES_HEIR_IMPRISONED"
+	}
+	modifier = {
+		add = -100
+		trigger = {
+			scope:mega_war_switch_sides ?= yes
+		}
+		has_trait = loyal
+		desc = "SWITCH_SIDES_LOYAL"
+	}
+	modifier = {
+		add = 50
+		trigger = {
+			scope:mega_war_switch_sides ?= yes
+		}
+		has_trait = disloyal
+		desc = "SWITCH_SIDES_DISLOYAL"
+	}
+	modifier = {
+		add = 35
+		trigger = {
+			scope:mega_war_switch_sides ?= yes
+		}
+		NOT = { completely_controls = scope:recipient.capital_province.barony }
+		desc = "SWITCH_SIDES_CONTROLS_CAPITAL"
+	}
+	#modifier = {
+	#	add = 35
+	#	trigger = {
+	#		scope:mega_war_switch_sides ?= yes
+	#	}
+	#	scope:actor.var:chosen_rebel_leader = { #AGOT TODO
+	#		any_owned_story = {
+	#			story_type = story_agot_mw_rebel
+	#			any_in_list = {
+	#				variable = mw_wars
+	#				trigger_if = {
+	#					limit = {
+	#						is_attacker = scope:actor
+	#						#is_defender = scope:recipient
+	#					}
+	#					attacker_war_score > 3
+	#				}
+	#			}
+	#		}
+	#	}
+	#	desc = "SWITCH_SIDES_LOSING_WAR"
+	#}
+}
+
+agot_mw_choose_stance_modifier = {
+	# General strategies:
+	#
+
+	### Base values
+	modifier = { # basic stance values with weighting
+		add = {
+			if = { # generally you favor your crown
+				limit = { $TARGET$ = scope:mw_crown.primary_title }
+
+				add = mw_base_loyalist_value
+			}
+			else_if = { # basic weight for neutral
+				limit = { $TARGET$ = scope:mw_ruler_scope.primary_title }
+
+				add = mw_base_neutral_value
+			}
+			else_if = { # basic weight for rebel leader
+				limit = { $TARGET$ = scope:mw_rebel_leader.primary_title }
+
+				add = mw_base_rebel_value
+			}
+			else_if = { # basic weight for independence leader
+				limit = { $TARGET$ = scope:mw_ruler_scope.capital_barony }
+
+				add = mw_seek_independence_base_value
+			}
+		}
+	}
+
+	# Script value based modifiers
+	modifier = { # Give additional weight to a certain stance if your liege chose it and you like him
+		trigger = {
+			NOR = { # If ruler has special relation we want him to follow that relation instead; this is to correspond to agot_mw_count_choice_is_unlocked_trigger disabling many heavy modifiers for counts
+				scope:s_relation_t_crown = yes
+				scope:s_relation_t_rebel_leader = yes
+			}
+		}
+		NOT = { scope:mw_ruler_scope.liege ?= scope:mw_ruler_scope }
+		OR = { # don't apply this to LPs
+			AND = { # realm tier is hegemony
+				scope:mw_crown.highest_held_title_tier = tier_hegemony
+				scope:mw_ruler_scope.highest_held_title_tier < tier_empire
+			}
+			AND = { # realm tier is empire
+				scope:mw_crown.highest_held_title_tier = tier_empire
+				scope:mw_ruler_scope.highest_held_title_tier < tier_kingdom
+			}
+		}
+		trigger_if = { # in mw lite oftimes most dukes are direct vassals of one side
+			limit = { scope:mw_crown_story.var:mw_mode ?= flag:mw_lite }
+			NOR = {
+				scope:mw_ruler_scope.liege ?= scope:mw_crown
+				scope:mw_ruler_scope.liege ?= scope:mw_rebel_leader
+			}
+		}
+		trigger_else = { always = yes }
+
+		mw_follow_lieges_choice_value > 0 # to ensure negative values invert choice
+
+		add = {
+			if = { # liege is crown, rebel leader or independence rebel leader
+				limit = {
+					OR = {
+						scope:mw_ruler_scope.liege = scope:mw_crown			# check crown option
+						scope:mw_ruler_scope.liege = scope:mw_rebel_leader	# check rebel option
+					}
+				}
+
+				if = { # Direct liege is loyalist
+					limit = { scope:mw_ruler_scope.liege = scope:mw_crown }
+					switch = {
+						trigger = $TARGET$
+						scope:mw_crown.primary_title = { add = mw_follow_lieges_choice_value } # Check crown option
+						scope:mw_ruler_scope.primary_title = { # Check neutral option
+							if = {
+								limit = { scope:mw_ruler_scope.mw_follow_lieges_choice_value > 0 }
+								subtract = mw_follow_lieges_choice_value
+							}
+						}
+						scope:mw_rebel_leader.primary_title = { subtract = mw_follow_lieges_choice_value } # Check rebel option
+						scope:mw_ruler_scope.capital_barony = { subtract = mw_follow_lieges_choice_value } # Check independence leader option
+					}
+				}
+				else_if = { # Direct liege is rebel
+					limit = { scope:mw_ruler_scope.liege = scope:mw_rebel_leader }
+					switch = {
+						trigger = $TARGET$
+						scope:mw_crown.primary_title = { subtract = mw_follow_lieges_choice_value } # Check crown option
+						scope:mw_ruler_scope.primary_title = { # Check neutral option
+							if = {
+								limit = { scope:mw_ruler_scope.mw_follow_lieges_choice_value > 0 }
+								subtract = mw_follow_lieges_choice_value
+							}
+						}
+						scope:mw_rebel_leader.primary_title = { add = mw_follow_lieges_choice_value } # Check rebel option
+						scope:mw_ruler_scope.capital_barony = { subtract = mw_follow_lieges_choice_value } # Check independence leader option
+					}
+				}
+			}
+			else_if = { # liege is neither crown nor rebel leader
+				limit = {
+					OR = {
+						scope:mw_crown_story = { is_target_in_variable_list = { name = mw_loyalist_list target = scope:mw_ruler_scope.liege } } # check crown option
+						scope:mw_crown_story = { is_target_in_variable_list = { name = mw_neutral_list target = scope:mw_ruler_scope.liege } } # check neutral option
+						scope:mw_rebel_story = { is_target_in_variable_list = { name = mw_rebel_supporter_list target = scope:mw_ruler_scope.liege } } # check rebel option
+						scope:mw_crown_story = { is_target_in_variable_list = { name = mw_independence_rebel_leader_list target = scope:mw_ruler_scope.liege } } # check independence option, liege
+						scope:mw_ruler_scope = { any_liege_or_above = { is_target_in_variable_list = { name = mw_independence_rebels_list target = scope:mw_ruler_scope.liege } } } # check independence option, liege, liege
+					}
+				}
+
+				if = { # Direct liege is loyalist
+					limit = { scope:mw_crown_story = { is_target_in_variable_list = { name = mw_loyalist_list target = scope:mw_ruler_scope.liege } } }
+					switch = {
+						trigger = $TARGET$
+						scope:mw_crown.primary_title = { add = mw_follow_lieges_choice_value } # Check crown option
+						scope:mw_ruler_scope.primary_title = { # Check neutral option
+							if = {
+								limit = { scope:mw_ruler_scope.mw_follow_lieges_choice_value > 0 }
+								subtract = mw_follow_lieges_choice_value
+							}
+						}
+						scope:mw_rebel_leader.primary_title = { subtract = mw_follow_lieges_choice_value } # Check rebel option
+						scope:mw_ruler_scope.capital_barony = { subtract = mw_follow_lieges_choice_value } # Check independence leader option
+					}
+				}
+				else_if = { # Direct liege is neutral
+					limit = { scope:mw_crown_story = { is_target_in_variable_list = { name = mw_neutral_list target = scope:mw_ruler_scope.liege } } }
+					switch = {
+						trigger = $TARGET$
+						scope:mw_crown.primary_title = { subtract = mw_follow_lieges_choice_value } # Check crown option
+						scope:mw_ruler_scope.primary_title = { # Check neutral option
+							if = {
+								limit = { scope:mw_ruler_scope.mw_follow_lieges_choice_value > 0 }
+								add = mw_follow_lieges_choice_value
+							}
+						}
+						scope:mw_rebel_leader.primary_title = { subtract = mw_follow_lieges_choice_value } # Check rebel option
+						scope:mw_ruler_scope.capital_barony = { subtract = mw_follow_lieges_choice_value } # Check independence leader option
+					}
+				}
+				else_if = { # Direct liege is rebel
+					limit = { scope:mw_rebel_story = { is_target_in_variable_list = { name = mw_rebel_supporter_list target = scope:mw_ruler_scope.liege } } }
+					switch = {
+						trigger = $TARGET$
+						scope:mw_crown.primary_title = { subtract = mw_follow_lieges_choice_value } # Check crown option
+						scope:mw_ruler_scope.primary_title = { # Check neutral option
+							if = {
+								limit = { scope:mw_ruler_scope.mw_follow_lieges_choice_value > 0 }
+								subtract = mw_follow_lieges_choice_value
+							}
+						}
+						scope:mw_rebel_leader.primary_title = { add = mw_follow_lieges_choice_value } # Check rebel option
+						scope:mw_ruler_scope.capital_barony = { subtract = mw_follow_lieges_choice_value } # Check independence leader option
+					}
+				}
+				else_if = { # Direct liege is independence leader
+					limit = {
+						OR = {
+							scope:mw_crown_story = { is_target_in_variable_list = { name = mw_independence_rebel_leader_list target = scope:mw_ruler_scope.liege } }
+							scope:mw_ruler_scope = { any_liege_or_above = { is_target_in_variable_list = { name = mw_independence_rebels_list target = scope:mw_ruler_scope.liege } } }
+						}
+					}
+					switch = {
+						trigger = $TARGET$
+						scope:mw_crown.primary_title = { subtract = mw_follow_lieges_choice_value } # Check crown option
+						scope:mw_ruler_scope.primary_title = { # Check neutral option
+							if = {
+								limit = { scope:mw_ruler_scope.mw_follow_lieges_choice_value > 0 }
+								subtract = mw_follow_lieges_choice_value
+							}
+						}
+						scope:mw_rebel_leader.primary_title = { subtract = mw_follow_lieges_choice_value } # Check rebel option
+						scope:mw_ruler_scope.capital_barony = { add = mw_follow_lieges_choice_value } # Check independence leader option
+					}
+				}
+			}
+		}
+	}
+
+	### Opinions
+	## Opinions
+	opinion_modifier = { # Opinion of crown
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			OR = {
+				$TARGET$ = scope:mw_crown.primary_title
+				$TARGET$ = scope:mw_ruler_scope.primary_title
+				$TARGET$ = scope:mw_ruler_scope.capital_barony
+			}
+		}
+		opinion_target = scope:mw_crown
+		who = scope:mw_ruler_scope
+		multiplier = {
+			add = mw_opinion_value_factor_crown # modify opinion weight by factor
+			# modify value to be negative
+			# --> if opinion is positive value becomes negative, thus decreasing chance for neutral, independence stance
+			# --> if opinion is negative value becomes positive, thus increasing chance for neutral, independence stance
+			switch = {
+				trigger = $TARGET$
+				scope:mw_ruler_scope.primary_title = { multiply = -0.3 }
+				scope:mw_ruler_scope.capital_barony = { multiply = -0.7 }
+			}
+		}
+	}
+	opinion_modifier = { # Opinion of rebel leader
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			OR = {
+				$TARGET$ = scope:mw_rebel_leader.primary_title
+				$TARGET$ = scope:mw_ruler_scope.primary_title
+				$TARGET$ = scope:mw_ruler_scope.capital_barony
+			}
+		}
+		opinion_target = scope:mw_rebel_leader
+		who = scope:mw_ruler_scope
+		multiplier = {
+			add = mw_opinion_value_factor_rebel_leader # modify opinion weight by factor
+			# modify value to be negative
+			# --> if opinion is positive, value becomes negative, thus decreasing chance for neutral, independence stance
+			# --> if opinion is negative, value becomes positive, thus increasing chance for neutral, independence stance
+			switch = {
+				trigger = $TARGET$
+				scope:mw_ruler_scope.primary_title = { multiply = -0.3 }
+				scope:mw_ruler_scope.capital_barony = { multiply = -0.7 }
+			}
+		}
+	}
+	opinion_modifier = { # Opinion of old stance leader | modifier target effectively is neutral stance
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			exists = scope:mw_old_stance_leader
+			agot_mw_is_in_another_rebel_list_bilateral_trigger = { RULER = scope:mw_ruler_scope TARGET = scope:mw_old_stance_leader }
+			OR = {
+				$TARGET$ = scope:mw_crown.capital_county		# crown
+				$TARGET$ = scope:mw_ruler_scope.primary_title	# neutral
+				$TARGET$ = scope:mw_rebel_leader.primary_title	# rebel leader
+			}
+		}
+		opinion_target = scope:mw_old_stance_leader
+		who = scope:mw_ruler_scope
+		multiplier = {
+			add = mw_opinion_value_factor_rebel_leader # modify opinion weight by factor
+			# modify value to be negative
+			# --> if opinion is positive, value becomes negative, thus decreasing chance for neutral, independence stance
+			# --> if opinion is negative, value becomes positive, thus increasing chance for neutral, independence stance
+			switch = {
+				trigger = $TARGET$
+				scope:mw_crown.capital_county = { multiply = -0.3 }
+				scope:mw_rebel_leader.primary_title = { multiply = -0.7 }
+			}
+		}
+	}
+
+	## Relations
+	## Family, house and dynasty
+	modifier = { # Close relations to one of the sides
+		OR = {
+			scope:s_relation_t_crown = yes
+			scope:s_relation_t_rebel_leader = yes
+		}
+		agot_mw_is_torn_between_sides_trigger = no # Not if char should rather go neutral!
+
+		add = {
+			if = { # Check for crown
+				limit = { scope:s_relation_t_crown = yes }
+
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { add = scope:s_close_family_crown } # Check crown option
+					scope:mw_rebel_leader.primary_title = { # Check rebel option
+						subtract = {
+							add = scope:s_close_family_crown
+							multiply = 0.5
+						}
+					}
+					scope:mw_ruler_scope.capital_barony = { # Check independence leader option
+						subtract = {
+							add = scope:s_close_family_crown
+							multiply = 0.5
+						}
+					}
+				}
+			}
+			if = { # Check for rebel leader
+				limit = { scope:s_relation_t_rebel_leader = yes }
+
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { # Check crown option
+						subtract = {
+							add = scope:s_close_family_rebel_leader
+							multiply = 0.5
+						}
+					}
+					scope:mw_rebel_leader.primary_title = { add = scope:s_close_family_rebel_leader } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { # Check independence leader option
+						subtract = {
+							add = scope:s_close_family_rebel_leader
+							multiply = 0.5
+						}
+					}
+				}
+			}
+		}
+	}
+	modifier = { # Same Dynasty
+		agot_mw_count_choice_is_unlocked_trigger = yes
+		exists = scope:mw_ruler_scope.dynasty
+		exists = $TARGET$.holder.dynasty
+		scope:mw_ruler_scope.dynasty ?= $TARGET$.holder.dynasty
+		NOT = { $TARGET$.holder = { is_close_family_of = scope:mw_ruler_scope } } # We already give bonus for that above
+
+		add = mw_same_dynasty_value
+	}
+	modifier = { # Check historical loyalties
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			exists = scope:mw_ruler_scope.house
+			exists = scope:mw_rebel_leader.house
+			NOT = { scope:mw_crown.house ?= scope:mw_rebel_leader.house }
+			OR = { # Target is...
+				$TARGET$ = scope:mw_crown.primary_title # ...crown
+				$TARGET$ = scope:mw_rebel_leader.primary_title # ...rebel leader
+			}
+		}
+
+		scope:mw_ruler_scope = {
+			OR = {
+				agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_crown.house }
+				agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_rebel_leader.house }
+			}
+		}
+
+		add = { # if having loyalty to both sides, a neutral bonus is granted via neutral base value
+			if = { # Crown side
+				limit = {
+					scope:mw_ruler_scope = { agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_crown.house } }
+				}
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { add = mw_historical_loyality_value }
+					scope:mw_rebel_leader.primary_title = { subtract = mw_historical_loyality_value }
+				}
+			}
+			if = { # Rebel side
+				limit = {
+					scope:mw_ruler_scope = { agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_rebel_leader.house } }
+				}
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { subtract = mw_historical_loyality_value }
+					scope:mw_rebel_leader.primary_title = { add = mw_historical_loyality_value }
+				}
+			}
+		}
+	}
+	modifier = { # Check hostages in crown or rebel court
+		trigger = {
+			scope:mw_ruler_scope ?= {
+				any_home_court_hostage = {
+					OR = {
+						warden ?= scope:mw_crown
+						warden ?= scope:mw_rebel_leader
+					}
+				}
+			}
+		}
+
+		agot_mw_is_torn_between_sides_trigger = no # Not if char should rather go neutral!
+
+		add = {
+			if = {
+				limit = { scope:mw_ruler_scope = { any_home_court_hostage = { warden ?= scope:mw_crown } } }
+				switch = {
+					trigger = $TARGET$
+					#scope:mw_crown.primary_title = { add = mw_has_hostage_crown_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { add = mw_has_hostage_crown_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { subtract = mw_has_hostage_crown_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { subtract = mw_has_hostage_crown_value } # Check independence leader option
+				}
+			}
+			if = {
+				limit = { scope:mw_ruler_scope = { any_home_court_hostage = { warden ?= scope:mw_rebel_leader } } }
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { subtract = mw_has_hostage_rebel_leader_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { subtract = mw_has_hostage_rebel_leader_value } # Check neutral option
+					#scope:mw_rebel_leader.primary_title = { add = mw_has_hostage_rebel_leader_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { subtract = mw_has_hostage_rebel_leader_value } # Check independence leader option
+				}
+			}
+		}
+	}
+	## Politics
+	modifier = { # Alliances and oaths of loyalty
+		trigger = {
+			OR = {
+				$TARGET$ = scope:mw_crown.primary_title
+				$TARGET$ = scope:mw_ruler_scope.primary_title
+				$TARGET$ = scope:mw_rebel_leader.primary_title
+			}
+			OR = {
+				scope:mw_ruler_scope.var:mw_is_loyal_to ?= scope:mw_crown
+				scope:mw_ruler_scope.var:mw_is_loyal_to ?= scope:mw_rebel_leader
+				agot_mw_has_alliance_with_crown_trigger = yes
+				agot_mw_has_alliance_with_rebel_leader_trigger = yes
+			}
+		}
+
+		agot_mw_is_torn_between_sides_trigger = no # Not if char should rather go neutral!
+
+		add = {
+			if = { # Has alliance with one of the sides
+				limit = {
+					OR = {
+						AND = {
+							agot_mw_has_alliance_with_crown_trigger = yes
+							agot_mw_has_alliance_with_rebel_leader_trigger = no
+							NOT = { agot_mw_has_personal_relation_to_TARGET_trigger = { TARGET = scope:mw_rebel_leader } }
+							NOT = { var:mw_is_loyal_to ?= scope:mw_rebel_leader } # conflict of conscience --> favour neutral stance
+						}
+						AND = {
+							agot_mw_has_alliance_with_crown_trigger = no
+							agot_mw_has_alliance_with_rebel_leader_trigger = yes
+							NOT = { agot_mw_has_personal_relation_to_TARGET_trigger = { TARGET = scope:crown } }
+							NOT = { var:mw_is_loyal_to ?= scope:mw_crown } # conflict of conscience --> favour neutral stance
+						}
+					}
+				}
+
+				if = { # Crown side
+					limit = { agot_mw_has_alliance_with_crown_trigger = yes }
+					if = {
+						limit = { $TARGET$ = scope:mw_crown.primary_title }
+						add = mw_has_alliance_with_side # alliances with TARGET/liege/liege.liege
+					}
+					if = {
+						limit = { $TARGET$ = scope:mw_rebel_leader.primary_title }
+						subtract = mw_has_alliance_with_side
+					}
+				}
+				if = { # Rebel side
+					limit = { agot_mw_has_alliance_with_rebel_leader_trigger = yes }
+					if = {
+						limit = { $TARGET$ = scope:mw_rebel_leader.primary_title }
+						add = mw_has_alliance_with_side # alliances with TARGET/liege/liege.liege
+					}
+					if = {
+						limit = { $TARGET$ = scope:mw_crown.primary_title }
+						subtract = mw_has_alliance_with_side
+					}
+				}
+			}
+			else_if = { # scope:mw_ruler_scope has sworn loyality to one of the sides
+				limit = {
+					OR = {
+						AND = {
+							var:mw_is_loyal_to ?= scope:mw_crown
+							agot_mw_has_alliance_with_rebel_leader_trigger = no # conflict of conscience --> favour neutral stance
+							NOT = { agot_mw_has_personal_relation_to_TARGET_trigger = { TARGET = scope:mw_rebel_leader } }
+						}
+						AND = {
+							var:mw_is_loyal_to ?= scope:mw_rebel_leader
+							agot_mw_has_alliance_with_crown_trigger = no # conflict of conscience --> favour neutral stance
+							NOT = { agot_mw_has_personal_relation_to_TARGET_trigger = { TARGET = scope:mw_crown } }
+						}
+					}
+				}
+
+				if = { # Crown side
+					limit = { var:mw_is_loyal_to ?= scope:mw_crown }
+					if = {
+						limit = { $TARGET$ = scope:mw_crown.primary_title }
+						add = mw_oath_to_crown_value # alliances with TARGET/liege/liege.liege
+					}
+					if = {
+						limit = { $TARGET$ = scope:mw_rebel_leader.primary_title }
+						subtract = mw_oath_to_crown_value
+					}
+				}
+				if = { # Rebel side
+					limit = { var:mw_is_loyal_to ?= scope:mw_rebel_leader }
+					if = {
+						limit = { $TARGET$ = scope:mw_rebel_leader.primary_title }
+						add = mw_oath_to_rebel_leader_value # alliances with TARGET/liege/liege.liege
+					}
+					if = {
+						limit = { $TARGET$ = scope:mw_crown.primary_title }
+						subtract = mw_oath_to_rebel_leader_value
+					}
+				}
+			}
+			### Torn between sides; dealt with below
+		}
+	}
+	modifier = { # AGOT TODO: REWORK | Consider legitimacy of crown and claimant | add delta
+		trigger = {
+			always = no # AGOT TODO for now disabled
+			exists = scope:claimant
+			OR = {
+				$TARGET$ = scope:mw_crown.primary_title
+				$TARGET$ = scope:mw_rebel_leader.primary_title
+			}
+			NOT = { $TARGET$.holder ?= scope:mw_ruler_scope } # don't check relation with yourself
+		}
+
+		add = {
+			if = {
+				limit = {
+					$TARGET$ = scope:mw_crown.primary_title
+					trigger_if = {
+						limit = { scope:claimant = { is_landed = yes } }
+						save_temporary_scope_value_as = {
+							name = t_mw_claimant_legitimacy
+							value = scope:claimant.legitimacy
+						}
+					}
+					trigger_else = {
+						scope:claimant = {
+							save_temporary_scope_value_as = {
+								name = t_mw_claimant_legitimacy
+								value = base_legitimacy_value
+							}
+						}
+					}
+					scope:mw_crown.legitimacy > scope:t_mw_claimant_legitimacy
+				}
+
+				add = {
+					value = scope:mw_crown.legitimacy # crown legitimacy is higher
+					subtract = scope:t_mw_claimant_legitimacy
+					multiply = 0.2
+				}
+			}
+			else_if = {
+				limit = {
+					$TARGET$ = scope:mw_rebel_leader.primary_title
+					trigger_if = {
+						limit = { scope:claimant = { is_landed = yes } }
+						save_temporary_scope_value_as = {
+							name = t_mw_claimant_legitimacy
+							value = scope:claimant.legitimacy
+						}
+					}
+					trigger_else = {
+						scope:claimant = {
+							save_temporary_scope_value_as = {
+								name = t_mw_claimant_legitimacy
+								value = base_legitimacy_value
+							}
+						}
+					}
+					scope:t_mw_claimant_legitimacy > scope:mw_crown.legitimacy
+				}
+
+				add = {
+					value = scope:t_mw_claimant_legitimacy # claimant legitimacy is higher
+					subtract = scope:mw_crown.legitimacy
+					multiply = 0.2
+				}
+			}
+		}
+	}
+	modifier = { # If you are in the same faction as the rebel leader, be more likely to support that faction
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			scope:mw_rebel_story = {
+				has_variable_list = mw_faction_members_list
+				is_target_in_variable_list = { name = mw_faction_members_list target = scope:mw_ruler_scope }
+			}
+		}
+
+		add = {
+			if = { # Direct liege is loyalist
+				limit = { scope:mw_crown_story = { is_target_in_variable_list = { name = mw_loyalist_list target = scope:mw_ruler_scope.liege } } }
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { add = mw_is_faction_member_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { subtract = mw_is_faction_member_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { subtract = mw_is_faction_member_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { subtract = mw_is_faction_member_value } # Check independence leader option
+				}
+			}
+			else_if = { # Direct liege is neutral
+				limit = { scope:mw_crown_story = { is_target_in_variable_list = { name = mw_loyalist_list target = scope:mw_ruler_scope.liege } } }
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { subtract = mw_is_faction_member_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { add = mw_is_faction_member_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { subtract = mw_is_faction_member_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { subtract = mw_is_faction_member_value } # Check independence leader option
+				}
+			}
+			else_if = { # Direct liege is rebel
+				limit = { scope:mw_rebel_story = { is_target_in_variable_list = { name = mw_rebel_supporter_list target = scope:mw_ruler_scope.liege } } }
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { subtract = mw_is_faction_member_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { subtract = mw_is_faction_member_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { add = mw_is_faction_member_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { subtract = mw_is_faction_member_value } # Check independence leader option
+				}
+			}
+			else_if = { # Direct liege is independence leader
+				limit = { scope:mw_ruler_scope = { any_liege_or_above = { is_target_in_variable_list = { name = mw_independence_rebels_list target = scope:mw_ruler_scope.liege } } } }
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { subtract = mw_is_faction_member_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { subtract = mw_is_faction_member_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { subtract = mw_is_faction_member_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { add = mw_is_faction_member_value } # Check independence leader option
+				}
+			}
+		}
+	}
+	modifier = { # If you are part of the loyalist faction, favour the crown additionally
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			exists = scope:mw_ruler_scope.joined_faction
+			NOT = { scope:mw_ruler_scope.liege ?= scope:mw_ruler_scope }
+		}
+
+		scope:mw_ruler_scope.joined_faction = {
+			faction_is_type = agot_loyalist_faction
+		}
+		scope:mw_ruler_scope.highest_held_title_tier > tier_barony
+
+		add = {
+			if = { # Direct liege is loyalist
+				limit = { scope:mw_ruler_scope.joined_faction = { faction_target = scope:mw_crown faction_is_type = agot_loyalist_faction } }
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { add = mw_loyalist_faction_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { subtract = mw_loyalist_faction_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { subtract = mw_loyalist_faction_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { subtract = mw_loyalist_faction_value } # Check independence leader option
+				}
+			}
+			else_if = { # Direct liege is neutral
+				limit = {
+					scope:mw_crown_story = { is_target_in_variable_list = { name = mw_loyalist_list target = scope:mw_ruler_scope.liege } }
+					scope:mw_ruler_scope.joined_faction = { faction_target = scope:mw_ruler_scope.liege faction_is_type = agot_loyalist_faction }
+				}
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { subtract = mw_loyalist_faction_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { add = mw_loyalist_faction_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { subtract = mw_loyalist_faction_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { subtract = mw_loyalist_faction_value } # Check independence leader option
+				}
+			}
+			else_if = { # Direct liege is rebel
+				limit = { scope:mw_ruler_scope.joined_faction = { faction_target = scope:mw_rebel_leader faction_is_type = agot_loyalist_faction } }
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { subtract = mw_loyalist_faction_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { subtract = mw_loyalist_faction_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { add = mw_loyalist_faction_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { subtract = mw_loyalist_faction_value } # Check independence leader option
+				}
+			}
+		}
+	}
+	modifier = { # Consider faith and culture
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			OR = {
+				scope:mw_ruler_scope.liege = scope:mw_crown
+				scope:mw_ruler_scope.liege = scope:mw_rebel_leader
+			}
+		}
+
+		OR = {
+			NOT = { scope:mw_ruler_scope.faith ?= scope:mw_crown.faith }
+			NOT = { scope:mw_ruler_scope.faith ?= scope:mw_rebel_leader.faith }
+			NOT = { scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_crown.culture } }
+			NOT = { scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_rebel_leader.culture } }
+		}
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:mw_ruler_scope.liege = scope:mw_crown
+					scope:mw_ruler_scope.liege = scope:mw_rebel_leader
+				}
+			}
+			scope:mw_ruler_scope.highest_held_title_tier > tier_county
+		}
+		scope:mw_ruler_scope ?= {
+			agot_mw_is_torn_between_sides_trigger = yes
+		}
+
+		add = {
+			if = { # Add faith values.
+				limit = {
+					NOR = {
+						scope:mw_ruler_scope.faith ?= scope:mw_crown.faith
+						scope:mw_ruler_scope.faith ?= scope:mw_rebel_leader.faith
+					}
+				}
+
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { add = mw_different_faith_crown_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { add = { add = mw_different_faith_base_value multiply = 0.5 } } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { add = mw_different_faith_rebel_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { add = { add = mw_different_faith_base_value multiply = 0.5 } } # Check independence leader option
+				}
+			}
+			# Add culture values.
+			if = { # Crown same, rebel different --> crown
+				limit = {
+					scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_crown.capital_county.culture }
+					NOT = { scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_rebel_leader.capital_county.culture } }
+				}
+
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { $TARGET$ = { save_temporary_scope_as = mw_target } add = mw_different_culture_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { $TARGET$ = { save_temporary_scope_as = mw_target } subtract = mw_different_culture_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { $TARGET$ = { save_temporary_scope_as = mw_target } subtract = mw_different_culture_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { $TARGET$ = { save_temporary_scope_as = mw_target } subtract = mw_different_culture_value } # Check independence leader option
+				}
+			}
+			else_if = { # Both sides are of different culture --> neutral or independence
+				limit = {
+					NOT = {
+						scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_crown.culture }
+						scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_rebel_leader.culture }
+					}
+				}
+
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { $TARGET$ = { save_temporary_scope_as = mw_target } subtract = mw_different_culture_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { $TARGET$ = { save_temporary_scope_as = mw_target } add = mw_different_culture_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { $TARGET$ = { save_temporary_scope_as = mw_target } subtract = mw_different_culture_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { $TARGET$ = { save_temporary_scope_as = mw_target } add = { add = mw_different_culture_value multiply = 0.2 } } # Check independence leader option
+				}
+			}
+			else_if = { # Crown different, rebel same --> rebel
+				limit = {
+					NOT = { scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_crown.culture } }
+					scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_rebel_leader.culture }
+				}
+
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { $TARGET$ = { save_temporary_scope_as = mw_target } subtract = mw_different_culture_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { $TARGET$ = { save_temporary_scope_as = mw_target } subtract = mw_different_culture_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { $TARGET$ = { save_temporary_scope_as = mw_target } add = mw_different_culture_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { $TARGET$ = { save_temporary_scope_as = mw_target } subtract = mw_different_culture_value } # Check independence leader option
+				}
+			}
+		}
+	}
+	modifier = { # AGOT TODO REVISIT AC | For conquests, especially fem: if current liege is hated and his faith is considered hostile or worse, activate "liberator" bonus for crown/rebel if crown/rebel is of astray or friendlier faith
+		always = no # AGOT TODO revisit when testing with Aegon's Conquest
+		OR = {
+			AND = { # ...you favour rebel leader faith-wise
+				scope:mw_crown.faith = {
+					faith_hostility_level = { target = scope:mw_ruler_scope.faith value < faith_hostile_level }
+				}
+				scope:mw_rebel_leader.faith = {
+					faith_hostility_level = { target = scope:mw_ruler_scope.faith value > faith_astray_level }
+				}
+				scope:mw_ruler_scope = { opinion = { target = scope:mw_rebel_leader value < -75 } }
+			}
+			AND = { # ...you favour crown faith-wise
+				scope:mw_rebel_leader.faith = {
+					faith_hostility_level = { target = scope:mw_ruler_scope.faith value < faith_hostile_level }
+				}
+				scope:mw_crown.faith = {
+					faith_hostility_level = { target = scope:mw_ruler_scope.faith value > faith_astray_level }
+				}
+				scope:mw_ruler_scope = { opinion = { target = scope:mw_crown value < -75 } }
+			}
+			AND = { # you are of different faith and  culture families than crown and you really hate him
+				OR = { # only applies if you are in the realm of the leader you hate
+					var:agot_pwl_direct ?= scope:mw_crown
+					liege ?= scope:mw_crown
+					liege.var:agot_pwl_direct ?= scope:mw_crown
+					liege.liege ?= scope:mw_crown
+				}
+				religion != scope:mw_crown.religion
+				culture = { NOT = { has_same_culture_heritage = scope:mw_crown.culture } }
+				scope:mw_ruler_scope = { opinion = { target = scope:mw_crown value < -90 } }
+			}
+			AND = { # you are of different faith and  culture families than crown and you really hate him
+				OR = { # only applies if you are in the realm of the leader you hate
+					var:agot_pwl_direct ?= scope:mw_rebel_leader
+					liege ?= scope:mw_rebel_leader
+					liege.var:agot_pwl_direct ?= scope:mw_rebel_leader
+					liege.liege ?= scope:mw_rebel_leader
+				}
+				religion != scope:mw_rebel_leader.religion
+				culture = { NOT = { has_same_culture_heritage = scope:mw_rebel_leader.culture } }
+				scope:mw_ruler_scope = { opinion = { target = scope:mw_rebel_leader value < -90 } }
+			}
+		}
+
+		add = {
+			if = { # ...you hate crown
+				limit = {
+					OR = {
+						AND = {
+							scope:mw_crown.faith = {
+								faith_hostility_level = { target = scope:mw_ruler_scope.faith value < faith_hostile_level }
+							}
+							scope:mw_rebel_leader.faith = {
+								faith_hostility_level = { target = scope:mw_ruler_scope.faith value > faith_astray_level }
+							}
+							scope:mw_ruler_scope = { opinion = { target = scope:mw_crown value < -75 } }
+						}
+						AND = { # you are of different faith and  culture families than crown and you really hate him
+							OR = { # only applies if you are in the realm of the leader you hate
+								var:agot_pwl_direct ?= scope:mw_crown
+								liege ?= scope:mw_crown
+								liege.var:agot_pwl_direct ?= scope:mw_crown
+								liege.liege ?= scope:mw_crown
+							}
+							religion != scope:mw_crown.religion
+							culture = { NOT = { has_same_culture_heritage = scope:mw_crown.culture } }
+							scope:mw_ruler_scope = { opinion = { target = scope:mw_crown value < -90 } }
+						}
+					}
+				}
+				if = { # ...crown
+					limit = { $TARGET$ = scope:mw_crown.primary_title }
+
+					add = -200
+				}
+				if = { # ...neutral
+					limit = { $TARGET$ = scope:mw_ruler_scope.primary_title }
+
+					add = 800 # wait and see how the war goes.
+				}
+				if = {
+					limit = { $TARGET$ = scope:mw_rebel_leader.primary_title }
+
+					add = 200
+				}
+			}
+			if = { # ...you hate rebel leader
+				limit = {
+					OR = {
+						AND = {
+							scope:mw_rebel_leader.faith = {
+								faith_hostility_level = { target = scope:mw_ruler_scope.faith value < faith_hostile_level }
+							}
+							scope:mw_crown.faith = {
+								faith_hostility_level = { target = scope:mw_ruler_scope.faith value > faith_astray_level }
+							}
+							scope:mw_ruler_scope = { opinion = { target = scope:mw_rebel_leader value < -75 } }
+						}
+						AND = { # you are of different faith and  culture families than crown and you really hate him
+							OR = { # only applies if you are in the realm of the leader you hate
+								var:agot_pwl_direct ?= scope:mw_rebel_leader
+								liege ?= scope:mw_rebel_leader
+								liege.var:agot_pwl_direct ?= scope:mw_rebel_leader
+								liege.liege ?= scope:mw_rebel_leader
+							}
+							religion != scope:mw_rebel_leader.religion
+							culture = { NOT = { has_same_culture_heritage = scope:mw_rebel_leader.culture } }
+							scope:mw_ruler_scope = { opinion = { target = scope:mw_rebel_leader value < -90 } }
+						}
+					}
+				}
+				if = { # ...crown
+					limit = { $TARGET$ = scope:mw_crown.primary_title }
+
+					add = 200
+				}
+				if = { # ...neutral
+					limit = { $TARGET$ = scope:mw_ruler_scope.primary_title }
+
+					add = 800 # wait and see how the war goes.
+				}
+				if = {
+					limit = { $TARGET$ = scope:mw_rebel_leader.primary_title }
+
+					add = -200
+				}
+			}
+		}
+	}
+	## Torn between sides
+	modifier = { # Being torn between sides due to conflicting alliances, oaths of loyalty and family relations --> neutral stance
+		agot_mw_count_choice_is_unlocked_trigger = yes
+		OR = {
+			$TARGET$ = scope:mw_crown.primary_title
+			$TARGET$ = scope:mw_ruler_scope.primary_title
+			$TARGET$ = scope:mw_rebel_leader.primary_title
+		}
+		agot_mw_is_torn_between_sides_trigger = yes
+
+		add = {
+			switch = {
+				trigger = $TARGET$
+				scope:mw_crown.primary_title = { subtract = mw_torn_between_sides_value }
+				scope:mw_ruler_scope.primary_title = { add = mw_torn_between_sides_value }
+				scope:mw_rebel_leader.primary_title = { subtract = mw_torn_between_sides_value }
+			}
+		}
+	}
+
+	### Other
+	## War related
+	modifier = { # You are less likely to support an independence war that your LP is not a part of | do not confuse this with the third stance! This is when the initial war is an independence war!
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			#highest_held_title_tier < tier_kingdom # kingdom tier suffices for now, also for hegemonies
+			exists = scope:war
+			scope:war = { using_cb = agot_independence_war }
+			scope:mw_rebel_story.var:mw_war_cb ?= flag:independence_war
+		}
+
+		#OR = { # AGOT TODO Delete; I don't know why I added this restriction, it increases gore unnecessarily
+		#	scope:mw_ruler_scope.liege = scope:mw_crown
+		#	scope:mw_ruler_scope.liege = scope:mw_rebel_leader
+		#}
+		scope:mw_ruler_scope = { # If you are not part of rebel leader's realm
+			any_liege_or_above = {
+				NOR = {
+					this = scope:mw_rebel_leader
+					scope:mw_rebel_story = {
+						has_variable_list = mw_faction_members_list
+						NOR = {
+							is_target_in_variable_list = { name = mw_faction_members_list target = scope:mw_ruler_scope }
+							is_target_in_variable_list = { name = mw_faction_members_list target = prev }
+						}
+					}
+				}
+			}
+		}
+
+		add = {
+			switch = {
+				trigger = $TARGET$
+				#scope:mw_crown.primary_title = { add = mw_independence_war_reluctance } # Check crown option
+				#scope:mw_ruler_scope.primary_title = { subtract = mw_independence_war_reluctance } # Check neutral option
+				scope:mw_rebel_leader.primary_title = { subtract = mw_independence_war_reluctance } # Check rebel option
+				scope:mw_ruler_scope.capital_barony = { subtract = mw_independence_war_reluctance } # Check independence leader option
+			}
+		}
+	}
+	## Stance specific weights
+	modifier = { # Independence rebel stance only modifiers
+		agot_mw_count_choice_is_unlocked_trigger = yes
+		OR = {
+			AND = {
+				scope:mw_ruler_scope.highest_held_title_tier > tier_duchy
+				OR = {
+					scope:mw_rebel_story.var:mw_war_cb ?= flag:independence_war
+					$TARGET$ = scope:mw_ruler_scope.capital_barony
+				}
+			}
+			scope:mw_crown_story = { is_target_in_variable_list = { name = mw_independence_rebel_leader_list target = scope:mw_ruler_scope.liege } }
+		}
+
+		add = {
+			if = {
+				limit = { scope:mw_crown_story = { is_target_in_variable_list = { name = mw_independence_rebel_leader_list target = scope:mw_ruler_scope.liege } } }
+
+				switch = {
+					trigger = $TARGET$
+					scope:mw_crown.primary_title = { subtract = mw_liege_is_indepen_leader_value } # Check crown option
+					scope:mw_ruler_scope.primary_title = { subtract = mw_liege_is_indepen_leader_value } # Check neutral option
+					scope:mw_rebel_leader.primary_title = { subtract = mw_liege_is_indepen_leader_value } # Check rebel option
+					scope:mw_ruler_scope.capital_barony = { add = mw_liege_is_indepen_leader_value } # Check independence leader option
+				}
+			}
+
+			if = {
+				limit = { # AGOT TODO add triggers here to allow positive independence weighting
+					scope:mw_ruler_scope.highest_held_title_tier > tier_duchy
+				}
+
+				if = {
+					limit = {
+						OR = {
+							NOT = { scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_ruler_scope.liege.culture } }
+							NOT = { scope:mw_ruler_scope.religion = scope:mw_ruler_scope.liege.religion }
+						}
+					}
+
+					if = { # Not the same culture heritage
+						limit = { NOT = { scope:mw_ruler_scope.culture = { has_same_culture_heritage = scope:mw_ruler_scope.liege.culture } } }
+
+						if = {
+							limit = {
+								OR = {
+									$TARGET$ = scope:mw_crown.primary_title
+									$TARGET$ = scope:mw_ruler_scope.primary_title
+									$TARGET$ = scope:mw_rebel_leader.primary_title
+								}
+							}
+							subtract = mw_seeks_independence_value
+						}
+						else = { add = mw_seeks_independence_value }
+					}
+					if = { # Not the same religion
+						limit = { NOT = { scope:mw_ruler_scope.religion = scope:mw_crown.religion } }
+
+						if = {
+							limit = {
+								OR = {
+									$TARGET$ = scope:mw_crown.primary_title
+									$TARGET$ = scope:mw_ruler_scope.primary_title
+									$TARGET$ = scope:mw_rebel_leader.primary_title
+								}
+							}
+							subtract = mw_seeks_independence_value
+						}
+						else = { add = mw_seeks_independence_value }
+					}
+				}
+				else_if = { # If you have no reason to seek independence: decrease chance heavily
+					limit = { $TARGET$ = scope:mw_ruler_scope.capital_barony }
+					add = -200
+				}
+			}
+			else = { # AGOT TODO; I probably forgot to add weights here....
+				if = {
+					limit = {
+						OR = {
+							scope:mw_crown_story = { is_target_in_variable_list = { name = mw_independence_rebel_leader_list target = scope:mw_ruler_scope.liege } }
+							scope:mw_ruler_scope = { any_liege_or_above = { is_target_in_variable_list = { name = mw_independence_rebels_list target = scope:mw_ruler_scope.liege } } }
+						}
+					}
+				}
+			}
+		}
+	}
+	modifier = { # If you already are in a rebel list, you should tend to stay in that list --> favour neutral stance for this
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			exists = scope:mw_old_stance_leader
+		}
+		agot_mw_is_in_another_rebel_list_bilateral_trigger = { RULER = scope:mw_ruler_scope TARGET = scope:mw_old_stance_leader }
+
+		#$TARGET$ = scope:mw_ruler_scope.primary_title	# neutral
+
+		add = {
+			switch = {
+				trigger = $TARGET$
+				scope:mw_crown.primary_title = { # Check crown option
+					subtract = {
+						add = mw_old_stance_value
+						multiply = 0.5
+					}
+				}
+				scope:mw_ruler_scope.primary_title = { add = mw_old_stance_value }
+				scope:mw_rebel_leader.primary_title = { # Check rebel option
+					subtract = {
+						add = mw_old_stance_value
+						multiply = 0.5
+					}
+				}
+				scope:mw_ruler_scope.capital_barony = { # Check independence leader option
+					subtract = {
+						add = mw_old_stance_value
+						multiply = 0.5
+					}
+				}
+			}
+		}
+	}
+
+
+	## Diarch weights
+	modifier = { # you are diarch and your target is imprisoned by one of the sides
+		trigger = {
+			always = no # AGOT TODO Diarch Rework
+			exists = scope:mw_diarch_target
+			scope:mw_diarch_target.diarch = scope:mw_ruler_scope
+		}
+		# AGOT TODO maybe make this dependent on diarch's traits/opinion of his target?
+		OR = { # Target is...
+			AND = {
+				OR = {
+					$TARGET$ = scope:mw_crown.primary_title # ...crown
+					$TARGET$ = scope:mw_ruler_scope.primary_title # ...neutral
+				}
+				OR = {
+					scope:mw_diarch_target = { is_imprisoned_by = scope:mw_crown }
+					scope:mw_crown_story = {
+						any_in_list = {
+							variable = mw_loyalist_list
+
+							scope:mw_diarch_target = { is_imprisoned_by = prev }
+						}
+					}
+				}
+			}
+			AND = {
+				OR = {
+					$TARGET$ = scope:mw_ruler_scope.primary_title # ...neutral
+					$TARGET$ = scope:mw_rebel_leader.primary_title # ...rebel leader
+				}
+				OR = {
+					scope:mw_diarch_target = { is_imprisoned_by = scope:mw_rebel_leader }
+					scope:mw_rebel_story = {
+						any_in_list = {
+							variable = mw_rebel_supporter_list
+
+							scope:mw_diarch_target = { is_imprisoned_by = prev }
+						}
+					}
+				}
+			}
+		}
+
+		add = mw_diarch_target_is_imprisoned_value
+	}
+
+
+	## Factor modifiers must be at the bottom, add new "add" modifiers above this
+
+	# If ruler is heir to crown or rebel leader, desencourage support for other side
+	modifier = {
+		trigger = {
+			OR = {
+				scope:mw_crown ?= {
+					any_heir = {
+						this = scope:mw_ruler_scope
+						NOT = { this = scope:mw_rebel_leader }
+					}
+				}
+				scope:mw_rebel_leader ?= {
+					any_heir = {
+						this = scope:mw_ruler_scope
+						NOT = { this = scope:mw_crown }
+					}
+				}
+			}
+			NOT = { scope:mw_ruler_scope = { has_trait = lunatic } }
+		}
+
+		OR = {
+			AND = {
+				scope:mw_crown ?= { any_heir = { this = scope:mw_ruler_scope } }
+				$TARGET$ = scope:mw_rebel_leader.primary_title
+			}
+			AND = {
+				scope:mw_rebel_leader ?= { any_heir = { this = scope:mw_ruler_scope } }
+				$TARGET$ = scope:mw_crown.primary_title
+			}
+			$TARGET$ = scope:mw_rebel_leader.primary_title
+		}
+
+		factor = mw_is_heir_to_side_factor
+	}
+
+	# Triggered by faction: reduce overall weight for participant stances and favour neutral stance
+	modifier = {
+		trigger = {
+			agot_mw_count_choice_is_unlocked_trigger = yes
+			scope:mw_rebel_story = {
+				has_variable_list = mw_faction_members_list
+			}
+		}
+		factor = {
+			value = 1
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							$TARGET$ = scope:mw_crown.primary_title
+							NOT = { scope:s_relation_t_crown = yes }
+						}
+						AND = {
+							$TARGET$ = scope:mw_crown.primary_title
+							NOT = { scope:s_relation_t_rebel_leader = yes }
+						}
+						$TARGET$ = scope:mw_ruler_scope.capital_barony
+					}
+				}
+				subtract = 0.75
+			}
+			else = { add = 0.5 }
+		}
+	}
+}
+
+agot_mw_faction_demand_chance_reduction = {
+	modifier = {
+		factor = 0.5
+		OR = {
+			agot_mw_is_in_loyalist_list_trigger = { TARGET = root.faction_target }
+			agot_mw_is_in_rebel_list_trigger = { TARGET = root.faction_target }
+		}
+	}
+}

@@ -1,0 +1,138 @@
+﻿namespace = agot_house_maintenance
+
+agot_house_maintenance.1000 = {
+	type = character_event
+	title = agot_house_maintenance.1000.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = {
+						has_variable = ahm_temp
+					}
+				}
+				desc = agot_house_maintenance.1000.desc_none
+			}
+			triggered_desc = {
+				trigger = {
+					has_variable = ahm_temp
+				}
+				desc = agot_house_maintenance.1000.desc
+			}
+		}
+	}
+	theme = dynasty
+
+	right_portrait = root
+
+	widget = {
+		is_shown = {
+			is_ai = no
+			any_living_character = {
+				house ?= {
+					any_house_relation = {
+						has_house_relation_level = feud
+					}
+				}
+			}
+		}
+		gui = "agot_character_house_feuds"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				any_living_character = {
+					house ?= {
+						any_house_relation = {
+							has_house_relation_level = feud
+						}
+					}
+				}
+			}
+			set_variable = ahm_temp
+			every_living_character = {
+				limit = {
+					house ?= {
+						house_head ?= prev
+						any_house_relation = {
+							has_house_relation_level = feud
+							any_relation_house = {
+								exists = house_head
+							}
+						}
+					}
+				}
+				save_scope_as = char
+				house = {
+					random_house_relation = {
+						limit = { has_house_relation_level = feud }
+						random_relation_house = {
+							limit = {
+								exists = house_head
+								this != scope:char.house
+							}
+							house_head = {
+								save_scope_as = house_head
+								set_variable = feud_viewer_remove_duplicates
+							}
+						}
+					}
+				}
+				scope:char = {
+					if = {
+						limit = {
+							exists = scope:house_head
+						}
+						set_variable = {
+							name = feud_viewer
+							value = scope:house_head
+						}
+					}
+					else = {
+						set_variable = no_feud_viewer
+					}
+				}
+				root = {
+					if = {
+						limit = {
+							scope:char = {
+								has_none_of_variables = {
+									name = feud_viewer_remove_duplicates
+									name = no_feud_viewer
+								}
+							}
+						}
+						add_to_variable_list = {
+							name = possible_feuds
+							target = scope:char
+						}
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = global_events_settings.dismiss
+	}
+	option = {
+		name = global_events_settings.main_screen
+		trigger_event = global_events_settings.0001
+	}
+	after = {
+		if = {
+			limit = {
+				has_variable = ahm_temp
+			}
+			remove_variable = ahm_temp
+		}
+		every_in_list = {
+			variable = possible_feuds
+			remove_variable = feud_viewer
+			remove_variable = feud_viewer_remove_duplicates
+		}
+		clear_variable_list = possible_feuds
+	}
+}

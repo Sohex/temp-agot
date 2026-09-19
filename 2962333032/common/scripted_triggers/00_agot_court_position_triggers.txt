@@ -1,0 +1,144 @@
+﻿# court_position_court_smith_trigger = {
+# 	liege = { can_employ_court_position_type = court_smith_court_position }
+# 	is_vassal_of = liege
+# }
+
+# court_position_master_at_arms_trigger = {
+# 	liege = { can_employ_court_position_type = master_at_arms_court_position }
+# 	is_vassal_of = liege
+# }
+
+is_valid_travel_leader_trigger = {
+	OR = {
+		has_court_position = travel_leader_court_position
+		AND = {
+			OR = {
+				learning > 5
+				stewardship > 5
+			}
+			OR = {
+				has_trait_xp = {
+					trait = lifestyle_traveler
+					track = travel
+					value >= 50
+				}
+				has_trait_xp = {
+					trait = lifestyle_traveler
+					track = danger
+					value >= 50
+				}
+			}
+			OR = {
+				travel_leader_speed > 10
+				travel_leader_safety > 10
+				has_trait = adventurer
+				has_trait = flexible_leader
+				has_trait = forest_fighter
+				has_trait = open_terrain_expert
+				has_trait = rough_terrain_expert
+				has_trait = desert_warrior
+				has_trait = jungle_stalker
+				has_trait = winter_soldier
+				has_trait = lifestyle_herbalist
+				has_trait = lifestyle_hunter
+				has_trait = lifestyle_physician
+				has_trait = brave
+				has_trait = diligent
+				has_trait = administrator
+				has_trait = scholar
+			}
+			NOR = {
+				has_trait = blind
+				has_trait = clubfooted
+				has_trait = craven
+				has_trait = infirm
+				has_trait = maimed
+			}
+		}
+		AND = {
+			OR = {
+				learning > 5
+				stewardship > 5
+			}
+			OR = {
+				travel_leader_speed > 10
+				travel_leader_safety > 10
+				has_trait = adventurer
+				has_trait = flexible_leader
+				has_trait = forest_fighter
+				has_trait = open_terrain_expert
+				has_trait = rough_terrain_expert
+				has_trait = desert_warrior
+				has_trait = jungle_stalker
+				has_trait = winter_soldier
+				has_trait = lifestyle_traveler
+				has_trait = lifestyle_herbalist
+				has_trait = lifestyle_hunter
+				has_trait = lifestyle_physician
+				has_trait = brave
+				has_trait = diligent
+				has_trait = administrator
+				has_trait = scholar
+			}
+			NOR = {
+				has_trait = blind
+				has_trait = clubfooted
+				has_trait = craven
+				has_trait = infirm
+				has_trait = maimed
+			}
+		}
+	}
+}
+
+# Sadly we cannot use court_position_inner_circle_salary_trigger since it's made to use scope:liege that is not given in the revoke block
+agot_court_position_inner_circle_revoke_trigger = {
+	trigger_if = {
+		limit = { exists = $LIEGE$ }
+		$LIEGE$ = {
+			dynasty ?= { has_dynasty_perk = fp2_coterie_legacy_1 }
+			employs_court_position = $POS$_court_position
+			any_court_position_holder = {
+				type = $POS$_court_position
+				house ?= prev.house
+			}
+		}
+	}
+	trigger_else = { always = no }
+}
+
+bloodrider_validity_trigger = {
+	base_court_position_validity_trigger = { EMPLOYER = $EMPLOYER$ }
+	is_landed = no
+	is_male = yes
+	is_courtier_of = $EMPLOYER$
+	NOR = {
+		has_trait = blind
+		has_trait = infirm
+		has_trait = disloyal
+	}
+	custom_tooltip = {
+		text = IS_NOT_THE_SPOUSE_OF_CHARACTER_COURT_POSITION
+		NOT = { is_spouse_of = $EMPLOYER$ }
+	}
+	custom_tooltip = {
+		text = IS_NOT_A_HEIR_TO_A_TITLE
+		NOT = { any_heir_title = {} }
+	}
+	custom_tooltip = {
+		text = PLACE_IN_LINE_OF_SUCCESSION
+		NOT = {
+			any_pretender_title = {
+				place_in_line_of_succession = {
+					target = prev
+					value <= 2
+				}
+			}
+		}
+	}
+	can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $EMPLOYER$ }
+	trigger_if = {
+		limit = { NOT = { has_court_position = bloodrider_court_position } }
+		court_position_does_not_already_have_a_job_trigger = yes # This positions is considered a job, and cannot be held at the same tims as another similar position
+	}
+}

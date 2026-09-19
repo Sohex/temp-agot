@@ -1,0 +1,534 @@
+﻿lmf_stray_seed_story_cycle = {
+
+	on_setup = {
+		set_variable = {
+			name = story_stray_seed_father
+			value = story_owner.var:story_stray_seed_father
+		}
+		if = {
+			limit = { exists = story_owner.var:heir_visit }
+			set_variable = {
+				name = heir_visit
+				value = yes
+			}
+			set_variable = {
+				name = story_stray_seed_heir_visit_target
+				value = story_owner.var:story_stray_seed_heir_visit_target
+			}
+			set_variable = {
+				name = story_stray_seed_location
+				value = root.story_owner.location
+			}
+			story_owner = {
+				remove_variable = heir_visit
+				remove_variable = story_stray_seed_heir_visit_target
+			}
+		}
+		else_if = {
+			limit = { exists = story_owner.var:army_camp_follower }
+			set_variable = {
+				name = army_camp_follower
+				value = yes
+			}
+			set_variable = {
+				name = story_stray_seed_location
+				value = root.story_owner.location
+			}
+			story_owner = {
+				remove_variable = army_camp_follower
+			}
+		}
+		else_if = {
+			limit = { exists = story_owner.var:army_tavern_girl }
+			set_variable = {
+				name = army_tavern_girl
+				value = yes
+			}
+			set_variable = {
+				name = story_stray_seed_location
+				value = root.story_owner.location
+			}
+			story_owner = {
+				remove_variable = army_tavern_girl
+			}
+		}
+		else_if = {
+			limit = { exists = story_owner.var:army_lost_guide }
+			set_variable = {
+				name = army_lost_guide
+				value = yes
+			}
+			set_variable = {
+				name = story_stray_seed_location
+				value = root.story_owner.location
+			}
+			story_owner = {
+				remove_variable = army_lost_guide
+			}
+		}
+		else_if = {
+			limit = { exists = story_owner.var:army_camp_caught_eye }
+			set_variable = {
+				name = army_camp_caught_eye
+				value = yes
+			}
+			set_variable = {
+				name = story_stray_seed_location
+				value = root.story_owner.location
+			}
+			story_owner = {
+				remove_variable = army_camp_caught_eye
+			}
+		}
+		else_if = {
+			limit = { exists = story_owner.var:army_found_pool }
+			set_variable = {
+				name = army_found_pool
+				value = yes
+			}
+			set_variable = {
+				name = story_stray_seed_location
+				value = root.story_owner.location
+			}
+			story_owner = {
+				remove_variable = army_found_pool
+			}
+		}
+		else = {
+			set_variable = {
+				name = story_stray_seed_location
+				value = root.story_owner.location
+			}
+		}
+		story_owner = {
+			remove_variable = story_stray_seed_father
+			# make her immune to disease just for a while
+			add_character_flag = { flag = immune_to_disease years = 5 }
+		}
+	}
+
+	on_owner_death = {
+		if = {
+			limit = {
+				root.var:stray_seed_child ?= {
+					is_alive = yes
+					NOT = { this = root.story_owner }
+				}
+				root.var:story_stray_seed_father ?= {
+					OR = {
+						is_playable_character = yes
+						any_close_or_extended_family_member = { is_playable_character = yes }
+					}
+				}
+			}
+			root.story_owner = {
+				random_secret = {
+					limit = {
+						secret_type = secret_unmarried_illegitimate_child
+						secret_target = root.var:stray_seed_child
+					}
+					reveal_to = root.var:stray_seed_child
+				}
+			}
+			make_story_owner = root.var:stray_seed_child
+		}
+		else = {
+			end_story = yes
+		}
+	}
+
+	on_end = {
+	}
+
+	#Make sure a child is born at the right time
+	effect_group = {
+		days = { 251 271 }
+
+		trigger = {
+			NOT = { exists = root.var:stray_seed_child }
+		}
+
+		first_valid = {
+			triggered_effect = {
+				trigger = {
+					root.var:story_stray_seed_father ?= {
+						OR = {
+							AND = {
+								is_playable_character = yes
+								NOT = { government_has_flag = government_is_nw }
+							}
+							any_close_or_extended_family_member = {
+								is_playable_character = yes
+								NOT = { government_has_flag = government_is_nw }
+							}
+						}
+					}
+					root.story_owner = {
+						is_alive = yes
+						exists = location
+						is_courtier = no
+						is_ruler = no
+					}
+				}
+				effect = {
+					create_character = {
+						location = root.story_owner.location
+						age = 0
+						gender_female_chance = 50
+						mother = root.story_owner
+						real_father = root.var:story_stray_seed_father
+						faith = root.story_owner.faith
+						culture = root.story_owner.culture
+						dynasty = none
+						random_traits = yes
+						save_scope_as = peasant_child
+						after_creation = {
+							if = {
+								limit = { faith = { has_doctrine_parameter = bastards_none } }
+								add_trait = wild_oat
+							}
+							else = {
+								add_trait = bastard
+							}
+							# make them immune to disease just for a while
+							add_character_flag = { flag = immune_to_disease years = 5 }
+						}
+					}
+					set_variable = {
+						name = stray_seed_child
+						value = scope:peasant_child
+					}
+					story_owner = {
+						add_adulterer_fornicator_trait_or_nothing_effect = yes
+						add_secret = {
+							type = secret_unmarried_illegitimate_child
+							target = root.var:stray_seed_child
+						}
+						lmf_check_pregnant_devoted_status = yes
+					}
+				}
+			}
+			triggered_effect = {
+				trigger = {
+					always = yes
+				}
+				effect = {
+					end_story = yes
+				}
+			}
+		}
+	}
+
+	#Periodically check to see if the bastard goes to meet their father
+	effect_group = {
+		days = { 320 420 }
+
+		first_valid = {
+			# first check to see if the story should no longer be valid
+			triggered_effect = {
+				trigger = {
+					OR = {
+						# child not born
+						NOT = { exists = root.var:stray_seed_child }
+						# father is neither a ruler nor close family to a ruler
+						root.var:story_stray_seed_father ?= {
+							NOR = {
+								AND = {
+									is_playable_character = yes
+									NOT = { government_has_flag = government_is_nw }
+								}
+								any_close_or_extended_family_member = {
+									is_playable_character = yes
+									NOT = { government_has_flag = government_is_nw }
+								}
+							}
+						}
+						# story owner is a ruler or married/betrothed
+						root.story_owner = {
+							OR = {
+								is_ruler = yes
+								is_married = yes
+								is_betrothed = yes
+							}
+						}
+						# child is a ruler or married/betrothed or already dead
+						root.var:stray_seed_child = {
+							OR = {
+								is_ruler = yes
+								is_married = yes
+								is_betrothed = yes
+								is_alive = no
+							}
+						}
+					}
+				}
+				effect = {
+					# mother will pass the story onto her child, if she can
+					if = {
+						limit = {
+							NOT = { root.story_owner = root.var:stray_seed_child }
+							root.var:stray_seed_child = {
+								is_alive = yes
+								is_ruler = no
+								is_married = no
+								is_betrothed = no
+							}
+						}
+						root.story_owner = {
+							random_secret = {
+								limit = {
+									secret_type = secret_unmarried_illegitimate_child
+									secret_target = root.var:stray_seed_child
+								}
+								reveal_to = root.var:stray_seed_child
+							}
+						}
+						make_story_owner = root.var:stray_seed_child
+					}
+					else = {
+						end_story = yes
+					}
+				}
+			}
+			# see if the liege will be approached
+			triggered_effect = {
+				trigger = {
+					exists = root.var:stray_seed_child
+					exists = root.var:story_stray_seed_father
+					# child must be available
+					root.var:stray_seed_child = {
+						is_available = yes
+						has_short_disease_trigger = no
+					}
+					# story owner must be available (and adult if it's the child) and have the secret
+					root.story_owner = {
+						is_available = yes
+						has_short_disease_trigger = no
+						is_adult = yes
+						any_secret = {
+							secret_type = secret_unmarried_illegitimate_child
+							secret_target = root.var:stray_seed_child
+						}
+					}
+					root.var:story_stray_seed_father = {
+						trigger_if = {
+							# father must be available, if he's alive
+							limit = { is_alive = yes }
+							is_available = yes
+							has_short_disease_trigger = no
+							# when father isn't a ruler, his liege must be available and close family
+							trigger_if = {
+								limit = { is_playable_character = no }
+								is_courtier = yes
+								liege = {
+									is_close_or_extended_family_of = root.var:story_stray_seed_father
+									exists = capital_province
+									is_available = yes
+									has_short_disease_trigger = no
+									NOT = { government_has_flag = government_is_nw }
+								}
+								# and the story owner must be willing to switch courts, if they're a courtier
+								trigger_if = {
+									limit = {
+										root.story_owner = { is_courtier = yes }
+									}
+									root.story_owner = {
+										NOT = { is_courtier_of = root.var:story_stray_seed_father.liege }
+										would_leave_liege_trigger = { CURRENT_LIEGE = root.story_owner.liege NEW_LIEGE = root.var:story_stray_seed_father.liege }
+									}
+								}
+							}
+							# when father is a ruler, the story owner just needs to be willing to switch courts
+							trigger_else = {
+								exists = capital_province
+								NOT = { government_has_flag = government_is_nw }
+								trigger_if = {
+									limit = {
+										root.story_owner = { is_courtier = yes }
+									}
+									root.story_owner = {
+										NOT = { is_courtier_of = root.var:story_stray_seed_father }
+										would_leave_liege_trigger = { CURRENT_LIEGE = root.story_owner.liege NEW_LIEGE = root.var:story_stray_seed_father }
+									}
+								}
+							}
+						}
+						# when father is dead, we're looking for a ruler parent
+						trigger_else_if = {
+							limit = {
+								any_parent = {
+									is_playable_character = yes
+									NOT = { government_has_flag = government_is_nw }
+								}
+							}
+							# who is available
+							any_parent = {
+								is_playable_character = yes
+								NOT = { government_has_flag = government_is_nw }
+								exists = capital_province
+								is_available = yes
+								has_short_disease_trigger = no
+								# and the story owner is willing to join their court
+								trigger_if = {
+									limit = {
+										root.story_owner = { is_courtier = yes }
+									}
+									save_temporary_scope_as = potential_liege
+									root.story_owner = {
+										NOT = { is_courtier_of = scope:potential_liege }
+										would_leave_liege_trigger = { CURRENT_LIEGE = root.story_owner.liege NEW_LIEGE = scope:potential_liege }
+									}
+								}
+							}
+						}
+						# or, failing that, a ruler close family member
+						trigger_else = {
+							# who is available
+							any_close_or_extended_family_member = {
+								is_playable_character = yes
+								NOT = { government_has_flag = government_is_nw }
+								exists = capital_province
+								is_available = yes
+								has_short_disease_trigger = no
+								# and the story owner is willing to join their court
+								trigger_if = {
+									limit = {
+										root.story_owner = { is_courtier = yes }
+									}
+									save_temporary_scope_as = potential_liege
+									root.story_owner = {
+										NOT = { is_courtier_of = scope:potential_liege }
+										would_leave_liege_trigger = { CURRENT_LIEGE = root.story_owner.liege NEW_LIEGE = scope:potential_liege }
+									}
+								}
+							}
+						}
+					}
+				}
+				effect = {
+					save_scope_as = story
+					root.var:stray_seed_child = { save_scope_as = bastard_child }
+					root.story_owner = { save_scope_as = visitor }
+					root.var:story_stray_seed_father = {
+						save_scope_as = bastard_child_father
+						if = {
+							limit = {
+								is_playable_character = yes
+								NOT = { government_has_flag = government_is_nw }
+							}
+							save_scope_as = bastard_child_father_liege
+						}
+						else_if = {
+							limit = {
+								is_courtier = yes
+								NOT = { government_has_flag = government_is_nw }
+							}
+							liege = { save_scope_as = bastard_child_father_liege }
+						}
+						else_if = {
+							limit = {
+								any_parent = {
+									is_playable_character = yes
+									NOT = { government_has_flag = government_is_nw }
+								}
+							}
+							random_parent = {
+								limit = {
+									is_playable_character = yes
+									exists = capital_province
+									is_available = yes
+									has_short_disease_trigger = no
+									trigger_if = {
+										limit = {
+											scope:visitor = { is_courtier = yes }
+										}
+										save_temporary_scope_as = potential_liege
+										scope:visitor = {
+											NOT = { is_courtier_of = scope:potential_liege }
+											would_leave_liege_trigger = { CURRENT_LIEGE = scope:visitor.liege NEW_LIEGE = scope:potential_liege }
+										}
+									}
+								}
+								weight = {
+									base = 1
+									modifier = {
+										highest_held_title_tier > 0
+										add = {
+											value = highest_held_title_tier
+											multiply = 10
+										}
+									}
+								}
+								save_scope_as = bastard_child_father_liege
+							}
+						}
+						else = {
+							random_close_or_extended_family_member = {
+								limit = {
+									is_playable_character = yes
+									NOT = { government_has_flag = government_is_nw }
+									exists = capital_province
+									is_available = yes
+									has_short_disease_trigger = no
+									trigger_if = {
+										limit = {
+											scope:visitor = { is_courtier = yes }
+										}
+										save_temporary_scope_as = potential_liege
+										scope:visitor = {
+											NOT = { is_courtier_of = scope:potential_liege }
+											would_leave_liege_trigger = { CURRENT_LIEGE = scope:visitor.liege NEW_LIEGE = scope:potential_liege }
+										}
+									}
+								}
+								weight = {
+									base = 1
+									modifier = {
+										highest_held_title_tier > 0
+										add = {
+											value = highest_held_title_tier
+											multiply = 10
+										}
+									}
+								}
+								save_scope_as = bastard_child_father_liege
+							}
+						}
+					}
+					scope:bastard_child_father_liege ?= {
+						random = {
+							chance = 20
+							modifier = {
+								add = 30
+								scope:bastard_child.age < 1
+							}
+							modifier = {
+								add = 30
+								scope:bastard_child = { is_adult = yes }
+							}
+							modifier = {
+								add = 30
+								scope:bastard_child_father = { is_ai = no }
+							}
+							modifier = {
+								add = 15
+								scope:bastard_child_father_liege = {
+									is_ai = no
+									is_close_family_of = scope:bastard_child_father
+								}
+							}
+							modifier = {
+								factor = 0
+								scope:bastard_child_father_liege = {
+									is_ai = no
+									has_character_flag = had_recent_bastard_appearance
+								}
+							}
+							trigger_event = lmf_heir.1700
+						}
+					}
+				}
+			}
+		}
+	}
+}

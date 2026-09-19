@@ -1,0 +1,412 @@
+﻿#AGOT Reaving
+
+# # Reaving Rewards
+
+# agot_short_reaving_reward_effect = {
+# 	add_piety = short_reaving_piety_gain
+# 	add_prestige = short_reaving_prestige_gain
+# 	agot_viking_rank_up_check_effect = yes
+# 	christian_saint_bone_tooltip_effect = yes
+# 	pilgrimage_additional_reward_effect = yes
+# }
+
+# agot_medium_reaving_reward_effect = {
+# 	add_piety = long_reaving_piety_gain
+# 	add_prestige = long_reaving_prestige_gain
+# 	agot_viking_rank_up_check_effect = yes
+# 	christian_saint_bone_tooltip_effect = yes
+# 	pilgrimage_additional_reward_effect = yes
+# }
+
+# agot_long_reaving_reward_effect = {
+# 	add_piety = very_long_reaving_piety_gain
+# 	add_prestige = very_long_reaving_prestige_gain
+# 	agot_viking_rank_up_check_effect = yes
+# 	christian_saint_bone_tooltip_effect = yes
+# 	pilgrimage_additional_reward_effect = yes
+# }
+
+# agot_very_long_reaving_reward_effect = {
+# 	add_piety = exceptionally_long_reaving_piety_gain
+# 	add_prestige = exceptionally_long_reaving_prestige_gain
+# 	agot_viking_rank_up_check_effect = yes
+# 	christian_saint_bone_tooltip_effect = yes
+# 	pilgrimage_additional_reward_effect = yes
+# }
+
+# agot_reaving_participant_reward_effect = {
+# 	add_piety = short_reaving_piety_gain
+# 	add_prestige = short_reaving_prestige_gain
+# 	agot_viking_rank_up_check_effect = yes
+# }
+
+# agot_give_reaving_reward_effect = {
+# 	if = {
+# 		limit = { scope:activity.var:reaving_distance = short_reaving_var }
+# 		agot_short_reaving_reward_effect = yes
+# 	}
+# 	else_if = {
+# 		limit = { scope:activity.var:reaving_distance = medium_reaving_var }
+# 		agot_medium_reaving_reward_effect = yes
+# 	}
+# 	else_if = {
+# 		limit = { scope:activity.var:reaving_distance = long_reaving_var }
+# 		agot_long_reaving_reward_effect = yes
+# 	}
+# 	else_if = {
+# 		limit = { scope:activity.var:reaving_distance = very_long_reaving_var }
+# 		agot_very_long_reaving_reward_effect = yes
+# 	}
+# }
+
+
+# #Viking/Reaver (Gained by Raiding/Events)
+agot_viking_points_gain_effect = {
+	if = {
+		limit = {
+			NOT = { has_variable = raid_counter }
+		}
+		set_variable = {
+			name = raid_counter
+			value = $CHANGE$
+		}
+	}
+	else = {
+		change_variable = {
+			name = raid_counter
+			add = $CHANGE$
+		}
+	}
+	#Random chance of additional increase to increase unpredictability
+	random = {
+		chance = 50
+		change_variable = {
+			name = raid_counter
+			add = $RANDOM_CHANGE$
+		}
+	}
+	#Extra Random chance with the Festivities Tradition
+	if = {
+		limit = {
+			culture = { has_cultural_parameter = culture_can_raid_at_sea_even_if_feudal  }
+		}
+		random = {
+			chance = 75
+			change_variable = {
+				name = raid_counter
+				add = 1
+			}
+		}
+	}
+}
+
+agot_viking_rank_up_check_effect = {
+	if = {
+		limit = {
+			NOT = { has_trait = viking }
+			exists = var:raid_counter
+			var:raid_counter >= 20
+		}
+		remove_variable = raid_counter
+		save_scope_as = raid_leader
+		random = {
+			chance = 20
+			if = {
+				limit = { scope:raid_leader = scope:raider }
+				trigger_event = {
+					id = raiding.0023
+					days = { 10 60 }
+				}
+			}
+			else = { add_trait = viking }
+		}
+	}
+}
+
+
+# #Set-Up Effects
+
+
+#  reaving_setup_effect = {
+# 	scope:activity = { #The Reaving
+
+# 		#Add any special setups here (multiple player characters, etc.), BEFORE the every_participant effect
+
+# 		activity_owner = {
+# 			trigger_event = {
+# 					on_action = reaving_start_events
+# 					days = 10
+# 				}
+# 			}
+
+# 		every_participant = { #Effect for remaining (most) guests
+# 			limit = {
+# 				NOT = { this = scope:activity.activity_owner }
+# 			}
+# 			trigger_event = {
+# 				on_action = reaving_start_events
+# 				days = 10
+# 			}
+# 		}
+# 	}
+#  }
+# # Used in the option to pick a specific Reaving Destination
+# agot_reaving_selection_event_option_effect = {
+# 	#hidden_effect = {
+# 		#set_variable = {
+# 			#name = pilgrimage_cooldown_timer
+# 			#years = pilgrimage_cooldown_year_amount
+# 			#location variable
+# 		#}
+# 	#}
+# 	capital_province = {
+# 		spawn_activity = {
+# 			type = activity_reaving
+# 			owner = root
+# 		}
+# 	}
+# 	#if = { AGOT when Essos returns
+# 	#	limit = { is_ai = no }
+# 	#	agot_calculate_reaving_distance_effect = { ADVENTURER = root }
+# 	#}
+# }
+
+
+# agot_calculate_reaving_distance_effect = {
+# 	# Requires PILGRIM = character
+# 	# Requires HOLY_SITE = barony_title
+# 	# Calculate distance to the target holy site
+# 	# The value set indicates how many Journey Events a character will get
+# 	#if = {   # AGOT Leaving this in to remind myself the format for original check when Essos comes back
+# 	#	limit = {
+# 	#		scope:start_barony = {
+# 	#			squared_distance = {
+# 	#				target = $HOLY_SITE$
+# 	#				value > long_pilgrimage_max_length
+# 	#			}
+# 	#		}
+# 	#	}
+# 	#	custom_tooltip = very_long_pilgrimage_tt
+# 	#	select_pilgrimage_effect = {
+# 	#		PILGRIMAGE_DISTANCE = very_long
+# 	#	}
+# 	#}
+# 	$ADVENTURER$ = { save_scope_as = adventurer }
+# 	if = {
+# 		#limit = {
+# 		#	scope:adventurer.var:adventure_destination = disputed_lands
+# 		#}
+# 		custom_tooltip = long_pilgrimage_tt
+# 		agot_select_reaving_effect = {
+# 			REAVING_DISTANCE = long
+# 		}
+# 	}
+# 	else_if = {
+# 		#limit = {
+# 		#	scope:adventurer.var:adventure_destination = flag:north_essos
+# 		#}
+# 		custom_tooltip = medium_pilgrimage_tt
+# 		agot_select_reaving_effect = {
+# 			REAVING_DISTANCE = medium
+# 		}
+# 	}
+# 	else_if = {
+# 		#limit = {
+# 		#	scope:adventurer.var:adventure_destination = flag:summer_sea
+# 		#}
+# 		custom_tooltip = medium_pilgrimage_tt
+# 		agot_select_reaving_effect = {
+# 			REAVING_DISTANCE = medium
+# 		}
+# 	}
+# 	else_if = {
+# 		#limit = {
+# 		#	scope:adventurer.var:adventure_destination = flag:slavers_bay
+# 		#}
+# 		custom_tooltip = very_long_pilgrimage_tt
+# 		agot_select_reaving_effect = {
+# 			REAVING_DISTANCE = very_long
+# 		}
+# 	}
+# 	else = {
+# 		custom_tooltip = short_pilgrimage_tt
+# 		agot_select_reaving_effect = {
+# 			REAVING_DISTANCE = short
+# 		}
+# 	}
+# }
+
+# agot_select_reaving_effect = {
+# 	# PILGRIMAGE_DISTANCE
+# 	save_temporary_scope_value_as = {
+# 		name = distance
+# 		value = flag:$REAVING_DISTANCE$
+# 		}
+# 		switch = {
+# 			trigger = scope:distance
+# 			flag:short = {
+# 				remove_short_term_gold = pilgrimage_minimum_cost
+# 			}
+# 			flag:medium = {
+# 				remove_short_term_gold = pilgrimage_medium_extra_cost
+# 			}
+# 			flag:long = {
+# 				remove_short_term_gold = pilgrimage_long_extra_cost
+# 			}
+# 			flag:very_long = {
+# 				remove_short_term_gold = pilgrimage_very_long_extra_cost
+# 			}
+# 	}
+# }
+
+# agot_set_reaving_distance_variable_effect = {
+# 	# Requires PILGRIM = character
+# 	# Requires HOLY_SITE = barony_title
+# 	#$PILGRIM$.capital_barony = { # Only landed characters can go on regular reavings
+# 	#	save_temporary_scope_as = start_barony
+# 	#}
+# 	# Calculate distance to the target holy site
+# 	# The value set indicates how many Journey Events a character will get
+# 	$REAVER$ = { save_scope_as = reaver }
+# 	if = {
+# 		limit = {
+# 			scope:reaver.var:reaving_destination = flag:slavers_bay
+# 		}
+# 		set_variable = {
+# 			name = reaving_distance
+# 			value = very_long_reaving_var
+# 		}
+# 	}
+# 	else_if = {
+# 		limit = {
+# 			scope:reaver.var:reaving_destination = flag:north_essos
+# 		}
+# 		set_variable = {
+# 			name = reaving_distance
+# 			value = long_reaving_var
+# 		}
+# 	}
+# 	else_if = {
+# 		limit = {
+# 			scope:reaver.var:reaving_destination = flag:disputed_lands
+# 		}
+# 		set_variable = {
+# 			name = reaving_distance
+# 			value = medium_reaving_var
+# 		}
+# 	}
+# 	else = {
+# 		set_variable = {
+# 			name = reaving_distance
+# 			value = short_reaving_var
+# 		}
+# 	}
+# }
+
+
+# #####################################################################
+# # EVENT EFFECTS
+# #####################################################################
+
+# agot_set_up_next_reaving_event_effect = {
+# 	if = {
+# 		limit = {
+# 			NOT = { exists = local_var:reaving_event_counter }
+# 		}
+# 		set_local_variable = {
+# 			name = reaving_event_counter
+# 			value = 1
+# 		}
+# 		reaving_fire_correct_default_event_effect = yes
+# 	}
+# 	else = {
+# 		change_local_variable = {
+# 			name = reaving_event_counter
+# 			add = 1
+# 		}
+# 	if = {
+# 		limit = { # Check the number of events fired
+# 			local_var:reaving_event_counter < max_default_reaving_events
+# 		}
+# 		# If below the max number check whether to fire more
+# 		if = {
+# 			limit = {
+# 				local_var:reaving_event_counter >= min_default_reaving_events
+# 				this = scope:activity.activity_owner #Only let the Host Reaver go above the minimum to stop everyone getting tons of events
+# 			}
+# 			random_list = {
+# 				75 = {
+# 					reaving_fire_correct_default_event_effect = yes
+# 				}
+# 				25 = {
+# 					agot_reaving_concluded_my_events_effect = yes # Arrival finish Reaving stuff
+# 				}
+# 			}
+# 		}
+# 		else_if = {
+# 			limit = { #wrap it up for guests
+# 				local_var:reaving_event_counter >= min_default_reaving_events
+# 				NOT = { this = scope:activity.activity_owner }
+# 			}
+# 			agot_reaving_concluded_my_events_effect = yes
+# 		}
+# 		else = {
+# 			reaving_fire_correct_default_event_effect = yes
+# 		}
+# 	}
+# 	else = { #fallback
+# 		agot_reaving_concluded_my_events_effect = yes #Arrive
+# 		}
+# 	}
+# }
+
+
+#  reaving_fire_correct_default_event_effect = {
+# 	if = {
+# 		limit = {
+# 			this = scope:activity.activity_owner
+# 		}
+# 		trigger_event = {
+# 			on_action = reaving_host_random_pulse
+# 			days = { 30 35 }
+# 		}
+# 	}
+# 	else = {
+# 		trigger_event = {
+# 			on_action = reaving_random_pulse
+# 			days = { 20 25 }
+# 		}
+# 	}
+# }
+
+# agot_reaving_concluded_my_events_effect = {
+# 	if = {
+# 		limit = {
+# 			this = scope:activity.activity_owner
+# 		}
+# 		trigger_event = {
+# 			on_action = reaving_destination_events #Big finale
+# 			days = { 15 20 }
+# 		}
+# 	}
+# 	else = {
+# 		save_temporary_scope_as = finished_participant
+# 		scope:activity = {
+# 			add_to_variable_list = {
+# 				name = finished_participants
+# 				target = scope:finished_participant
+# 			}
+# 		}
+# 	}
+# }
+
+# agot_reaving_end_guest_effect = {
+# 	# Only called on the end of a *successful* feast. Feasts which are interrupted due to death, imprisonment, etc., don't get this, so put critical clean-up stuff in the activity itself.
+# 	agot_viking_rank_up_check_effect = yes
+# 	stress_impact = {  #reaving stuff
+# 		base = medium_stress_loss
+# 		gluttonous = medium_stress_impact_loss
+# 		gregarious = medium_stress_impact_loss
+# 		shy = medium_stress_impact_gain
+# 	}
+# }

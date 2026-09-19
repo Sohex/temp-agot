@@ -1,0 +1,854 @@
+﻿namespace = agot_dragonstone
+
+#Child of current ruler comes of age
+agot_dragonstone.0001 = {
+	hidden = yes
+
+	trigger = {
+		title:h_the_iron_throne.holder ?= { save_temporary_scope_as = ruler }
+		scope:ruler = {
+			dynasty = dynasty:dynn_Targaryen
+			OR = {
+				has_title = title:k_dragonstone
+				NOT = { exists = title:k_dragonstone.holder }
+			}
+			has_title = title:d_dragonstone
+			has_title = title:c_dragonstone
+		}
+		is_primary_heir_of = scope:ruler
+		NOT = { is_at_war_with = scope:ruler }
+		OR = {
+			is_child_of = scope:ruler
+			is_grandchild_of = scope:ruler
+			is_great_grandchild_of = scope:ruler
+			scope:ruler = { can_have_children = no }
+			scope:ruler = {
+				AND = {
+					is_married = yes
+					primary_spouse = { can_have_children = no }
+					allowed_more_spouses = no
+					max_number_of_concubines = 0
+				}
+			}
+		}
+	}
+
+	immediate = {
+		save_scope_as = heir
+		title:h_the_iron_throne.holder = {
+			trigger_event = agot_dragonstone.0002
+		}
+	}
+}
+
+agot_dragonstone.0002 = {
+	type = character_event
+	title = agot_dragonstone.0002.t
+	desc = agot_dragonstone.0002.desc
+	theme = crown
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:heir
+		animation = personality_content
+	}
+
+	option = {
+		name = agot_dragonstone.0002.a
+
+		trigger = {
+			primary_heir = {
+				age > 15
+				OR = {
+					is_child_of = root
+					is_grandchild_of = root
+					is_great_grandchild_of = root
+					root = { can_have_children = no }
+					root = {
+						AND = {
+							is_married = yes
+							primary_spouse = { can_have_children = no }
+							allowed_more_spouses = no
+							max_number_of_concubines = 0
+						}
+					}
+				}
+				trigger_if = {
+					limit = { is_landed = yes }
+					liege = root
+				}
+			}
+		}
+
+		show_as_unavailable = {
+			scope:heir.liege != root
+		}
+
+		hidden_effect = {
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+
+			title:c_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:heir
+					change = scope:change
+				}
+			}
+			title:d_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:heir
+					change = scope:change
+				}
+			}
+
+			resolve_title_and_vassal_change = scope:change
+
+			if = {
+				limit = { has_title = title:k_dragonstone }
+
+				create_title_and_vassal_change = {
+					type = granted
+					save_scope_as = change2
+					add_claim_on_loss = no
+				}
+				title:k_dragonstone = {
+					change_title_holder_include_vassals = {
+						holder = scope:heir
+						change = scope:change2
+					}
+				}
+				resolve_title_and_vassal_change = scope:change2
+			}
+			else = {
+				create_title_and_vassal_change = {
+					type = created
+					save_scope_as = change2
+					add_claim_on_loss = no
+				}
+				title:k_dragonstone = {
+					change_title_holder = {
+						holder = root
+						change = scope:change2
+					}
+				}
+				resolve_title_and_vassal_change = scope:change2
+			}
+
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change3
+				add_claim_on_loss = no
+			}
+		}
+
+		title:k_dragonstone = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					holder = root
+				}
+
+				change_title_holder_include_vassals = {
+					holder = scope:heir
+					change = scope:change3
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:change3
+
+		#Switch to heir event
+		if = {
+			limit = {
+				has_multiple_players = no
+				is_ai = no
+			}
+			trigger_event = agot_dragonstone.0008
+		}
+
+		ai_chance = { base = 100 }
+	}
+
+	option = {
+		name = agot_dragonstone.0002.b
+
+		scope:heir = {
+			add_opinion = {
+				target = root
+				modifier = hurt_opinion
+				opinion = -50
+			}
+		}
+
+		ai_chance = { base = 0 }
+	}
+}
+
+#On ascending the throne
+agot_dragonstone.0003 = {
+	type = character_event
+	title = agot_dragonstone.0003.t
+	desc = agot_dragonstone.0003.desc
+	theme = crown
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:heir
+		animation = personality_content
+	}
+
+	trigger = {
+		OR = {
+			has_title = title:k_dragonstone
+			NOT = { exists = title:k_dragonstone.holder }
+		}
+		has_title = title:d_dragonstone
+		has_title = title:c_dragonstone
+		AND = {
+			primary_heir = {
+				age > 15
+				OR = {
+					is_child_of = root
+					is_grandchild_of = root
+					is_great_grandchild_of = root
+					root = { can_have_children = no }
+					root = {
+						AND = {
+							is_married = yes
+							primary_spouse = { can_have_children = no }
+							allowed_more_spouses = no
+							max_number_of_concubines = 0
+						}
+					}
+				}
+				NOT = { is_at_war_with = root }
+			}
+		}
+	}
+
+	immediate = {
+		primary_heir = { save_scope_as = heir }
+	}
+
+	option = {
+		name = agot_dragonstone.0003.a
+
+		trigger = {
+			primary_heir = {
+				age > 15
+				OR = {
+					is_child_of = root
+					is_grandchild_of = root
+					is_great_grandchild_of = root
+					root = { can_have_children = no }
+					root = {
+						AND = {
+							is_married = yes
+							primary_spouse = { can_have_children = no }
+							allowed_more_spouses = no
+							max_number_of_concubines = 0
+						}
+					}
+				}
+				trigger_if = {
+					limit = { is_landed = yes }
+					liege = root
+				}
+			}
+		}
+
+		show_as_unavailable = {
+			scope:heir.liege != root
+		}
+
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+
+		title:c_dragonstone = {
+			change_title_holder_include_vassals = {
+				holder = scope:heir
+				change = scope:change
+			}
+		}
+		title:d_dragonstone = {
+			change_title_holder_include_vassals = {
+				holder = scope:heir
+				change = scope:change
+			}
+		}
+
+		resolve_title_and_vassal_change = scope:change
+
+		if = {
+			limit = { has_title = title:k_dragonstone }
+
+			create_title_and_vassal_change = {
+				type = granted
+				save_scope_as = change2
+				add_claim_on_loss = no
+			}
+			title:k_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:heir
+					change = scope:change2
+				}
+			}
+			resolve_title_and_vassal_change = scope:change2
+		}
+		else = {
+			create_title_and_vassal_change = {
+				type = created
+				save_scope_as = change2
+				add_claim_on_loss = no
+			}
+			title:k_dragonstone = {
+				change_title_holder = {
+					holder = root
+					change = scope:change2
+				}
+			}
+			resolve_title_and_vassal_change = scope:change2
+		}
+
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change3
+			add_claim_on_loss = no
+		}
+
+		title:k_dragonstone = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					holder = root
+				}
+
+				change_title_holder_include_vassals = {
+					holder = scope:heir
+					change = scope:change3
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:change3
+
+		#Switch to heir event
+		if = {
+			limit = {
+				has_multiple_players = no
+				is_ai = no
+			}
+			trigger_event = agot_dragonstone.0008
+		}
+
+		ai_chance = { base = 100 }
+	}
+
+	option = {
+		name = agot_dragonstone.0003.b
+
+		trigger = { is_ai = no }
+
+		scope:heir = {
+			add_opinion = {
+				target = root
+				modifier = hurt_opinion
+				opinion = -50
+			}
+		}
+
+		ai_chance = { base = 0 }
+	}
+
+	option = {
+		name = agot_dragonstone.0003.b
+
+		trigger = {
+			is_ai = yes
+			has_title = title:k_dragonstone
+		}
+
+		root = { destroy_title = title:k_dragonstone }
+
+		ai_chance = { base = 0 }
+	}
+}
+
+agot_dragonstone.0005 = {
+	hidden = yes
+
+	#please stop giving away dragonstone i beg
+	trigger = {
+		dynasty = dynasty:dynn_Targaryen
+		OR = {
+			has_title = title:k_dragonstone
+			NOT = { exists = title:k_dragonstone.holder }
+		}
+		has_title = title:d_dragonstone
+		has_title = title:c_dragonstone
+		is_ai = yes
+	}
+
+	immediate = {
+		create_character = {
+			location = root.capital_province
+			template = pool_repopulate_stewardship
+			faith = root.faith
+			culture = scope:title.title_province.culture
+			save_scope_as = new_holder
+		}
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+
+		scope:title = {
+			change_title_holder_include_vassals = {
+				holder = scope:new_holder
+				change = scope:change
+			}
+		}
+
+		resolve_title_and_vassal_change = scope:change
+	}
+}
+
+# Dragonstone reverts to crown on death of holder
+agot_dragonstone.0006 = {
+	hidden = yes
+
+	trigger = {
+		title:h_the_iron_throne.holder ?= {
+			exists = dynasty
+			dynasty = dynasty:dynn_Targaryen
+		}
+		top_liege = title:h_the_iron_throne.holder
+		OR = {
+			is_ai = yes
+			trigger_if = {
+				limit = {
+					title:h_the_iron_throne.holder = {
+						is_ai = yes
+					}
+				}
+				is_ai = no
+			}
+		}
+		dynasty = dynasty:dynn_Targaryen
+		OR = {
+			has_title = title:k_dragonstone
+			NOT = { exists = title:k_dragonstone.holder }
+		}
+		has_title = title:d_dragonstone
+		has_title = title:c_dragonstone
+		NOT = {
+			this = title:h_the_iron_throne.holder
+		}
+	}
+
+	immediate = {
+		title:h_the_iron_throne.holder = { save_scope_as = heir }
+		# We need to transfer artifacts back to Iron Throne to prevent deletion
+		every_character_artifact = {
+			set_owner = {
+				target = scope:heir
+				history = {
+					type = inherited
+					recipient = scope:heir
+				}
+			}
+		}
+		every_home_court_hostage = {
+			add_character_flag = dragonstone_hostage
+			set_variable = {
+				name = dragonstone_holder
+				value = root
+			}
+		}
+		# We need to copy for title transfers
+		title:k_dummy_dragonstone = {
+			copy_title_history = title:k_dragonstone
+		}
+		if = {
+			limit = {
+				primary_heir = {
+					is_landless_adventurer = yes
+				}
+			}
+			create_character = {
+				location = root.capital_province
+				template = pool_repopulate_stewardship
+				faith = root.faith
+				culture = culture:crownlander
+				save_scope_as = temp_heir
+				after_creation = {
+					add_character_flag = marked_for_termination
+				}
+			}
+			set_designated_heir_unsafe = scope:temp_heir
+			if = {
+				limit = {
+					title:k_dragonstone = { title_uses_legitimate_house_mechanic = yes }
+				}
+				agot_set_current_house = {
+					TITLE = title:k_dragonstone
+					HOUSE = title:h_the_iron_throne.holder.house
+				}
+			}
+		}
+		if = {
+			limit = {
+				root = {
+					is_ai = no
+				}
+				title:h_the_iron_throne.holder = {
+					is_ai = yes
+				}
+			}
+			set_player_character = title:h_the_iron_throne.holder
+		}
+		every_courtier = {
+			scope:heir = { add_courtier ?= prev }
+		}
+		title:k_dragonstone = {
+			scope:heir = {
+				add_to_variable_list = {
+					name = dragonstone_titles
+					target = prev
+				}
+			}
+		}
+		title:d_dragonstone = {
+			scope:heir = {
+				add_to_variable_list = {
+					name = dragonstone_titles
+					target = prev
+				}
+			}
+		}
+		title:c_dragonstone = {
+			scope:heir = {
+				add_to_variable_list = {
+					name = dragonstone_titles
+					target = prev
+				}
+			}
+		}
+
+		save_scope_as = deceased_heir
+		scope:heir = {
+			trigger_event = { id = agot_dragonstone.0007 days = 1 }
+		}
+	}
+}
+
+agot_dragonstone.0007 = {
+	type = character_event
+	title = agot_dragonstone.0007.t
+	desc = agot_dragonstone.0007.desc
+	theme = crown
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	right_portrait = {
+		character = scope:heir
+		animation = personality_content
+	}
+	lower_center_portrait = {
+		character = scope:deceased_heir
+	}
+
+	trigger = {
+		OR = {
+			has_title = title:k_dragonstone
+			NOT = { exists = title:k_dragonstone.holder }
+		}
+		has_title = title:d_dragonstone
+		has_title = title:c_dragonstone
+		AND = {
+			primary_heir = {
+				age > 15
+				OR = {
+					is_child_of = root
+					is_grandchild_of = root
+					is_great_grandchild_of = root
+					root = { can_have_children = no }
+					root = {
+						AND = {
+							is_married = yes
+							primary_spouse = { can_have_children = no }
+							allowed_more_spouses = no
+							max_number_of_concubines = 0
+						}
+					}
+				}
+				NOT = { is_at_war_with = root }
+			}
+		}
+	}
+
+	immediate = {
+		primary_heir = { save_scope_as = heir }
+	}
+
+	option = {
+		name = agot_dragonstone.0007.a
+
+		trigger = {
+			primary_heir = {
+				age > 15
+				OR = {
+					is_child_of = root
+					is_grandchild_of = root
+					is_great_grandchild_of = root
+					root = { can_have_children = no }
+					root = {
+						AND = {
+							is_married = yes
+							primary_spouse = { can_have_children = no }
+							allowed_more_spouses = no
+							max_number_of_concubines = 0
+						}
+					}
+				}
+				trigger_if = {
+					limit = { is_landed = yes }
+					liege = root
+				}
+			}
+		}
+
+		show_as_unavailable = {
+			scope:heir.liege != root
+		}
+
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+
+		#Avoid repeats
+		hidden_effect = {
+			title:c_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:heir
+					change = scope:change
+				}
+			}
+			title:d_dragonstone = {
+				change_title_holder_include_vassals = {
+					holder = scope:heir
+					change = scope:change
+				}
+			}
+
+			resolve_title_and_vassal_change = scope:change
+
+			if = {
+				limit = { has_title = title:k_dragonstone }
+
+				create_title_and_vassal_change = {
+					type = granted
+					save_scope_as = change2
+					add_claim_on_loss = no
+				}
+				title:k_dragonstone = {
+					change_title_holder_include_vassals = {
+						holder = scope:heir
+						change = scope:change2
+					}
+				}
+				resolve_title_and_vassal_change = scope:change2
+			}
+			else = {
+				create_title_and_vassal_change = {
+					type = created
+					save_scope_as = change2
+					add_claim_on_loss = no
+				}
+				title:k_dragonstone = {
+					change_title_holder = {
+						holder = root
+						change = scope:change2
+					}
+				}
+				resolve_title_and_vassal_change = scope:change2
+			}
+		}
+
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change3
+			add_claim_on_loss = no
+		}
+
+		title:k_dragonstone = {
+			every_in_de_jure_hierarchy = {
+				limit = {
+					holder = root
+				}
+
+				change_title_holder_include_vassals = {
+					holder = scope:heir
+					change = scope:change3
+				}
+			}
+		}
+		resolve_title_and_vassal_change = scope:change3
+
+		#Switch to heir event
+		if = {
+			limit = {
+				has_multiple_players = no
+				is_ai = no
+			}
+			trigger_event = agot_dragonstone.0008
+		}
+
+		ai_chance = { base = 100 }
+	}
+
+	option = {
+		name = agot_dragonstone.0007.b
+
+		trigger = { is_ai = no }
+
+		scope:heir = {
+			add_opinion = {
+				target = root
+				modifier = hurt_opinion
+				opinion = -50
+			}
+		}
+
+		ai_chance = { base = 0 }
+	}
+
+	option = {
+		name = agot_dragonstone.0007.b
+
+		trigger = {
+			is_ai = yes
+			has_title = title:k_dragonstone
+		}
+
+		root = { destroy_title = title:k_dragonstone }
+
+		ai_chance = { base = 0 }
+	}
+}
+
+#Switch to heir event
+agot_dragonstone.0008 = {
+	type = character_event
+	title = agot_dragonstone.0008.t
+	desc = agot_dragonstone.0008.desc
+	theme = crown
+	left_portrait = {
+		character = root
+		animation = personality_compassionate
+	}
+	right_portrait = {
+		character = scope:heir
+		animation = personality_content
+	}
+
+	trigger = {
+		has_multiple_players = no
+		is_ai = no
+	}
+
+	option = {
+		name = agot_dragonstone.0008.a
+	}
+
+	option = {
+		name = agot_dragonstone.0008.b
+		set_player_character = scope:heir
+	}
+}
+
+# Disinherited Player holder of Dragonstone
+agot_dragonstone.0009 = {
+	type = character_event
+	title = agot_dragonstone.0009.t
+	desc = agot_dragonstone.0009.desc
+	theme = crown
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:monarch
+		animation = dismissal
+	}
+
+	immediate = {
+		title:h_the_iron_throne.holder = {
+			save_scope_as = monarch
+		}
+		save_scope_as = disinherited_character
+	}
+
+	option = {
+		name = agot_dragonstone.0009.a
+		trigger = {
+			has_dlc_feature = roads_to_power
+		}
+		set_variable = {
+			name = adv_location_oop
+			value = yes
+			days = 1
+		}
+		every_courtier_or_guest = {
+			set_variable = {
+				name = skip_dragonstone_courtier_reassignment
+				value = yes
+				days = 1
+			}
+		}
+		agot_dragonstone_heir_disinherit_removal_effect = { DISINHERITOR = scope:monarch }
+		create_landless_adventurer_title_effect = {
+			REASON = flag:voluntary
+			FLAVOR_CHAR = root
+		}
+	}
+
+	option = {
+		name = agot_dragonstone.0009.b
+		trigger = {
+			scope:monarch = {
+				is_ai = yes
+			}
+		}
+		set_player_character = scope:monarch
+		agot_dragonstone_heir_disinherit_removal_effect = { DISINHERITOR = scope:monarch }
+	}
+
+	option = {
+		name = agot_dragonstone.0009.c
+		add_internal_flag = dangerous
+		add_character_flag = { flag = declined_become_laamp days = 1 } # Used to avoid become playable courtier bug
+		if = {
+			limit = {
+				NOT = {
+					any_held_county = {
+						this != title:c_dragonstone
+					}
+				}
+			}
+			custom_tooltip = agot_dragonstone.0009.c_tt
+		}
+		agot_dragonstone_heir_disinherit_removal_effect = { DISINHERITOR = scope:monarch }
+	}
+}

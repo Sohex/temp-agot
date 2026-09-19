@@ -1,0 +1,75 @@
+﻿agot_capital_barony_cadet_name_effect = {
+	save_scope_as = cadet_founder
+	#set_global_variable = {
+	#	name = cadet_founder_global_variable
+	#	value = scope:cadet_founder
+	#}
+	set_global_variable = {
+		name = cadet_founder_global_variable_house_name
+		value = scope:former_house
+	}
+	scope:cadet_founder.house = {
+		#set_house_name = "[GetGlobalVariable('cadet_founder_global_variable').Char.GetDynastyNameNoTooltip] of [GetGlobalVariable('cadet_founder_global_variable').Char.GetCapitalLocation.GetNameNoTooltip]"
+		set_house_name = cadet_name
+	}
+
+	#remove_global_variable = cadet_founder_global_variable
+	remove_global_variable = cadet_founder_global_variable_house_name
+}
+
+#Sets the correct "parent house" for a known bastard
+agot_set_parent_house_effect = {
+	house ?= { save_scope_as = root_original_house }
+	if = {
+		limit = {
+			has_character_flag = had_mother_house
+		}
+		set_house = mother.house
+	}
+	else_if = {
+		limit = {
+			has_character_flag = had_father_house
+		}
+		set_house = father.house
+	}
+	else_if = {
+		limit = {
+			should_mother_give_house_to_bastard_trigger = yes
+		}
+		set_house = mother.house
+	}
+	else_if = {
+		limit = {
+			exists = father
+			exists = father.house
+			NOT = { father = { has_trait = bastard } }
+		}
+		set_house = father.house
+	}
+	else = {
+		set_to_lowborn = yes
+	}
+	# Legitimate house maintenance
+	if = {
+		limit = {
+			NOT = { is_lowborn = yes }
+			exists = scope:root_original_house
+			is_ruler = yes
+		}
+		house = { save_scope_as = root_new_house }
+		every_held_title = {
+			limit = {
+				title_uses_legitimate_house_mechanic = yes
+			}
+			save_scope_as = legitimate_house_title_to_change
+			agot_set_current_house = {
+				HOUSE = scope:root_new_house
+				TITLE = scope:legitimate_house_title_to_change
+			}
+			# NOTE: We don't set the legitimate house if they were it like we do elsewhere because
+			# this can actually be someone thinking they were of one house and then finding out they
+			# are ACTUALLY of another, not just the 'perception' of being of another house.
+			# (Cuckoldry why do you complicate things so much?)
+		}
+	}
+}

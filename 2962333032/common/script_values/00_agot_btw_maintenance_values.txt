@@ -1,0 +1,513 @@
+﻿agot_btw_maintenance_create_kingdom_score_value = {
+	# Skills & prowess (-2 - 2)
+	add = {
+		value = sum_of_all_skills_and_prowess_value
+		divide = 10
+		floor = yes
+		add = -4
+		multiply = 0.5
+	}
+
+	# Traits
+	if = {
+		limit = { has_trait = ambitious }
+		add = 1
+	}
+	else_if = {
+		limit = { has_trait = content }
+		add = -1
+	}
+	if = {
+		limit = { has_trait = arrogant }
+		add = 1
+	}
+	else_if = {
+		limit = { has_trait = humble }
+		add = -1
+	}
+
+	# Poor health
+	if = {
+		limit = { is_healthy = no }
+		add = -1
+	}
+
+	# Age (-1 - 1)
+	add = {
+		if = {
+			limit = { age < 30 }
+			value = -1
+		}
+		else_if = {
+			limit = { age >= 40 age < 60 }
+			value = 1
+		}
+		else_if = {
+			limit = { age >= 70 }
+			value = -1
+		}
+	}
+
+	# Prestige level (-0.5 - 2)
+	add = {
+		value = prestige_level
+		add = -1
+		multiply = 0.5
+	}
+
+	# Dynasty prestige level (-0.5 - 4.5)
+	add = {
+		value = dynasty.dynasty_prestige_level
+		add = -1
+		multiply = 0.5
+	}
+
+	# Legitimacy level (-2 - 3)
+	add = {
+		value = legitimacy_level
+		add = -2
+	}
+
+	# Realm size (-2.5 - ?)
+	add = {
+		value = realm_size
+		add = -5
+		multiply = 0.5
+	}
+
+	# Military strength (-1.5 - ?)
+	add = {
+		value = current_military_strength
+		divide = 1000
+		floor = yes
+		add = -3
+		multiply = 0.5
+	}
+
+	# Gold (? - ?)
+	add = {
+		value = gold
+		divide = 100
+		floor = yes
+		multiply = 0.5
+	}
+}
+
+agot_btw_maintenance_swear_fealty_score_value = {
+	value = agot_btw_maintenance_create_kingdom_score_value
+	multiply = -1
+}
+
+# Vassalization acceptance value used in agot_btw_maintenance.010x event chain.
+# Adapted from offer_vasalization_interaction ai_accept modifier.
+# Scoped character is the potential vassal, scope:king is the king.
+agot_btw_maintenance_vassalization_acceptance_value = {
+	save_temporary_scope_as = character
+
+	# Base
+	add = -50
+
+	# Perks
+	if = {
+		limit = {
+			scope:king = {
+				has_perk = true_ruler_perk
+			}
+		}
+		add = true_ruler_value
+	}
+	if = {
+		limit = {
+			scope:king = {
+				has_trait_with_flag = offer_vassalisation_25
+			}
+		}
+		add = 25
+	}
+
+	# Events
+	if = {
+		limit = {
+			scope:king = {
+				has_character_modifier = event_bonus_to_vassal_accept
+			}
+		}
+		add = 20
+	}
+
+	# Struggles (not possible)
+
+	# Cultural acceptance (0 to -35)
+	add = {
+		scope:king = { save_temporary_scope_as = target_character }
+		value = agot_cultural_acceptance_value
+		subtract = 100
+		multiply = 0.35
+		floor = yes
+	}
+
+	# Faith hostility (0 to -120, less with pluralism)
+	add = {
+		scope:king = { save_temporary_scope_as = target_character }
+		value = agot_faith_hostility_level_value
+		if = {
+			limit = {
+				NOT = { faith = scope:king.faith }
+			}
+			if = {
+				limit = {
+					faith = { has_doctrine = doctrine_pluralism_pluralistic }
+				}
+				if = {
+					limit = {
+						scope:king.faith = { has_doctrine = doctrine_pluralism_pluralistic }
+					}
+					multiply = -10
+				}
+				else = {
+					multiply = -20
+				}
+			}
+			else = {
+				multiply = -40
+			}
+		}
+	}
+
+	# Character is a king (not possible)
+
+	# Truce
+	if = {
+		limit = {
+			any_truce_holder = {
+				this = scope:king
+			}
+			scope:king = {
+				NOT = { has_purchased_truce_with_char = { TARGET = scope:character } }
+			}
+		}
+		add = -50
+	}
+
+	# Fought independence war (not possible)
+
+	# Character is tribal but king is not or vice versa (not possible)
+
+	# Isolationist tradition
+	if = {
+		limit = {
+			culture = {
+				NOT = { this = scope:king.culture }
+				has_cultural_tradition = tradition_isolationist
+			}
+		}
+		add = -20
+	}
+
+	# King is bankrupt
+	if = {
+		limit = { scope:king.gold <= -1 }
+		add = -100
+	}
+
+	# Wide difference in rank
+	# Checking for count since king is a king
+	if = {
+		limit = {
+			highest_held_title_tier <= tier_county
+		}
+		add = 10
+	}
+
+	# Allied
+	if = {
+		limit = { is_allied_to = scope:king }
+		add = 20
+	}
+
+	# King is rightful liege of character (always)
+	add = 20
+
+	# Encircled
+	if = {
+		limit = {
+			NOT = {
+				any_neighboring_top_liege_realm_owner = {
+					NOT = { this = scope:king }
+				}
+			}
+			NOT = {
+				any_realm_county = {
+					is_coastal_county = yes
+				}
+			}
+		}
+		add = 20
+	}
+
+	# Distant realm (not possible)
+
+	# Military strength (-20 to +20)
+	# Changed to use current_military_strength for both and ensure the result has a lower bound of -20
+	add = {
+		if = {
+			limit = { current_military_strength < scope:king.current_military_strength }
+			value = 1
+			subtract = {
+				value = current_military_strength
+				divide = scope:king.current_military_strength
+			}
+		}
+		else_if = {
+			limit = { current_military_strength > scope:king.current_military_strength }
+			value = -1
+			add = {
+				value = scope:king.current_military_strength
+				divide = current_military_strength
+			}
+		}
+		else = {
+			value = 0
+		}
+		multiply = 20
+		floor = yes
+	}
+
+	# Powerful vassals opinion (-20 to +20)
+	if = {
+		limit = {
+			scope:king = {
+				number_of_powerful_vassals >= 1
+			}
+		}
+		add = {
+			value = scope:king.agot_powerful_vassals_opinion_value
+			divide = 5
+			floor = yes
+		}
+	}
+
+	# Relations (simplified, rival not possible)
+	if = {
+		limit = {
+			has_relation_friend = scope:king
+		}
+		add = 10
+	}
+	if = {
+		limit = {
+			has_relation_best_friend = scope:king
+		}
+		add = 10
+	}
+	if = {
+		limit = {
+			has_relation_lover = scope:king
+		}
+		add = 10
+	}
+	if = {
+		limit = {
+			has_relation_soulmate = scope:king
+		}
+		add = 10
+	}
+
+	# Same dynasty
+	if = {
+		limit = {
+			dynasty = scope:king.dynasty
+		}
+		add = 5
+	}
+
+	# Same language
+	if = {
+		limit = {
+			scope:king = {
+				knows_language_of_culture = scope:character.culture
+			}
+		}
+		add = 5
+	}
+
+	# Struggle, less likely for outsiders to vassalize inside (not possible)
+
+	# King is child and character is not (not possible)
+
+	# Illegitimacy
+	# Changed to check traits on king, not character (vanilla bug)
+	if = {
+		limit = {
+			scope:king = {
+				OR = {
+					AND = {
+						has_trait = bastard
+						scope:character = {
+							faith = { NOT = { has_doctrine = doctrine_bastardry_none } }
+						}
+					}
+					has_trait = denounced
+					has_trait = disinherited
+				}
+			}
+		}
+		add = -10
+	}
+
+	# Claimant
+	if = {
+		limit = {
+			has_claim_on = scope:kingdom_title
+		}
+		add = -20
+	}
+
+	# Traits
+	if = {
+		limit = { has_trait = ambitious }
+		add = -20
+	}
+	if = {
+		limit = { has_trait = paranoid }
+		add = -20
+	}
+	if = {
+		limit = { has_trait = arrogant }
+		add = -20
+	}
+	if = {
+		limit = { has_trait = fickle }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = stubborn }
+		add = -10
+	}
+	if = {
+		limit = { has_trait = trusting }
+		add = 5
+	}
+	if = {
+		limit = { has_trait = content }
+		add = 5
+	}
+
+	# Dread (0, 10, or 20, doubled with guile_legacy_5)
+	add = {
+		scope:king = { save_temporary_scope_as = target_character }
+		value = agot_dread_level_value
+		multiply = 10
+		if = {
+			limit = {
+				scope:king.dynasty = {
+					has_dynasty_perk = guile_legacy_5
+				}
+			}
+			multiply = 2
+		}
+	}
+
+	# Opinion (-35 to 35)
+	add = {
+		scope:king = { save_temporary_scope_as = target_character }
+		value = agot_opinion_value
+		multiply = 0.35
+		floor = yes
+	}
+
+	# Diplomatic court grandeur bonus (not possible)
+
+	# Contract options (not possible)
+
+	# Legitimacy
+	add = {
+		scope:king = {
+			if = {
+				limit = { has_legitimacy_flag = massively_reduced_vassalization_acceptance }
+				value = -75
+			}
+			if = {
+				limit = { has_legitimacy_flag = very_reduced_vassalization_acceptance }
+				value = -50
+			}
+			if = {
+				limit = { has_legitimacy_flag = reduced_vassalization_acceptance }
+				value = -25
+			}
+			if = {
+				limit = { has_legitimacy_flag = increased_vassalization_acceptance }
+				value = 25
+			}
+			if = {
+				limit = { has_legitimacy_flag = very_increased_vassalization_acceptance }
+				value = 50
+			}
+			if = {
+				limit = { has_legitimacy_flag = extra_increased_vassalization_acceptance }
+				value = 75
+			}
+		}
+	}
+}
+
+# Additional vassalization acceptance value used in agot_btw_maintenance.010x event chain.
+# Checks conditions that are not used in offer_vasalization_interaction ai_accept modifier, but are plausible.
+# Scoped character is the potential vassal, scope:king is the king.
+agot_btw_maintenance_additional_vassalization_acceptance_value = {
+	# Character is bankrupt
+	if = {
+		limit = { gold <= -1 }
+		add = 10
+	}
+
+	# Character is a child
+	if = {
+		limit = { is_adult = no }
+		add = 10
+	}
+
+	# Character is losing a war as primary attacker / defender
+	if = {
+		limit = {
+			any_character_war = {
+				OR = {
+					AND = {
+						primary_attacker = prev
+						attacker_war_score < -50
+					}
+					AND = {
+						primary_defender = prev
+						defender_war_score < -50
+					}
+				}
+			}
+		}
+		add = 10
+	}
+
+	# Realm size (-20 to +20)
+	add = {
+		if = {
+			limit = { realm_size < scope:king.realm_size }
+			value = 1
+			subtract = {
+				value = realm_size
+				divide = scope:king.realm_size
+			}
+		}
+		else_if = {
+			limit = { realm_size > scope:king.realm_size }
+			value = -1
+			add = {
+				value = scope:king.realm_size
+				divide = realm_size
+			}
+		}
+		else = {
+			value = 0
+		}
+		multiply = 20
+		floor = yes
+	}
+}

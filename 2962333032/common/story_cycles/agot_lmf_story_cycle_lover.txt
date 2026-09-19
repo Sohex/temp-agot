@@ -1,0 +1,214 @@
+﻿lmf_lover_story_cycle = {
+
+	on_setup = {
+		set_variable = { name = relationship_years value = 0 }
+		set_variable = { name = has_not_had_lover_event value = 0 }
+
+		#lover_rating variable is rated 0 to 5, as follows:
+		#5 = adoration (starting for soulmate, lover might upgrade)
+		#4 = abiding love
+		#3 = love (starting for lovers, soulmate might downgrade)
+		#2 = affection (soulmate definitely downgrade)
+		#1 = waning love (might break up)
+		#0 = lost love (definitely break up)
+	}
+
+	on_owner_death = {
+		end_story = yes
+	}
+
+	on_end = {
+		story_owner = { remove_lover_modifiers_effect = yes }
+	}
+
+	# checking status changes
+	effect_group = {
+		days = { 60 180 }
+		first_valid = {
+			# has the dominant lover changed?
+			triggered_effect = {
+				trigger = {
+					var:lover_target ?= {
+						is_valid_for_lover_story = { LOVER = root.story_owner }
+						should_be_primary_lover = { TARGET = root.story_owner }
+					}
+					story_owner = {
+						NOT = {
+							should_be_primary_lover = { TARGET = root.var:lover_target }
+						}
+					}
+				}
+				# swap lover target and story owner
+				effect = {
+					story_owner = {
+						remove_lover_modifiers_effect = yes
+						save_scope_as = current_primary_lover
+					}
+					make_story_owner = root.var:lover_target
+					set_variable = { name = lover_target value = scope:current_primary_lover }
+				}
+			}
+			# check if the lover is dead, married to the other lover, or they ended the relationship
+			triggered_effect = {
+				trigger = {
+					OR = {
+						NOT = { exists = var:lover_target }
+						var:lover_target = {
+							NOT = {
+								is_valid_for_lover_story = { LOVER = root.story_owner }
+							}
+						}
+					}
+				}
+				# in that case, end the story
+				effect = {
+					end_story = yes
+				}
+			}
+		}
+	}
+
+	# advance the relationship_years variable
+	effect_group = {
+		days = 365
+		triggered_effect = {
+			trigger = {
+				exists = var:relationship_years
+				var:lover_target ?= {
+					is_valid_for_lover_story = { LOVER = root.story_owner }
+				}
+			}
+			effect = {
+				change_variable = { name = relationship_years add = 1 }
+			}
+		}
+	}
+
+	# kickoff event ASAP
+	effect_group = {
+		days = { 3 7 }
+
+		triggered_effect = {
+			trigger = {
+				NOT = { exists = var:had_kickoff_event }
+				var:lover_target ?= {
+					is_available = yes
+					has_short_disease_trigger = no
+					exists = location
+				}
+				story_owner = {
+					is_valid_for_lover_story = { LOVER = root.var:lover_target }
+					is_available = yes
+					has_short_disease_trigger = no
+					exists = location
+				}
+			}
+			effect = {
+				root = { save_scope_as = story }
+				var:lover_target = { save_scope_as = lover }
+				story_owner = {
+					trigger_event = lmf_lover.100 # lover kickoff event
+				}
+			}
+		}
+	}
+
+	# random events
+	effect_group = {
+		days = { 180 365 }
+
+		first_valid = {
+			# simplified events for AI counts, barons, and non-rulers
+			triggered_effect = {
+				trigger = {
+					exists = var:had_kickoff_event
+					exists = var:lover_target
+					exists = var:has_not_had_lover_event
+					exists = var:lover_rating
+					var:lover_rating > 0
+					story_owner = {
+						is_valid_for_lover_story = { LOVER = root.var:lover_target }
+						is_valid_for_full_lover_events = no
+					}
+				}
+				effect = {
+					change_variable = { name = has_not_had_lover_event add = 1 }
+					var:lover_target = { save_scope_as = lover }
+					story_owner = {
+						save_scope_as = primary_lover
+						trigger_event = {
+							on_action = ongoing_lmf_lover_simplified_events
+						}
+					}
+				}
+			}
+			# events for players and dukes+ if lover is positive rating and within range
+			triggered_effect = {
+				trigger = {
+					exists = var:had_kickoff_event
+					exists = var:lover_target
+					exists = var:has_not_had_lover_event
+					exists = var:lover_rating
+					var:lover_rating > 0
+					story_owner = {
+						is_valid_for_lover_story = { LOVER = root.var:lover_target }
+						is_valid_for_full_lover_events = yes
+						is_lover_within_diplo_range = yes
+					}
+				}
+				effect = {
+					change_variable = { name = has_not_had_lover_event add = 1 }
+					var:lover_target = { save_scope_as = lover }
+					story_owner = {
+						save_scope_as = primary_lover
+						trigger_event = {
+							on_action = ongoing_lmf_lover_events
+						}
+					}
+				}
+			}
+			# events for players and dukes+ if lover is positive rating but not within range
+			triggered_effect = {
+				trigger = {
+					exists = var:had_kickoff_event
+					exists = var:lover_target
+					exists = var:has_not_had_lover_event
+					exists = var:lover_rating
+					var:lover_rating > 0
+					story_owner = {
+						is_valid_for_lover_story = { LOVER = root.var:lover_target }
+						is_valid_for_full_lover_events = yes
+						is_lover_within_diplo_range = no
+					}
+				}
+				effect = {
+					change_variable = { name = has_not_had_lover_event add = 1 }
+					var:lover_target = { save_scope_as = lover }
+					story_owner = {
+						save_scope_as = primary_lover
+						trigger_event = {
+							on_action = ongoing_lmf_lover_far_off_events
+						}
+					}
+				}
+			}
+			# break up event for everyone if lover rating ever drops to 0
+			triggered_effect = {
+				trigger = {
+					exists = var:lover_target
+					exists = var:lover_rating
+					var:lover_rating = 0
+					story_owner = {
+						is_valid_for_lover_story = { LOVER = root.var:lover_target }
+					}
+				}
+				effect = {
+					var:lover_target = { save_scope_as = lover }
+					story_owner = {
+						trigger_event = lmf_lover.105 # ends the love affair
+					}
+				}
+			}
+		}
+	}
+}

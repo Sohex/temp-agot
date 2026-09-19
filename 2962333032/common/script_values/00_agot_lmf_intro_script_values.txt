@@ -1,0 +1,997 @@
+﻿# used in the marriage introduction events
+
+introduction_candidate_interest_value = {
+	value = 0
+
+	add = scope:match_opinion
+
+	# is their lover
+	if = {
+		limit = { has_relation_lover = scope:match }
+		add = {
+			value = 50
+			if = {
+				limit = { has_relation_soulmate = scope:match }
+				multiply = 2
+			}
+		}
+	}
+
+	# trait compatibility
+	if = {
+		limit = {
+			trait_compatibility = {
+				target = scope:match
+				value >= low_positive_trait_compatibility
+			}
+		}
+		add = 10
+	}
+	else_if = {
+		limit = {
+			trait_compatibility = {
+				target = scope:match
+				value >= medium_positive_trait_compatibility
+			}
+		}
+		add = 20
+	}
+	else_if = {
+		limit = {
+			trait_compatibility = {
+				target = scope:match
+				value >= high_positive_trait_compatibility
+			}
+		}
+		add = 30
+	}
+	else_if = {
+		limit = {
+			trait_compatibility = {
+				target = scope:match
+				value <= low_negative_trait_compatibility
+			}
+		}
+		add = -10
+	}
+	else_if = {
+		limit = {
+			trait_compatibility = {
+				target = scope:match
+				value <= medium_negative_trait_compatibility
+			}
+		}
+		add = -20
+	}
+	else_if = {
+		limit = {
+			trait_compatibility = {
+				target = scope:match
+				value <= high_negative_trait_compatibility
+			}
+		}
+		add = -30
+	}
+
+	# attraction
+	if = {
+		limit = {
+			scope:match = { is_attracted_to_gender_of = scope:candidate }
+		}
+		add = {
+			value = attraction
+			multiply = 2
+			if = {
+				limit = {
+					attraction < 0
+					scope:match = {
+						ai_compassion < 0
+						age <= 25
+					}
+				}
+				multiply = 2
+			}
+			scope:match = {
+				if = {
+					# horny teenagers
+					limit = {
+						age > 12
+						OR = {
+							age < 20
+							AND = {
+								age < 25
+								is_male = yes
+							}
+						}
+					}
+					multiply = 2
+				}
+				if = {
+					limit = { has_trait = lustful }
+					multiply = 2
+				}
+				else_if = {
+					limit = { has_trait = chaste }
+					multiply = 0.5
+				}
+			}
+		}
+	}
+
+	# they're not attracted to me
+	if = {
+		limit = {
+			NOR = {
+				is_attracted_to_gender_of = scope:match
+				has_sexuality = none
+			}
+			scope:match = {
+				is_attracted_to_gender_of = scope:candidate
+			}
+		}
+		add = -50
+	}
+
+	# they're too prudish
+	if = {
+		limit = {
+			has_trait = chaste
+			scope:match = { likely_to_take_lover_trigger = yes }
+		}
+		add = {
+			value = -25
+			if = {
+				limit = {
+					scope:match = { is_deviant_trigger = yes }
+				}
+				multiply = 2
+			}
+		}
+	}
+
+	# malformed traits
+	if = {
+		limit = {
+			is_malformed_trigger = yes
+			scope:match = { is_malformed_trigger = no }
+		}
+		add = -100
+	}
+
+	# health
+	add = {
+		value = health
+		subtract = medium_health
+		multiply = 5
+		max = 5
+	}
+
+	# STD
+	if = {
+		limit = { has_std_trigger = yes }
+		add = -50
+	}
+
+	# negative traits
+	if = {
+		limit = {
+			OR = {
+				# they're a sodomite
+				AND = {
+					OR = {
+						has_trait = sodomite
+						any_secret = {
+							secret_type = secret_homosexual
+							is_known_by = scope:match
+						}
+					}
+					scope:match = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:sodomite GENDER_CHARACTER = scope:candidate } }
+				}
+				# they're incestuous
+				AND = {
+					OR = {
+						has_trait = incestuous
+						any_secret = {
+							secret_type = secret_incest
+							is_known_by = scope:match
+						}
+					}
+					scope:match = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:incestuous GENDER_CHARACTER = scope:candidate } }
+				}
+				# they're deviant
+				AND = {
+					OR = {
+						has_trait = deviant
+						any_secret = {
+							secret_type = secret_deviant
+							is_known_by = scope:match
+						}
+					}
+					scope:match = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:deviant GENDER_CHARACTER = scope:candidate } }
+				}
+				# they're a cannibal
+				AND = {
+					OR = {
+						has_trait = cannibal
+						any_secret = {
+							secret_type = secret_cannibal
+							is_known_by = scope:match
+						}
+					}
+					scope:match = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:cannibal GENDER_CHARACTER = scope:candidate } }
+				}
+				# they're a witch
+				AND = {
+					OR = {
+						has_trait = witch
+						any_secret = {
+							secret_type = secret_witch
+							is_known_by = scope:match
+						}
+					}
+					scope:match = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:witch GENDER_CHARACTER = scope:candidate } }
+				}
+				# they're an adulterer/fornicator
+				AND = {
+					OR = {
+						has_trait = adulterer
+						has_trait = fornicator
+						any_secret = {
+							secret_type = secret_lover
+							is_known_by = scope:match
+						}
+					}
+					scope:match = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:adulterer GENDER_CHARACTER = scope:candidate } }
+				}
+			}
+		}
+		add = -100
+	}
+
+	# age difference
+	add = {
+		if = {
+			limit = { age < scope:match.age }
+			value = age
+			subtract = scope:match.age
+			multiply = 0.5
+			if = {
+				limit = {
+					scope:match = { is_male = yes }
+					is_adult = yes
+				}
+				value = 0
+			}
+		}
+		else = {
+			value = scope:match.age
+			subtract = age
+			if = {
+				limit = {
+					scope:match = { is_male = yes }
+				}
+				multiply = 2
+			}
+			if = {
+				limit = { age >= scope:match.age_plus_10 }
+				multiply = 2
+			}
+		}
+		if = {
+			limit = {
+				age > 25
+				scope:match = {
+					is_male = yes
+					fertility > 0.3
+					NOT = {
+						has_inheritable_children = { TOTAL = 3 PREFER = no }
+					}
+				}
+			}
+			add = {
+				value = 25
+				subtract = age
+				multiply = 2
+			}
+		}
+	}
+
+	# bastard birth
+	if = {
+		limit = {
+			OR = {
+				has_trait = bastard
+				has_trait = legitimized_bastard
+				has_trait = bastard_founder
+				has_trait = disputed_heritage
+			}
+			scope:match = {
+				NOR = {
+					is_lowborn = yes
+					has_trait = bastard
+					has_trait = legitimized_bastard
+					has_trait = bastard_founder
+					has_trait = disputed_heritage
+				}
+			}
+		}
+		add = {
+			value = -10
+			if = {
+				limit = { has_trait = bastard }
+				add = -15
+			}
+			scope:match = {
+				if = {
+					limit = { religion = religion:the_seven_religion }
+					multiply = 2
+				}
+				if = {
+					limit = { has_trait = arrogant }
+					multiply = 2
+				}
+				if = {
+					limit = { has_trait = humble }
+					multiply = 0.5
+				}
+			}
+		}
+	}
+
+	# has a bastard child
+	if = {
+		limit = {
+			any_child = {
+				even_if_dead = yes
+				NOT = { is_child_of = scope:match }
+				OR = {
+					has_trait = bastard
+					has_trait = legitimized_bastard
+				}
+			}
+			scope:match = {
+				has_negative_attitude_towards_trait_trigger = { TRAIT = trait:fornicator GENDER_CHARACTER = scope:candidate }
+				NOT = {
+					any_child = {
+						even_if_dead = yes
+						OR = {
+							has_trait = bastard
+							has_trait = legitimized_bastard
+						}
+					}
+				}
+			}
+		}
+		add = {
+			value = -25
+			scope:match = {
+				if = {
+					limit = { religion = religion:the_seven_religion }
+					multiply = 2
+				}
+				if = {
+					limit = { has_trait = arrogant }
+					multiply = 2
+				}
+				if = {
+					limit = { has_trait = humble }
+					multiply = 0.5
+				}
+			}
+		}
+	}
+
+	# dynasty prestige
+	add = {
+		value = 0
+		if = {
+			limit = { exists = dynasty }
+			add = dynasty.dynasty_prestige_level # 0-10
+		}
+		if = {
+			limit = { exists = scope:match.dynasty }
+			subtract = scope:match.dynasty.dynasty_prestige_level
+		}
+		scope:match = {
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							is_landed = yes
+							highest_held_title_tier >= tier_kingdom
+						}
+						any_heir_title = { tier >= tier_kingdom }
+					}
+				}
+				multiply = 2
+			}
+			if = {
+				limit = { has_trait = ambitious }
+				multiply = 2
+			}
+			else_if = {
+				limit = { has_trait = content }
+				multiply = 0.5
+			}
+			if = {
+				limit = { has_trait = arrogant }
+				multiply = 2
+			}
+			else_if = {
+				limit = { has_trait = humble }
+				multiply = 0.5
+			}
+			if = {
+				limit = { age > 25 }
+				multiply = 0.5
+			}
+		}
+		if = {
+			limit = {
+				is_lowborn = yes
+				scope:match = { has_dynasty = yes }
+				scope:match.age <= 25
+			}
+			add = -20
+			multiply = {
+				value = 2
+				scope:match = {
+					if = {
+						limit = { has_trait = arrogant }
+						add = 1
+					}
+					else_if = {
+						limit = { has_trait = humble }
+						value = 1
+					}
+					if = {
+						limit = { is_landed_or_landless_administrative = yes }
+						add = 1
+					}
+				}
+			}
+		}
+	}
+
+	# wanderer
+	if = {
+		limit = {
+			NOR = {
+				is_courtier = yes
+				is_playable_character = yes
+			}
+		}
+		add = -10
+	}
+
+	# adventurer
+	if = {
+		limit = {
+			OR = {
+				is_landless_adventurer = yes
+				liege ?= { is_landless_adventurer = yes }
+			}
+		}
+		add = -20
+	}
+
+	# higher title tier
+	if = {
+		limit = {
+			is_landed_or_landless_administrative = yes
+			OR = {
+				scope:match = { is_ruler = no }
+				primary_title.tier > scope:match.primary_title.tier
+			}
+		}
+		add = {
+			value = primary_title.tier
+			multiply = 20
+			scope:match = {
+				if = {
+					limit = {
+						OR = {
+							AND = {
+								is_landed = yes
+								highest_held_title_tier >= tier_kingdom
+							}
+							any_heir_title = { tier >= tier_kingdom }
+						}
+					}
+					multiply = 2
+				}
+				if = {
+					limit = { has_trait = ambitious }
+					multiply = 2
+				}
+				else_if = {
+					limit = { has_trait = content }
+					multiply = 0.5
+				}
+				if = {
+					limit = {
+						NOT = { any_close_family_member = { is_landed_or_landless_administrative = yes } }
+					}
+					multiply = 0.5
+				}
+				if = {
+					limit = { is_lowborn = yes }
+					value = 0
+				}
+			}
+		}
+	}
+
+	# lower or equal title tier
+	if = {
+		limit = {
+			is_landed = yes
+			scope:match = { is_ruler = yes }
+			primary_title.tier <= scope:match.primary_title.tier
+		}
+		add = {
+			value = primary_title.tier
+			multiply = 10
+			scope:match = {
+				if = {
+					limit = {
+						OR = {
+							AND = {
+								is_landed = yes
+								highest_held_title_tier >= tier_kingdom
+							}
+							any_heir_title = { tier >= tier_kingdom }
+						}
+					}
+					multiply = 2
+				}
+				if = {
+					limit = { has_trait = ambitious }
+					multiply = 2
+				}
+				else_if = {
+					limit = { has_trait = content }
+					multiply = 0.5
+				}
+				if = {
+					limit = {
+						NOT = { any_close_family_member = { is_landed = yes } }
+					}
+					multiply = 0.5
+				}
+				if = {
+					limit = { is_lowborn = yes }
+					value = 0
+				}
+			}
+		}
+	}
+
+	# heir
+	if = {
+		limit = {
+			is_landed = no
+			any_heir_title = {}
+		}
+		add = {
+			value = 10
+			if = {
+				limit = {
+					any_heir_title = { tier >= tier_county }
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					any_heir_title = { tier >= tier_duchy }
+				}
+				add = 10
+			}
+			if = {
+				limit = {
+					any_heir_title = { tier >= tier_kingdom }
+				}
+				add = 10
+			}
+			scope:match = {
+				if = {
+					limit = {
+						OR = {
+							AND = {
+								is_landed = yes
+								highest_held_title_tier >= tier_kingdom
+							}
+							any_heir_title = { tier >= tier_kingdom }
+						}
+					}
+					multiply = 2
+				}
+				if = {
+					limit = { has_trait = ambitious }
+					multiply = 2
+				}
+				else_if = {
+					limit = { has_trait = content }
+					multiply = 0.5
+				}
+				if = {
+					limit = { is_landed_or_landless_administrative = yes }
+					multiply = 2
+				}
+				if = {
+					limit = {
+						NOT = { any_close_family_member = { is_landed_or_landless_administrative = yes } }
+					}
+					multiply = 0.5
+				}
+				if = {
+					limit = { is_lowborn = yes }
+					value = 0
+				}
+			}
+		}
+	}
+
+	# family of ruler
+	if = {
+		limit = {
+			is_landed_or_landless_administrative = no
+			NOT = {
+				any_heir_title = {}
+			}
+			any_close_family_member = { is_ruler = yes }
+		}
+		add = {
+			value = 5
+			if = {
+				limit = {
+					any_close_family_member = { highest_held_title_tier >= tier_county }
+				}
+				add = 5
+			}
+			if = {
+				limit = {
+					any_close_family_member = { highest_held_title_tier >= tier_duchy }
+				}
+				add = 5
+			}
+			if = {
+				limit = {
+					any_close_family_member = { highest_held_title_tier >= tier_kingdom }
+				}
+				add = 5
+			}
+			scope:match = {
+				if = {
+					limit = {
+						OR = {
+							AND = {
+								is_landed = yes
+								highest_held_title_tier >= tier_kingdom
+							}
+							any_heir_title = { tier >= tier_kingdom }
+						}
+					}
+					multiply = 2
+				}
+				if = {
+					limit = { has_trait = ambitious }
+					multiply = 2
+				}
+				else_if = {
+					limit = { has_trait = content }
+					multiply = 0.5
+				}
+				if = {
+					limit = { is_landed_or_landless_administrative = yes }
+					multiply = 2
+				}
+				if = {
+					limit = {
+						NOT = { any_close_family_member = { is_landed_or_landless_administrative = yes } }
+					}
+					multiply = 0.5
+				}
+				if = {
+					limit = { is_lowborn = yes }
+					value = 0
+				}
+			}
+		}
+	}
+
+	# vassal or family of vassal
+	if = {
+		limit = {
+			scope:match = {
+				is_landed = yes
+				highest_held_title_tier >= tier_kingdom
+			}
+			OR = {
+				AND = {
+					is_landed = yes
+					is_vassal_of = scope:match
+					highest_held_title_tier > tier_county
+				}
+				AND = {
+					is_landed = no
+					any_close_family_member = {
+						is_vassal_of = scope:match
+						highest_held_title_tier > tier_county
+					}
+				}
+			}
+		}
+		add = {
+			value = 20
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							is_landed = yes
+							is_powerful_vassal_of = scope:match
+							highest_held_title_tier > tier_county
+						}
+						AND = {
+							is_landed = no
+							any_close_family_member = {
+								is_powerful_vassal_of = scope:match
+								highest_held_title_tier > tier_county
+							}
+						}
+					}
+				}
+				add = 20
+			}
+		}
+	}
+
+	# family of liege
+	if = {
+		limit = {
+			scope:match = {
+				is_landed = no
+				any_close_family_member = {
+					is_landed = yes
+					highest_held_title_tier >= tier_kingdom
+				}
+			}
+			OR = {
+				AND = {
+					is_landed = yes
+					highest_held_title_tier > tier_county
+					liege ?= { is_close_family_of = scope:match }
+				}
+				AND = {
+					is_landed = no
+					any_close_family_member = {
+						liege ?= { is_close_family_of = scope:match }
+						highest_held_title_tier > tier_county
+					}
+				}
+			}
+		}
+		add = {
+			value = 20
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							is_landed = yes
+							highest_held_title_tier > tier_county
+							exists = liege
+							liege = { is_close_family_of = scope:match }
+							is_powerful_vassal_of = liege
+						}
+						AND = {
+							is_landed = no
+							any_close_family_member = {
+								highest_held_title_tier > tier_county
+								exists = liege
+								liege = { is_close_family_of = scope:match }
+								is_powerful_vassal_of = liege
+							}
+						}
+					}
+				}
+				add = 20
+			}
+		}
+	}
+
+	# genetics
+	if = {
+		limit = {
+			OR = {
+				is_adult = no
+				fertility >= 0.2
+			}
+			scope:match = {
+				OR = {
+					is_adult = no
+					fertility >= 0.2
+				}
+			}
+		}
+		add = {
+			value = genetic_character_value
+			multiply = 5
+			if = {
+				limit = {
+					scope:match = {
+						OR = {
+							is_landed = yes
+							any_heir_title = {}
+						}
+					}
+				}
+				multiply = 2
+			}
+			if = {
+				limit = {
+					scope:match = {
+						OR = {
+							has_inheritable_children = { TOTAL = 2 PREFER = no }
+							has_no_real_status_trigger = yes
+						}
+					}
+				}
+				multiply = 0.5
+			}
+		}
+	}
+
+	# too closely related
+	if = {
+		limit = {
+			scope:match = {
+				ai_zeal > 0
+				has_negative_attitude_towards_trait_trigger = { TRAIT = trait:incestuous GENDER_CHARACTER = scope:match }
+			}
+			OR = {
+				AND = {
+					is_sibling_of = scope:match
+					faith = {
+						NOT = { has_doctrine_parameter = allows_sibling_marriage }
+					}
+				}
+				AND = {
+					OR = {
+						is_uncle_or_aunt_of = scope:match
+						scope:match = { is_uncle_or_aunt_of = scope:candidate }
+					}
+					faith = {
+						NOT = { has_doctrine_parameter = allows_aunt_nephew_and_uncle_niece_marriage }
+					}
+				}
+				AND = {
+					is_cousin_of = scope:match
+					faith = {
+						NOT = { has_doctrine_parameter = allows_cousin_marriage }
+					}
+				}
+			}
+		}
+		add = {
+			value = scope:match.ai_zeal
+		}
+	}
+
+	# low fertility
+	if = {
+		limit = {
+			fertility < 0.3
+			scope:match = {
+				fertility > 0.3
+				trigger_if = {
+					limit = {
+						OR = {
+							is_playable_character = yes
+							any_heir_title = {}
+							is_male = yes
+						}
+					}
+					NOT = {
+						has_inheritable_children = { TOTAL = 2 PREFER = no }
+					}
+				}
+				trigger_else = {
+					NOT = {
+						any_child = {
+							count > 1
+							is_alive = yes
+							NOT = { has_trait = bastard }
+						}
+					}
+				}
+			}
+		}
+		add = -25
+		if = {
+			limit = {
+				scope:match = {
+					OR = {
+						is_landed = yes
+						any_heir_title = {}
+					}
+				}
+			}
+			multiply = 2
+		}
+	}
+
+	# skills
+	add = {
+		value = sum_of_all_skills_value
+		subtract = 40
+		if = {
+			limit = {
+				scope:match = {
+					OR = {
+						is_landed = yes
+						any_heir_title = {}
+					}
+				}
+			}
+			multiply = 1.5
+		}
+		if = {
+			limit = {
+				scope:match = { has_no_real_status_trigger = yes }
+			}
+			multiply = 0.5
+		}
+	}
+
+	# prowess
+	if = {
+		limit = {
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:candidate }
+		}
+		add = {
+			value = prowess
+			subtract = 8
+		}
+		if = {
+			limit = {
+				scope:match = {
+					NOR = {
+						is_landed = yes
+						any_heir_title = {}
+					}
+				}
+			}
+			multiply = 0.5
+		}
+	}
+
+	# distance
+	if = {
+		limit = {
+			location ?= { squared_distance = { target = scope:match.location value > 200000 } }
+		}
+		add = -10
+	}
+	if = {
+		limit = {
+			location ?= { squared_distance = { target = scope:match.location value > 350000 } }
+		}
+		add = -10
+	}
+	if = {
+		limit = {
+			location ?= { squared_distance = { target = scope:match.location value > 500000 } }
+		}
+		add = -10
+	}
+}
+
+dynasty_prestige_level_plus_2 = {
+	value = dynasty_prestige_level
+	add = 2
+}
+
+dynasty_prestige_level_plus_5 = {
+	value = dynasty_prestige_level
+	add = 5
+}

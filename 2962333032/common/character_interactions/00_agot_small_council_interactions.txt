@@ -1,0 +1,294 @@
+﻿
+# recipient - Liege of Subvassal
+# secondary_recipient - Subvassal
+# tertiary_recipient - Liege of the Liege (recipient) of Subvassal (secondary_recipient)
+invite_to_small_council = {
+	category = interaction_category_vassal
+	icon = icon_vassal
+
+
+	ai_maybe = yes
+	ai_min_reply_days = 8
+	ai_max_reply_days = 16
+	can_send_despite_rejection = yes
+	ai_accept_negotiation = yes
+	popup_on_receive = yes
+
+	prompt = invite_to_small_council_prompt # This is the loc key for asking the intermediate liege
+	is_shown = {
+		scope:secondary_recipient = {
+			is_physically_able_adult = yes
+			highest_held_title_tier >= tier_county
+		}
+		scope:actor = { has_title = title:h_the_iron_throne }
+		NOT = {
+			scope:actor = scope:recipient
+			scope:actor = scope:secondary_recipient.liege
+		}
+		scope:recipient.top_liege = scope:actor
+		scope:actor = { is_human = yes }
+		scope:recipient = { is_human = yes }
+	}
+
+	is_valid_showing_failures_only = {
+		scope:secondary_recipient = {
+			is_at_war = no
+		}
+		custom_description = {
+			text = small_council_vassal_retained_desc
+			object = scope:recipient
+			NOT = {
+				scope:recipient = {
+					primary_title = { has_variable = small_council_vassal_title }
+				}
+			}
+		}
+	}
+	redirect = {
+		scope:recipient = {
+			save_scope_as = secondary_recipient
+		}
+		if = { # If we're not the liege of the target, then we have to ask their liege for permission.
+			limit = {
+				exists = scope:recipient.liege
+				NOT = {
+					scope:recipient.liege = scope:actor
+				}
+			}
+			scope:recipient.liege = {
+				save_scope_as = recipient
+			}
+		}
+	}
+	on_accept = {
+		scope:actor = {
+			trigger_event = agot_small_council.0001
+		}
+		show_as_tooltip = {
+			custom_tooltip = invite_to_small_council_accepted
+		}
+		hidden_effect = {
+			scope:recipient = {
+				add_truce_both_ways = {
+					character = scope:secondary_recipient
+					days = 36500
+					name = TRUCE_ENFORCE_TRUCE
+				}
+			}
+			if = {
+				limit = {
+					exists = scope:recipient.liege
+					scope:recipient.liege != scope:actor
+				}
+				scope:recipient.liege = {
+					save_scope_as = tertiary_recipient
+				}
+				scope:tertiary_recipient ?= {
+					add_truce_both_ways = {
+						character = scope:secondary_recipient
+						days = 36500
+						name = TRUCE_ENFORCE_TRUCE
+					}
+				}
+			}
+		}
+	}
+
+	ai_accept = {
+		base = 25
+
+		#Opinions
+		opinion_modifier = {
+			opinion_target = scope:actor
+			multiplier = 0.5
+			step = 5
+			max = 25
+		}
+
+		#Current roles
+		modifier = {
+			scope:secondary_recipient = {
+				is_knight = yes
+			}
+			add = -5
+			desc = SMALL_COUNCIL_MY_KNIGHT
+		}
+		modifier = {
+			scope:secondary_recipient = {
+				is_commanding_army = yes
+			}
+			add = -15
+			desc = AI_MY_LIEGES_COMMANDER
+		}
+		modifier = {
+			scope:secondary_recipient = {
+				is_councillor_of = scope:recipient
+			}
+			add = -40
+			desc = SMALL_COUNCIL_ON_THE_COUNCIL
+		}
+
+		#Relations & relatives (with host)
+
+		modifier = {
+			exists = liege
+			is_child_of = liege
+			add = -25
+			desc = AI_THEIR_CHILD
+		}
+
+		modifier = {
+			scope:secondary_recipient = {
+				NOT = { is_child_of = scope:recipient }
+				is_close_family_of = scope:recipient
+			}
+			add = -15
+			desc = SMALL_COUNCIL_THEIR_RELATIVE
+		}
+
+		# Amenities impact
+		## Actor's amenities increases acceptance
+		modifier = {
+			add = {
+				value = 10
+				if = {
+					limit = {
+						scope:actor = {
+							has_royal_court = yes
+							amenity_level = { target = court_lodging_standards value >= high_amenity_level }
+						}
+					}
+					 add = 10
+				}
+				if = {
+					limit = {
+						scope:actor = {
+							amenity_level = { target = court_lodging_standards value >= very_high_amenity_level }
+						}
+					}
+					 add = 10
+				}
+				if = {
+					limit = {
+						scope:actor = {
+							amenity_level = { target = court_lodging_standards value >= max_amenity_level }
+						}
+					}
+					 add = 20
+				}
+			}
+			desc = AI_COURT_LODGING_STANDARDS_QUALITY
+			scope:actor = {
+				has_royal_court = yes
+				amenity_level = { target = court_lodging_standards value >= medium_amenity_level }
+			}
+		}
+	}
+
+	on_decline = {
+		scope:recipient = {
+			hidden_effect = {
+				random_list = {
+					80 = { # Conditional acceptance
+						ai_value_modifier = {
+							ai_greed = 0.5
+						}
+						random_list = {
+							200 = { #They ask for gold
+								modifier = {
+									add = 300 # More likely to ask for gold if they're poor
+									scope:recipient.short_term_gold < medium_gold_value
+								}
+								modifier = {
+									add = { # Much more likely to ask for gold involved in one of their own wars (they want to win).
+										value = 50
+										if = {
+											# Especially true if they're in debt!
+											limit = { gold < 0 }
+											add = 150
+										}
+									}
+									is_at_war = yes
+									any_character_war = {
+										is_war_leader = scope:recipient
+									}
+								}
+								scope:actor = {
+									trigger_event = {
+										id = agot_small_council.0003
+									}
+								}
+							}
+							500 = { #They ask for a favor
+								trigger = {
+									exists = scope:recipient.capital_county
+									NOT = { has_hook = scope:actor }
+								}
+								# Direct feudal vassals appreciate favors more (they can improve their contract).
+								modifier = {
+									add = {
+										value = 50
+										# This goes double for your Powerful Vassals. A better contract is likely to be much more important than a short-term payout.
+										if = {
+											limit = { is_powerful_vassal_of = scope:actor }
+											add = 100
+										}
+									}
+									this.liege = scope:actor
+									OR = {
+										has_government = lp_feudal_government
+										has_government = feudal_government
+									}
+								}
+								scope:actor = {
+									trigger_event = {
+										id = agot_small_council.0004
+									}
+								}
+							}
+						}
+						#Ask to Send a relative instead?
+						#Ask for held land?
+					}
+					20 = { # Full refuse
+						modifier = {
+							add = 20
+							opinion = {
+								target = scope:actor
+								value < neutral_opinion
+							}
+						}
+						modifier = {
+							add = 20
+							opinion = {
+								target = scope:actor
+								value < medium_negative_opinion
+							}
+						}
+						modifier = {
+							add = 50
+							opinion = {
+								target = scope:actor
+								value < very_high_negative_opinion
+							}
+						}
+						scope:actor = {
+							trigger_event = {
+								id = agot_small_council.0005
+							}
+						}
+					}
+				}
+			}
+			custom_tooltip = invite_to_small_council_declined
+			show_as_tooltip = {
+				#Negative opinions
+				add_opinion = {
+					modifier = demanded_my_vassal_opinion
+					target = scope:actor
+					opinion = -10
+				}
+			}
+		}
+	}
+}

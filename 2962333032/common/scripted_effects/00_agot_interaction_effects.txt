@@ -1,0 +1,105 @@
+﻿#####################################################################
+# EFFECT LIST
+#####################################################################
+# !!! Remember to add all new effects with a short description here !!!
+
+#Mute Effects
+
+#####################################################################
+# EFFECTS
+#####################################################################
+
+agot_mute_recipient_effect = {
+	scope:recipient = {
+		if = {
+			limit = { scope:actor = { is_ai = no } }
+			add_trait_force_tooltip = mute #This is because we want to show a blinded portrait it prison.1020 for players, then we add the trait in the immediate but we still want a tooltip
+		}
+		else = {
+			add_trait = mute
+		}
+
+		add_character_modifier = {
+			modifier = recently_muted
+			years = 1
+		}
+		blind_castrated_disfigured_recipient_support_effect = yes #also perfect for muting
+	}
+}
+
+raise_to_nobility_effect = {
+	$ACTOR$ = { save_scope_as = actor }
+	$RECIPIENT$ = { save_scope_as = recipient }
+	scope:recipient = {
+		hidden_effect = {
+			create_dynasty = {
+				spread_to_descendants = yes
+			}
+		}
+		custom_tooltip = raise_to_nobility_tt
+
+		add_opinion = {
+			target = scope:actor
+			opinion = 20
+			modifier = raised_me_to_nobility_opinion
+		}
+
+		custom_tooltip = raise_to_nobility_house_relation_impact_tt
+
+		add_gold = 50
+		create_character_memory = {
+			type = agot_raised_to_nobility_memory
+
+			participants = {
+				raiser = scope:actor
+			}
+		}
+	}
+
+	scope:actor = {
+		house ?= {
+			set_house_relation_level_effect = {
+				HOUSE = scope:recipient.house
+				REASON = raised_to_nobility
+				LEVEL = amity
+			}
+		}
+		if = {
+			limit = {
+				can_add_hook = {
+					target = scope:recipient
+					type = loyalty_hook
+				}
+				scope:recipient = {
+					ai_honor >= 50
+				}
+			}
+			add_hook = {
+				type = loyalty_hook
+				target = scope:recipient
+			}
+		}
+		else_if = {
+			limit = {
+				can_add_hook = {
+					target = scope:recipient
+					type = favor_hook
+				}
+				scope:recipient = {
+					ai_honor >= 0
+				}
+			}
+			add_hook = {
+				type = favor_hook
+				target = scope:recipient
+			}
+		}
+	}
+	if = {
+		limit = {
+			scope:recipient = { has_trait = kingsguard }
+			exists = title:h_the_iron_throne.holder
+		}
+		title:h_the_iron_throne.holder = { trigger_event = agot_kingsguard.9007 }
+	}
+}

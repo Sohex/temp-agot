@@ -1,0 +1,951 @@
+﻿story_agot_after_the_spring = {
+	# By Llama
+
+	#Stage variables:
+	#agot_ats_daemon
+	#agot_ats_rohanne
+	#agot_ats_eustace
+	#agot_ats_dunk
+
+	on_setup = {
+		save_scope_as = scenario_ats_story
+
+		#create variables for stages
+
+		set_variable = {
+			name = agot_ats_rohanne
+			value = flag:stage_start
+		}
+
+		set_variable = {
+			name = agot_ats_eustace
+			value = flag:stage_start
+		}
+
+		set_variable = {
+			name = agot_ats_dunk
+			value = flag:stage_start
+		}
+
+		set_variable = {
+			name = agot_ats_eustace_status
+			value = flag:stage_start_status
+		}
+
+		# Create variable to track deaths
+		set_variable = {
+			name = agot_ats_death
+			value = flag:no_one_is_dead
+		}
+
+		# Give standfast the dam modifier
+		title:c_standfast = {
+			add_county_modifier = {
+				modifier = agot_ats_drought_modifier_with_dam
+				days = 90
+			}
+		}
+		# Intro events
+
+		# Rohanne Webber
+		character:Webber_13 = {
+			add_trait = refusing_marriage
+			trigger_event = agot_scenario_ats.1001
+			save_scope_as = rohanne
+		}
+		# Eustace Osgrey
+		character:Osgrey_55 = {
+			trigger_event = agot_scenario_ats.1002
+			save_scope_as = eustace
+		}
+		# Dunk
+		character:Tall_1 = {
+			add_trait = refusing_marriage
+			trigger_event = agot_scenario_ats.1003
+			save_scope_as = dunk
+			add_character_flag = {
+				flag = block_laamp_starting_event
+				weeks = 1
+			}
+		}
+
+		character:Lannister_120 = {
+			add_trait = refusing_marriage
+		}
+
+		######## Run stage 1 events #########
+		if = {
+			limit = {
+				AND = {
+					var:agot_ats_rohanne = flag:stage_start
+					var:agot_ats_dunk = flag:stage_start
+				}
+			}
+			character:Webber_13 = {
+				trigger_event = {
+					id = agot_scenario_ats.2010
+					days = 1
+				}
+			}
+			character:Tall_1 = {
+				trigger_event = {
+					id = agot_scenario_ats.2030
+					days = 1
+				}
+			}
+			set_variable = {
+				name = agot_ats_rohanne
+				value = flag:stage_2
+			}
+			set_variable = {
+				name = agot_ats_dunk
+				value = flag:stage_2
+			}
+		}
+		if = {
+			limit = {
+				AND = {
+					var:agot_ats_eustace = flag:stage_start
+					var:agot_ats_eustace_status = flag:stage_start_status
+					character:Tall_1 = {
+						is_ai = yes
+					}
+				}
+			}
+			character:Osgrey_55 = {
+				trigger_event = {
+					id = agot_scenario_ats.2020
+					days = 1
+				}
+			}
+		}
+		set_variable = {
+			name = agot_ats_eustace
+			value = flag:stage_2
+		}
+
+	}
+
+	on_end = {}
+
+	on_owner_death = {
+		character:Tall_1 = {
+			trigger_event = agot_scenario_ats.9030
+		}
+		character:Osgrey_55 = {
+			trigger_event = agot_scenario_ats.9020
+		}
+		end_story = yes
+	}
+
+
+	######## Run stage 2 events #########
+	effect_group = {
+		days = { 5 10 }
+		trigger = {
+			OR = {
+				var:agot_ats_dunk = flag:stage_2
+				var:agot_ats_rohanne = flag:stage_2
+				var:agot_ats_eustace = flag:stage_2
+			}
+			NOT = { var:agot_ats_rohanne_status = flag:started_war }
+		}
+
+		triggered_effect = {
+			trigger = {
+				AND = {
+					var:agot_ats_dunk = flag:stage_2
+					var:agot_ats_rohanne = flag:stage_2
+					var:agot_ats_dunk_status = flag:meeting_rohanne
+					var:agot_ats_rohanne_status = flag:waiting_for_dunk
+				}
+			}
+
+			effect = {
+				if = {
+					limit = {
+						var:agot_ats_dunk_status = flag:meeting_rohanne
+						var:agot_ats_rohanne_status = flag:waiting_for_dunk
+					}
+					character:Tall_1 = {
+						trigger_event = agot_scenario_ats.3033
+					}
+					set_variable = {
+						name = agot_ats_eustace
+						value = flag:stage_3
+					}
+					set_variable = {
+						name = agot_ats_dunk
+						value = flag:stage_3
+					}
+					set_variable = {
+						name = agot_ats_rohanne
+						value = flag:stage_3
+					}
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				AND = {
+					var:agot_ats_eustace = flag:stage_2
+					var:agot_ats_rohanne = flag:stage_2
+					var:agot_ats_eustace_status = flag:meeting_rohanne
+					var:agot_ats_rohanne_status = flag:waiting_for_dunk
+					var:agot_ats_dunk_status = flag:waiting_for_eustace
+				}
+			}
+
+			effect = {
+				character:Osgrey_55 = {
+					trigger_event = agot_scenario_ats.3020
+				}
+				set_variable = {
+					name = agot_ats_eustace
+					value = flag:stage_3
+				}
+				set_variable = {
+					name = agot_ats_dunk
+					value = flag:stage_3
+				}
+				set_variable = {
+					name = agot_ats_rohanne
+					value = flag:stage_3
+				}
+
+			}
+		}
+	}
+
+	######## Run stage 3 events #########
+
+	effect_group = {
+		days = { 5 10 }
+		trigger = {
+			OR = {
+				var:agot_ats_dunk = flag:stage_3
+				var:agot_ats_rohanne = flag:stage_3
+				var:agot_ats_eustace = flag:stage_3
+			}
+			NOT = { var:agot_ats_rohanne_status = flag:started_war }
+		}
+
+		# Rohanne accepted gold from Eustace but kept the dam
+		triggered_effect = {
+			trigger = {
+				AND = {
+					var:agot_ats_eustace = flag:stage_3
+					var:agot_ats_rohanne = flag:stage_3
+					OR = {
+						var:agot_ats_eustace_status = flag:offered_gold
+						var:agot_ats_eustace_status = flag:offered_bennis
+					}
+				}
+			}
+
+			effect = {
+				if = {
+					limit = {
+						AND = {
+							OR = {
+								var:agot_ats_eustace_status = flag:offered_gold
+								var:agot_ats_eustace_status = flag:offered_bennis
+							}
+							OR = {
+								var:agot_ats_rohanne_status = flag:accepted_gold_kept_dam
+								var:agot_ats_rohanne_status = flag:accepted_bennis_kept_dam
+								var:agot_ats_rohanne_status = flag:refused_all
+							}
+						}
+					}
+					# Trigger wat's wood fire event for Eustace and Rohanne if Dunk wasn't sent
+					character:Osgrey_55 = {
+						trigger_event = agot_scenario_ats.4021
+					}
+					character:Webber_13 = {
+						trigger_event = agot_scenario_ats.4010
+					}
+					character:Tall_1 = {
+						trigger_event = agot_scenario_ats.4031
+					}
+				}
+				set_variable = {
+					name = agot_ats_rohanne
+					value = flag:stage_4
+				}
+
+				set_variable = {
+					name = agot_ats_eustace
+					value = flag:stage_4
+				}
+
+				set_variable = {
+					name = agot_ats_dunk
+					value = flag:stage_4
+				}
+
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				AND = {
+					var:agot_ats_dunk = flag:stage_3
+					var:agot_ats_rohanne = flag:stage_3
+					OR = {
+						var:agot_ats_dunk_status = flag:offered_gold
+						var:agot_ats_dunk_status = flag:offered_bennis
+					}
+				}
+			}
+
+			effect = {
+				if = {
+					limit = {
+						AND = {
+							OR = {
+								var:agot_ats_dunk_status = flag:offered_gold
+								var:agot_ats_dunk_status = flag:offered_bennis
+							}
+							OR = {
+								var:agot_ats_rohanne_status = flag:accepted_gold_kept_dam
+								var:agot_ats_rohanne_status = flag:accepted_bennis_kept_dam
+								var:agot_ats_rohanne_status = flag:refused_all
+							}
+						}
+					}
+					# Trigger confrontation for Dunk and Eustace and Wat's wood fire for Rohanne
+					character:Tall_1 = {
+						trigger_event = agot_scenario_ats.4030
+					}
+					character:Webber_13 = {
+						trigger_event = agot_scenario_ats.4010
+					}
+					character:Osgrey_55 = {
+						trigger_event = agot_scenario_ats.4020
+					}
+				}
+				set_variable = {
+					name = agot_ats_rohanne
+					value = flag:stage_4
+				}
+
+				set_variable = {
+					name = agot_ats_eustace
+					value = flag:stage_4
+				}
+
+				set_variable = {
+					name = agot_ats_dunk
+					value = flag:stage_4
+				}
+
+			}
+		}
+	}
+	######## Run stage 4 events #########
+	effect_group = {
+		days = { 5 10 }
+
+		trigger = {
+			AND = {
+				var:agot_ats_rohanne = flag:stage_4
+				var:agot_ats_eustace = flag:stage_4
+				var:agot_ats_dunk = flag:stage_4
+				NOT = { var:agot_ats_rohanne_status = flag:started_war }
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				AND = {
+					var:agot_ats_rohanne_status = flag:saw_the_fire
+					var:agot_ats_eustace_status = flag:eustace_saw_the_fire
+					NOT = {
+						var:agot_ats_rohanne_status = flag:no_more_fire
+					}
+				}
+			}
+
+			effect = {
+				character:Webber_13 = {
+					trigger_event = agot_scenario_ats.5010
+				}
+				set_variable = {
+					name = agot_ats_rohanne_status
+					value = flag:no_more_fire
+				}
+			}
+		}
+	}
+
+	######## Run stage 6 events #########
+	effect_group = {
+		days = { 5 10 }
+
+		trigger = {
+			AND = {
+				var:agot_ats_rohanne = flag:stage_5
+				var:agot_ats_eustace = flag:stage_5
+				var:agot_ats_dunk = flag:stage_5
+				NOT = { var:agot_ats_rohanne_status = flag:started_war }
+			}
+		}
+		# Fire Rohanne marriage event if Dunk lived
+		triggered_effect = {
+			trigger = {
+				OR = {
+					var:agot_ats_dunk_status = flag:won_the_duel
+					var:agot_ats_eustace_status = flag:won_the_duel
+				}
+				character:Webber_13 = {
+					is_married = no
+				}
+			}
+
+			effect = {
+				character:Webber_13 = {
+					random_owned_story = {
+						limit = { story_type = story_agot_after_the_spring_marriage_cycle }
+						save_scope_as = scenario_ats_story_marriage
+					}
+				}
+				scope:scenario_ats_story_marriage = {
+					set_variable = {
+						name = agot_ats_rohanne_marriage_status
+						value = flag:ready_for_marriage
+					}
+				}
+			}
+		}
+		# Fire Rohanne marriage event if Dunk died
+		triggered_effect = {
+			trigger = {
+				OR = {
+					var:agot_ats_dunk_status = flag:died_in_duel
+					var:agot_ats_eustace_status = flag:died_in_duel
+				}
+				character:Webber_13 = {
+					is_married = no
+				}
+			}
+
+			effect = {
+				character:Webber_13 = {
+					random_owned_story = {
+						limit = { story_type = story_agot_after_the_spring_marriage_cycle }
+						save_scope_as = scenario_ats_story_marriage
+					}
+				}
+				scope:scenario_ats_story_marriage = {
+					set_variable = {
+						name = agot_ats_rohanne_marriage_status
+						value = flag:ready_for_marriage
+					}
+				}
+			}
+		}
+		# Fire Rohanne marriage event if she gave in
+		triggered_effect = {
+			trigger = {
+				character:Webber_13 = {
+					has_character_flag = admitted_guilt
+				}
+			}
+
+			effect = {
+				if = {
+					limit = {
+						character:Webber_13 = {
+							any_owned_story = {
+								story_type = story_agot_after_the_spring_marriage_cycle
+							}
+						}
+					}
+					character:Webber_13 = {
+						random_owned_story = {
+							limit = { story_type = story_agot_after_the_spring_marriage_cycle }
+							save_scope_as = scenario_ats_story_marriage
+						}
+					}
+					scope:scenario_ats_story_marriage = {
+						set_variable = {
+							name = agot_ats_rohanne_marriage_status
+							value = flag:ready_for_marriage
+						}
+					}
+				}
+				if = {
+					limit = {
+						character:Tall_1 = {
+							has_character_flag = left_story
+						}
+					}
+					end_story = yes
+				}
+			}
+		}
+	}
+
+	effect_group = {
+		days = { 5 10 }
+
+		trigger = {
+			var:agot_ats_dunk_status = flag:leave_or_go
+			NOT = { var:agot_ats_rohanne_status = flag:started_war }
+		}
+
+		triggered_effect = {
+			trigger = {
+				var:agot_ats_dunk_status = flag:leave_or_go
+				NOT = { var:agot_ats_dunk_status = flag:dunk_left }
+				NOT = {
+					character:Tall_1 = {
+						has_character_flag = left_story
+					}
+				}
+			}
+
+			effect = {
+				character:Tall_1 = {
+					trigger_event = agot_scenario_ats.8030
+				}
+				set_variable = {
+					name = agot_ats_dunk_status
+					value = flag:dunk_left
+				}
+			}
+		}
+	}
+
+	# Fallback events for character deaths
+	effect_group = {
+		days = { 1 3 }
+
+		trigger = {
+			OR = {
+				character:Webber_13 = {
+					is_alive = no
+				}
+				character:Osgrey_55 = {
+					is_alive = no
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				OR = {
+					character:Webber_13 = {
+						is_alive = no
+					}
+					character:Osgrey_55 = {
+						is_alive = no
+					}
+					character:Tall_1 = {
+						is_alive = no
+					}
+				}
+				var:agot_ats_death = flag:no_one_is_dead
+				NOT = {
+					var:agot_ats_rohanne_status = flag:started_war
+				}
+			}
+			effect = {
+				if = {
+					limit = {
+						character:Osgrey_55 = {
+							is_alive = no
+						}
+					}
+					remove_variable = agot_ats_death
+					character:Webber_13 = {
+						trigger_event = agot_scenario_ats.9010
+					}
+					character:Tall_1 = {
+						trigger_event = agot_scenario_ats.9031
+					}
+					end_story = yes
+				}
+			}
+		}
+	}
+
+	# Remove refusing marriage if the war started
+	effect_group = {
+		days = { 1 2 }
+
+		trigger = {
+			var:agot_ats_rohanne_status ?= flag:started_war
+		}
+
+		triggered_effect = {
+			trigger = {
+				OR = {
+					character:Webber_13 = {
+						is_alive = yes
+						is_at_war = yes
+						any_character_war = {
+							using_cb = osgrey_and_webber_claim
+						}
+					}
+					character:Webber_13 = {
+						is_alive = yes
+						is_at_war = yes
+						any_character_war = {
+							using_cb = osgrey_and_webber_claim
+						}
+					}
+				}
+			}
+
+			effect = {
+				character:Inchfield_20 = {
+					remove_trait = refusing_marriage
+				}
+				character:Tall_1 = {
+					remove_trait = refusing_marriage
+				}
+				character:Lannister_120 = {
+					remove_trait = refusing_marriage
+				}
+				character:Osgrey_55 = {
+					remove_trait = widowed
+					add_character_flag = at_war_with_rohanne
+				}
+				character:Webber_13 = {
+					remove_trait = refusing_marriage
+				}
+			}
+		}
+	}
+
+	# Send an event for Dunk to join the war on Eustace's side if he hasn't left already
+	effect_group = {
+		days = { 1 2 }
+
+		trigger = {
+			AND = {
+				var:agot_ats_rohanne_status ?= flag:started_war
+				NOT = { character:Tall_1 = { has_character_flag = left_story } }
+				NOT = { var:agot_ats_dunk_status = flag:dunk_joined_war }
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				OR = {
+					character:Webber_13 = {
+						is_at_war = yes
+						any_character_war = {
+							using_cb = osgrey_and_webber_claim
+						}
+					}
+					character:Webber_13 = {
+						is_at_war = yes
+						any_character_war = {
+							using_cb = osgrey_and_webber_claim
+						}
+					}
+				}
+			}
+
+			effect = {
+				character:Tall_1 = {
+					trigger_event = {
+						id = agot_scenario_ats.9032
+					}
+				}
+				set_variable = {
+					name = agot_ats_dunk_status
+					value = flag:dunk_joined_war
+				}
+			}
+		}
+
+	}
+}
+
+story_agot_after_the_spring_daemon = {
+	# Also by Llama
+
+	on_setup = {
+		save_scope_as = scenario_ats_story_daemon
+
+		# Create variable for stages
+
+		set_variable = {
+			name = agot_ats_daemon
+			value = flag:stage_start
+		}
+
+		# Intro event
+
+		# Daemon II Blackfyre
+		character:Blackfyre_5 = {
+			set_variable = {
+				name = agot_ats_daemon_status
+				value = flag:no_blackfyre
+			}
+			trigger_event = agot_scenario_ats.1000
+			save_scope_as = daemon_2
+		}
+
+		#Create variable for bittercringe
+		set_variable = {
+			name = bittersteel_status
+			value = flag:waiting_around
+		}
+
+		if = {
+			limit = {
+				var:agot_ats_daemon = flag:stage_start
+			}
+			character:Blackfyre_5 = {
+				trigger_event = {
+					id = agot_scenario_ats.2000
+					days = 5
+				}
+			}
+			set_variable = {
+				name = agot_ats_daemon
+				value = flag:stage_2
+			}
+		}
+	}
+	on_end = {}
+
+	on_owner_death = {
+		if = {
+			limit = {
+				character:Targaryen_95 = {
+					is_alive = yes
+				}
+			}
+			make_story_owner = character:Targaryen_95
+		}
+		else = {
+			end_story = yes
+		}
+	}
+
+	effect_group = {
+		days = { 1 2 }
+
+		trigger = {
+			var:agot_ats_daemon = flag:stage_2
+			character:Blackfyre_5 = { is_alive = yes }
+			character:Blackfyre_5.var:agot_ats_daemon_status = flag:got_blackfyre
+		}
+
+		triggered_effect = {
+			trigger = {
+				character:Blackfyre_5 = {
+					any_character_war = {
+						is_attacker = character:Blackfyre_5
+						is_defender = title:h_the_iron_throne.holder
+					}
+				}
+				character:Targaryen_95 = {
+					is_ruler = yes
+					is_at_war = no
+				}
+			}
+
+			effect = {
+				character:Blackfyre_5 = {
+					every_character_war = {
+						limit = {
+							is_attacker = character:Blackfyre_5
+							is_defender = title:h_the_iron_throne.holder
+						}
+						add_attacker = character:Targaryen_95
+					}
+				}
+			}
+		}
+	}
+
+	effect_group = {
+		years = 1
+
+		trigger = {
+			character:Targaryen_95 = {
+				is_alive = yes
+				is_imprisoned = no
+			}
+			OR = {
+				character:Blackfyre_5 = {
+					is_alive = no
+				}
+				AND = {
+					character:Blackfyre_5 = {
+						is_alive = yes
+					}
+					NOT = { character:Blackfyre_5.var:agot_ats_daemon_status = flag:had_war_event }
+				}
+			}
+			NOT = {
+				var:bittersteel_status = flag:started_gc
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				character:Targaryen_95 = {
+					is_alive = yes
+					is_imprisoned = no
+					is_ruler = no
+				}
+				var:bittersteel_status = flag:waiting_around
+			}
+
+			effect = {
+				character:Targaryen_95 = {
+					trigger_event = agot_gold_company_formation.0003
+				}
+				set_variable = {
+					name = bittersteel_status
+					value = flag:started_gc
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				character:Blackfyre_5 = { is_alive = yes }
+				character:Blackfyre_5.var:agot_ats_daemon_status = flag:got_blackfyre
+			}
+
+			effect = {
+				character:Blackfyre_5 = {
+					trigger_event = agot_scenario_ats.9000
+					set_variable = {
+						name = agot_ats_daemon_status
+						value = flag:had_war_event
+					}
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				OR = {
+					AND = {
+						character:Blackfyre_5 = { is_alive = yes }
+						OR = {
+							character:Blackfyre_5.var:agot_ats_daemon_status = flag:had_war_event
+							character:Blackfyre_5.var:agot_ats_daemon_status = flag:giving_up_on_blackfyre
+						}
+					}
+					character:Blackfyre_5 = { is_alive = no }
+				}
+				var:bittersteel_status = flag:started_gc
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+	}
+}
+
+story_agot_after_the_spring_marriage_cycle = {
+	# Also by Llama
+
+	# rohanne_marriage_status possible values:
+	# flag:story_start, flag:ready_for_marriage
+	on_setup = {
+		save_scope_as = scenario_ats_story_marriage
+
+		set_variable = {
+			name = agot_ats_rohanne_marriage_status
+			value = flag:story_start
+		}
+	}
+
+	on_end = {}
+
+	on_owner_death = {
+		end_story = yes
+	}
+
+	effect_group = {
+		days = { 5 10 }
+
+		triggered_effect = {
+			trigger = {
+				var:agot_ats_rohanne_marriage_status = flag:ready_for_marriage
+				NOT = { var:agot_ats_rohanne_marriage_status = flag:found_marriage }
+				NOT = {
+					character:Webber_13 = {
+						is_married = yes
+					}
+				}
+			}
+
+			effect = {
+				character:Tall_1 = {
+					remove_trait = refusing_marriage
+				}
+				character:Lannister_120 = {
+					remove_trait = refusing_marriage
+				}
+				character:Osgrey_55 = {
+					remove_trait = widowed
+				}
+				character:Webber_13 = {
+					remove_trait = refusing_marriage
+					trigger_event = agot_scenario_ats.7010
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				var:agot_ats_rohanne_marriage_status = flag:found_marriage
+			}
+
+			effect = {
+				end_story = yes
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				character:Webber_13 = {
+					is_married = yes
+				}
+
+			}
+
+			effect = {
+				end_story = yes
+			}
+		}
+	}
+
+	effect_group = {
+		months = { 6 7 }
+
+		triggered_effect = {
+			trigger = {
+				character:Webber_13 = {
+					is_married = no
+				}
+				OR = {
+					var:agot_ats_rohanne_marriage_status = flag:searching_for_partner
+					var:agot_ats_rohanne_marriage_status = flag:story_start
+				}
+			}
+
+			effect = {
+				character:Webber_13 = {
+					trigger_event = {
+						id = agot_scenario_ats.9011
+					}
+				}
+			}
+		}
+	}
+}

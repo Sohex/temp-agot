@@ -1,0 +1,309 @@
+﻿rv_toggle_prisoner={
+	scope = character
+	#saved_scopes = {
+		#rv_prisoner_target
+	#}
+
+	effect = {
+		if = {
+			limit = {
+				NOT = {
+					any_owned_story = {
+						story_type = rv_rescue_war_story
+						exists = this
+					}
+				}
+			}
+			create_story = {
+				type = rv_rescue_war_story
+				save_scope_as = rv_rescue_story
+			}
+			scope:rv_rescue_story = {
+				add_to_variable_list = {
+					name = rv_rescue_list
+					target = scope:rv_prisoner_target
+				}
+			}
+			add_to_variable_list = {
+				name = rv_rescue_list_temp
+				target = scope:rv_prisoner_target
+			}
+		}
+
+		else_if = {
+			limit = {
+				any_owned_story = {
+					story_type = rv_rescue_war_story
+					NOT = {
+						is_target_in_variable_list = {
+							name = rv_rescue_list
+							target = scope:rv_prisoner_target
+						}
+					}
+				}
+			}
+
+			random_owned_story = {
+				limit = { story_type = rv_rescue_war_story }
+				add_to_variable_list = {
+					name = rv_rescue_list
+					target = scope:rv_prisoner_target
+				}
+			}
+			add_to_variable_list = {
+				name = rv_rescue_list_temp
+				target = scope:rv_prisoner_target
+			}
+		}
+
+		else = {
+			random_owned_story = {
+				limit = { story_type = rv_rescue_war_story }
+				remove_list_variable = {
+					name = rv_rescue_list
+					target = scope:rv_prisoner_target
+				}
+			}
+			remove_list_variable = {
+				name = rv_rescue_list_temp
+				target = scope:rv_prisoner_target
+			}
+		}
+
+	}
+}
+
+rv_rescue_trigger = {
+	is_valid = {
+		any_owned_story = {
+			story_type = rv_rescue_war_story
+			is_target_in_variable_list = {
+				name = rv_rescue_list
+				target = scope:rv_prisoner_target
+			}
+		}
+	}
+}
+
+rv_rescue_visible_trigger = {
+	is_shown = {
+		scope:rv_prisoner_target = {
+			OR = {
+				AND = {
+					is_imprisoned_by = root.var:rv_defender_temp
+					OR = {
+						is_heir_of = root
+						is_spouse_of = root
+						has_relation_lover = root
+						has_relation_soulmate = root
+						has_relation_friend = root
+						has_relation_best_friend = root
+						is_close_or_extended_family_of = root
+						root = {
+							has_relation_esr_family_friend = prev
+						}
+						any_in_list = {
+							variable = rv_demanded_me_list
+							this = root
+						}
+					}
+				}
+				OR = {
+					AND = {
+						any_former_spouse = {
+							this = root
+						}
+						has_opinion_modifier = {
+							modifier = forced_me_concubine_marriage_opinion
+							target = root.var:rv_defender_temp
+						}
+						root.var:rv_defender_temp = {
+							reverse_has_opinion_modifier = {
+								modifier = forced_spouse_concubine_marriage_opinion
+								target = root
+							}
+						}
+					}
+
+					AND = {
+						is_close_or_extended_family_of = root
+						root.var:rv_defender_temp = {
+							reverse_has_opinion_modifier = {
+								modifier = forced_family_concubine_marriage_opinion
+								target = root
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+rv_transfer_on_demand_trigger = {
+	is_shown = {
+		scope:rv_prisoner_target = {
+			any_in_list = {
+				variable = rv_demanded_me_list
+				this = root
+			}
+		}
+	}
+}
+
+rv_rescue_same_house_trigger = {
+	is_shown = {
+		scope:rv_prisoner_target = {
+			root = { government_has_flag = government_is_clan }
+			scope:rv_prisoner_target.house = root.house
+		}
+	}
+}
+
+rv_family_icon_trigger = {
+	is_shown = {
+		scope:rv_prisoner_target = {
+			OR = {
+				is_spouse_of = root
+				is_close_or_extended_family_of = root
+			}
+		}
+	}
+}
+
+rv_criminal_warning_icon_visible = {
+	is_shown = {
+		root.var:rv_defender_temp = {
+			has_imprisonment_reason = scope:rv_prisoner_target
+		}
+	}
+}
+
+rv_save_defender = {
+	effect = {
+		set_variable = {
+			name = rv_defender_temp
+			value = scope:rv_defender
+		}
+	}
+}
+
+rv_can_send_rescue_war = {
+	is_valid = {
+		any_owned_story = {
+			story_type = rv_rescue_war_story
+			has_variable_list = rv_rescue_list
+			any_in_list = {
+				variable = rv_rescue_list
+				is_alive = yes
+				OR = {
+					AND = {
+						is_imprisoned = yes
+						is_imprisoned_by = root.var:rv_defender_temp
+					}
+					AND = {
+						is_concubine = yes
+						is_concubine_of = root.var:rv_defender_temp
+					}
+				}
+			}
+		}
+		debt_level < 0
+		prestige_level > 0
+		NOT = {any_army = { exists = this }}
+	}
+}
+
+rv_create_revenge_list = {
+	scope = character
+	effect = {
+		if = {
+			limit = { NOT = {has_variable_list = rv_to_be_revenged} }
+			rv_revenge_add_dead_characters_to_root_sgui = yes
+		}
+	}
+}
+
+rv_create_concubine_list = {
+	scope = character
+	effect = {
+		if = {
+			limit = { NOT = {has_variable_list = rv_defender_concubines} }
+			rv_rescue_add_concubines_to_root_sgui = yes
+		}
+	}
+}
+
+rv_clear_revenge_list = {
+	scope = character
+	effect = {
+		if = {
+			limit = {
+				OR = {
+					### Should be constructed in rv_revenge_list_construction (clear at the beginning!!!) and refined in rv) rv_revenge_war_declaration
+					has_variable_list = rv_revenging_dead_lovers
+					has_variable_list = rv_revenging_dead_soulmates
+					has_variable_list = rv_revenging_dead_friends
+					has_variable_list = rv_revenging_dead_best_friends
+					has_variable_list = rv_revenging_dead_spouses
+					has_variable_list = rv_revenging_dead_families
+					has_variable_list = rv_to_be_revenged
+				}
+			}
+			clear_variable_list = rv_revenging_dead_lovers
+			clear_variable_list = rv_revenging_dead_soulmates
+			clear_variable_list = rv_revenging_dead_friends
+			clear_variable_list = rv_revenging_dead_best_friends
+			clear_variable_list = rv_revenging_dead_spouses
+			clear_variable_list = rv_revenging_dead_families
+			clear_variable_list = rv_to_be_revenged
+		}
+	}
+}
+
+rv_clear_concubine_list = {
+	scope = character
+	effect = {
+		if = {
+			limit = {
+				has_variable_list = rv_defender_concubines
+			}
+			clear_variable_list = rv_defender_concubines
+		}
+	}
+}
+
+rv_revenge_visible_trigger = {
+	is_shown = {
+		root = {
+			OR = {
+				is_target_in_variable_list = {
+					name = rv_revenging_dead_lovers
+					target = scope:rv_revenge_target
+				}
+				is_target_in_variable_list = {
+					name = rv_revenging_dead_soulmates
+					target = scope:rv_revenge_target
+				}
+				is_target_in_variable_list = {
+					name = rv_revenging_dead_friends
+					target = scope:rv_revenge_target
+				}
+				is_target_in_variable_list = {
+					name = rv_revenging_dead_best_friends
+					target = scope:rv_revenge_target
+				}
+				is_target_in_variable_list = {
+					name = rv_revenging_dead_spouses
+					target = scope:rv_revenge_target
+				}
+				is_target_in_variable_list = {
+					name = rv_revenging_dead_families
+					target = scope:rv_revenge_target
+				}
+			}
+		}
+	}
+}
+
+

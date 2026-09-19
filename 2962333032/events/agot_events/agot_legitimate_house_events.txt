@@ -1,0 +1,277 @@
+﻿namespace = agot_legitimate_house
+
+# By Sililex
+
+agot_legitimate_house.0001 = { # New Legitimate House Announcement
+	type = character_event
+	title = agot_legitimate_house.0001.t
+	desc = {
+		desc = agot_legitimate_house.0001.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = {
+						scope:old_legitimate_house = {
+							any_house_member = { is_alive = yes }
+						}
+					}
+				}
+				desc = agot_legitimate_house.0001.desc_extinct
+			}
+			triggered_desc = {
+				trigger = {
+					scope:old_legitimate_house.last_house_head.dynasty = scope:new_legitimate_house.last_house_head.dynasty
+				}
+				desc = agot_legitimate_house.0001.desc_supplanted
+			}
+			desc = agot_legitimate_house.0001.desc_default
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					root = scope:new_legitimate_holder
+				}
+				desc = agot_legitimate_house.0001.desc_end_me
+			}
+			desc = agot_legitimate_house.0001.desc_end
+		}
+	}
+
+	override_background = {
+		trigger = { scope:changed_legitimate_title = title:h_the_iron_throne }
+		reference = agot_iron_throne
+	}
+
+	theme = crown
+
+	right_portrait = {
+		character = scope:new_legitimate_holder
+		animation = personality_honorable
+	}
+
+	option = {
+		name = agot_legitimate_house.0001.a
+		flavor = agot_legitimate_house.0001.a.flavor
+		trigger = {
+			NOT = { house = scope:old_legitimate_house }
+		}
+		show_as_tooltip = { # Real effect done in the decision
+			agot_set_legitimate_house = {
+				TITLE = scope:changed_legitimate_title
+				HOUSE = scope:new_legitimate_house
+			}
+			scope:new_legitimate_holder = {
+				add_prestige = medium_prestige_value
+				dynasty = { add_dynasty_prestige = medium_prestige_value }
+				add_legitimacy_effect = { LEGITIMACY = medium_legitimacy_gain }
+			}
+		}
+	}
+
+	option = {
+		name = agot_legitimate_house.0001.b
+		flavor = agot_legitimate_house.0001.b.flavor
+		trigger = {
+			house = scope:old_legitimate_house
+		}
+		show_as_tooltip = { # Real effect done in the decision
+			agot_set_legitimate_house = {
+				TITLE = scope:changed_legitimate_title
+				HOUSE = scope:new_legitimate_house
+			}
+			scope:new_legitimate_holder = {
+				add_prestige = medium_prestige_value
+				dynasty = { add_dynasty_prestige = medium_prestige_value }
+				add_legitimacy_effect = { LEGITIMACY = medium_legitimacy_gain }
+			}
+		}
+	}
+}
+
+agot_legitimate_house.0002 = { # Get house claim as legitimate house
+	type = character_event
+	title = agot_legitimate_house.0002.t
+	desc = agot_legitimate_house.0002.desc
+
+	override_background = {
+		trigger = { scope:legitimate_house_title_for_maintenance = title:h_the_iron_throne }
+		reference = agot_iron_throne
+	}
+
+	theme = crown
+
+	right_portrait = {
+		character = scope:legitimate_house_title_for_maintenance.holder
+		animation = personality_honorable
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { ai_boldness <= high_negative_ai_value }
+			animation = worry
+		}
+		triggered_animation = {
+			trigger = { ai_vengefulness >= high_positive_ai_value }
+			animation = rage
+		}
+		animation = disapproval
+	}
+
+	immediate = {
+		scope:legitimate_house_title_for_maintenance.holder = {
+			save_scope_as = title_holder
+			house = {
+				save_scope_as = new_house
+			}
+		}
+		house = {
+			save_scope_as = legitimate_house
+		}
+	}
+
+	option = {
+		name = agot_legitimate_house.0002.a
+		flavor = agot_legitimate_house.0002.a.flavor
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 0
+				OR = {
+					has_trait = content
+					has_trait = generous
+					has_trait = forgiving
+				}
+			}
+		}
+		stress_impact = {
+			greedy = medium_stress_impact_loss
+			ambitious = medium_stress_impact_loss
+			vengeful = medium_stress_impact_loss
+			content = minor_stress_impact_gain
+		}
+	}
+
+	option = {
+		name = agot_legitimate_house.0002.b
+		flavor = agot_legitimate_house.0002.b.flavor
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 0
+				OR = {
+					has_trait = ambitious
+					has_trait = greedy
+					has_trait = vengeful
+				}
+			}
+		}
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+			ambitious = medium_stress_impact_gain
+			vengeful = medium_stress_impact_gain
+			content = minor_stress_impact_loss
+		}
+	}
+
+	after = {
+		if = {
+			limit = {
+				house.house_head = root
+			}
+			add_pressed_claim = scope:legitimate_house_title_for_maintenance
+			add_pressed_claim = scope:legitimate_house_title_for_maintenance.title_capital_county.duchy
+			add_pressed_claim = scope:legitimate_house_title_for_maintenance.title_capital_county
+			show_as_tooltip = {
+				every_close_family_member = {
+					limit = {
+						house = scope:legitimate_house_title_for_maintenance.var:legitimate_house
+						NOR = {
+							has_strong_claim_on = scope:legitimate_house_title_for_maintenance
+							has_weak_claim_on = scope:legitimate_house_title_for_maintenance
+						}
+					}
+					add_unpressed_claim = scope:legitimate_house_title_for_maintenance
+					add_unpressed_claim = scope:legitimate_house_title_for_maintenance.title_capital_county.duchy
+					add_unpressed_claim = scope:legitimate_house_title_for_maintenance.title_capital_county
+				}
+			}
+		}
+		else = {
+			add_unpressed_claim = scope:legitimate_house_title_for_maintenance
+			show_as_tooltip = {
+				house.house_head = {
+					add_pressed_claim = scope:legitimate_house_title_for_maintenance
+					add_pressed_claim = scope:legitimate_house_title_for_maintenance.title_capital_county.duchy
+					add_pressed_claim = scope:legitimate_house_title_for_maintenance.title_capital_county
+					every_close_family_member = {
+						limit = {
+							house = scope:legitimate_house_title_for_maintenance.var:legitimate_house
+							NOR = {
+								this = root
+								has_strong_claim_on = scope:legitimate_house_title_for_maintenance
+								has_weak_claim_on = scope:legitimate_house_title_for_maintenance
+							}
+						}
+						add_unpressed_claim = scope:legitimate_house_title_for_maintenance
+						add_unpressed_claim = scope:legitimate_house_title_for_maintenance.title_capital_county.duchy
+						add_unpressed_claim = scope:legitimate_house_title_for_maintenance.title_capital_county
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_legitimate_house.0003 = { # A legitimate house has lost their title
+	hidden = yes
+
+	trigger = {
+		NOT = { scope:title.holder.house = scope:title.var:legitimate_house }
+	}
+
+	immediate = {
+		scope:title = {
+			save_scope_as = changed_legitimate_title
+			holder = {
+				save_scope_as = new_holder
+				house = {
+					save_scope_as = new_house
+				}
+			}
+		}
+		scope:previous_holder = {
+			save_scope_as = legitimate_holder
+			house = {
+				save_scope_as = legitimate_house
+			}
+		}
+		send_interface_message = {
+			type = msg_lh_inheritance_neutral
+			title = agot_legitimate_house.0003.t
+			desc = {
+				desc = agot_legitimate_house.0003.desc
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							NOT = {
+								scope:previous_holder.house = {
+									any_house_member = { is_alive = yes }
+								}
+							}
+						}
+						desc = agot_legitimate_house.0003.desc_extinct
+					}
+					triggered_desc = {
+						trigger = {
+							house = scope:title.var:legitimate_house
+						}
+						desc = agot_legitimate_house.0003.desc_supplanted
+					}
+					desc = agot_legitimate_house.0003.desc_default
+				}
+			}
+			left_icon = scope:title.holder
+			right_icon = scope:previous_holder
+		}
+	}
+}

@@ -1,0 +1,138 @@
+﻿namespace = agot_proclamation_events
+
+# Event fired for the New Lord Paramount to notify them of their new title
+agot_proclamation_events.1000 = {
+	type = character_event
+	title = agot_proclamation_events.1000.t
+	desc = {
+		desc = agot_proclamation_events.1000.desc_intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:legitimate_house
+					NOT = { root.house = scope:legitimate_house }
+				}
+				desc = agot_proclamation_events.1000.desc.not_legitimate_house
+			}
+			triggered_desc = {
+				trigger = {
+					exists = scope:legitimate_house
+					root.house = scope:legitimate_house
+				}
+				desc = agot_proclamation_events.1000.desc.legitimate_house
+			}
+		}
+	}
+	theme = realm
+	override_background = {
+		reference = agot_iron_throne
+	}
+
+	right_portrait = {
+		character = scope:king
+		animation = chancellor
+	}
+
+	left_portrait = {
+		character = scope:new_holder
+		animation = happiness
+	}
+
+	immediate = {
+		if = {
+			limit = { exists = scope:kingdom_title_to_grant.var:legitimate_house }
+			scope:kingdom_title_to_grant.var:legitimate_house = { save_scope_as = legitimate_house }
+		}
+		show_as_tooltip = { get_title = scope:kingdom_title_to_grant }
+	}
+
+	option = {
+		name = agot_proclamation_events.1000.a
+		add_prestige = 300
+	}
+}
+
+##############################
+# Iron Throne Alert Events   #
+# 9900 - 9999                #
+##############################
+
+#on_title_gain hidden event to inform relevant players of Iron Throne succession
+agot_proclamation_events.9900 = {
+	hidden = yes
+
+	trigger = {
+		scope:title = title:h_the_iron_throne
+	}
+
+	immediate = {
+		every_player = {
+			limit = {
+				NOT = { scope:new_holder = this }
+				NOT = { scope:previous_holder = this }
+			}
+			save_scope_as = player
+			if = {
+				limit = {
+					scope:transfer_type = flag:inheritance
+					scope:new_holder = { NOT = { has_character_flag = usurper_proclamation_flag } }
+				}
+				send_interface_message = {
+					type = msg_it_inheritance
+					title = agot_proclamation_it_succession_msg_title
+					desc = agot_proclamation_it_succession_msg_inheritance
+					left_icon = scope:new_holder
+					right_icon = scope:previous_holder
+				}
+			}
+			else_if = {
+				limit = {
+					scope:transfer_type = flag:conquest
+				}
+				send_interface_message = {
+					type = msg_it_inheritance
+					title = agot_proclamation_it_succession_msg_title
+					desc = agot_proclamation_it_succession_msg_conquest
+					left_icon = scope:new_holder
+					right_icon = scope:previous_holder
+				}
+			}
+			else_if = {
+				limit = {
+					OR = {
+						scope:transfer_type = flag:usurped
+						scope:new_holder = { has_character_flag = usurper_proclamation_flag }
+					}
+				}
+				send_interface_message = {
+					type = msg_it_inheritance
+					title = agot_proclamation_it_succession_msg_title
+					desc = agot_proclamation_it_succession_msg_usurped
+					left_icon = scope:new_holder
+					right_icon = scope:previous_holder
+				}
+			}
+			else_if = {
+				limit = {
+					scope:transfer_type = flag:abdication
+				}
+				send_interface_message = {
+					type = msg_it_inheritance
+					title = agot_proclamation_it_succession_msg_title
+					desc = agot_proclamation_it_succession_msg_abdication
+					left_icon = scope:new_holder
+					right_icon = scope:previous_holder
+				}
+			}
+			else = {
+				send_interface_message = {
+					type = msg_it_inheritance
+					title = agot_proclamation_it_succession_msg_title
+					desc = agot_proclamation_it_succession_msg_fallback
+					left_icon = scope:new_holder
+					right_icon = scope:previous_holder
+				}
+			}
+		}
+	}
+}

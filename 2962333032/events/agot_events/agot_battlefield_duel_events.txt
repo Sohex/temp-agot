@@ -1,0 +1,261 @@
+﻿# agot battlefield duels for captains by Ronko
+
+namespace = agot_battlefield_duel
+
+agot_battlefield_duel.0001 = { # After duell event
+	hidden = yes
+
+	immediate = {
+		if = {
+			limit = {
+				scope:sc_loser = { is_alive = yes }
+			}
+			scope:sc_victor = { # imprison or kill
+				trigger_event = {
+					id = agot_battlefield_duel.0002
+					days = 1
+				}
+			}
+		}
+		else = {
+			scope:sc_victor = { # just get prestige
+				trigger_event = {
+					id = agot_battlefield_duel.0003
+					days = 1
+				}
+			}
+		}
+	}
+}
+
+agot_battlefield_duel.0002 = { # imprison or kill
+	type = character_event
+	title = agot_battlefield_duel.0002.t
+	desc = agot_battlefield_duel.0002.desc
+
+	theme = battle
+
+	left_portrait = {
+		character = scope:sc_victor
+		animation = happiness
+	}
+
+	right_portrait = {
+		character = scope:sc_loser
+		animation = worry
+	}
+
+	option = { # imprison
+		name = agot_battlefield_duel.0002.a
+
+		add_prestige = 100
+
+		trigger = {
+			OR = {
+				scope:sc_victor = { is_ruler = yes }
+				exists = scope:sc_victor.liege_or_court_owner
+			}
+		}
+
+		if = {
+			limit = {
+				scope:sc_victor = { is_ai = no }
+			}
+			if = {
+				limit = {
+					scope:sc_loser = { is_imprisoned = no }
+				}
+				if = {
+					limit = {
+						scope:sc_victor = { is_ruler = yes }
+					}
+					rightfully_imprison_character_effect = {
+						TARGET = scope:sc_loser
+						IMPRISONER = scope:sc_victor
+					}
+				}
+				else = {
+					rightfully_imprison_character_effect = {
+						TARGET = scope:sc_loser
+						IMPRISONER = scope:sc_victor.liege_or_court_owner
+					}
+				}
+			}
+			scope:sc_victor = { remove_character_flag = already_fighting }
+			scope:sc_loser = { remove_character_flag = already_fighting }
+		}
+		else = {
+			scope:sc_loser = { # you were imprisoned
+				trigger_event = {
+					id = agot_battlefield_duel.0004
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { # slay
+		name = agot_battlefield_duel.0002.b
+
+		add_dread = minor_dread_gain
+
+		if = {
+			limit = {
+				scope:sc_victor = { is_ai = no }
+			}
+			execute_prisoner_effect = {
+				VICTIM = scope:sc_loser
+				EXECUTIONER = scope:sc_victor
+			}
+			scope:sc_victor = { remove_character_flag = already_fighting }
+		}
+		else = {
+			scope:sc_loser = { # you were killed
+				trigger_event = {
+					id = agot_battlefield_duel.0005
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 0
+			ai_value_modifier = {
+				ai_honor = -1
+				ai_compassion = -0.5
+				ai_vengefulness = 0.5
+			}
+			modifier = { # wants the ransom money
+				factor = 0.5
+				has_trait = greedy
+			}
+			opinion_modifier = {
+				opinion_target = scope:sc_loser
+				multiplier = -0.5
+			}
+		}
+	}
+}
+
+agot_battlefield_duel.0003 = { # just get prestige
+	type = character_event
+	title = agot_battlefield_duel.0003.t
+	desc = agot_battlefield_duel.0003.desc
+
+	theme = battle
+
+	left_portrait = {
+		character = scope:sc_victor
+		animation = happiness
+	}
+
+	option = {
+		name = agot_battlefield_duel.0003.a
+
+		add_prestige = 100
+
+		scope:sc_victor = { remove_character_flag = already_fighting }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+agot_battlefield_duel.0004 = { # you were imprisoned
+	type = character_event
+	title = agot_battlefield_duel.0004.t
+	desc = agot_battlefield_duel.0004.desc
+
+	theme = battle
+
+	left_portrait = {
+		character = scope:sc_victor
+		animation = happiness
+	}
+
+	right_portrait = {
+		character = scope:sc_loser
+		animation = worry
+	}
+
+	option = {
+		name = agot_battlefield_duel.0004.a
+
+		if = {
+			limit = {
+				scope:sc_loser = { is_imprisoned = no }
+			}
+			if = {
+				limit = {
+					scope:sc_victor = { is_ruler = yes }
+				}
+				rightfully_imprison_character_effect = {
+					TARGET = scope:sc_loser
+					IMPRISONER = scope:sc_victor
+				}
+			}
+			else = {
+				rightfully_imprison_character_effect = {
+					TARGET = scope:sc_loser
+					IMPRISONER = scope:sc_victor.liege_or_court_owner
+				}
+			}
+		}
+
+		scope:sc_victor = { remove_character_flag = already_fighting }
+		scope:sc_loser = { remove_character_flag = already_fighting }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+agot_battlefield_duel.0005 = { # you were killed
+	type = character_event
+	title = agot_battlefield_duel.0005.t
+	desc = agot_battlefield_duel.0005.desc
+
+	theme = battle
+
+	left_portrait = {
+		character = scope:sc_victor
+		animation = rage
+	}
+
+	right_portrait = {
+		character = scope:sc_loser
+		animation = fear
+	}
+
+	option = {
+		name = agot_battlefield_duel.0005.a
+
+		if = {
+			limit = {
+				scope:sc_loser = {
+					agot_dying_king_trigger = yes
+				}
+			}
+			scope:sc_loser = {
+				save_scope_as = crown_theft_king
+				crown_theft_battleother_effect = yes
+			}
+		}
+		else = {
+			death = {
+				death_reason = death_duel
+				killer = scope:sc_victor
+			}
+		}
+
+		scope:sc_victor = { remove_character_flag = already_fighting }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+}

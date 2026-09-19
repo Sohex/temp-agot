@@ -1,0 +1,658 @@
+﻿#This needs to be below the main declare war interaction in the file list, or the AI won't start wars
+rv_declare_private_war_interaction = { # Declare war interaction but without redirection
+	category = interaction_category_diplomacy
+	icon = rv_declare_war_interaction
+	common_interaction = yes
+	special_interaction = declare_war_interaction
+	interface = declare_war
+	interface_priority = 70
+	popup_on_receive = yes
+	pause_on_receive = no # this is handled by the interface instead
+
+	desc = rv_declare_private_war_desc
+
+	### rv
+	ai_frequency = 12 #Added to remove error
+	ai_potential = { always = no }
+	ai_targets = { ai_recipients = spouses } #Added to prevent error
+	### rv/
+
+
+
+	is_shown = {
+		NOR = {
+			scope:recipient = scope:actor
+			scope:actor = {
+				has_trait = nightswatch
+			}
+		}
+		scope:recipient = {
+			is_playable_character = yes
+		}
+		scope:actor = {
+			NOT = {
+				is_at_war_with = scope:recipient
+			}
+		}
+
+		### rv
+		OR = {
+			AND = { # is Rescue war valid?
+				scope:recipient = {
+					OR = {
+						any_prisoner = {
+							OR = {
+								is_heir_of = scope:actor
+								is_spouse_of = scope:actor
+								has_relation_lover = scope:actor
+								has_relation_soulmate = scope:actor
+								has_relation_friend = scope:actor
+								has_relation_best_friend = scope:actor
+								is_close_or_extended_family_of = scope:actor
+								scope:actor = {
+									has_relation_esr_family_friend = prev
+								}
+								any_in_list = {
+									variable = rv_demanded_me_list
+									this = scope:actor
+								}
+							}
+						}
+						any_consort = {
+							OR = {
+								AND = {
+									any_former_spouse = {
+										this = scope:actor
+									}
+									has_opinion_modifier = {
+										modifier = forced_me_concubine_marriage_opinion
+										target = prev
+									}
+									prev = {
+										reverse_has_opinion_modifier = {
+											modifier = forced_spouse_concubine_marriage_opinion
+											target = scope:actor
+										}
+									}
+								}
+
+								AND = {
+									is_close_or_extended_family_of = scope:actor
+									prev = {
+										reverse_has_opinion_modifier = {
+											modifier = forced_family_concubine_marriage_opinion
+											target = scope:actor
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			AND = { # is Revenge war valid?
+				#is_local_player = yes
+				scope:actor = {
+					OR = {
+						any_memory = {
+							has_memory_type = lover_died
+							exists = memory_participant:dead_relation
+							memory_participant:dead_relation = {
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_playable_character = yes
+									this = scope:recipient
+									prev = {save_temporary_scope_as = rv_dead_char}
+									NOR = {
+										scope:rv_dead_char = {
+											any_memory = {
+												has_memory_type = rv_was_revenged
+											}
+										}
+										any_secret = {
+											secret_type = secret_murder
+											NOT = {is_known_by = scope:actor}
+											exists = secret_target
+											secret_target = {
+												this = scope:rv_dead_char
+											}
+										}
+										scope:actor = {
+											any_memory = {
+												OR = {
+													has_memory_type = rival_died
+													has_memory_type = nemesis_died
+												}
+												exists = memory_participant:dead_relation
+												memory_participant:dead_relation = {
+													this = scope:rv_dead_char
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						any_memory = {
+							has_memory_type = soulmate_died
+							exists = memory_participant:dead_relation
+							memory_participant:dead_relation = {
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_playable_character = yes
+									this = scope:recipient
+									prev = {save_temporary_scope_as = rv_dead_char}
+									NOR = {
+										scope:rv_dead_char = {
+											any_memory = {
+												has_memory_type = rv_was_revenged
+											}
+										}
+										any_secret = {
+											secret_type = secret_murder
+											NOT = {is_known_by = scope:actor}
+											exists = secret_target
+											secret_target = {
+												this = scope:rv_dead_char
+											}
+										}
+										scope:actor = {
+											any_memory = {
+												OR = {
+													has_memory_type = rival_died
+													has_memory_type = nemesis_died
+												}
+												exists = memory_participant:dead_relation
+												memory_participant:dead_relation = {
+													this = scope:rv_dead_char
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						any_memory = {
+							has_memory_type = friend_died
+							exists = memory_participant:dead_relation
+							memory_participant:dead_relation = {
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_playable_character = yes
+									this = scope:recipient
+									prev = {save_temporary_scope_as = rv_dead_char}
+									NOR = {
+										scope:rv_dead_char = {
+											any_memory = {
+												has_memory_type = rv_was_revenged
+											}
+										}
+										any_secret = {
+											secret_type = secret_murder
+											NOT = {is_known_by = scope:actor}
+											exists = secret_target
+											secret_target = {
+												this = scope:rv_dead_char
+											}
+										}
+										scope:actor = {
+											any_memory = {
+												OR = {
+													has_memory_type = rival_died
+													has_memory_type = nemesis_died
+												}
+												exists = memory_participant:dead_relation
+												memory_participant:dead_relation = {
+													this = scope:rv_dead_char
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						any_memory = {
+							has_memory_type = best_friend_died
+							exists = memory_participant:dead_relation
+							memory_participant:dead_relation = {
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_playable_character = yes
+									this = scope:recipient
+									prev = {save_temporary_scope_as = rv_dead_char}
+									NOR = {
+										scope:rv_dead_char = {
+											any_memory = {
+												has_memory_type = rv_was_revenged
+											}
+										}
+										any_secret = {
+											secret_type = secret_murder
+											NOT = {is_known_by = scope:actor}
+											exists = secret_target
+											secret_target = {
+												this = scope:rv_dead_char
+											}
+										}
+										scope:actor = {
+											any_memory = {
+												OR = {
+													has_memory_type = rival_died
+													has_memory_type = nemesis_died
+												}
+												exists = memory_participant:dead_relation
+												memory_participant:dead_relation = {
+													this = scope:rv_dead_char
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						any_memory = {
+							has_memory_type = spouse_died
+							exists = memory_participant:dead_relation
+							memory_participant:dead_relation = {
+								exists = killer
+								killer = {
+									is_alive = yes
+									is_playable_character = yes
+									this = scope:recipient
+									prev = {save_temporary_scope_as = rv_dead_char}
+									NOR = {
+										scope:rv_dead_char = {
+											any_memory = {
+												has_memory_type = rv_was_revenged
+											}
+										}
+										any_secret = {
+											secret_type = secret_murder
+											NOT = {is_known_by = scope:actor}
+											exists = secret_target
+											secret_target = {
+												this = scope:rv_dead_char
+											}
+										}
+										scope:actor = {
+											any_memory = {
+												OR = {
+													has_memory_type = rival_died
+													has_memory_type = nemesis_died
+												}
+												exists = memory_participant:dead_relation
+												memory_participant:dead_relation = {
+													this = scope:rv_dead_char
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						scope:recipient = {
+							OR = {
+								any_killed_character = {
+									save_temporary_scope_as = rv_dead_char
+									OR = {
+										#is_heir_of = scope:attacker
+										#is_spouse_of = scope:attacker #Not working; replaced with memory
+										is_close_or_extended_family_of = scope:actor
+									}
+									scope:recipient = {
+										NOR = {
+											scope:rv_dead_char = {
+												any_memory = {
+													has_memory_type = rv_was_revenged
+												}
+											}
+											any_secret = {
+												secret_type = secret_murder
+												NOT = {is_known_by = scope:actor}
+												exists = secret_target
+												secret_target = {
+													this = scope:rv_dead_char
+												}
+											}
+											scope:actor = {
+												any_memory = {
+													OR = {
+														has_memory_type = rival_died
+														has_memory_type = nemesis_died
+													}
+													exists = memory_participant:dead_relation
+													memory_participant:dead_relation = {
+														this = scope:rv_dead_char
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+		}
+	}
+
+	redirect = { scope:recipient ?= { save_scope_as = recipient } }
+	### rv/
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			NOT = { has_trait = incapable }
+			can_attack_in_hierarchy = scope:recipient
+			NOT = {
+				has_raised_armies = yes
+			}
+			has_any_display_cb_on = scope:recipient
+			NOT = {
+				is_allied_in_war = scope:recipient
+			}
+			custom_description = {
+				text = "is_not_bankrupt"
+				gold > 0
+			}
+			NOT = {
+				custom_description = {
+					text = "is_in_an_activity"
+					exists = involved_activity
+				}
+			}
+			trigger_if = {
+				limit = {
+					culture = { has_cultural_parameter = cannot_attack_allies }
+				}
+				NOT = {
+					is_allied_to = scope:recipient
+				}
+			}
+			trigger_if = {
+				limit = {
+					culture = { has_cultural_parameter = cannot_attack_truces }
+				}
+				NOT = {
+					has_truce = scope:recipient
+				}
+			}
+			is_imprisoned = no
+			trigger_if = {
+				limit = {
+					has_variable_list = subjugation_offer_under_consideration
+				}
+				custom_description = {
+					text = is_not_considering_offer_of_subjugation
+					NOT = {
+						is_target_in_variable_list = {
+							name = subjugation_offer_under_consideration
+							target = scope:recipient
+						}
+					}
+				}
+			}
+		}
+		scope:recipient = { NOT = { has_strong_hook = scope:actor } }
+		scope:recipient = {
+			trigger_if = {
+				limit = { is_imprisoned = yes }
+				NOT = {
+					imprisoner = scope:actor
+				}
+			}
+		}
+		scope:actor = {
+			trigger_if = {
+				limit = {
+					NOT = { government_allows = administrative }
+					liege ?= {
+						has_realm_law_flag = vassal_all_wars_banned_permanent
+						NOT = { this = scope:actor }
+					}
+				}
+				custom_tooltip = {
+					text = admin_all_vassal_wars_banned
+					always = no
+				}
+			}
+			trigger_if = {
+				limit = {
+					government_allows = administrative
+					top_liege = scope:recipient.top_liege
+					scope:recipient = { government_allows = administrative }
+					NOT = { top_liege = scope:recipient }
+				}
+				custom_tooltip = {
+					text = admin_cannot_declare_internal_wars
+					always = no
+				}
+			}
+		}
+		scope:actor = {
+			trigger_if = {
+				limit = {
+					OR = {
+						is_landless_adventurer = yes
+						agot_is_landless_pirate_character = yes
+					}
+				}
+				custom_tooltip = {
+					text = camp_located_in_defender_realm.tt
+					domicile.domicile_location.county.holder = {
+						NOR = {
+							this = scope:recipient
+							any_liege_or_above = { this = scope:recipient }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	has_valid_target_showing_failures_only = {
+		custom_description = {
+			text = "declare_war_hook_on_liege"
+			OR = {
+				war_declarer_needs_hook_on_liege = no
+				always = scope:hook
+			}
+		}
+		scope:actor = {
+			NOR = {
+				is_at_war_with = scope:recipient
+				custom_description = { #A vassal cannot go to war against someone their Liege is already at war with
+					text = liege_is_at_war_with_recipient
+					object = scope:recipient
+					liege = {
+						is_at_war_with = scope:recipient
+					}
+				}
+			}
+		}
+	}
+
+	send_options_exclusive = no
+	send_option = {
+		is_shown = {
+			war_declarer_needs_hook_on_liege = yes
+		}
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = liege
+			}
+		}
+		flag = hook
+		localization = WAR_LIEGE_HOOK
+		can_invalidate_interaction = yes
+	}
+	should_use_extra_icon = {
+		war_declarer_needs_hook_on_liege = yes
+		scope:actor = { has_usable_hook = liege }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	on_accept = {
+
+		scope:actor = {
+			#Feedback!
+			hidden_effect = {
+				send_interface_toast = {
+					type = event_toast_effect_neutral
+					title = declare_war_interaction_notification
+
+					left_icon = scope:actor
+					right_icon = scope:recipient
+
+					custom_tooltip = declare_war_interaction_notification_tooltip
+
+					show_as_tooltip = {
+						if = {
+							limit = { always = scope:hook }
+							use_hook = liege
+						}
+					}
+				}
+			}
+
+			#Has the instigator promised a vassal a war (vassal.2601)?
+			if = {
+				limit = {
+					exists = var:promised_war
+					var:promised_war = {
+						is_alive = yes
+						NOT = { this = scope:recipient }
+					}
+				}
+				trigger_event = {
+					id = vassal.2610
+					days = { 7 10 }
+				}
+			}
+
+			if = {
+				limit = { always = scope:hook }
+				use_hook = liege
+			}
+
+			#Send break up event if they are your lover
+			if = {
+				limit = {
+					has_relation_lover = scope:recipient
+					NOT = { has_relation_rival = scope:recipient } #To enable really strange love stories
+					any_character_war = {
+						casus_belli = {
+							primary_attacker = scope:actor
+							primary_defender = scope:recipient
+							any_target_title = { count >= 1 }
+						}
+					}
+				}
+				scope:recipient = {
+					trigger_event = {
+						id = lover.0103
+						days = { 14 30 }
+					}
+				}
+			}
+
+			#Invalidate any wars your vassals have going against recipient atm
+			scope:recipient = {
+				if = {
+					limit = {
+						any_character_war = {
+							primary_attacker = {
+								is_vassal_or_below_of = scope:actor
+								trigger_if = { #Ai should never invalidate a player's war!
+									limit = {
+										is_ai = no
+									}
+									scope:actor = {
+										is_ai = no
+									}
+								}
+							}
+						}
+					}
+					every_character_war = {
+						limit = {
+							primary_attacker = {
+								is_vassal_or_below_of = scope:actor
+								trigger_if = { #Ai should never invalidate a player's war!
+									limit = {
+										is_ai = no
+									}
+									scope:actor = {
+										is_ai = no
+									}
+								}
+							}
+						}
+						show_as_tooltip = { end_war = invalidated } #Actually ended in the event
+						primary_attacker = { trigger_event = war_event.1001 }
+					}
+				}
+			}
+			#Notify defender's vassals if the war is targeting one or more of their titles
+			scope:recipient = {
+				if = {
+					limit = {
+						any_vassal = {
+							save_temporary_scope_as = attacked_vassal
+							any_character_war = {
+								casus_belli = {
+									primary_attacker = scope:actor
+									primary_defender = scope:recipient
+									any_target_title = {
+										holder = {
+											OR = {
+												this = scope:attacked_vassal
+												is_vassal_or_below_of = scope:attacked_vassal
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					every_vassal = {
+						save_temporary_scope_as = attacked_vassal
+						limit = {
+							any_character_war = {
+								casus_belli = {
+									primary_attacker = scope:actor
+									primary_defender = scope:recipient
+									any_target_title = {
+										holder = {
+											OR = {
+												this = scope:attacked_vassal
+												is_vassal_or_below_of = scope:attacked_vassal
+											}
+										}
+									}
+								}
+							}
+						}
+						send_interface_toast = {
+							type = msg_war_declared_on_liege
+							title = declare_war_interaction_notification
+
+							left_icon = scope:actor
+							right_icon = scope:recipient
+
+							custom_tooltip = declare_war_interaction_notification_tooltip
+						}
+					}
+				}
+			}
+		}
+	}
+
+	auto_accept = yes
+}

@@ -1,0 +1,2668 @@
+﻿namespace = dragon_bond_events
+
+# Note: Bonding is handled differently based on if a dragon is already owned and bonded, or if it is trying to establish a bond.
+
+dragon_bond_events.0001 = { # Handler event for Bond Dragon Scheme
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		NOR = {
+			any_relation = { type = agot_dragon }
+			scope:target = {
+				any_relation = { type = agot_dragon }
+			}
+			government_has_flag = government_is_nw
+		}
+	}
+
+	immediate = {
+		random_list = {
+			0 = {
+				modifier = {
+					add = scope:scheme.scheme_success_chance
+				}
+				trigger_event = dragon_bond_events.1000
+			}
+			0 = {
+				modifier = {
+					add = {
+						value = 100
+						subtract = scope:scheme.scheme_success_chance
+					}
+				}
+				modifier = {
+					agot_canon_dragons_enabled = yes
+					agot_is_canon_rider_dragon_pair = { RIDER = scope:owner DRAGON = scope:target }
+					factor = 0
+				}
+				trigger_event = { on_action = dragon_bonding_failure }
+			}
+		}
+	}
+}
+
+dragon_bond_events.1000 = { # Bond Dragon Success
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.1000.t
+	desc = dragon_bond_events.1000.desc
+	theme = dragon
+	override_background = {
+		trigger = {
+			scope:target = {
+				has_variable = in_dragonpit
+			}
+		}
+		reference = agot_dragonpit
+	}
+	override_background = {
+		trigger = {
+			scope:target = {
+				NOT = { has_variable = in_dragonpit }
+			}
+		}
+		reference = wilderness
+	}
+
+	trigger = {
+		scope:target = {
+			any_relation = {
+				type = agot_dragon
+				count = 0
+			}
+		}
+	}
+
+	on_trigger_fail = {
+		send_interface_toast = {
+			title = bond_with_dragon_scheme_invalidated_title
+			left_icon = scope:target
+			custom_tooltip = bond_with_dragon_scheme_invalidated_bonded_someone_else
+		}
+		every_scheme = {
+			limit = {
+				scheme_type = bond_with_dragon_scheme
+				scheme_target_character = scope:target
+			}
+			end_scheme = yes
+		}
+	}
+
+	left_portrait = root
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		agot_bond_dragon_relation_effect = {
+			ACTOR = root
+			DRAGON = scope:target
+		}
+	}
+
+	option = {
+		name = dragon_bond_events.1000.a
+		save_scope_as = tamer
+		scope:target = {
+			save_scope_as = dragon
+		}
+		scope:scheme = {
+			end_scheme = yes
+		}
+		if = {
+			limit = {
+				scope:target.dragon_size >= dragon_taming_minimum_size
+			}
+			trigger_event = dragon_taming_events.0201
+		}
+	}
+}
+
+dragon_bond_events.1001 = { # Bond Dragon Failure - Default
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.1001.t
+	desc = dragon_bond_events.1001.desc
+	theme = dragon
+	override_background = {
+		trigger = {
+			scope:target = {
+				has_variable = in_dragonpit
+			}
+		}
+		reference = agot_dragonpit
+	}
+	override_background = {
+		trigger = {
+			scope:target = {
+				NOT = { has_variable = in_dragonpit }
+			}
+		}
+		reference = wilderness
+	}
+	left_portrait = root
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {}
+
+	option = {
+		name = dragon_bond_events.1001.a
+		scope:scheme = {
+			end_scheme = yes
+		}
+		stress_impact = {
+			base = medium_stress_impact_gain
+			arrogant = medium_stress_impact_gain
+		}
+	}
+}
+
+dragon_bond_events.1002 = { # Bond Dragon Failure - Dragon Burns You
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.1002.t
+	desc = dragon_bond_events.1002.desc
+	theme = befriend_scheme
+
+	left_portrait = root
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	weight_multiplier = {
+		base = 0
+
+		modifier = {
+			scope:target = { has_trait = dragon_bloodthirsty }
+			add = 1
+		}
+		modifier = {
+			scope:target = { has_trait = dragon_aggressive }
+			add = 1
+		}
+		modifier = {
+			scope:target = { has_trait = dragon_impulsive }
+			add = 1
+		}
+	}
+
+	trigger = {
+		scope:target = {
+			NOT = { has_character_flag = owned_dragon }
+			OR = {
+				has_trait = dragon_bloodthirsty
+				has_trait = dragon_aggressive
+			}
+		}
+	}
+
+	immediate = {
+		add_trait = burned
+		add_trait_xp = {
+			trait = burned
+			value = {
+				integer_range = {
+					min = 5
+					max = 25
+				}
+			}
+		}
+		increase_wounds_effect = { REASON = maimed_by_wild_beast }
+	}
+
+	option = {
+		name = dragon_bond_events.1002.a
+		stress_impact = {
+			base = medium_stress_impact_gain
+			arrogant = medium_stress_impact_gain
+		}
+		scope:scheme = {
+			end_scheme = yes
+		}
+	}
+}
+
+dragon_bond_events.1003 = { # Bond Dragon Failure - Dragon Kills You
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.1003.t
+	desc = dragon_bond_events.1003.desc
+	theme = befriend_scheme
+
+	left_portrait = root
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	weight_multiplier = {
+		base = 0
+
+		modifier = {
+			scope:target = { has_trait = dragon_bloodthirsty }
+			add = 1
+		}
+		modifier = {
+			scope:target = { has_trait = dragon_aggressive }
+			add = 1
+		}
+		modifier = {
+			scope:target = { has_trait = dragon_impulsive }
+			add = 1
+		}
+	}
+
+	trigger = {
+		scope:target = {
+			NOT = { has_character_flag = owned_dragon }
+			OR = {
+				has_trait = dragon_bloodthirsty
+				has_trait = dragon_aggressive
+			}
+		}
+	}
+
+	option = {
+		name = dragon_bond_events.1002.a
+		add_trait = burned
+		add_trait_xp = {
+			trait = burned
+			value = 100
+		}
+		death = {
+			death_reason = death_dragon_fire_failed_tame
+			killer = scope:target
+		}
+		scope:scheme = {
+			end_scheme = yes
+		}
+	}
+}
+
+# handler event for bonding scheme
+dragon_bond_events.2000 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		random_list = {
+			0 = {
+				modifier = {
+					add = scope:scheme.scheme_success_chance
+				}
+				trigger_event = dragon_bond_events.2001
+			}
+			0 = {
+				modifier = {
+					add = {
+						value = 100
+						subtract = scope:scheme.scheme_success_chance
+					}
+				}
+				trigger_event = dragon_bond_events.2002
+			}
+		}
+	}
+}
+# Tamed Dragon Bonding scheme success
+dragon_bond_events.2001 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.2001.t
+	desc = dragon_bond_events.2001.desc
+	theme = befriend_scheme
+
+	left_portrait = root
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				dynasty ?= { has_dynasty_perk = dragonrider_dynasty_legacy_2 }
+				scope:target = {
+					exists = var:cradlemate
+					var:cradlemate = root
+				}
+			}
+			add_trait_xp = {
+				trait = dragonrider
+				track = dragon_bond
+				value = {
+					integer_range = {
+						min = 15
+						max = 30
+					}
+				}
+			}
+		}
+		else = {
+			add_trait_xp = {
+				trait = dragonrider
+				track = dragon_bond
+				value = {
+					integer_range = {
+						min = 12
+						max = 15
+					}
+				}
+			}
+		}
+		scope:target = {
+			add_opinion = {
+				modifier = bonded_with_me
+				target = root
+			}
+		}
+	}
+
+	option = {
+		name = dragon_bond_events.2001.a
+		deepen_bond_end_effect = yes
+	}
+}
+
+# Tamed Dragon Bonding scheme failure
+dragon_bond_events.2002 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.2002.t
+	desc = dragon_bond_events.2002.desc
+	theme = befriend_scheme
+
+	left_portrait = root
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		scope:target = {
+			add_opinion = {
+				modifier = failed_to_bond_with_me
+				target = root
+			}
+		}
+	}
+
+	option = {
+		name = dragon_bond_events.2002.a
+		deepen_bond_end_effect = yes
+	}
+}
+
+# Feed them a charred meal
+dragon_bond_events.3000 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3000.t
+	desc = dragon_bond_events.3000.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = {
+		scope:scheme = {
+			NOT = { has_variable = had_fed_charred_meat_event }
+		}
+	}
+	immediate = {
+		scope:scheme = {
+			set_variable = {
+				name = had_fed_charred_meat_event
+				value = yes
+				years = 10
+			}
+		}
+	}
+	# Charred sheep
+	option = {
+		name = dragon_bond_events.3000.a
+		remove_short_term_gold = medium_gold_value
+		random_list = {
+			# Success!
+			60 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_charred_sheep_success_modifier }
+					}
+				}
+				modifier = {
+					add = 20
+					scope:target = { has_trait = dragon_voracious }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:sheep
+					}
+					trigger_event = {
+						id = dragon_bond_events.3001
+						days = { 7 14 }
+					}
+				}
+			}
+			# Failure!
+			40 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_charred_sheep_failure_modifier }
+					}
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:sheep
+					}
+					trigger_event = {
+						id = dragon_bond_events.3002
+						days = { 7 14 }
+					}
+				}
+			}
+		}
+		stress_impact = {
+			greedy = minor_stress_impact_gain
+			gluttonous = medium_stress_impact_gain
+		}
+	}
+	# Charred pig/boar
+	option = {
+		name = dragon_bond_events.3000.b
+		remove_short_term_gold = minor_gold_value
+		random_list = {
+			# Success!
+			60 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_charred_pig_success_modifier }
+					}
+				}
+				modifier = {
+					add = 20
+					scope:target = { has_trait = dragon_voracious }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:pig
+					}
+					trigger_event = {
+						id = dragon_bond_events.3001
+						days = { 7 14 }
+					}
+				}
+			}
+			# Failure!
+			40 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_charred_pig_failure_modifier }
+					}
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:pig
+					}
+					trigger_event = {
+						id = dragon_bond_events.3002
+						days = { 7 14 }
+					}
+				}
+			}
+		}
+		stress_impact = {
+			greedy = minor_stress_impact_gain
+			gluttonous = medium_stress_impact_gain
+		}
+	}
+	# Hmm.. Never mind.
+	option = {
+		name = dragon_bond_events.3000.c
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				short_term_gold < minor_gold_value
+			}
+		}
+	}
+}
+
+dragon_bond_events.3001 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3001.t
+	desc = dragon_bond_events.3001.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3001.a
+		scope:scheme = {
+			if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:sheep }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_charred_sheep_success_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+			else_if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:pig }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_charred_pig_success_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+		}
+	}
+}
+
+dragon_bond_events.3002 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3002.t
+	desc = dragon_bond_events.3002.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	option = {
+		name = dragon_bond_events.3002.a
+		scope:scheme = {
+			if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:sheep }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_charred_sheep_failure_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+			else_if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:pig }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_charred_pig_failure_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+		}
+		stress_impact = {
+			base = minor_stress_impact_gain
+		}
+	}
+}
+
+# Feed them a living meal (Live Sheep/livestock)
+dragon_bond_events.3003 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3003.t
+	desc = dragon_bond_events.3003.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = {
+		scope:scheme = {
+			NOT = { has_variable = had_fed_live_meal_event }
+		}
+	}
+	immediate = {
+		scope:scheme = {
+			set_variable = {
+				name = had_fed_live_meal_event
+				value = yes
+				years = 10
+			}
+		}
+	}
+	# Live Sheep!
+	option = {
+		name = dragon_bond_events.3003.a
+		remove_short_term_gold = major_gold_value
+		random_list = {
+			# Success!
+			60 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_live_sheep_success_modifier }
+					}
+				}
+				modifier = {
+					add = 20
+					scope:target = { has_trait = dragon_voracious }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:sheep
+					}
+					trigger_event = {
+						id = dragon_bond_events.3004
+						days = { 7 14 }
+					}
+				}
+			}
+			# Failure!
+			40 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_live_sheep_failure_modifier }
+					}
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:sheep
+					}
+					trigger_event = {
+						id = dragon_bond_events.3005
+						days = { 7 14 }
+					}
+				}
+			}
+		}
+		stress_impact = {
+			compassionate = major_stress_impact_gain
+			sadistic = major_stress_impact_loss
+		}
+	}
+	# Live Pigs
+	option = {
+		name = dragon_bond_events.3003.b
+		remove_short_term_gold = medium_gold_value
+		random_list = {
+			# Success!
+			60 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_live_pig_success_modifier }
+					}
+				}
+				modifier = {
+					add = 20
+					scope:target = { has_trait = dragon_voracious }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:pig
+					}
+					trigger_event = {
+						id = dragon_bond_events.3004
+						days = { 7 14 }
+					}
+				}
+			}
+			# Failure!
+			40 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_live_pig_failure_modifier }
+					}
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:pig
+					}
+					trigger_event = {
+						id = dragon_bond_events.3005
+						days = { 7 14 }
+					}
+				}
+			}
+		}
+		stress_impact = {
+			compassionate = major_stress_impact_gain
+			sadistic = major_stress_impact_loss
+		}
+	}
+	# Hmm.. Never mind.
+	option = {
+		name = dragon_bond_events.3003.c
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				short_term_gold < minor_gold_value
+			}
+		}
+	}
+}
+
+dragon_bond_events.3004 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3004.t
+	desc = dragon_bond_events.3004.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3004.a
+		scope:scheme = {
+			if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:sheep }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_live_sheep_success_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+			else_if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:pig }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_live_pig_success_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+		}
+	}
+}
+
+dragon_bond_events.3005 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3005.t
+	desc = dragon_bond_events.3005.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	option = {
+		name = dragon_bond_events.3005.a
+		scope:scheme = {
+			if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:sheep }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_live_sheep_failure_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+			else_if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:pig }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_live_pig_failure_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+		}
+		stress_impact = {
+			base = minor_stress_impact_gain
+		}
+	}
+}
+
+# Feed them an ordinary meal (Raw Slaughtered Livestock)
+dragon_bond_events.3006 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3006.t
+	desc = dragon_bond_events.3006.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = {
+		scope:scheme = {
+			NOT = { has_variable = had_fed_raw_meal_event }
+		}
+	}
+	immediate = {
+		scope:scheme = {
+			set_variable = {
+				name = had_fed_raw_meal_event
+				value = yes
+				years = 10
+			}
+		}
+	}
+	# Raw (Slaughtered) Sheep
+	option = {
+		name = dragon_bond_events.3006.a
+		remove_short_term_gold = medium_gold_value
+		random_list = {
+			# Success!
+			60 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_meat_sheep_success_modifier }
+					}
+				}
+				modifier = {
+					add = 20
+					scope:target = { has_trait = dragon_voracious }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:sheep
+					}
+					trigger_event = {
+						id = dragon_bond_events.3007
+						days = { 7 14 }
+					}
+				}
+			}
+			# Failure!
+			40 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_meat_sheep_failure_modifier }
+					}
+				}
+				modifier = {
+					add = 20
+					scope:target = { has_trait = dragon_voracious }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:sheep
+					}
+					trigger_event = {
+						id = dragon_bond_events.3008
+						days = { 7 14 }
+					}
+				}
+			}
+		}
+	}
+	# Raw (Slaughtered) Pigs
+	option = {
+		name = dragon_bond_events.3006.b
+		remove_short_term_gold = minor_gold_value
+		random_list = {
+			# Success!
+			60 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_meat_pig_success_modifier }
+					}
+				}
+				modifier = {
+					add = 20
+					scope:target = { has_trait = dragon_voracious }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:pig
+					}
+					trigger_event = {
+						id = dragon_bond_events.3007
+						days = { 7 14 }
+					}
+				}
+			}
+			# Failure!
+			40 = {
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = { type = dragon_bond_fed_meat_pig_failure_modifier }
+					}
+				}
+				modifier = {
+					add = 20
+					scope:target = { has_trait = dragon_voracious }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_animal
+						value = flag:pig
+					}
+					trigger_event = {
+						id = dragon_bond_events.3008
+						days = { 7 14 }
+					}
+				}
+			}
+		}
+	}
+	# Hmm.. Never mind.
+	option = {
+		name = dragon_bond_events.3006.c
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				short_term_gold < minor_gold_value
+			}
+		}
+	}
+}
+
+dragon_bond_events.3007 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3007.t
+	desc = dragon_bond_events.3007.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3007.a
+		scope:scheme = {
+			if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:sheep }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_meat_sheep_success_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+			else_if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:pig }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_meat_pig_success_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+		}
+	}
+}
+
+dragon_bond_events.3008 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3008.t
+	desc = dragon_bond_events.3008.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3008.a
+		scope:scheme = {
+			if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:sheep }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_meat_sheep_failure_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+			else_if = {
+				limit = {
+					scope:owner = { var:selected_animal ?= flag:pig }
+				}
+				add_scheme_modifier = { type = dragon_bond_fed_meat_pig_failure_modifier }
+				scope:owner = { remove_variable = selected_animal }
+			}
+		}
+		stress_impact = {
+			base = minor_stress_impact_gain
+		}
+	}
+}
+
+# Consult Valyrian lore on how to bond
+dragon_bond_events.3009 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3009.t
+	desc = dragon_bond_events.3009.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = {
+		scope:scheme = {
+			NOT = { has_variable = had_event_dragon_bond_consult_valyrian_lore }
+		}
+		culture = { has_cultural_pillar = heritage_valyrian }
+	}
+	immediate = {
+		scope:scheme = {
+			set_variable = {
+				name = had_event_dragon_bond_consult_valyrian_lore
+				value = yes
+				years = 10
+			}
+		}
+	}
+	# Consult Oral Folklore
+	option = {
+		name = dragon_bond_events.3009.a
+		duel = {
+			skill = learning
+			value = high_skill_rating
+			40 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				show_as_tooltip = {
+					scope:scheme = { add_scheme_modifier = { type = dragon_bond_oral_folklore_success_modifier } }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_lore
+						value = flag:folklore
+					}
+					trigger_event = {
+						id = dragon_bond_events.3010
+						days = { 2 7 }
+					}
+				}
+			}
+			60 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				show_as_tooltip = {
+					scope:scheme = { add_scheme_modifier = { type = dragon_bond_oral_folklore_failure_modifier } }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_lore
+						value = flag:folklore
+					}
+					trigger_event = {
+						id = dragon_bond_events.3011
+						days = { 2 7 }
+					}
+				}
+			}
+		}
+	}
+	# Consult Writen Lore
+	option = {
+		name = dragon_bond_events.3009.b
+		duel = {
+			skill = learning
+			value = high_skill_rating
+			60 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				show_as_tooltip = {
+					scope:scheme = { add_scheme_modifier = { type = dragon_bond_written_lore_success_modifier } }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_lore
+						value = flag:tomes
+					}
+					trigger_event = {
+						id = dragon_bond_events.3010
+						days = { 2 7 }
+					}
+				}
+			}
+			40 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				show_as_tooltip = {
+					scope:scheme = { add_scheme_modifier = { type = dragon_bond_written_lore_failure_modifier } }
+				}
+				scope:owner = {
+					set_variable = {
+						name = selected_lore
+						value = flag:tomes
+					}
+					trigger_event = {
+						id = dragon_bond_events.3011
+						days = { 2 7 }
+					}
+				}
+			}
+		}
+	}
+	# Hmm.. Never mind.
+	option = {
+		name = dragon_bond_events.3009.c
+	}
+}
+
+dragon_bond_events.3010 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3010.t
+	desc = dragon_bond_events.3010.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3010.a
+		scope:scheme = {
+			if = {
+				limit = {
+					scope:owner = { var:selected_lore ?= flag:folklore }
+				}
+				add_scheme_modifier = { type = dragon_bond_oral_folklore_success_modifier }
+				scope:owner = { remove_variable = selected_lore }
+			}
+			else_if = {
+				limit = {
+					scope:owner = { var:selected_lore ?= flag:tomes }
+				}
+				add_scheme_modifier = { type = dragon_bond_written_lore_success_modifier }
+				scope:owner = { remove_variable = selected_lore }
+			}
+		}
+	}
+}
+
+dragon_bond_events.3011 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3011.t
+	desc = dragon_bond_events.3011.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3011.a
+		scope:scheme = {
+			if = {
+				limit = {
+					scope:owner = { var:selected_lore ?= flag:folklore }
+				}
+				add_scheme_modifier = { type = dragon_bond_oral_folklore_failure_modifier }
+				scope:owner = { remove_variable = selected_lore }
+			}
+			else_if = {
+				limit = {
+					scope:owner = { var:selected_lore ?= flag:tomes }
+				}
+				add_scheme_modifier = { type = dragon_bond_written_lore_failure_modifier }
+				scope:owner = { remove_variable = selected_lore }
+			}
+		}
+		stress_impact = {
+			base = minor_stress_impact_gain
+		}
+	}
+}
+
+# You have a Head Dragonkeeper to help
+dragon_bond_events.3012 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3012.t
+	desc = dragon_bond_events.3012.desc
+	theme = dragon
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	lower_left_portrait = {
+		character = scope:head_dragonkeeper
+	}
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	trigger = {
+		exists = court_position:head_dragonkeeper_court_position
+		scope:scheme = {
+			NOT = { has_variable = had_event_hdk_help }
+		}
+	}
+	immediate = {
+		random_court_position_holder = {
+			type = head_dragonkeeper_court_position
+			save_scope_as = head_dragonkeeper
+		}
+		scope:scheme = {
+			set_variable = {
+				name = had_event_hdk_help
+				value = yes
+				years = 10
+			}
+		}
+	}
+	# Head Dragonkeeper, Offer me Advice
+	option = {
+		name = dragon_bond_events.3012.a
+		duel = {
+			skill = diplomacy
+			value = medium_skill_rating
+			55 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 1.5
+					min = -49
+				}
+				modifier = {
+					add = scope:head_dragonkeeper.aptitude:head_dragonkeeper_court_position
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = dragon_bond_good_hdk_assistance
+						}
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3013
+						days = 2
+					}
+				}
+			}
+			45 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -1.5
+					min = -49
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = dragon_bond_bad_hdk_assistance
+						}
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3014
+						days = 2
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 1
+				ai_compassion = 1
+			}
+		}
+	}
+	# No, never mind...
+	option = {
+		name = dragon_bond_events.3012.b
+	}
+}
+
+dragon_bond_events.3013 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3013.t
+	desc = dragon_bond_events.3013.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	option = {
+		name = dragon_bond_events.3013.a
+		scope:scheme = { add_scheme_modifier = { type = dragon_bond_good_hdk_assistance } }
+	}
+}
+
+dragon_bond_events.3014 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3014.t
+	desc = dragon_bond_events.3014.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	option = {
+		name = dragon_bond_events.3014.a
+		scope:scheme = { add_scheme_modifier = { type = dragon_bond_bad_hdk_assistance } }
+		stress_impact = {
+			base = minor_stress_impact_gain
+		}
+	}
+}
+
+# Sing in Valyrian
+dragon_bond_events.3015 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3015.t
+	desc = dragon_bond_events.3015.desc
+	theme = dragon
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	trigger = {
+		scope:scheme = {
+			NOT = { has_variable = had_singing_event }
+		}
+		NOT = { has_trait = mute }
+		knows_language = language_agot_valyrian
+	}
+	immediate = {
+		scope:scheme = {
+			set_variable = {
+				name = had_singing_event
+				value = yes
+				years = 10
+			}
+		}
+	}
+	option = {
+		name = dragon_bond_events.3015.a
+		duel = {
+			skills = { learning diplomacy }
+			value = high_skill_rating
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = dragon_bond_good_singing
+						}
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3016
+						days = 2
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = dragon_bond_bad_singing
+						}
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3017
+						days = 2
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 1
+				ai_compassion = 1
+			}
+		}
+	}
+	# No, never mind...
+	option = {
+		name = dragon_bond_events.3015.b
+	}
+}
+
+dragon_bond_events.3016 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3016.t
+	desc = dragon_bond_events.3016.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3016.a
+		scope:scheme = { add_scheme_modifier = { type = dragon_bond_good_singing } }
+	}
+}
+
+dragon_bond_events.3017 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3017.t
+	desc = dragon_bond_events.3017.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3017.a
+		scope:scheme = { add_scheme_modifier = { type = dragon_bond_bad_singing } }
+		stress_impact = {
+			base = minor_stress_impact_gain
+		}
+	}
+}
+
+# Speak in Valyrian
+dragon_bond_events.3018 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3018.t
+	desc = dragon_bond_events.3018.desc
+	theme = dragon
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	trigger = {
+		scope:scheme = {
+			NOT = { has_variable = had_speaking_event }
+		}
+		NOT = { has_trait = mute }
+		knows_language = language_agot_valyrian
+	}
+	immediate = {
+		scope:scheme = {
+			set_variable = {
+				name = had_speaking_event
+				value = yes
+				years = 10
+			}
+		}
+	}
+	option = {
+		name = dragon_bond_events.3018.a
+		duel = {
+			skills = { learning diplomacy }
+			value = high_skill_rating
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.5
+					min = -49
+				}
+				modifier = {
+					add = 25
+					knows_language = language_agot_valyrian
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = dragon_bond_good_speaking
+						}
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3019
+						days = 2
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.5
+					min = -49
+				}
+				modifier = {
+					add = -50
+					NOT = { knows_language = language_agot_valyrian }
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = dragon_bond_bad_speaking
+						}
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3020
+						days = 2
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 1
+				ai_compassion = 1
+			}
+		}
+	}
+	# No, never mind...
+	option = {
+		name = dragon_bond_events.3018.b
+	}
+}
+
+dragon_bond_events.3019 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3019.t
+	desc = dragon_bond_events.3019.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3019.a
+		scope:scheme = { add_scheme_modifier = { type = dragon_bond_good_speaking } }
+	}
+}
+
+dragon_bond_events.3020 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3020.t
+	desc = dragon_bond_events.3020.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	option = {
+		name = dragon_bond_events.3020.a
+		scope:scheme = { add_scheme_modifier = { type = dragon_bond_bad_speaking } }
+		stress_impact = {
+			base = minor_stress_impact_gain
+		}
+	}
+}
+
+# Ride Dragon
+dragon_bond_events.3021 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3021.t
+	desc = dragon_bond_events.3021.desc
+	theme = dragon
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	trigger = {
+		scope:scheme = {
+			NOT = { has_variable = had_riding_event }
+		}
+	}
+	immediate = {
+		scope:scheme = {
+			set_variable = {
+				name = had_riding_event
+				value = yes
+				years = 10
+			}
+		}
+	}
+	option = {
+		name = dragon_bond_events.3021.a
+		duel = {
+			skill = martial
+			value = mediocre_skill_rating
+			55 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.5
+					min = -49
+				}
+				modifier = {
+					add = 5
+					knows_language = language_agot_valyrian
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = dragon_bond_riding_success_modifier
+						}
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3022
+						days = 2
+					}
+				}
+			}
+			45 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.5
+					min = -49
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						custom_tooltip = dragon_bond_events.3021.custom_tt
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3023
+						days = 2
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 1
+				ai_compassion = 1
+			}
+		}
+	}
+	# No, never mind...
+	option = {
+		name = dragon_bond_events.3021.b
+	}
+}
+
+dragon_bond_events.3022 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3022.t
+	desc = dragon_bond_events.3022.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3022.a
+		scope:scheme = { add_scheme_modifier = { type = dragon_bond_riding_success_modifier } }
+	}
+}
+
+dragon_bond_events.3023 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3023.t
+	desc = dragon_bond_events.3023.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	option = {
+		name = dragon_bond_events.3023.a
+		scope:scheme = {
+			custom_tooltip = dragon_bond_events.3021.custom_tt
+		}
+	}
+}
+
+# Visit Dragon Daily
+dragon_bond_events.3024 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3024.t
+	desc = dragon_bond_events.3024.desc
+	theme = dragon
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	trigger = {
+		scope:scheme = {
+			NOT = { has_variable = had_visitation_event }
+		}
+	}
+	immediate = {
+		scope:scheme = {
+			set_variable = {
+				name = had_visitation_event
+				value = yes
+				years = 10
+			}
+		}
+	}
+	option = {
+		name = dragon_bond_events.3024.a
+		duel = {
+			skill = diplomacy
+			value = mediocre_skill_rating
+			60 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				modifier = {
+					add = 5
+					knows_language = language_agot_valyrian
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						add_scheme_modifier = {
+							type = dragon_bond_visitation_modifier
+						}
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3025
+						days = 7
+					}
+				}
+			}
+			40 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				show_as_tooltip = {
+					scope:scheme = {
+						custom_tooltip = dragon_bond_events.3024.custom_tt
+					}
+				}
+				hidden_effect = {
+					trigger_event = {
+						id = dragon_bond_events.3026
+						days = 7
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 1
+				ai_compassion = 1
+			}
+		}
+	}
+	# No, never mind...
+	option = {
+		name = dragon_bond_events.3024.b
+	}
+}
+
+dragon_bond_events.3025 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3025.t
+	desc = dragon_bond_events.3025.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	# Excellent!
+	option = {
+		name = dragon_bond_events.3025.a
+		scope:scheme = { add_scheme_modifier = { type = dragon_bond_riding_success_modifier } }
+	}
+}
+
+dragon_bond_events.3026 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3026.t
+	desc = dragon_bond_events.3026.desc
+	theme = dragon
+	left_portrait = scope:owner
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+	trigger = { exists = scope:scheme }
+
+	option = {
+		name = dragon_bond_events.3026.a
+		scope:scheme = {
+			custom_tooltip = dragon_bond_events.3024.custom_tt
+		}
+		stress_impact = {
+			base = minor_stress_impact_gain
+		}
+	}
+}
+
+########################
+# Sleeping Dragon Chain#
+#      3027-3031       #
+#       Sallow         #
+########################
+
+dragon_bond_events.3027 = { # walking in the wilderness
+	title = dragon_bond_events.3027.t
+	desc = dragon_bond_events.3027.desc
+	theme = dragon
+
+	override_background = { reference = wilderness }
+
+	left_portrait = {
+		character = scope:owner
+		animation = idle
+	}
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	trigger = {
+		exists = scope:scheme
+
+		scope:scheme = {
+			NOT = { has_variable = had_event_dragon_bond_found_sleeping }
+		}
+		scope:target = {# make sure they're not pitted
+			NOT = {
+				has_character_flag = in_dragonpit
+			}
+		}
+		scope:owner = {
+			OR = { # ultimately the event doesn't make sense without one of the traits that kicks it off, as long as the player doesn't really know I feel like it's fine to act as though the option to sleep is special due to traits
+				has_trait = lazy
+				has_trait = eccentric
+				has_trait = calm
+			}
+		}
+	}
+	immediate = { # to ensure no simultaneous firing in MP
+		set_variable = {
+			name = scheme_event_active_flag
+			value = yes
+		}
+		scope:scheme = {
+			set_variable = {
+				name = had_event_dragon_bond_found_sleeping
+				value = yes
+				years = 10
+			}
+		}
+	}
+
+	option = { # investigate snoring - start event chain
+		name = dragon_bond_events.3027.a
+		custom_tooltip = dragon_bond_events.3027.custom_tt.a
+		trigger_event = dragon_bond_events.3028
+
+		ai_chance = {
+			base = 0
+		}
+	}
+
+	option = { # be the guy who survives the horror movie and leaves
+		name = dragon_bond_events.3027.b
+		stress_impact = {
+			base = minor_stress_impact_loss
+			calm = minor_stress_impact_loss
+			craven = minor_stress_impact_loss
+			content = minor_stress_impact_loss
+			ambitious = minor_stress_impact_gain
+			impatient = minor_stress_impact_gain
+		}
+		remove_variable = scheme_event_active_flag
+
+		ai_chance = { #to make it so ai's don't repeatedly throw themselves at a dragon's house
+			base = 100
+		}
+	}
+}
+
+dragon_bond_events.3028 = { # find sleeping dragmon
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3027.t
+	desc = dragon_bond_events.3028.desc
+	theme = dragon
+
+	override_background = { reference = wilderness }
+
+	left_portrait = {
+		character = scope:owner
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		# Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	option = { # be a sleepy guy
+		name = dragon_bond_events.3028.a
+
+		custom_tooltip = dragon_bond_events.3028.custom_tt.a
+
+		trigger = {
+			root = {
+				OR = {
+					has_trait = lazy
+					has_trait = calm
+					has_trait = eccentric
+				}
+			}
+		}
+
+		stress_impact = {
+			craven = major_stress_impact_gain
+			lazy = minor_stress_loss
+			calm = minor_stress_impact_loss
+			paranoid = minor_stress_impact_gain
+		}
+
+		custom_tooltip = {
+			text = dragon_bond_events.3028.custom_tt.react
+			random_list = {
+				5 = { # wake up with it tucked around you
+
+					#POSITIVE TRAITS
+
+					modifier = {
+						scope:target = { has_trait = dragon_friendly }
+						add = 2.5
+					}
+					modifier = {
+						scope:target = { has_trait = dragon_cooperative }
+						add = 2
+					}
+					modifier = {
+						scope:target = { has_trait = dragon_supporting }
+						add = 2
+					}
+					modifier = {
+						scope:target = { has_trait = dragon_accepting }
+						add = 2
+					}
+					modifier = {
+						scope:target = { has_trait = dragon_cooperative }
+						add = 2
+					}
+					modifier = { # sick dragons like hugs
+						OR = {
+							scope:target = { has_trait = dragon_burned }
+							scope:target = { has_trait = dragon_ill }
+						}
+						add = 3.5
+					}
+					modifier = {
+						scope:owner = {
+							culture = { has_cultural_pillar = heritage_valyrian }
+						}
+						add = 3
+					}
+
+					#NEGATIVE TRAITS
+
+					modifier = { # maybe a better way to flip chance modifier if it has an opposite trait to the one in POSITIVE TRAITS, perchance
+						scope:target = { has_trait = dragon_aggressive }
+						add = -4
+					}
+					modifier = {
+						scope:target = { has_trait = dragon_voracious }
+						add = -2
+					}
+					modifier = {
+						scope:target = { has_trait = dragon_defiant }
+						add = -2
+					}
+					modifier = {
+						scope:target = { has_trait = dragon_bloodthirsty }
+						add = -5
+					}
+					modifier = {
+						scope:target = { has_trait = dragon_skittish }
+						add = -1.5
+					}
+					trigger_event = dragon_bond_events.3029
+				}
+				5 = {
+					trigger_event = dragon_bond_events.3030
+				}
+			}
+		}
+	}
+
+	option = { # Nope, sneak away
+		name = dragon_bond_events.3028.b
+
+		custom_tooltip = dragon_bond_events.3028.custom_tt.b
+
+		duel = {
+			skill = intrigue
+			value = average_skill_rating
+
+			3 = { # you make it away
+				custom_tooltip = dragon_bond_events.3028.custom_tt.b.a
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 0.5
+				}
+				hidden_effect = {
+					send_interface_toast = {
+						title = dragon_bond_events.3028.b.success.t
+						custom_tooltip = dragon_bond_events.3028.b.success.custom_tt
+						left_icon = scope:owner
+						right_icon = scope:target
+					}
+				}
+				remove_variable = scheme_event_active_flag
+			}
+			5 = { # the dragon awakens and attacks
+				custom_tooltip = dragon_bond_events.3028.custom_tt.b.b
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -0.2
+				}
+				trigger_event = dragon_bond_events.3031
+			}
+		}
+	}
+
+	option = { # Nope, run away
+		name = dragon_bond_events.3028.c
+
+		custom_tooltip = dragon_bond_events.3028.custom_tt.c
+
+		duel = {
+			skill = prowess
+			value = high_skill_rating
+
+			5 = { # you make it away
+				custom_tooltip = dragon_bond_events.3028.custom_tt.b.a
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 1
+				}
+				hidden_effect = {
+					send_interface_toast = {
+						title = dragon_bond_events.3028.c.success.t
+						custom_tooltip = dragon_bond_events.3028.c.success.custom_tt
+						left_icon = scope:owner
+						right_icon = scope:target
+					}
+				}
+				remove_variable = scheme_event_active_flag
+			}
+			5 = { # the dragon awakens and attacks
+				custom_tooltip = dragon_bond_events.3028.custom_tt.b.b
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -0.5
+				}
+				trigger_event = dragon_bond_events.3031
+			}
+		}
+	}
+}
+
+dragon_bond_events.3029 = { # waking up with it still sleeping
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3027.t
+	desc = dragon_bond_events.3029.desc
+	theme = dragon
+
+	override_background = { reference = wilderness }
+
+	left_portrait = {
+		character = scope:owner
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		# Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	option = {
+		name = dragon_bond_events.3029.a
+
+		scope:scheme = {
+			add_scheme_modifier = {
+				type = dragon_bond_sleep_success_modifier
+			}
+		}
+		remove_variable = scheme_event_active_flag
+	}
+}
+
+dragon_bond_events.3030 = { # The Dragon awakens
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3027.t
+	desc = dragon_bond_events.3030.desc
+	theme = dragon
+
+	override_background = { reference = wilderness }
+
+	left_portrait = {
+		character = scope:owner
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		# Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	option = { # sing it back to sleep, works if the scheme owner speaks valyrian, not if not
+		name = dragon_bond_events.3030.a
+		custom_tooltip = dragon_bond_events.3030.custom_tt.a
+
+		if = {
+			limit = {
+				knows_language = language_agot_valyrian
+			}
+			scope:scheme = {
+				add_scheme_modifier = {
+					type = dragon_bond_lullaby_success_modifier
+				}
+			}
+			hidden_effect = {
+				send_interface_toast = {
+					title = dragon_bond_events.3030.c.success.t
+					custom_tooltip = dragon_bond_events.3030.c.success.custom_tt
+					left_icon = scope:owner
+					right_icon = scope:target
+				}
+			}
+			remove_variable = scheme_event_active_flag
+
+		}
+		else = {
+			scope:scheme = {
+				add_scheme_modifier = {
+					type = dragon_bond_lullaby_failure_modifier
+				}
+			}
+			trigger_event = dragon_bond_events.3031
+		}
+	}
+}
+
+dragon_bond_events.3031 = { # The Dragon attacks
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_bond_events.3027.t
+	desc = dragon_bond_events.3031.desc
+	theme = dragon
+
+	override_background = { reference = wilderness }
+
+	left_portrait = {
+		character = scope:owner
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:target
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		# Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	option = { #walk back home :(
+		name = agot_scream_aaargh
+
+		random_list = {
+			5 = { #attacks you
+				custom_tooltip = dragon_bond_events.3031.custom_tt.a
+
+				modifier = {
+					scope:target = { has_trait = dragon_aggressive }
+					add = 2
+				}
+				modifier = {
+					scope:target = { has_trait = dragon_voracious }
+					add = 2
+				}
+				modifier = {
+					scope:target = { has_trait = dragon_defiant }
+					add = 2
+				}
+				modifier = {
+					scope:target = { has_trait = dragon_bloodthirsty }
+					add = 3
+				}
+				modifier = {
+					scope:target = { has_trait = dragon_skittish }
+					add = -5
+				}
+				modifier = {
+					scope:target = { has_trait = dragon_friendly }
+					add = -2
+				}
+				hidden_effect = {
+					send_interface_toast = {
+						title = dragon_bond_events.3031.attack.t
+						custom_tooltip = dragon_bond_events.3031.attack.custom_tt
+						left_icon = scope:owner
+						right_icon = scope:target
+					}
+				}
+
+				add_trait = burned
+				add_trait_xp = {
+					trait = burned
+					value = {
+						integer_range = {
+							min = 5
+							max = 25
+						}
+					}
+				}
+				increase_wounds_effect = { REASON = maimed_by_wild_beast }
+			}
+
+			5 = { # leaves and maybe gains skittish
+				custom_tooltip = dragon_bond_events.3031.custom_tt.b
+				hidden_effect = {
+					send_interface_toast = {
+						title = dragon_bond_events.3031.flee.t
+						custom_tooltip = dragon_bond_events.3031.flee.custom_tt
+						left_icon = scope:owner
+						right_icon = scope:target
+					}
+				}
+
+				if = {
+					limit = {
+						NOR = {
+							scope:target = { has_trait = dragon_skittish }
+							trait:dragon_skittish = {
+								any_opposite_trait = {
+									scope:target = {
+										NOT = {has_trait = prev}
+									}
+								}
+							}
+							scope:target = { number_of_personality_traits >= personality_trait_limit }
+						}
+					}
+					hidden_effect = {
+						random = {
+							chance = 5
+							scope:target = { add_trait = dragon_skittish }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	after = {
+		remove_variable = scheme_event_active_flag
+	}
+}

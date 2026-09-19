@@ -1,0 +1,880 @@
+﻿agot_create_generic_dragonpit_scripted_effect = {
+	$DRAGON_PIT_OWNER$ = {
+		trigger_event = agot_dragonkeepers.0001  # Creates the Head Dragonkeeper Character, Provides a Little Bit of Context to Player
+		#  Adds a variable to the county holding the dragonpit so that the decision cannot be taken again
+		if = {
+			limit = {
+				any_held_county = {
+					any_county_province = {
+						has_holding_type = castle_holding
+						has_building_or_higher = generic_dragon_pit_01
+					}
+					NOT = { has_variable = has_dragonkeeper_order }
+				}
+			}
+			random_held_county = {
+				limit = {
+					any_county_province = {
+						has_holding_type = castle_holding
+						has_building_or_higher = generic_dragon_pit_01
+					}
+					NOT = { has_variable = has_dragonkeeper_order }
+				}
+				set_variable = { name = has_dragonkeeper_order }
+			}
+			add_realm_law = dragonpit_close_family_law
+		}
+		if = {
+			limit = {
+				has_ep1_dlc_trigger = yes
+			}
+			hidden_effect = { set_amenity_level = { type = agot_dragonpit_amenities value = 3 } }
+			custom_tooltip = agot_dragonpit_amenities_level_set_to_three_tt
+		}
+	}
+}
+
+# Dragonpit handling
+agot_send_to_dragonpit_effect = {
+	$DRAGON$ = {
+		add_character_flag = in_dragonpit
+		add_character_modifier = agot_dragon_in_dragonpit
+		set_variable = {
+			name = pitted_dragon_location
+			value = $DRAGONPIT_COUNTY$
+		}
+	}
+	$DRAGONPIT_HOLDER$ = {
+		if = {
+			limit = {
+				$DRAGONPIT_COUNTY$ = { has_county_modifier = agot_roaming_dragon }
+				any_courtier = { # 13
+					count <= 0
+					has_trait = dragon
+					AND = {
+						NOT = { has_character_flag = in_dragonpit }
+						has_character_flag = owned_dragon
+					}
+				}
+			}
+			$DRAGONPIT_COUNTY$ = { remove_county_modifier = agot_roaming_dragon } # 23
+		}
+	}
+	$DRAGONPIT_COUNTY$ = {
+		add_to_variable_list = {
+			name = dragons_in_pit
+			target = $DRAGON$
+		}
+	}
+}
+
+agot_send_to_dragonpit_no_event = {
+	$DRAGONPIT_COUNTY$ = {
+		add_to_variable_list = {
+			name = dragons_in_pit
+			target = $DRAGON$
+		}
+	}
+	$DRAGON$ = {
+		add_character_flag = in_dragonpit
+		add_character_modifier = agot_dragon_in_dragonpit
+		set_variable = {
+			name = pitted_dragon_location
+			value = $DRAGONPIT_COUNTY$
+		}
+		remove_variable = travelling_from_pit
+	}
+}
+
+agot_remove_from_dragonpit_effect = {
+	$DRAGON$ = {
+		remove_character_flag = in_dragonpit
+		remove_character_modifier = agot_dragon_in_dragonpit
+		remove_variable = pitted_dragon_location
+		if = {
+			limit = { has_character_flag = dragon_put_in_different_pit }
+			remove_character_flag = dragon_put_in_different_pit
+		}
+		save_scope_as = removed_dragon
+	}
+	$DRAGONPIT_COUNTY$ = {
+		remove_list_variable = {
+			name = dragons_in_pit
+			target = $DRAGON$
+		}
+		save_scope_as = dragon_pit_location
+	}
+	$DRAGONPIT_HOLDER$ = {
+		if = {
+			limit = {
+				$DRAGON$.age >= dragon_poses_a_danger_age
+				NOT = {
+					$DRAGONPIT_COUNTY$ = {
+						has_county_modifier = agot_roaming_dragon
+					}
+				}
+			}
+			trigger_event = agot_dragon_pits.1100
+		}
+	}
+}
+
+agot_remove_from_dragonpit_no_event = {
+	$DRAGONPIT_COUNTY$ = {
+		remove_list_variable = {
+			name = dragons_in_pit
+			target = $DRAGON$
+		}
+		save_scope_as = dragon_pit_location
+	}
+	$DRAGON$ = {
+		remove_character_flag = in_dragonpit
+		remove_character_modifier = agot_dragon_in_dragonpit
+		remove_variable = pitted_dragon_location
+		if = {
+			limit = { has_character_flag = dragon_put_in_different_pit }
+			remove_character_flag = dragon_put_in_different_pit
+		}
+		save_scope_as = removed_dragon
+	}
+}
+
+agot_force_wild_dragon_into_dragonpit_effect = {
+	$DRAGON$ = {
+		save_scope_as = wild_dragon
+	}
+	$DRAGONPIT_HOLDER$ = {
+		trigger_event = agot_dragon_pits.1200
+	}
+	$DRAGONPIT_COUNTY$ = {
+
+	}
+}
+
+agot_change_dragonpit_status = {
+	save_scope_as = dragon
+	scope:owner = {
+		if = {
+			limit = {
+				agot_has_multiple_active_dragonpits = yes
+			}
+			trigger_event = agot_choose_dragonpit_event.0001
+		}
+		else = { # If not, assume default AGOT logic
+			random_held_county = {
+				limit = {
+					OR = {
+						any_county_province = {
+							has_holding_type = castle_holding
+							has_building_or_higher = generic_dragon_pit_01
+						}
+						any_county_province = {
+							OR = {
+								has_building_or_higher = dragonpit_01 # Historical Version
+								has_building = dragonpit_ruins_03 # Fully Restored Ruin Version
+								has_building = agot_dragonmont_01 # Dragonmont Version
+							}
+						}
+					}
+					has_variable = has_dragonkeeper_order
+				}
+				save_scope_as = dragon_pit_location
+			}
+			scope:dragon = {
+				if = {
+					limit = {
+						has_character_flag = in_dragonpit
+					}
+					agot_remove_from_dragonpit_effect = { DRAGON = root DRAGONPIT_HOLDER = scope:owner DRAGONPIT_COUNTY = scope:dragon_pit_location }
+				}
+				else_if = {
+					limit = {
+						has_character_flag = owned_dragon
+					}
+					agot_send_to_dragonpit_effect = { DRAGON = root DRAGONPIT_HOLDER = scope:owner DRAGONPIT_COUNTY = scope:dragon_pit_location }
+				}
+				else_if = {
+					limit = {
+						NOT = {
+							has_character_flag = owned_dragon
+						}
+					}
+					agot_force_wild_dragon_into_dragonpit_effect = { DRAGON = root DRAGONPIT_HOLDER = scope:owner DRAGONPIT_COUNTY = scope:dragon_pit_location }
+				}
+			}
+		}
+	}
+}
+
+agot_remove_from_dragonpit_skip_county_effects = {
+	$DRAGON$ = {
+		remove_character_flag = in_dragonpit
+		remove_character_modifier = agot_dragon_in_dragonpit
+		var:pitted_dragon_location = {
+			remove_list_variable = {
+				name = dragons_in_pit
+				target = $DRAGON$
+			}
+		}
+		remove_variable = pitted_dragon_location
+		if = {
+			limit = { has_character_flag = dragon_put_in_different_pit }
+			remove_character_flag = dragon_put_in_different_pit
+		}
+	}
+}
+
+agot_change_dragonpit_status_ai = {
+	$OWNER$ = {
+		random_held_county = {
+			limit = {
+				OR = {
+					any_county_province = {
+						has_holding_type = castle_holding
+						has_building_or_higher = generic_dragon_pit_01
+					}
+					any_county_province = {
+						OR = {
+							has_building_or_higher = dragonpit_01 # Historical Version
+							has_building = dragonpit_ruins_03 # Fully Restored Ruin Version
+							has_building = agot_dragonmont_01 # Dragonmont Version
+						}
+					}
+				}
+				has_variable = has_dragonkeeper_order
+			}
+			save_scope_as = dragon_pit_location
+		}
+	}
+	$DRAGON_REC$ = {
+		if = {
+			limit = {
+				has_character_flag = in_dragonpit
+			}
+			agot_remove_from_dragonpit_effect = { DRAGON = $DRAGON_REC$ DRAGONPIT_HOLDER = $OWNER$ DRAGONPIT_COUNTY = scope:dragon_pit_location }
+		}
+		else_if = {
+			limit = {
+				has_character_flag = owned_dragon
+			}
+			agot_send_to_dragonpit_effect = { DRAGON = $DRAGON_REC$ DRAGONPIT_HOLDER = $OWNER$ DRAGONPIT_COUNTY = scope:dragon_pit_location }
+		}
+		else_if = {
+			limit = {
+				NOT = {
+					has_character_flag = owned_dragon
+				}
+			}
+			agot_force_wild_dragon_into_dragonpit_effect = { DRAGON = $DRAGON_REC$ DRAGONPIT_HOLDER = $OWNER$ DRAGONPIT_COUNTY = scope:dragon_pit_location }
+		}
+	}
+}
+
+# Transition effects for dragons at war
+agot_send_to_dragonpit_war = {
+	$DRAGON$ = {
+		add_character_flag = in_dragonpit
+		add_character_modifier = agot_dragon_in_dragonpit
+		set_variable = {
+			name = pitted_dragon_location
+			value = var:return_pitted_dragon_location
+		}
+		remove_variable = return_pitted_dragon_location
+		var:pitted_dragon_location = {
+			add_to_variable_list = {
+				name = dragons_in_pit
+				target = $DRAGON$
+			}
+		}
+	}
+}
+
+agot_remove_from_dragonpit_war = {
+	$DRAGON$ = {
+		remove_character_flag = in_dragonpit
+		remove_character_modifier = agot_dragon_in_dragonpit
+		set_variable = {
+			name = return_pitted_dragon_location
+			value = var:pitted_dragon_location
+		}
+		remove_variable = pitted_dragon_location
+		if = {
+			limit = { has_character_flag = dragon_put_in_different_pit }
+			remove_character_flag = dragon_put_in_different_pit
+		}
+		var:return_pitted_dragon_location = {
+			remove_list_variable = {
+				name = dragons_in_pit
+				target = $DRAGON$
+			}
+		}
+	}
+}
+
+# Generates Head Dragonkeeper
+agot_generate_head_dragonkeeper = {
+	if = {
+		limit = {
+			has_ep1_dlc_trigger = yes
+			highest_held_title_tier >= tier_kingdom
+		}
+		if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 1 }  # Lowest Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_lowest_funding_template
+				employer = root
+				culture = root.capital_province.culture
+				faith = root.capital_province.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 2 }  # Basic Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_low_funding_template
+				employer = root
+				culture = root.capital_province.culture
+				faith = root.capital_province.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 3 } # Medium Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_med_funding_template
+				employer = root
+				culture = root.capital_province.culture
+				faith = root.capital_province.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 4 } # High Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_high_funding_template
+				employer = root
+				culture = root.capital_province.culture
+				faith = root.capital_province.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 5 } # Grand Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_grand_funding_template
+				employer = root
+				culture = root.capital_province.culture
+				faith = root.capital_province.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+	}
+	else = {
+		random_list = {
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_lowest_funding_template
+					employer = root
+					culture = root.capital_province.culture
+					faith = root.capital_province.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_low_funding_template
+					employer = root
+					culture = root.capital_province.culture
+					faith = root.capital_province.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_med_funding_template
+					employer = root
+					culture = root.capital_province.culture
+					faith = root.capital_province.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_high_funding_template
+					employer = root
+					culture = root.capital_province.culture
+					faith = root.capital_province.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_grand_funding_template
+					employer = root
+					culture = root.capital_province.culture
+					faith = root.capital_province.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+		}
+	}
+}
+
+# Historical effects, fired from on_actions. use the above effect during events and other script work outside of bookmark init or setup.
+agot_generate_IT_head_dragonkeeper = {
+	if = {
+		limit = {
+			has_ep1_dlc_trigger = yes
+			highest_held_title_tier >= tier_kingdom
+		}
+		if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 1 }  # Lowest Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_lowest_funding_template
+				employer = title:h_the_iron_throne.holder
+				culture = title:h_the_iron_throne.holder.location.culture
+				faith = title:h_the_iron_throne.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 2 }  # Basic Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_low_funding_template
+				employer = title:h_the_iron_throne.holder
+				culture = title:h_the_iron_throne.holder.location.culture
+				faith = title:h_the_iron_throne.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 3 } # Medium Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_med_funding_template
+				employer = title:h_the_iron_throne.holder
+				culture = title:h_the_iron_throne.holder.location.culture
+				faith = title:h_the_iron_throne.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 4 } # High Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_high_funding_template
+				employer = title:h_the_iron_throne.holder
+				culture = title:h_the_iron_throne.holder.location.culture
+				faith = title:h_the_iron_throne.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 5 } # Grand Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_grand_funding_template
+				employer = title:h_the_iron_throne.holder
+				culture = title:h_the_iron_throne.holder.location.culture
+				faith = title:h_the_iron_throne.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+	}
+	else = {
+		random_list = {
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_lowest_funding_template
+					employer = title:h_the_iron_throne.holder
+					culture = title:h_the_iron_throne.holder.location.culture
+					faith = title:h_the_iron_throne.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_low_funding_template
+					employer = title:h_the_iron_throne.holder
+					culture = title:h_the_iron_throne.holder.location.culture
+					faith = title:h_the_iron_throne.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_med_funding_template
+					employer = title:h_the_iron_throne.holder
+					culture = title:h_the_iron_throne.holder.location.culture
+					faith = title:h_the_iron_throne.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_high_funding_template
+					employer = title:h_the_iron_throne.holder
+					culture = title:h_the_iron_throne.holder.location.culture
+					faith = title:h_the_iron_throne.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_grand_funding_template
+					employer = title:h_the_iron_throne.holder
+					culture = title:h_the_iron_throne.holder.location.culture
+					faith = title:h_the_iron_throne.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+		}
+	}
+}
+
+agot_generate_dragonstone_head_dragonkeeper = {
+	if = {
+		limit = {
+			has_ep1_dlc_trigger = yes
+			highest_held_title_tier >= tier_kingdom
+		}
+		if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 1 }  # Lowest Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_lowest_funding_template
+				employer = title:c_dragonstone.holder
+				culture = title:c_dragonstone.holder.location.culture
+				faith = title:c_dragonstone.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 2 }  # Basic Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_low_funding_template
+				employer = title:c_dragonstone.holder
+				culture = title:c_dragonstone.holder.location.culture
+				faith = title:c_dragonstone.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 3 } # Medium Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_med_funding_template
+				employer = title:c_dragonstone.holder
+				culture = title:c_dragonstone.holder.location.culture
+				faith = title:c_dragonstone.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 4 } # High Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_high_funding_template
+				employer = title:c_dragonstone.holder
+				culture = title:c_dragonstone.holder.location.culture
+				faith = title:c_dragonstone.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+		else_if = {
+			limit = {
+				amenity_level = { target = agot_dragonpit_amenities value = 5 } # Grand Funding
+			}
+			create_character = { # Create Head Dragonkeeper
+				template = agot_head_dragonkeeper_grand_funding_template
+				employer = title:c_dragonstone.holder
+				culture = title:c_dragonstone.holder.location.culture
+				faith = title:c_dragonstone.holder.location.faith
+				save_scope_as = head_dragonkeeper
+			}
+		}
+	}
+	else = {
+		random_list = {
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_lowest_funding_template
+					employer = title:c_dragonstone.holder
+					culture = title:c_dragonstone.holder.location.culture
+					faith = title:c_dragonstone.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_low_funding_template
+					employer = title:c_dragonstone.holder
+					culture = title:c_dragonstone.holder.location.culture
+					faith = title:c_dragonstone.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_med_funding_template
+					employer = title:c_dragonstone.holder
+					culture = title:c_dragonstone.holder.location.culture
+					faith = title:c_dragonstone.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_high_funding_template
+					employer = title:c_dragonstone.holder
+					culture = title:c_dragonstone.holder.location.culture
+					faith = title:c_dragonstone.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+			20 = {
+				create_character = { # Create Head Dragonkeeper
+					template = agot_head_dragonkeeper_grand_funding_template
+					employer = title:c_dragonstone.holder
+					culture = title:c_dragonstone.holder.location.culture
+					faith = title:c_dragonstone.holder.location.faith
+					save_scope_as = head_dragonkeeper
+				}
+			}
+		}
+	}
+}
+
+# Dragonpit Law Effects
+agot_dragonpit_access_law_close_family_effect = {
+	if = {
+		limit = {
+			has_realm_law = dragonpit_house_law
+		}
+		remove_realm_law = dragonpit_house_law
+		add_realm_law = dragonpit_close_family_law
+	}
+	else_if = {
+		limit = {
+			has_realm_law = dragonpit_dynasty_law
+		}
+		remove_realm_law = dragonpit_dynasty_law
+		add_realm_law = dragonpit_close_family_law
+	}
+	else_if = {
+		limit = {
+			has_realm_law = dragonpit_everyone_law
+		}
+		remove_realm_law = dragonpit_everyone_law
+		add_realm_law = dragonpit_close_family_law
+	}
+}
+agot_dragonpit_access_law_house_effect = {
+	if = {
+		limit = {
+			has_realm_law = dragonpit_close_family_law
+		}
+		remove_realm_law = dragonpit_close_family_law
+		add_realm_law = dragonpit_house_law
+	}
+	else_if = {
+		limit = {
+			has_realm_law = dragonpit_dynasty_law
+		}
+		remove_realm_law = dragonpit_dynasty_law
+		add_realm_law = dragonpit_house_law
+	}
+	else_if = {
+		limit = {
+			has_realm_law = dragonpit_everyone_law
+		}
+		remove_realm_law = dragonpit_everyone_law
+		add_realm_law = dragonpit_house_law
+	}
+}
+agot_dragonpit_access_law_dynasty_effect = {
+	if = {
+		limit = {
+			has_realm_law = dragonpit_close_family_law
+		}
+		remove_realm_law = dragonpit_close_family_law
+		add_realm_law = dragonpit_dynasty_law
+	}
+	else_if = {
+		limit = {
+			has_realm_law = dragonpit_house_law
+		}
+		remove_realm_law = dragonpit_house_law
+		add_realm_law = dragonpit_dynasty_law
+	}
+	else_if = {
+		limit = {
+			has_realm_law = dragonpit_everyone_law
+		}
+		remove_realm_law = dragonpit_everyone_law
+		add_realm_law = dragonpit_dynasty_law
+	}
+}
+agot_dragonpit_access_law_everyone_effect = {
+	if = {
+		limit = {
+			has_realm_law = dragonpit_close_family_law
+		}
+		remove_realm_law = dragonpit_close_family_law
+		add_realm_law = dragonpit_everyone_law
+	}
+	else_if = {
+		limit = {
+			has_realm_law = dragonpit_house_law
+		}
+		remove_realm_law = dragonpit_house_law
+		add_realm_law = dragonpit_everyone_law
+	}
+	else_if = {
+		limit = {
+			has_realm_law = dragonpit_dynasty_law
+		}
+		remove_realm_law = dragonpit_dynasty_law
+		add_realm_law = dragonpit_everyone_law
+	}
+}
+
+agot_dragonpit_gamestart_init_pit_effect = {
+	set_variable = { name = has_dragonkeeper_order }
+	if = {
+		limit = {
+			NOT = {
+				holder = { has_realm_law = dragonpit_close_family_law }
+			}
+		}
+		holder = { add_realm_law = dragonpit_close_family_law }
+	}
+}
+
+agot_dragonpit_grant_access_to_pit_effect = {
+	add_to_variable_list = {
+		name = authorized_tamers
+		target = $RECIPIENT$
+	}
+	$RECIPIENT$ = {
+		set_variable = { name = granted_access_to_dragonpit value = scope:dragon_pit_location }
+	}
+}
+agot_dragonpit_revoke_access_to_pit_effect = {
+	remove_list_variable = {
+		name = authorized_tamers
+		target = $RECIPIENT$
+	}
+	$RECIPIENT$ = {
+		remove_variable = granted_access_to_dragonpit
+		add_opinion = {
+			modifier = revoked_access_to_dragonpit
+			target = root.holder
+		}
+	}
+}
+
+agot_ban_from_dragonpit_effect = {
+	$PERSON_BEING_BANNED$ = {
+		add_to_variable_list = {
+			name = banned_dragonpit_locations
+			target = scope:dragon_pit_location
+		}
+		if = {
+			limit = {
+				var:granted_access_to_dragonpit ?= scope:dragon_pit_location
+			}
+			var:granted_access_to_dragonpit = {
+				remove_list_variable = {
+					name = authorized_tamers
+					target = $PERSON_BEING_BANNED$
+				}
+			}
+			remove_variable = granted_access_to_dragonpit
+		}
+	}
+}
+
+#Destroy Pit effect - Fired on the County Level
+agot_destroy_dragonpit_effect = {
+	hidden_effect = {
+		if = {
+			limit = {
+				has_variable_list = dragons_in_pit
+			}
+			if = {
+				limit = {
+					variable_list_size = {
+						name = dragons_in_pit
+						value > 0
+					}
+				}
+				every_in_list = {
+					variable = dragons_in_pit
+					save_scope_as = dragon_in_pit
+					remove_variable = pitted_dragon_location
+					if = {
+						limit = { has_character_flag = dragon_put_in_different_pit }
+						remove_character_flag = dragon_put_in_different_pit
+					}
+					remove_character_flag = in_dragonpit
+					remove_character_modifier = agot_dragon_in_dragonpit
+				}
+			}
+			clear_variable_list = dragons_in_pit
+		}
+		remove_variable = has_dragonkeeper_order
+		holder = {
+			if = {
+				limit = {
+					has_royal_court = yes
+				}
+				set_amenity_level = { type = agot_dragonpit_amenities value = 1 }
+			}
+		}
+	}
+	custom_tooltip = dragonpit_was_ruinized_tt
+}
+
+# Testing Effects
+agot_set_conditions_for_dragonpit_effect = {
+	if = {
+		limit = {
+			OR = {
+				has_trait = fickle
+				has_trait = stubborn
+			}
+		}
+		remove_trait = fickle
+		remove_trait = stubborn
+	}
+	add_trait = eccentric
+	create_artifact_dragon_egg_rainbow_effect = { OWNER = root }
+	add_gold = massive_gold_value
+	agot_spawn_wild_dragon_effect = yes
+	agot_spawn_wild_dragon_effect = yes
+	agot_spawn_wild_dragon_effect = yes
+	agot_spawn_wild_dragon_effect = yes
+}

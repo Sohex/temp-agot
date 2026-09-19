@@ -1,0 +1,514 @@
+﻿reveal_identity_decision = {
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = major
+
+	desc = reveal_identity_decision_desc
+
+	selection_tooltip = reveal_identity_decision_tooltip
+
+	is_shown = {
+		any_secret = { secret_type = secret_agot_identity }
+	}
+
+	effect = {
+		if = {
+			limit = { root = character:Stark_5 }
+			custom_tooltip = knight_of_the_laughing_tree_effect
+			hidden_effect = {
+				every_known_secret = {
+					limit = { secret_type = secret_agot_identity }
+					expose_secret = root
+				}
+			}
+		}
+		else_if = {
+			limit = { has_character_flag = generic_secret_identity }
+			custom_tooltip = generic_secret_identity_tooltip
+			hidden_effect = {
+				every_known_secret = {
+					limit = { secret_type = secret_agot_identity }
+					expose_secret = root
+				}
+			}
+		}
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_will_do = {
+		base = 20
+		modifier = {
+			factor = 0
+			root = character:Stark_5
+			character:Targaryen_1 = { is_alive = yes }
+		}
+		modifier = {
+			factor = 0
+			root = character:Stark_5
+			OR = {
+				is_spouse_of = character:Baratheon_2
+				betrothed ?= character:Baratheon_2
+			}
+		}
+	}
+}
+
+select_dynastic_nickname = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+
+	desc = select_dynastic_nickname_desc
+	decision_group_type = major
+
+	selection_tooltip = select_dynastic_nickname_tooltip
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	is_shown = {
+		is_ruler = yes
+		is_landed = yes
+		NOR = {
+			house_has_dynastic_nickname_trigger = yes
+			#Multiplayers fuck off
+			any_player = {
+				count > 1
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		is_at_war = no
+	}
+
+	cost = {
+		#adherence to the church of badger
+	}
+
+	effect = {
+		trigger_event = agot_nicknames.9000
+		custom_tooltip = select_dynastic_nickname_tt
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+agot_beg_bittersteel_to_make_golden_company = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	decision_group_type = major
+	desc = agot_beg_bittersteel_to_make_golden_company_desc
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	is_shown = {
+		is_ai = no
+		OR = {
+			primary_title = title:d_laamp_blackfyre
+			AND = {
+				is_landless_adventurer = yes
+				has_realm_law = camp_purpose_legitimists
+				house ?= house:house_Blackfyre
+			}
+		}
+		NOR = {
+			exists = title:d_laamp_merc_golden_company.holder
+			exists = global_var:dynamic_gc_formed
+		}
+		exists = global_var:number_of_blackfyre_rebellions
+		character:Targaryen_95 = {
+			is_alive = yes
+			is_playable_character = no
+		}
+	}
+	is_valid = {
+		character:Targaryen_95 = {
+			has_good_opinion_of_root_trigger = yes
+		}
+	}
+	effect = {
+		custom_tooltip = agot_beg_bittersteel_to_make_golden_company_effect
+		character:Targaryen_95 = {
+			trigger_event = agot_gold_company_formation.0003
+			add_opinion = {
+				target = root
+				modifier = unfair_demand_opinion
+				opinion = -50
+			}
+		}
+	}
+	cost = {
+		prestige = 200
+		gold = 300
+	}
+	ai_potential = {
+		always = no
+	}
+	ai_will_do = {
+		base = 0
+	}
+}
+
+### Mega Wars
+
+# Declare independence whilst neutral in a mega war
+agot_mega_war_declare_independence_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	decision_group_type = major
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+	desc = agot_mega_war_declare_independence_decision_desc
+
+	is_shown = {
+		NOT = { has_character_flag = mw_declared_independence }
+		exists = var:agot_pwl_direct
+		NOT = { is_at_war_with = var:agot_pwl_direct }
+		var:agot_pwl_direct = {
+			any_owned_story = {
+				story_type = story_agot_mw_crown
+				is_target_in_variable_list = { name = mw_neutral_list target = root }
+			}
+		}
+		primary_title.tier = tier_empire
+		NOT = { any_character_war = { using_cb = agot_independence_war } }
+		is_ai = no
+	}
+
+	effect = {
+		# custom_tooltip = agot_mega_war_declare_independence_decision_tooltip
+
+		custom_tooltip = {
+			text = agot_mega_war_declare_independence_decision_tooltip
+			# text = MEGA_WARS_DECLARE_INDEPENDENCE_TOOLTIP
+		}
+
+		add_character_flag = { flag = mw_declared_independence days = 10 }
+
+		trigger_event = agot_mega_wars.0010
+	}
+
+
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}
+
+
+# Whilst being primary attacker in a mega war, declare rebellion!
+agot_mega_war_declare_rebellion_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_destiny_goal.dds"
+	}
+	decision_group_type = major
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 7
+		kingdom = 5
+		empire = 3
+		hegemony = 0
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { has_variable = agot_pwl_direct }
+				desc = agot_mega_war_declare_rebellion_decision_desc.1
+			}
+			desc = agot_mega_war_declare_rebellion_decision_desc.2
+		}
+	}
+
+	is_shown = {
+		OR = {
+			var:agot_pwl_direct ?= { # regular mw
+				any_owned_story = {
+					story_type = story_agot_mw_crown
+					is_target_in_variable_list = { name = mw_rebel_leader_list target = root }
+				}
+			}
+			liege ?= { # lite mw
+				any_owned_story = {
+					story_type = story_agot_mw_crown
+					var:mw_mode ?= flag:mw_lite
+					is_target_in_variable_list = { name = mw_rebel_leader_list target = root }
+				}
+			}
+		}
+		any_character_war = {
+			using_cb = refused_liege_demand_war
+		}
+	}
+
+	is_valid = {
+		trigger_if = {
+			limit = { has_variable = agot_pwl_direct }
+			highest_held_title_tier > tier_duchy
+		}
+		trigger_else = {
+			OR = {
+				AND = { # For hegemonies and empire you must be at least kingdom tier
+					liege.highest_held_title_tier > tier_kingdom
+					highest_held_title_tier > tier_duchy
+				}
+				AND = { # For kingdoms you must be at least duchy tier
+					liege.highest_held_title_tier = tier_kingdom
+					highest_held_title_tier > tier_county
+				}
+			}
+		}
+	}
+
+	effect = {
+		random_character_war = {
+			limit = {
+				is_attacker = root
+				OR = {
+					root.var:agot_pwl_direct ?= { is_defender_in_war = prev } # regular mw
+					root.liege ?= { # lite mw
+						any_owned_story = {
+							story_type = story_agot_mw_crown
+							var:mw_mode ?= flag:mw_lite
+							is_target_in_variable_list = { name = mw_rebel_leader_list target = root }
+						}
+						prev = { is_defender = prev }
+					}
+				}
+			}
+			set_casus_belli = agot_rebellion_war
+		}
+	}
+
+	cost = {
+		prestige = {
+			value = 1000
+		}
+	}
+
+	ai_potential = {
+		OR = {
+			has_trait = ambitious
+			ai_boldness > 25
+			ai_rationality < -25
+			any_relation = {
+				type = rival
+				OR = {
+					root.var:agot_pwl_direct ?= this
+					liege ?= this
+				}
+			}
+		}
+		NOT = { # You don't turn back on family
+			any_relation = {
+				type = friend
+				OR = {
+					root.var:agot_pwl_direct ?= this
+					liege ?= this
+				}
+			}
+		}
+		prestige > 750
+	}
+
+	ai_will_do = {
+		base = -200
+
+		modifier = {
+			add = {
+				add = highest_held_title_tier
+				multiply = 4
+			}
+		}
+
+		modifier = {
+			OR = {
+				has_trait = arrogant
+				has_trait = ambitious
+				has_trait = authoritative
+			}
+			add = {
+				if = {
+					limit = { has_trait = arrogant }
+					add = 25
+				}
+				if = {
+					limit = { has_trait = ambitious }
+					add = 25
+				}
+				if = {
+					limit = { has_trait = authoritative }
+					add = 25
+				}
+				multiply = {
+					value = 1
+
+					if = {
+						limit = { has_trait = arrogant }
+						add = 0.3
+					}
+					if = {
+						limit = { has_trait = ambitious }
+						add = 0.3
+					}
+					if = {
+						limit = { has_trait = authoritative }
+						add = 0.3
+					}
+				}
+			}
+		}
+
+		# If AI can't afford it, be less likely to do it
+		modifier = {
+			prestige < 1000
+			add = -50
+		}
+
+		ai_value_modifier = {
+			ai_boldness = 0.5
+		}
+
+		# Opinion of (pre war) liege
+		opinion_modifier = {
+			trigger = { liege != root }
+			who = root
+			opinion_target = root.liege
+			multiplier = -0.4
+		}
+		opinion_modifier = {
+			trigger = { exists = var:agot_pwl_direct }
+			who = root
+			opinion_target = root.var:agot_pwl_direct
+			multiplier = -0.4
+		}
+
+		# Opinion of (pre war) liege's heir
+		opinion_modifier = {
+			trigger = {
+				liege != root
+				exists = root.liege.primary_heir
+			}
+			who = root
+			opinion_target = root.liege.primary_heir
+			multiplier = -0.4
+		}
+		opinion_modifier = {
+			trigger = { exists = var:agot_pwl_direct.primary_heir }
+			who = root
+			opinion_target = root.var:agot_pwl_direct.primary_heir
+			multiplier = -0.4
+		}
+
+		# Rivalry with (pre war) liege
+		modifier = {
+			any_relation = {
+				type = rival
+				OR = {
+					root.var:agot_pwl_direct ?= this
+					liege ?= this
+				}
+			}
+			add = {
+				if = {
+					limit = {
+						any_relation = {
+							type = nemesis
+							OR = {
+								root.var:agot_pwl_direct ?= this
+								liege ?= this
+							}
+						}
+					}
+					add = 40
+				}
+				else_if = {
+					limit = {
+						any_relation = {
+							type = rival
+							OR = {
+								root.var:agot_pwl_direct ?= this
+								liege ?= this
+							}
+						}
+					}
+					add = 20
+				}
+			}
+		}
+		modifier = {
+			any_relation = {
+				type = rival
+				OR = {
+					root.var:agot_pwl_direct.primary_heir ?= this
+					liege.primary_heir ?= this
+				}
+			}
+			add = {
+				if = {
+					limit = {
+						any_relation = {
+							type = nemesis
+							OR = {
+								root.var:agot_pwl_direct.primary_heir ?= this
+								liege.primary_heir ?= this
+							}
+						}
+					}
+					add = 40
+				}
+				else_if = {
+					limit = {
+						any_relation = {
+							type = rival
+							OR = {
+								root.var:agot_pwl_direct.primary_heir ?= this
+								liege.primary_heir ?= this
+							}
+						}
+					}
+					add = 20
+				}
+			}
+		}
+	}
+}

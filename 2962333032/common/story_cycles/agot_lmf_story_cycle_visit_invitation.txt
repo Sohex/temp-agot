@@ -1,0 +1,325 @@
+﻿lmf_visit_invitation_story_cycle = {
+
+	on_setup = {
+	}
+
+	on_owner_death = {
+		end_story = yes
+	}
+
+	on_end = {
+		if = {
+			limit = {
+				var:visit_target ?= {
+					is_alive = yes
+					has_variable = visited_by_target
+				}
+			}
+			var:visit_target = { remove_variable = visited_by_target }
+		}
+	}
+
+	# checking status changes
+	effect_group = {
+		days = 30
+		triggered_effect = {
+			trigger = {
+				OR = {
+					NOT = { exists = root.var:visit_target }
+					story_owner = {
+						OR = {
+							is_imprisoned = yes
+							is_incapable = yes
+							has_short_disease_trigger = yes
+							NOR = {
+								is_spouse_of = root.var:visit_target
+								has_relation_lover = root.var:visit_target
+								exists = root.var:spouse_visiting_from
+							}
+							trigger_if = {
+								limit = {
+									NOT = { exists = root.var:spouse_visiting_from }
+								}
+								OR = {
+									has_trait = infirm
+									has_trait = wounded_2
+									has_trait = wounded_3
+									has_trait = pregnant
+								}
+							}
+						}
+					}
+					var:visit_target = {
+						OR = {
+							is_imprisoned = yes
+							is_incapable = yes
+							trigger_if = {
+								limit = {
+									NOT = { exists = root.var:spouse_visiting_from }
+								}
+								OR = {
+									has_trait = infirm
+									has_trait = wounded_2
+									has_trait = wounded_3
+									has_trait = pregnant
+									has_short_disease_trigger = yes
+								}
+							}
+							trigger_if = {
+								limit = {
+									NOT = { exists = root.var:courtier_visit }
+								}
+								is_playable_character = no
+							}
+						}
+					}
+				}
+			}
+			effect = {
+				story_owner = { save_scope_as = recipient }
+				var:visit_target = { save_scope_as = actor }
+				if = {
+					limit = {
+						exists = var:spouse_visiting_from
+						var:spouse_visiting_from = {
+							is_married = yes
+							is_ai = no
+							primary_spouse = scope:recipient
+						}
+					}
+					var:spouse_visiting_from = {
+						send_interface_message = {
+							type = event_generic_bad_with_text
+							title = lmf_interaction.1505.a.title
+							left_icon = scope:actor
+							right_icon = scope:recipient
+							desc = {
+								desc = lmf_interaction.1505.desc.begin
+								first_valid = {
+									triggered_desc = {
+										trigger = {
+											NOR = {
+												scope:destination = scope:actor.capital_province
+												exists = root.var:courtier_visit
+											}
+										}
+										desc = lmf_interaction.1505.desc.notprovince
+									}
+									triggered_desc = {
+										trigger = {
+											scope:recipient = { has_short_disease_trigger = yes }
+										}
+										desc = lmf_interaction.1505.desc.rootill
+									}
+									triggered_desc = {
+										trigger = {
+											scope:actor = { is_imprisoned = yes }
+										}
+										desc = lmf_interaction.1505.desc.actorimprison
+									}
+									triggered_desc = {
+										trigger = {
+											scope:recipient = { is_imprisoned = yes }
+										}
+										desc = lmf_interaction.1505.desc.rootimprison
+									}
+									desc = lmf_interaction.1505.desc.default
+								}
+							}
+						}
+					}
+				}
+				scope:actor = {
+					send_interface_message = {
+						type = event_generic_bad_with_text
+						title = lmf_interaction.1505.a.title
+						left_icon = scope:actor
+						right_icon = scope:recipient
+						desc = {
+							desc = lmf_interaction.1505.desc.begin
+							first_valid = {
+								triggered_desc = {
+									trigger = {
+										scope:recipient = {
+											NOR = {
+												is_spouse_of = scope:actor
+												has_relation_lover = scope:actor
+											}
+										}
+									}
+									desc = lmf_interaction.1505.desc.norelationship
+								}
+								triggered_desc = {
+									trigger = {
+										scope:actor = { has_short_disease_trigger = yes }
+									}
+									desc = lmf_interaction.1505.desc.actorill
+								}
+								triggered_desc = {
+									trigger = {
+										scope:recipient = { has_short_disease_trigger = yes }
+									}
+									desc = lmf_interaction.1505.desc.rootill
+								}
+								triggered_desc = {
+									trigger = {
+										scope:actor = { is_imprisoned = yes }
+									}
+									desc = lmf_interaction.1505.desc.actorimprison
+								}
+								triggered_desc = {
+									trigger = {
+										scope:recipient = { is_imprisoned = yes }
+									}
+									desc = lmf_interaction.1505.desc.rootimprison
+								}
+								triggered_desc = {
+									trigger = {
+										scope:actor = { has_trait = pregnant }
+									}
+									desc = lmf_interaction.1505.desc.actorpregnant
+								}
+								triggered_desc = {
+									trigger = {
+										scope:recipient = { has_trait = pregnant }
+									}
+									desc = lmf_interaction.1505.desc.rootpregnant
+								}
+								triggered_desc = {
+									trigger = {
+										scope:actor = {
+											OR = {
+												is_incapable = yes
+												has_trait = infirm
+												has_trait = wounded_2
+												has_trait = wounded_3
+											}
+										}
+									}
+									desc = lmf_interaction.1505.desc.actorhealth
+								}
+								triggered_desc = {
+									trigger = {
+										scope:recipient = {
+											OR = {
+												is_incapable = yes
+												has_trait = infirm
+												has_trait = wounded_2
+												has_trait = wounded_3
+											}
+										}
+									}
+									desc = lmf_interaction.1505.desc.roothealth
+								}
+								desc = lmf_interaction.1505.desc.default
+							}
+						}
+						scope:actor = {
+							hidden_effect = {
+								remove_opinion = { target = scope:recipient modifier = agreed_to_visit_opinion }
+							}
+						}
+					}
+				}
+				story_owner = {
+					send_interface_message = {
+						type = event_generic_bad_with_text
+						title = lmf_interaction.1505.a.title
+						left_icon = scope:actor
+						right_icon = scope:recipient
+						desc = {
+							desc = lmf_interaction.1505.desc.begin
+							first_valid = {
+								triggered_desc = {
+									trigger = {
+										scope:recipient = {
+											NOR = {
+												is_spouse_of = scope:actor
+												has_relation_lover = scope:actor
+											}
+										}
+									}
+									desc = lmf_interaction.1505.desc.norelationship
+								}
+								triggered_desc = {
+									trigger = {
+										scope:actor = { has_short_disease_trigger = yes }
+									}
+									desc = lmf_interaction.1505.desc.actorill
+								}
+								triggered_desc = {
+									trigger = {
+										root = { has_short_disease_trigger = yes }
+									}
+									desc = lmf_interaction.1505.desc.rootill
+								}
+								triggered_desc = {
+									trigger = {
+										scope:actor = { is_imprisoned = yes }
+									}
+									desc = lmf_interaction.1505.desc.actorimprison
+								}
+								triggered_desc = {
+									trigger = {
+										scope:recipient = { is_imprisoned = yes }
+									}
+									desc = lmf_interaction.1505.desc.rootimprison
+								}
+								triggered_desc = {
+									trigger = {
+										scope:actor = { has_trait = pregnant }
+									}
+									desc = lmf_interaction.1505.desc.actorpregnant
+								}
+								triggered_desc = {
+									trigger = {
+										scope:recipient = { has_trait = pregnant }
+									}
+									desc = lmf_interaction.1505.desc.rootpregnant
+								}
+								triggered_desc = {
+									trigger = {
+										scope:actor = {
+											OR = {
+												is_incapable = yes
+												has_trait = infirm
+												has_trait = wounded_2
+												has_trait = wounded_3
+											}
+										}
+									}
+									desc = lmf_interaction.1505.desc.actorhealth
+								}
+								triggered_desc = {
+									trigger = {
+										scope:recipient = {
+											OR = {
+												is_incapable = yes
+												has_trait = infirm
+												has_trait = wounded_2
+												has_trait = wounded_3
+											}
+										}
+									}
+									desc = lmf_interaction.1505.desc.roothealth
+								}
+								desc = lmf_interaction.1505.desc.default
+							}
+						}
+					}
+					if = {
+						limit = {
+							is_travelling = yes
+							current_travel_plan ={
+								travel_plan_owner = root.story_owner
+								can_cancel = yes
+							}
+						}
+						current_travel_plan = { abort_travel_plan = yes }
+					}
+				}
+				end_story = yes
+			}
+		}
+	}
+}

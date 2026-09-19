@@ -1,0 +1,485 @@
+﻿
+# This file contains story cycles for the TargaryenExiles
+# story_agot_targaryen_exile_invasion - The story that manages the TargaryenExile content, from prep to invasion.
+
+#exile_is_not_adult - exile is a child
+#exile_is_adult - exile is an adult, used to progress to the immediate steps before the invasion
+#exile_special_event_pre_invasion_window - a special stage of the story meant exclusively for lore events, specifically for the destined dragon bit
+#exile_pre_invasion_window - a year long window given so the destined dragon can grow
+#exile_invasion - invasion launches, story ends after the war declaration event is triggered
+
+story_agot_targaryen_exile_invasion = {
+	visible = yes
+	icon = {
+		trigger = {
+			always = yes
+		}
+		reference = "gfx/interface/icons/artifact/artifact_iron_throne.dds"
+	}
+	background = {
+		reference = "gfx/interface/illustrations/event_scenes/ironthrone/throneroom_ironthrone.dds"
+	}
+	visualization = {
+		custom_string_key = story_agot_targaryen_exiles_custom_string_key
+		title_list = {
+			variable_name = "exiled_primary_titles_list"
+			label = story_agot_targaryen_exiles_target_titles_label
+		}
+		tug_of_war_counter = {
+			variable_name = "exile_current_military_strength"
+			min = 0
+			max = 15000
+			label = story_agot_targaryen_exiles_military_strength_label
+			min_label = story_agot_targaryen_exiles_military_strength_label_min
+			max_label = story_agot_targaryen_exiles_military_strength_label_max
+		}
+		character_list = {
+			variable_name = "legitimist_supporters"
+			label = story_agot_targaryen_exiles_legitimist_list_label
+		}
+	}
+	on_setup = {
+		set_variable = {
+			name = exile_current_military_strength # Used for visualization only
+			value = story_owner.current_military_strength
+		}
+		scope:story = { # Used for visualization only
+			add_to_variable_list = {
+				name = exiled_primary_titles_list
+				target = title:h_the_iron_throne
+			}
+			add_to_variable_list = {
+				name = exiled_primary_titles_list
+				target = title:e_the_crownlands
+			}
+			add_to_variable_list = {
+				name = exiled_primary_titles_list
+				target = title:k_the_blackwater
+			}
+			add_to_variable_list = {
+				name = exiled_primary_titles_list
+				target = title:d_kings_landing
+			}
+			add_to_variable_list = {
+				name = exiled_primary_titles_list
+				target = title:c_kings_landing
+			}
+			add_to_variable_list = {
+				name = exiled_primary_titles_list
+				target = title:k_dragonstone
+			}
+			add_to_variable_list = {
+				name = exiled_primary_titles_list
+				target = title:d_dragonstone
+			}
+			add_to_variable_list = {
+				name = exiled_primary_titles_list
+				target = title:c_dragonstone
+			}
+		}
+		if = {
+			limit = {
+				story_owner = {
+					is_adult = no
+				}
+			}
+			set_variable = {
+				name = story_cycle_status
+				value = flag:exile_is_not_adult
+			}
+		}
+		else = {
+			set_variable = {
+				name = story_cycle_status
+				value = flag:exile_is_adult
+			}
+		}
+		set_global_variable = {
+			name = targaryen_exile_title
+			value = story_owner.primary_title
+		}
+		if = {
+			limit = {
+				story_owner = {
+					is_ai = yes
+				}
+			}
+			set_variable = {
+				name = ai_bonuses
+				value = yes
+			}
+		}
+		else = {
+			story_owner = { trigger_event = agot_targaryen_exile_invasion.0800 }
+			set_variable = {
+				name = human_exiles_bonuses
+				value = yes
+			}
+		}
+	}
+
+	on_end = {
+		if = {
+			limit = {
+				story_owner = {
+					has_variable_list = exiles_recently_asked_for_support
+				}
+			}
+			story_owner = {
+				clear_variable_list = exiles_recently_asked_for_support
+			}
+		}
+	}
+
+	on_owner_death = {
+		if = {
+			limit = {
+				exists = story_owner.player_heir
+				story_owner.player_heir.house = story_owner.house
+			}
+			make_story_owner = story_owner.player_heir
+			story_owner = {
+				set_variable = {
+					name = legitimist_claimed_title
+					value = title:h_the_iron_throne
+				}
+				if = {
+					limit = {
+						scope:story.var:story_cycle_status = flag:exile_invasion
+					}
+					trigger_event = { id = agot_targaryen_exile_invasion.0804 days = 1 }
+				}
+				if = {
+					limit = {
+						scope:story = {
+							var:story_cycle_status ?= flag:exile_pre_invasion_window
+						}
+						NOT = {
+							any_relation = {
+								type = agot_dragon
+							}
+						}
+					}
+					scope:story = {
+						set_variable = {
+							name = story_cycle_status
+							value = flag:hatching_ceremony_failed # Reused so the case of the exile dying & their heir NOT having a dragon doesn't softlock the content
+						}
+					}
+				}
+			}
+		}
+		else = { end_story = yes }
+	}
+
+	# Effect Block that Creates Interactions Between Free City lords
+	effect_group = {
+		days = { 90 100 }
+		chance = 30
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					is_available = yes
+				}
+				scope:story = {
+					var:ai_bonuses ?= yes
+					NOR = {
+						var:story_cycle_status ?= flag:exile_special_event_pre_invasion_window
+						var:story_cycle_status ?= flag:exile_pre_invasion_window
+					}
+				}
+				story_owner = {
+					NOT = {
+						has_character_flag = recently_had_targ_exile_supporter_event
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_targaryen_exile_invasion.0100
+				}
+			}
+		}
+	}
+	# Checks to see if the exile leader has the requirements to advance to the dragon stage.
+	effect_group = {
+		days = { 300 365 }
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					is_available = yes
+				}
+				scope:story = {
+					var:story_cycle_status ?= flag:exile_is_adult
+				}
+				story_owner.current_military_strength >= title:h_the_iron_throne.holder.agot_military_strength_63_percent
+			}
+			effect = {
+				scope:story = {
+					set_variable = {
+						name = story_cycle_status
+						value = flag:exile_special_event_pre_invasion_window
+					}
+				}
+			}
+		}
+	}
+	# Effect Block That Prepares Invasion - Used for one purpose, and that is giving the exile their dragons
+	effect_group = {
+		days = { 150 300 }
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					is_alive = yes
+					is_imprisoned = no
+				}
+				scope:story = {
+					var:story_cycle_status ?= flag:exile_special_event_pre_invasion_window
+				}
+			}
+			effect = {
+				scope:story = {
+					set_variable = {
+						name = story_cycle_status
+						value = flag:exile_pre_invasion_window
+					}
+				}
+				story_owner = {
+					trigger_event = agot_targaryen_exile_invasion.0300
+				}
+			}
+		}
+	}
+	# Effect Block That Launches Invasion - With Dragons
+	effect_group = {
+		days = 365
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					is_alive = yes
+					is_imprisoned = no
+					any_relation = { # Sometimes the story cycle triggers this effect group instantly as soon as the trigger is true, so this trigger will slow things down.
+						type = agot_dragon
+						has_trait = dragon
+						dragon_size >= dragon_taming_minimum_size
+					}
+				}
+				scope:story = {
+					var:story_cycle_status ?= flag:exile_pre_invasion_window
+				}
+			}
+			effect = {
+				scope:story = {
+					set_variable = {
+						name = story_cycle_status
+						value = flag:exile_invasion
+					}
+				}
+				story_owner = {
+					trigger_event = agot_targaryen_exile_invasion.0400
+					if = {
+						limit = {
+							has_variable = status_602
+						}
+						remove_variable = status_602
+					}
+				}
+			}
+		}
+	}
+	# Effect Block That Launches Invasion - Without Dragons
+	effect_group = {
+		days = 130
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					is_alive = yes
+					is_imprisoned = no
+				}
+				scope:story = {
+					var:story_cycle_status ?= flag:hatching_ceremony_failed
+				}
+			}
+			effect = {
+				scope:story = {
+					set_variable = {
+						name = story_cycle_status
+						value = flag:exile_invasion
+					}
+				}
+				story_owner = {
+					trigger_event = agot_targaryen_exile_invasion.0400
+					if = {
+						limit = {
+							has_variable = status_602
+						}
+						remove_variable = status_602
+					}
+				}
+			}
+		}
+	}
+	# Maintenance for Age
+	effect_group = {
+		days = 1
+		triggered_effect = {
+			trigger = {
+				scope:story = {
+					var:story_cycle_status ?= flag:exile_is_not_adult
+				}
+				story_owner = {
+					is_adult = yes
+				}
+			}
+			effect = {
+				scope:story = {
+					set_variable = {
+						name = story_cycle_status
+						value = flag:exile_is_adult
+					}
+				}
+			}
+		}
+	}
+	# Maintenance for Landed
+	effect_group = {
+		days = 1
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					is_adult = yes
+					is_landed_or_landless_administrative = yes
+				}
+			}
+			effect = {
+				scope:story = {
+					end_story = yes
+				}
+			}
+		}
+	}
+	# Maintenance for Iron Throne no longer existing
+	effect_group = {
+		days = 1
+		triggered_effect = {
+			trigger = {
+				NOT = {
+					exists = title:h_the_iron_throne.holder
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_targaryen_exile_invasion.0801
+				}
+			}
+		}
+	}
+	# Maintenance for story cycle bonus rules
+	effect_group = {
+		days = 1
+		triggered_effect = {
+			trigger = {
+				scope:story = {
+					var:human_exiles_bonuses ?= yes
+				}
+				story_owner = {
+					is_ai = yes
+				}
+			}
+			effect = {
+				scope:story = {
+					set_variable = {
+						name = ai_bonuses
+						value = yes
+					}
+					remove_variable = human_exiles_bonuses
+				}
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				scope:story = {
+					var:ai_bonuses ?= yes
+				}
+				story_owner = {
+					is_ai = no
+				}
+			}
+			effect = {
+				scope:story = {
+					set_variable = {
+						name = human_exiles_bonuses
+						value = yes
+					}
+					remove_variable = ai_bonuses
+				}
+			}
+		}
+	}
+
+	# Maintenance for story cycle military counter visualization
+	effect_group = {
+		days = 1
+		triggered_effect = {
+			trigger = { always = yes }
+			effect = {
+				scope:story = {
+					set_variable = {
+						name = exile_current_military_strength # Used for visualization only
+						value = story_owner.current_military_strength
+					}
+				}
+				scope:story = {
+					if = {
+						limit = {
+							any_in_list = { # Error destroyer since story cycle visualization doesn't count as a use according to the error log
+								variable = exiled_primary_titles_list
+							}
+						}
+						every_in_list = {
+							variable = exiled_primary_titles_list
+						}
+					}
+					if = {
+						limit = {
+							exists = var:exile_current_military_strength
+						}
+						# Error destroyer since story cycle visualization doesn't count as a use according to the error log
+					}
+				}
+			}
+		}
+	}
+	effect_group = {
+		days = 1
+		triggered_effect = {
+			trigger = { always = yes }
+			effect = {
+				scope:story = {
+					if = {
+						limit = {
+							has_variable_list = legitimist_supporters
+						}
+						clear_variable_list = legitimist_supporters
+					}
+				}
+				story_owner = {
+					every_in_list = {
+						variable = legitimist_supporters
+						limit = {
+							is_alive = yes
+						}
+						save_scope_as = temp
+						scope:story = {
+							add_to_variable_list = {
+								name = legitimist_supporters
+								target = scope:temp
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+}

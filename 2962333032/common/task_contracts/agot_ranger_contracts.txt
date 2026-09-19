@@ -1,0 +1,2263 @@
+﻿##################################################
+# INFO
+# For laamp contracts that are broadly applicable: that is, they should be able to trigger virtually anywhere and with a minimum of triggers.
+# The idea is that any given laamp led by a character skilled in any one thing should always be viable — maybe through crime, maybe by demeaning themselves, but they should always have some contracts around to work with.
+##################################################
+
+
+
+#Befriend Wildling After Getting Injured
+ranger_laamp_contract_1101 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/regimenttypes/bowmen.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 50
+		#Employer weights.
+		scope:employer = {
+			add = {
+				#Weights.
+				add = {
+					value = ai_rationality
+					multiply = 1.5
+				}
+				add = {
+					value = ai_honor
+					multiply = 1.5
+				}
+				add = {
+					value = ai_sociability
+					multiply = 1.5
+				}
+				#Restrictions.
+				min = -50
+				max = 50
+			}
+			multiply = task_contract_weight_by_tier_value
+		}
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		employer_has_treasury_to_offer_job_trigger = yes
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = { agot_wildling_cooperative_with_nw = yes }
+		NOT = { has_character_flag = got_wildling_friend }
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_1101 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+			agot_wildling_cooperative_with_nw = yes
+		}
+		NOT = { has_character_flag = got_wildling_friend }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			agot_wildling_cooperative_with_nw = yes
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_taker = { NOT = { has_character_flag = got_wildling_friend } }
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			agot_wildling_cooperative_with_nw = yes
+		}
+		root.task_contract_taker = { NOT = { has_character_flag = got_wildling_friend } }
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.1101
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_success_prestige_gain_half_value
+					PIETY = 0
+					PROVISIONS = task_contract_success_provisions_gain_minor_value
+					OPINION = 0
+					OPINION_TYPE = friendly_interaction
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = 0
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = -10
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Defeat the Chief
+ranger_laamp_contract_1201 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/scheme_types/war.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 100
+		#Employer weights.
+		scope:employer = {
+			add = {
+				#Weights.
+				add = {
+					value = ai_rationality
+					multiply = -1.5
+				}
+				add = {
+					value = ai_honor
+					multiply = -1.5
+				}
+				add = {
+					value = ai_sociability
+					multiply = -1.5
+				}
+				#Restrictions.
+				min = -50
+				max = 50
+			}
+			multiply = task_contract_weight_by_tier_value
+		}
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		employer_has_treasury_to_offer_job_trigger = yes
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = {
+			agot_wildling_uncooperative_with_nw = yes
+			agot_wildling_insane = yes
+		}
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_1201 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+			agot_wildling_uncooperative_with_nw = yes
+			agot_wildling_insane = yes
+		}
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			agot_wildling_uncooperative_with_nw = yes
+			agot_wildling_insane = yes
+		}
+		exists = root.task_contract_employer.capital_county
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			agot_wildling_uncooperative_with_nw = yes
+			agot_wildling_insane = yes
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.1201
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_success_prestige_gain_half_value
+					PIETY = 0
+					PROVISIONS = task_contract_success_provisions_gain_minor_value
+					OPINION = 0
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_failure_prestige_loss_full_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = -30
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Kill the Upcoming Chief
+ranger_laamp_contract_1301 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/scheme_types/icon_scheme_hostile.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 100
+		#Employer weights.
+		scope:employer = {
+			add = {
+				#Weights.
+				add = {
+					value = ai_energy
+					multiply = 1.5
+				}
+				add = {
+					value = ai_boldness
+					multiply = 1.5
+				}
+				add = {
+					value = ai_greed
+					multiply = 1.5
+				}
+				#Restrictions.
+				min = -50
+				max = 50
+			}
+			multiply = task_contract_weight_by_tier_value
+		}
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		employer_has_treasury_to_offer_job_trigger = yes
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = { highest_held_title_tier >= tier_duchy }
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_1301 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+			highest_held_title_tier >= tier_duchy
+		}
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			highest_held_title_tier >= tier_duchy
+		}
+		exists = root.task_contract_employer.capital_county
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			highest_held_title_tier >= tier_duchy
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.1301
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_success_prestige_gain_half_value
+					PIETY = task_contract_success_piety_gain_full_value
+					PROVISIONS = task_contract_success_provisions_gain_minor_value
+					OPINION = 0
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_failure_prestige_loss_full_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = -30
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Trade With a Wildling
+ranger_laamp_contract_1401 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/scheme_types/icon_scheme_befriend.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 200
+		#Employer weights.
+		scope:employer = {
+			add = {
+				#Weights.
+				add = {
+					value = ai_rationality
+					multiply = -1.5
+				}
+				add = {
+					value = ai_boldness
+					multiply = 1.5
+				}
+				add = {
+					value = ai_sociability
+					multiply = 1.5
+				}
+				#Restrictions.
+				min = -50
+				max = 50
+			}
+			multiply = task_contract_weight_by_tier_value
+		}
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		employer_has_treasury_to_offer_job_trigger = yes
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = { is_available_healthy_ai_adult = yes }
+		NOT = { has_character_flag = traded_with_wildling }
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_1401 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+			is_available_healthy_ai_adult = yes
+		}
+		NOT = { has_character_flag = traded_with_wildling }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			is_available_healthy_ai_adult = yes
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_taker = {
+			NOT = { has_character_flag = traded_with_wildling }
+		}
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			is_available_healthy_ai_adult = yes
+		}
+		root.task_contract_taker = {
+			NOT = { has_character_flag = traded_with_wildling }
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.1401
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = 0
+					PIETY = 0
+					PROVISIONS = task_contract_success_provisions_gain_major_value
+					OPINION = 30
+					OPINION_TYPE = friendly_interaction
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_failure_prestige_loss_full_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = -20
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#A Wildling Child
+ranger_laamp_contract_1501 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/character_interactions/legitimized_bastard.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 5
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = {
+			is_available_healthy_ai_adult = yes
+			is_female = yes
+		}
+		NOT = { has_character_flag = wildling_findling_found }
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_1501 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+			is_available_healthy_ai_adult = yes
+			is_female = yes
+		}
+		NOT = { has_character_flag = wildling_findling_found }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			is_available_healthy_ai_adult = yes
+			is_female = yes
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_taker = {
+			NOT = { has_character_flag = wildling_findling_found }
+		}
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			is_available_healthy_ai_adult = yes
+			is_female = yes
+		}
+		root.task_contract_taker = {
+			NOT = { has_character_flag = wildling_findling_found }
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.1501
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = 0
+					PIETY = task_contract_success_piety_gain_full_value
+					PROVISIONS = 0
+					OPINION = 0
+					OPINION_TYPE = friendly_interaction
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = 0
+					PIETY = task_contract_failure_piety_loss_full_value
+					PROVISIONS = 0
+					OPINION = 0
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Loot Artifact
+ranger_laamp_contract_1601 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/scheme_types/icon_scheme_seizure.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 100
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = {
+			any_character_artifact = {
+				OR = {
+					rarity = famed
+					rarity = illustrious
+				}
+				NOT = { has_variable = redbeard_axe_artifact }
+			}
+		}
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_1601 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+		NOT = { has_character_flag = ranger_artifact_theft }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+			any_character_artifact = {
+				OR = {
+					rarity = famed
+					rarity = illustrious
+				}
+				NOT = { has_variable = redbeard_axe_artifact }
+			}
+		}
+		NOT = { has_character_flag = ranger_artifact_theft }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			any_character_artifact = {
+				OR = {
+					rarity = famed
+					rarity = illustrious
+				}
+				NOT = { has_variable = redbeard_axe_artifact }
+			}
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_taker = { NOT = { has_character_flag = ranger_artifact_theft } }
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			any_character_artifact = {
+				OR = {
+					rarity = famed
+					rarity = illustrious
+				}
+				NOT = { has_variable = redbeard_axe_artifact }
+			}
+		}
+		root.task_contract_taker = { NOT = { has_character_flag = ranger_artifact_theft } }
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.1601
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_success_prestige_gain_half_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = 0
+					OPINION_TYPE = stole_artifact_from_me
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_failure_prestige_loss_full_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = -30
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Turncloak
+ranger_laamp_contract_1701 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/scheme_types/icon_scheme_convert_to_witchcraft.dds"
+
+	use_diplomatic_range = no
+	#is_criminal = yes
+
+	weight = {
+		#Standard weights.
+		value = 200
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = {
+			agot_wildling_cooperative_with_nw = yes
+			highest_held_title_tier >= tier_duchy
+			capital_county = {
+				any_neighboring_county = {
+					exists = holder
+					holder = {
+						culture = { agot_is_wildling_culture = yes }
+						is_landed = yes
+						highest_held_title_tier = tier_county
+						capital_county.title_province = { geographical_region = world_westeros_beyond_the_wall }
+						NOT = { is_vassal_of = scope:employer }
+						NOT = { is_allied_to = scope:employer }
+					}
+				}
+			}
+		}
+		prestige_level >= 2
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_1701 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+		NOT = { has_character_flag = the_turnloack }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+			agot_wildling_cooperative_with_nw = yes
+			highest_held_title_tier >= tier_duchy
+			capital_county = {
+				any_neighboring_county = {
+					exists = holder
+					holder = {
+						culture = { agot_is_wildling_culture = yes }
+						is_landed = yes
+						highest_held_title_tier = tier_county
+						capital_county.title_province = { geographical_region = world_westeros_beyond_the_wall }
+						NOT = { is_vassal_of = scope:employer }
+						NOT = { is_allied_to = scope:employer }
+					}
+				}
+			}
+		}
+		prestige_level >= 2
+		NOT = { has_character_flag = the_turnloack }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			agot_wildling_cooperative_with_nw = yes
+			highest_held_title_tier >= tier_duchy
+			capital_county = {
+				any_neighboring_county = {
+					exists = holder
+					holder = {
+						culture = { agot_is_wildling_culture = yes }
+						is_landed = yes
+						highest_held_title_tier = tier_county
+						capital_county.title_province = { geographical_region = world_westeros_beyond_the_wall }
+						NOT = { is_vassal_of = root.task_contract_employer }
+						NOT = { is_allied_to = root.task_contract_employer }
+					}
+				}
+			}
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_taker = {
+			prestige_level >= 2
+			NOT = { has_character_flag = the_turnloack }
+		}
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			agot_wildling_cooperative_with_nw = yes
+			highest_held_title_tier >= tier_duchy
+			capital_county = {
+				any_neighboring_county = {
+					exists = holder
+					holder = {
+						culture = { agot_is_wildling_culture = yes }
+						is_landed = yes
+						highest_held_title_tier = tier_county
+						capital_county.title_province = { geographical_region = world_westeros_beyond_the_wall }
+						NOT = { is_vassal_of = root.task_contract_employer }
+						NOT = { is_allied_to = root.task_contract_employer }
+					}
+				}
+			}
+		}
+		root.task_contract_taker = {
+			prestige_level >= 2
+			NOT = { has_character_flag = the_turnloack }
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.1701
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_success_prestige_gain_half_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = 75
+					OPINION_TYPE = friendly_interaction
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_failure_prestige_loss_full_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = -75
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Wildling Seduction
+ranger_laamp_contract_1801 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/scheme_types/icon_scheme_romance.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 20
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		employer_has_treasury_to_offer_job_trigger = yes
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = {
+			is_landed = yes
+			has_trait = lustful
+		}
+		OR = {
+			AND = {
+				NOT = { attracted_to_opposite_gender_trigger = yes }
+				has_trait = lustful
+				scope:employer = {
+					sex_opposite_of = root
+					NOT = { attracted_to_opposite_gender_trigger = yes }
+				}
+			}
+			AND = {
+				attracted_to_opposite_gender_trigger = yes
+				has_trait = lustful
+				scope:employer = {
+					NOT = { sex_opposite_of = root }
+					attracted_to_opposite_gender_trigger = yes
+				}
+			}
+		}
+		NOT = { has_character_flag = wildling_lover }
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_1801 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+			has_trait = lustful
+		}
+		OR = {
+			AND = {
+				NOT = { attracted_to_opposite_gender_trigger = yes }
+				has_trait = lustful
+				scope:employer = {
+					sex_opposite_of = root
+					NOT = { attracted_to_opposite_gender_trigger = yes }
+				}
+			}
+			AND = {
+				attracted_to_opposite_gender_trigger = yes
+				has_trait = lustful
+				scope:employer = {
+					NOT = { sex_opposite_of = root }
+					attracted_to_opposite_gender_trigger = yes
+				}
+			}
+		}
+		NOT = { has_character_flag = wildling_lover }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_taker = { NOT = { has_character_flag = wildling_lover } }
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		root.task_contract_taker = { NOT = { has_character_flag = wildling_lover } }
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.1801
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_success_prestige_gain_half_value
+					PIETY = 0
+					PROVISIONS = task_contract_success_provisions_gain_minor_value
+					OPINION = 30
+					OPINION_TYPE = romantic_gesture_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = 0
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = -10
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Catch Deserter
+ranger_laamp_contract_1901 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/scheme_types/icon_scheme_abduct.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 100
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		employer_has_treasury_to_offer_job_trigger = yes
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = {
+			OR = {
+				any_courtier_or_guest = { has_trait = deserter }
+				has_trait = deserter
+			}
+		}
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_1901 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = { is_landed = yes }
+		scope:employer = {
+			OR = {
+				any_courtier_or_guest = { has_trait = deserter }
+				has_trait = deserter
+			}
+		}
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_employer = {
+			OR = {
+				any_courtier_or_guest = { has_trait = deserter }
+				has_trait = deserter
+			}
+		}
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		root.task_contract_employer = {
+			OR = {
+				any_courtier_or_guest = { has_trait = deserter }
+				has_trait = deserter
+			}
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.1901
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_success_prestige_gain_half_value
+					PIETY = 0
+					PROVISIONS = task_contract_success_provisions_gain_minor_value
+					OPINION = 0
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_failure_prestige_loss_full_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = -30
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Rescue Blackbrother
+ranger_laamp_contract_2001 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/court_position_types/witness_camp_officer.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 5
+		#Employer weights.
+		scope:employer = {
+			add = {
+				#Weights.
+				add = {
+					value = ai_rationality
+					multiply = -1.5
+				}
+				add = {
+					value = ai_honor
+					multiply = -1.5
+				}
+				add = {
+					value = ai_boldness
+					multiply = 1.5
+				}
+				#Restrictions.
+				min = -50
+				max = 50
+			}
+			multiply = task_contract_weight_by_tier_value
+		}
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = {
+			is_landed = yes
+			agot_wildling_uncooperative_with_nw = yes
+		}
+		NOT = { has_character_flag = blackbrother_found }
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_2001 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+			agot_wildling_uncooperative_with_nw = yes
+		}
+		NOT = { has_character_flag = blackbrother_found }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			agot_wildling_uncooperative_with_nw = yes
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_taker = {
+			NOT = { has_character_flag = blackbrother_found }
+		}
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+			agot_wildling_uncooperative_with_nw = yes
+		}
+		root.task_contract_taker = {
+			NOT = { has_character_flag = blackbrother_found }
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.2001
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_success_prestige_gain_half_value
+					PIETY = task_contract_success_piety_gain_full_value
+					PROVISIONS = 0
+					OPINION = 0
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = 0
+					PIETY = task_contract_failure_piety_loss_full_value
+					PROVISIONS = 0
+					OPINION = -20
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Investigation
+ranger_laamp_contract_2101 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/vassal_directives/promote_culture.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 50
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = {
+			is_landed = yes
+		}
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_2101 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+		NOT = { has_character_flag = signs_in_the_snow }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+		}
+		NOT = { has_character_flag = signs_in_the_snow }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_taker = {
+			NOT = { has_character_flag = signs_in_the_snow }
+		}
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		root.task_contract_taker = {
+			NOT = { has_character_flag = signs_in_the_snow }
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.2101
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			save_scope_as = task_contract
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+			#Grand Reward location
+			random_list = {
+				1 = {
+					set_variable = {
+						name = reward_path
+						value = flag:cave_a
+					}
+				}
+				1 = {
+					set_variable = {
+						name = reward_path
+						value = flag:cave_b
+					}
+				}
+				1 = {
+					set_variable = {
+						name = reward_path
+						value = flag:cave_c
+					}
+				}
+				1 = {
+					set_variable = {
+						name = reward_path
+						value = flag:woods_a
+					}
+				}
+				1 = {
+					set_variable = {
+						name = reward_path
+						value = flag:woods_b
+					}
+				}
+				1 = {
+					set_variable = {
+						name = reward_path
+						value = flag:woods_c
+					}
+				}
+				1 = {
+					set_variable = {
+						name = reward_path
+						value = flag:hill_a
+					}
+				}
+				1 = {
+					set_variable = {
+						name = reward_path
+						value = flag:hill_b
+					}
+				}
+				1 = {
+					set_variable = {
+						name = reward_path
+						value = flag:hill_c
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				custom_tooltip = ranger_laamp_contract_2101_reward_win
+			}
+		}
+		failure_standard = {
+			positive = no
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				custom_tooltip = ranger_laamp_contract_2101_reward_lose
+			}
+		}
+	}
+}
+
+#Assess Wildling Danger
+ranger_laamp_contract_2201 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/scheme_types/icon_raid_estate_scheme.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 1000
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		employer_has_treasury_to_offer_job_trigger = yes
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		scope:employer = {
+			highest_held_title_tier >= tier_county
+		}
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_2201 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+		NOT = { has_character_flag = assess_danger }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = { is_landed = yes }
+		scope:employer = {
+			highest_held_title_tier >= tier_county
+		}
+		NOT = { has_character_flag = assess_danger }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_employer = {
+			highest_held_title_tier >= tier_county
+		}
+		root.task_contract_taker = {
+			NOT = { has_character_flag = assess_danger }
+		}
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		root.task_contract_employer = {
+			highest_held_title_tier >= tier_county
+		}
+		root.task_contract_taker = {
+			NOT = { has_character_flag = assess_danger }
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.2201
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = 50
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = 0
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_failure_prestige_loss_full_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = 0
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}
+
+#Fallen Ranger
+ranger_laamp_contract_2301 = {
+	group = agot_nw_ranger_group
+	icon = "gfx/interface/icons/vassal_directives/no_directive.dds"
+
+	use_diplomatic_range = no
+
+	weight = {
+		#Standard weights.
+		value = 50
+	}
+
+	valid_to_create = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		employer_has_treasury_to_offer_job_trigger = yes
+		valid_laamp_sensible_start_trigger = yes
+		#Effects require a capital county.
+		scope:employer.capital_county ?= {
+			#Aaaand we need to have at least three duchies in our de jure kingdom.
+			kingdom = {
+				any_in_de_jure_hierarchy = {
+					continue = { tier >= tier_duchy }
+					tier = tier_duchy
+					count >= 3
+				}
+			}
+		}
+		NOT = { any_character_task_contract = { has_task_contract_type = ranger_laamp_contract_2301 } }
+		scope:employer.primary_title = { NOT = { has_variable = spawned_ranger_contract_already } }
+		NOT = { has_character_flag = investigation_mission }
+	}
+	valid_to_accept = {
+		valid_laamp_basic_accept_only_trigger = yes
+		agot_valid_ranger_trigger = {
+			EMPLOYER = scope:employer
+			LAAMP = root
+		}
+		scope:employer = {
+			is_landed = yes
+		}
+		NOT = { has_character_flag = investigation_mission }
+	}
+	valid_to_continue = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		exists = root.task_contract_employer.capital_county
+		root.task_contract_taker = {
+			NOT = { has_character_flag = investigation_mission }
+		}
+	}
+	valid_to_keep = {
+		agot_valid_ranger_trigger = {
+			EMPLOYER = root.task_contract_employer
+			LAAMP = root.task_contract_taker
+		}
+		task_contract_employer = {
+			is_landed = yes
+		}
+		root.task_contract_taker = {
+			NOT = { has_character_flag = investigation_mission }
+		}
+	}
+
+	#On_actions
+	on_accepted = {
+		task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_accept_contract" }
+		#For the intro event.
+		save_scope_as = task_contract
+		task_contract_employer = { save_scope_as = employer }
+		#Then we start the travel.
+		task_contract_taker ?= {
+			trigger_event = agot_nw_ranger_events.2301
+			agot_nw_ranger_save_contract = yes
+		}
+	}
+	on_create = {
+		scope:contract = {
+			#Make our gold rewards static.
+			grab_gold_fuzz_number_effect = yes
+			save_scope_as = task_contract
+			set_variable = {
+				name = gold_success_standard
+				value = task_contract_taker.task_contract_success_gold_gain_full_value
+			}
+			task_contract_employer = {
+				if = {
+					limit = { primary_title = { NOT = { has_variable = spawned_ranger_contract_already } } }
+					primary_title = {
+						set_variable = {
+							name = spawned_ranger_contract_already
+							years = 5
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Rewards
+	task_contract_reward = {
+		success_standard = {
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_success_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Rewards.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = 50
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = 0
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+		failure_standard = {
+			positive = no
+			should_print_on_complete = yes
+			effect = {
+				task_contract_taker = { play_sound_effect = "event:/DLC/EP3/SFX/UI/Contracts/ep3_ui_contracts_failure_on_contract" }
+				save_scope_value_as = { name = extra_reward value = flag:no }
+				#Standard Penalties.
+				laamp_rewards_disburse_ordinary_currency_effect = {
+					GOLD = 0
+					PRESTIGE = task_contract_failure_prestige_loss_full_value
+					PIETY = 0
+					PROVISIONS = 0
+					OPINION = 0
+					OPINION_TYPE = insult_opinion
+					CONTACT = no
+					CONTACT_HOOK = no
+					EXTRA_REWARD = scope:extra_reward
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,524 @@
+﻿# yearly checks on maidens, disinherited courtiers, will not wed, and heirs in training
+on_lmf_special_trait_check = {
+	trigger = {
+		OR = {
+			has_trait = disinherited
+			has_trait = heir_in_training
+		}
+	}
+	effect = {
+		if = {
+			limit = { has_trait = disinherited }
+			trigger_event = lmf_interaction.0003 #Disinherited courtier demands restoration of inheritance from dynast
+		}
+		if = {
+			limit = {
+				has_trait = heir_in_training
+				NAND = {
+					is_courtier = yes
+					exists = host
+					is_player_heir_of = host
+				}
+			}
+			remove_trait = heir_in_training
+		}
+	}
+}
+
+# yearly checks for invalid secret lovers (vanilla bug)
+on_lmf_bad_secret_lover_check = {
+	trigger = {
+		has_any_secrets = yes
+		any_secret = {
+			secret_type = secret_lover
+			secret_target = {
+				OR = {
+					is_alive = no
+					is_consort_of = root
+					NOT = { has_relation_lover = root }
+				}
+			}
+		}
+	}
+	effect = {
+		every_secret = {
+			limit = {
+				secret_type = secret_lover
+				secret_target = {
+					OR = {
+						is_alive = no
+						is_consort_of = root
+						NOT = { has_relation_lover = root }
+					}
+				}
+			}
+			remove_secret = yes
+		}
+	}
+}
+
+# for the LMF army events
+on_lmf_army_event_check = {
+	trigger = {
+		NOT = { government_has_flag = government_is_nw }
+		scope:army = { army_size >= 1000 }
+		trigger_if = {
+			limit = { has_game_rule = lmf_player_only_army_events }
+			is_ai = no
+		}
+		trigger_else_if = {
+			limit = { has_game_rule = lmf_player_realm_army_events }
+			OR = {
+				is_ai = no
+				AND = {
+					highest_held_title_tier >= tier_duchy
+					#AGOT Modified
+					#any_player = { top_liege = root.top_liege }
+					is_player_realm_ruler = { RULER = root }
+				}
+			}
+		}
+		trigger_else_if = {
+			limit = { has_game_rule = lmf_independent_ruler_army_events }
+			OR = {
+				is_ai = no
+				#AGOT Modified
+				#AND = {
+				#	is_independent_ruler = yes
+				#	highest_held_title_tier >= tier_duchy
+				#}
+				highest_held_title_tier >= tier_kingdom
+
+			}
+		}
+		trigger_else = {
+			always = no
+		}
+	}
+	effect = {
+		# first keep track of how many months the army has existed
+		if = {
+			limit = {
+				NOT = { exists = scope:army.var:army_creation_months }
+			}
+			scope:army = {
+				set_variable = { name = army_creation_months value = 1 }
+			}
+		}
+		else = {
+			scope:army = {
+				change_variable = { name = army_creation_months add = 1 }
+			}
+		}
+		# army events are possible at month 3+ if not in combat or raiding
+		if = {
+			limit = {
+				scope:army = {
+					var:army_creation_months > 2
+					is_army_in_combat = no
+					is_army_in_raid = no
+					exists = location
+				}
+			}
+			random_list = {
+				30 = { # fire the bounce event
+					modifier = {
+						add = -20
+						is_ai = yes
+					}
+					modifier = {
+						add = {
+							value = scope:army.var:army_noevent_months
+							multiply = 20
+						}
+						exists = scope:army.var:army_noevent_months
+					}
+					scope:army = {
+						set_variable = { name = army_noevent_months value = 0 }
+					}
+					trigger_event = lmf_army.1000 # Main bounce event for army events
+				}
+				70 = { # increase the chances of an event next month
+					if = {
+						limit = {
+							NOT = { exists = scope:army.var:army_noevent_months }
+						}
+						scope:army = {
+							set_variable = { name = army_noevent_months value = 1 }
+						}
+					}
+					else = {
+						scope:army = {
+							change_variable = { name = army_noevent_months add = 1 }
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# family dinner events
+on_lmf_family_dinner_event = {
+	trigger = {
+		is_ai = no
+		NOT = { has_game_rule = lmf_no_family_feasts }
+		NOT = { government_has_flag = government_is_nw }
+	}
+	random_events = {
+		chance_of_no_event = {
+			value = 25
+			if = {
+				limit = { has_game_rule = lmf_less_frequent_family_feasts }
+				add = 25
+			}
+			if = {
+				limit = { has_character_flag = had_family_dinner_event }
+				add = 25
+			}
+			if = {
+				limit = { is_adult = no }
+				add = 25
+			}
+			if = {
+				limit = { has_trait = gregarious }
+				add = -10
+			}
+			if = {
+				limit = { has_trait = lifestyle_reveler }
+				add = -5
+			}
+			if = {
+				limit = { has_trait = reclusive }
+				add = 20
+			}
+			if = {
+				limit = { has_trait = irritable }
+				add = 10
+			}
+			if = {
+				limit = {
+					NOT = { has_game_rule = lmf_less_frequent_family_feasts }
+					any_close_family_member = {
+						is_alive = no
+						even_if_dead = yes
+						days_since_death <= 90
+					}
+				}
+				divide = 2
+			}
+			if = {
+				limit = {
+					NOT = { has_game_rule = lmf_less_frequent_family_feasts }
+					exists = primary_spouse
+					primary_spouse = {
+						has_variable = had_miscarriage
+						has_trait = depressed_1
+					}
+					ai_compassion > high_negative_compassion
+				}
+				divide = 2
+			}
+			min = 10
+			max = 90
+		}
+		1 = lmf_feast.1000 # bounce event for family dinner
+	}
+}
+
+# Root is the character
+# scope:old_faith is the faith they used to have
+# for checking whether bastard status should change when changing faiths
+on_lmf_faith_change_bastard_check = {
+	trigger = {
+		OR = {
+			has_trait = bastard
+			has_trait = legitimized_bastard
+			has_trait = wild_oat
+		}
+	}
+	effect = {
+		if = {
+			limit = {
+				has_trait = wild_oat
+				faith = {
+					OR = {
+						has_doctrine = doctrine_bastardry_legitimization
+						has_doctrine = doctrine_bastardry_all
+					}
+				}
+			}
+			remove_trait = wild_oat
+			add_trait = bastard
+		}
+		if = {
+			limit = {
+				has_trait = bastard
+				faith = { has_doctrine = doctrine_bastardry_none }
+			}
+			remove_trait = bastard
+			add_trait = wild_oat
+		}
+		if = {
+			limit = {
+				has_trait = legitimized_bastard
+				faith = { has_doctrine = doctrine_bastardry_none }
+			}
+			remove_trait = legitimized_bastard
+			add_trait = wild_oat
+		}
+	}
+}
+
+# for checking whether religious traits should be lost when changing faiths
+on_lmf_faith_change_oath_check = {
+	trigger = {
+		agot_has_religious_trait = yes
+		NOT = {
+			religion = scope:old_faith.religion
+		}
+	}
+	effect = {
+		remove_religious_traits_effect = yes
+		if = {
+			limit = {
+				exists = liege
+				liege = {
+					faith = scope:old_faith
+					OR = {
+						has_government = theocracy_government
+						has_government = holy_order_government
+					}
+				}
+			}
+			save_temporary_scope_as = oath_breaker
+			liege = { remove_courtier_or_guest = scope:oath_breaker }
+		}
+	}
+}
+
+# for adding and removing the in-law relations
+on_lmf_in_law_setup = {
+	 effect = {
+		# add the good-daughter/good-son relation for your spouse
+		every_parent = {
+			limit = {
+				is_alive = yes
+				NOR = {
+					has_relation_agot_child_in_law = scope:spouse
+					is_parent_of = scope:spouse
+					is_child_of = scope:spouse
+					is_consort_of = scope:spouse
+					this = scope:spouse
+				}
+			}
+			set_relation_agot_child_in_law = scope:spouse
+		}
+		# and now for yourself
+		scope:spouse = {
+			every_parent = {
+				limit = {
+					is_alive = yes
+					NOR = {
+						has_relation_agot_child_in_law = root
+						is_parent_of = root
+						is_child_of = root
+						is_consort_of = root
+						this = root
+					}
+				}
+				set_relation_agot_child_in_law = root
+			}
+		}
+	}
+}
+
+on_lmf_in_law_remove = {
+	effect = {
+		# add the good-daughter/good-son relation for your spouse
+		every_parent = {
+			limit = {
+				is_alive = yes
+				has_relation_agot_child_in_law = scope:spouse
+			}
+			remove_relation_agot_child_in_law = scope:spouse
+		}
+		# and now for yourself
+		scope:spouse = {
+			every_parent = {
+				limit = {
+					is_alive = yes
+					has_relation_agot_child_in_law = root
+				}
+				remove_relation_agot_child_in_law = root
+			}
+		}
+	}
+}
+
+on_lmf_in_law_check = {
+	trigger = {
+		is_married = yes
+	}
+	effect = {
+		# remove in-law relations for living parents towards your spouse
+		every_spouse = {
+			save_temporary_scope_as = spouse_1
+			root = {
+				every_parent = {
+					limit = {
+						is_alive = yes
+						has_relation_agot_child_in_law = scope:spouse_1
+					}
+					remove_relation_agot_child_in_law = scope:spouse_1
+				}
+			}
+		}
+	}
+}
+
+# for challenging betrothal lineality
+on_lmf_betrothal_lineality_check = {
+	trigger = {
+		age = 15
+		exists = betrothed
+		is_human = yes
+	}
+	events = {
+		delay = { days = 274 }
+		agot_engagement_events.0020
+	}
+}
+
+# for checking a spouse's willingness to return to the council
+on_lmf_spouse_council_check = {
+	trigger = {
+		OR = {
+			AND = {
+				has_variable = block_hire_councillor
+				has_character_flag = had_lmf_spouse_1220_event
+			}
+			scope:spouse = {
+				has_variable = block_hire_councillor
+				has_character_flag = had_lmf_spouse_1220_event
+			}
+		}
+	}
+	effect = {
+		trigger_event = { id = lmf_spouse.1221 days = 1 }
+		scope:spouse = {
+			trigger_event = { id = lmf_spouse.1221 days = 1 }
+		}
+	}
+}
+
+on_lmf_spouse_council_relation_check = {
+	trigger = {
+		has_variable = block_hire_councillor
+		has_character_flag = had_lmf_spouse_1220_event
+	}
+	effect = {
+		trigger_event = { id = lmf_spouse.1221 days = 1 }
+	}
+}
+
+# for checking a spouse's willingness to return to the martial bed
+on_lmf_marital_bed_check = {
+	trigger = {
+		has_character_flag = had_lmf_spouse_1235_event
+	}
+	effect = {
+		trigger_event = { id = lmf_spouse.1236 days = 1 }
+	}
+}
+
+# for the initial LMF spouse event
+on_lmf_initial_spouse_check = {
+	trigger = {
+		can_get_lmf_spouse_events = yes
+		primary_spouse = scope:spouse
+	}
+	effect = {
+		primary_spouse = { save_scope_as = new_spouse }
+		trigger_event = { id = lmf_spouse.100 days = 7 }
+	}
+}
+
+# for the LMF spouse events
+on_lmf_spouse_check = {
+	trigger = {
+		can_get_lmf_spouse_events = yes
+		NOT = { has_character_flag = spouse_event_player_delay }
+	}
+	events = {
+		lmf_spouse.500
+	}
+}
+
+lmf_spouse_events = {
+	trigger = {
+		NOT = { has_character_flag = spouse_event_player_delay }
+	}
+	random_events = {
+		50 = 0 # Fallback in case all of the below events are invalid
+		50 = lmf_spouse.1000 # The bliss of having a soulmate spouse
+		50 = lmf_spouse.1005 # Soulmate spouse influences you to change a trait
+		50 = lmf_spouse.1010 # Your influence soulmate spouse to change a trait
+		50 = lmf_spouse.1015 # Lover spouse at court reveals a secret they’ve learned
+		50 = lmf_spouse.1020 # Skilled courtier lover offers support
+		50 = lmf_spouse.1025 # Wealthy and generous spouse offers you a gift
+		50 = lmf_spouse.1030 # Spouse is in debt - should you help out?
+		50 = lmf_spouse.1035 # Spouse ruler asks for advice, if your skill is higher than theirs
+		50 = lmf_spouse.1040 # Spouse gives advice, if skill higher than yours
+		100 = lmf_spouse.1045 # Spouse looks after you while you’re sick
+		50 = lmf_spouse.1050 # Lover spouse learns a secret of yours
+		50 = lmf_spouse.1055 # You learn a lover spouse's secret
+		100 = lmf_spouse.1060 # Lover spouse writes to you while you're far away
+		100 = lmf_spouse.1065 # Lover spouse writes to you while you're imprisoned
+		50 = lmf_spouse.1070 # Greedy spouse demands an expensive gift
+		50 = lmf_spouse.1075 # Spouse demands that you do something about courtier insult
+		50 = lmf_spouse.1080 # Needy spouse proves to be a distraction
+		100 = lmf_spouse.1085 # Spending the day with spouse lover
+		100 = lmf_spouse.1090 # Spouse comes to you when the army camps
+		100 = lmf_spouse.1095 # Spending time with lover spouse while travelling
+		100 = lmf_spouse.1100 # Malicious/Greedy spouse sells a secret of yours to a rival
+		50 = lmf_spouse.1105 # Courtier spouse is sick - do you take time to care for them?
+		50 = lmf_spouse.1110 # Spouse demands that you end an affair
+		50 = lmf_spouse.1115 # Spouse lover's opinion of you drops too low
+		50 = lmf_spouse.1120 # Spouse's opinion increases because of common personality
+		50 = lmf_spouse.1125 # Spouse's opinion increases because of common lifestyle
+		50 = lmf_spouse.1130 # Spouse's opinion decreases because of opposite personality trait
+		50 = lmf_spouse.1135 # Many arguments with spouse lately
+		50 = lmf_spouse.1140 # Getting along well with spouse
+		50 = lmf_spouse.1145 # Spouse's opinion increases because of common friend
+		50 = lmf_spouse.1150 # Spouse takes on your stress
+		50 = lmf_spouse.1155 # Do you take on spouse's stress?
+		100 = lmf_spouse.1160 # Spouse stressed by position
+		50 = lmf_spouse.1165 # Bored spouse asks for advice
+		50 = lmf_spouse.1170 # Spouse wants to tutor child
+		50 = lmf_spouse.1175 # Spouse thinks daughter should stop learning swordsmanship
+		50 = lmf_spouse.1180 # Spouse thinks daughter should start learning swordsmanship
+		50 = lmf_spouse.1185 # Spouse gets into argument with teenaged child
+		50 = lmf_spouse.1190 # You get into argument with teenaged child, spouse counsels
+		50 = lmf_spouse.1195 # Spouse passes on trait to favorite child
+		50 = lmf_spouse.1200 # Spouse tries to secretly convert child
+		50 = lmf_spouse.1205 # Rival spouse makes your life stressful
+		50 = lmf_spouse.1210 # Rival spouse sabotages things at the castle
+		50 = lmf_spouse.1215 # Rival spouse sabotages relationship with vassal
+		50 = lmf_spouse.1220 # Rival spouse refuses to take their place at the council
+		50 = lmf_spouse.1225 # Spouse doesn't want more children
+		50 = lmf_spouse.1230 # Spouse wants more children
+		100 = lmf_spouse.1235 # Spouse kicks you out of the marriage bed
+		200 = lmf_spouse.1240 # Spouse wants to visit friend/relative for a while - on their own
+		50 = lmf_spouse.1250 # Spouse has negative stress trait
+		50 = lmf_spouse.1260 # Spouse has positive stress trait
+		50 = lmf_spouse.1270 # Spouse is depressed
+		50 = lmf_spouse.1280 # Spouse is infirm
+		50 = lmf_spouse.1290 # Made spouse mad - can it be fixed?
+		50 = lmf_spouse.1300 # Spouse tries to make amends
+		50 = lmf_spouse.1310 # Spouse bonds with you over good child
+		100 = lmf_spouse.1320 # All our children are grown now
+		200 = lmf_spouse.1330 # Spouse sad that a relative has died
+		100 = lmf_spouse.1340 # Spouse wants bastard child sent away
+	}
+}

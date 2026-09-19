@@ -1,0 +1,3354 @@
+﻿namespace = agot_religious_decision
+
+#Faith of the Seven    0xxxx
+#Old Gods              1xxxx
+#Drowned God           2xxxx
+#Rooloo                3xxxx
+#Free Cities           4xxxx
+#Other Essos           5xxxx
+
+#################################
+# MEDITATE AT WEIRWOOD DECISION #
+#################################
+
+# Choose what you'll be meditating for
+agot_religious_decision.1001 = {
+	type = character_event
+	title = agot_religious_decision.1001.t
+	desc = agot_religious_decision.1001.desc
+	theme = faith
+	override_background = {
+		reference = agot_weirwood_event
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { ai_zeal >= 100 }
+			animation = personality_zealous
+		}
+		triggered_animation = {
+			trigger = { ai_zeal <= -100 }
+			animation = personality_cynical
+		}
+		triggered_animation = {
+			trigger = { always = yes }
+			animation = personality_honorable
+		}
+	}
+
+	immediate = {
+		# generate_removable_sins_effect = yes
+		if = {
+			limit = { exists = primary_spouse }
+			primary_spouse = { save_scope_as = spouse }
+		}
+	}
+
+	# Seek blessing
+	option = {
+		name = agot_religious_decision.1001.a
+
+		random_list = {
+			70 = {	# Fallback (Piety)
+				add_piety = medium_piety_gain
+			}
+			20 = {
+				trigger = {
+					can_have_children = yes
+				}
+				add_character_modifier = {
+					modifier = weirwood_fertility_bonus_modifier
+					years = 5
+				}
+			}
+			4 = {
+				trigger = {
+					can_gain_pet_trigger = yes
+				}
+				start_cat_story_cycle_effect = yes
+			}
+			4 = {
+				trigger = {
+					can_gain_pet_trigger = yes
+				}
+				start_dog_story_cycle_effect = yes
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_zeal = 0.25
+			}
+		}
+	}
+
+	# Seek healing
+	option = {
+		name = agot_religious_decision.1001.b
+
+		random_list = {
+			40 = {
+				add_character_modifier = {
+					modifier = weirwood_minor_health_bonus_modifier
+					years = 5
+				}
+			}
+			10 = {
+				add_character_modifier = {
+					modifier = weirwood_medium_health_bonus_modifier
+					years = 5
+				}
+			}
+			6 = {
+				trigger = {
+					has_trait = wounded
+				}
+				change_trait_rank = {
+					trait = wounded
+					rank = -1
+				}
+			}
+			4 = {
+				trigger = {
+					has_trait_rank = {
+						trait = wounded
+						rank >= 3
+					}
+				}
+				custom_tooltip = wounds_turn_to_cripple_tooltip
+				show_as_tooltip = {
+					if = {
+						limit = {
+							has_trait = wounded_3
+						}
+						remove_trait = wounded_3
+					}
+					add_trait = crippled
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 30
+				health < fine_health
+			}
+			modifier = {
+				add = 50
+				health < poor_health
+			}
+			modifier = {
+				add = 100
+				health < dying_health
+			}
+			modifier = {	# Cynical less likely to believe this would actually work
+				add = -40
+				has_trait = cynical
+			}
+		}
+	}
+
+	# Seek calm
+	option = {
+		name = agot_religious_decision.1001.c
+
+		if = {
+			limit = { has_variable = times_visited_weirwood_for_calm }
+			change_variable = {
+				name = times_visited_weirwood_for_calm
+				add = 1
+			}
+		}
+		else = {
+			set_variable = {
+				name = times_visited_weirwood_for_calm
+				value = 0
+			}
+		}
+
+		random_list = {
+			1 = {
+				trigger = {
+					NOR = {
+						has_trait = calm
+						has_trait = wrathful
+						number_of_personality_traits >= personality_trait_limit
+					}
+				}
+				add_trait = calm
+			}
+			30 = {	# Fallback (Stress reduction/Piety)
+				trigger = { stress > 0 }
+				stress_impact = {
+					base = medium_stress_impact_loss
+					zealous = minor_stress_impact_loss
+				}
+			}
+			30 = {
+				add_character_modifier = {
+					modifier = weirwood_stress_modifier
+					years = 5
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_energy = -0.25
+			}
+		}
+	}
+
+	# Seek guidance
+	option = {
+		name = agot_religious_decision.1001.d
+
+		trigger = {
+			OR = {
+				has_trait = drunkard
+				has_trait = hashishiyah
+				has_trait = rakish
+				has_trait = irritable
+				has_trait = flagellant
+				has_trait = contrite
+				has_trait = profligate
+				has_trait = comfort_eater
+				has_trait = inappetetic
+			}
+		}
+
+		random_list = {
+			1 = {
+				modifier = {
+					trigger = { ai_zeal > 0 }
+					add = ai_zeal
+				}
+				if = {
+					limit = { has_trait = drunkard }
+					remove_trait = drunkard
+				}
+				else_if = {
+					limit = { has_trait = hashishiyah }
+					remove_trait = hashishiyah
+				}
+				else_if = {
+					limit = { has_trait = rakish }
+					remove_trait = rakish
+				}
+				else_if = {
+					limit = { has_trait = irritable }
+					remove_trait = irritable
+				}
+				else_if = {
+					limit = { has_trait = flagellant }
+					remove_trait = flagellant
+				}
+				else_if = {
+					limit = { has_trait = contrite }
+					remove_trait = contrite
+				}
+				else_if = {
+					limit = { has_trait = profligate }
+					remove_trait = profligate
+				}
+				else_if = {
+					limit = { has_trait = comfort_eater }
+					remove_trait = comfort_eater
+				}
+				else_if = {
+					limit = { has_trait = inappetetic }
+					remove_trait = inappetetic
+				}
+			}
+			100 = {
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_zeal = 0.25
+				ai_honor = 0.25
+			}
+		}
+	}
+}
+
+#################################
+# RESTORE HIGH HEART DECISION #
+#################################
+
+agot_religious_decision.1100 = {
+	hidden = yes
+
+	immediate = {
+		title:b_high_heart = {
+			if = {
+				limit = {
+					title_province = { has_building = agot_ruin_high_heart_02 }
+				}
+				county.holder = { trigger_event = agot_religious_decision.1101 }
+			}
+		}
+	}
+}
+
+agot_religious_decision.1101 = {
+	type = character_event
+	title = agot_religious_decision.1001.t
+	desc = agot_religious_decision.1001.desc
+	theme = faith
+	override_background = {
+		reference = agot_weirwood_event
+	}
+	left_portrait = {
+		character = root
+		animation = personality_zealous
+	}
+
+	immediate = {
+		title:b_high_heart.title_province = {
+			remove_building = agot_ruin_high_heart_02
+			add_special_building = agot_high_heart_01
+		}
+	}
+
+	option = {
+		name = agot_religious_decision.1001.a
+	}
+}
+
+#################################
+# LOOK INTO THE FLAMES DECISION #
+#################################
+
+scripted_trigger is_valid_kingsblood_offering = {
+	is_adult = yes
+	OR = {
+		any_held_title = {
+			tier >= tier_kingdom
+		}
+		any_parent = {
+			even_if_dead = yes
+			highest_held_title_tier >= tier_kingdom
+		}
+		any_close_family_member = {
+			is_grandparent_of = prev
+			even_if_dead = yes
+			highest_held_title_tier >= tier_kingdom
+		}
+	}
+}
+
+scripted_trigger faith_accepts_human_sacrifice = {
+	faith = {
+		OR = {
+			has_doctrine_parameter = gruesome_festivals_active
+			has_doctrine_parameter = human_sacrifice_active
+			has_doctrine = tenet_heart_of_fire
+		}
+	}
+}
+
+scripted_effect look_into_flames_cleanup_effect = {
+	if = {
+		limit = {
+			exists = var:offering
+		}
+		remove_variable = offering
+	}
+}
+
+agot_religious_decision.3001 = {
+	type = character_event
+	title = agot_religious_decision.3001.t
+	desc = agot_religious_decision.3001.desc
+	theme = faith
+	override_background = {
+		reference = bp1_bonfire
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { ai_zeal <= high_negative_ai_value }
+			animation = personality_cynical
+		}
+		animation = personality_zealous
+	}
+	right_portrait = {
+		character = scope:red_priest
+		animation = personality_zealous
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				exists = cp:councillor_court_chaplain
+			}
+			cp:councillor_court_chaplain = {
+				save_scope_as = red_priest
+			}
+		}
+		else = {
+			court_position:camp_priest_camp_officer = {
+				save_scope_as = red_priest
+			}
+		}
+		#Save potential target for the offering
+		if = {
+			limit = {
+				any_prisoner = {
+					is_valid_kingsblood_offering = yes
+				}
+			}
+			random_prisoner = {
+				limit = { is_valid_kingsblood_offering = yes }
+				save_scope_as = sacrifice_target
+			}
+		}
+	}
+
+	#There is power in king's blood...
+	option = {
+		trigger = { #A valid sacrifice target must exist for this option
+			exists = scope:sacrifice_target
+		}
+		name = agot_religious_decision.3001.prisoner
+		set_variable = {
+			name = offering
+			value = flag:kingsblood
+		}
+
+		scope:sacrifice_target = {
+			death = {
+				death_reason = death_burned_witch
+				killer = root
+			}
+		}
+		add_kinslayer_trait_or_nothing_effect = { VICTIM = scope:sacrifice_target }
+		execute_opinion_effect = { VICTIM = scope:sacrifice_target EXECUTIONER = root }
+
+		#Custom tooltips to prevent spam
+		custom_tooltip = agot_religious_decision.3001.prisoner.tt
+		custom_tooltip = agot_religious_decision.3001.prisoner.tt.a
+		hidden_effect = {
+			#Vassals that do not have same tenet or HumSac will HATE this
+			every_vassal_or_below = {
+				if = {
+					limit = {
+						has_trait = zealous
+						faith_accepts_human_sacrifice = yes
+					}
+					add_opinion = {
+						target = root
+						modifier = respect_opinion
+						opinion = 10
+					}
+				}
+				if = {
+					limit = {
+						NOT = { faith_accepts_human_sacrifice = yes }
+					}
+					add_opinion = {
+						target = root
+						modifier = cruelty_opinion
+						opinion = -30
+					}
+				}
+			}
+			#Zealous vassals of same religion might approve
+			every_courtier_or_guest = {
+				if = {
+					limit = {
+						has_trait = zealous
+						faith_accepts_human_sacrifice = yes
+					}
+					add_opinion = {
+						target = root
+						modifier = respect_opinion
+						opinion = 10
+					}
+				}
+				if = {
+					limit = {
+						NOT = { faith_accepts_human_sacrifice = yes }
+					}
+					add_opinion = {
+						target = root
+						modifier = cruelty_opinion
+						opinion = -30
+					}
+				}
+			}
+		}
+		add_dread = medium_dread_gain
+
+		add_character_flag = {
+			flag = look_into_flames_cooldown
+			days = 1825
+		}
+
+		stress_impact = {
+			compassionate = major_stress_impact_gain
+			sadistic = major_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 0
+			ai_value_modifier = {
+				ai_zeal = 3
+				ai_compassion = -2
+				ai_boldness = 2
+				ai_honor = -0.5
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					has_trait = zealous
+					has_trait = callous
+					has_trait = ambitious
+					has_trait = sadistic
+				}
+			}
+		}
+	}
+
+	#Burn peasants as an offering
+	option = {
+		name = agot_religious_decision.3001.peasants
+		trigger = {
+			is_landed = yes
+		}
+		set_variable = {
+			name = offering
+			value = flag:peasants
+		}
+		capital_county ?= {
+			add_county_modifier = {
+				modifier = burned_commoners
+				years = 5
+			}
+		}
+
+		custom_tooltip = agot_religious_decision.3001.peasants.tt
+		custom_tooltip = agot_religious_decision.3001.peasants.tt.a
+		hidden_effect = {
+			every_courtier_or_guest = {
+				if = {
+					limit = {
+						has_trait = zealous
+						faith_accepts_human_sacrifice = yes
+					}
+					add_opinion = {
+						target = root
+						modifier = respect_opinion
+						opinion = 10
+					}
+				}
+				if = {
+					limit = {
+						NOT = { faith_accepts_human_sacrifice = yes }
+					}
+					add_opinion = {
+						target = root
+						modifier = cruelty_opinion
+						opinion = -15
+					}
+				}
+			}
+		}
+		add_dread = minor_dread_gain
+
+		add_character_flag = {
+			flag = look_into_flames_cooldown
+			days = 1825
+		}
+
+		stress_impact = {
+			compassionate = medium_stress_impact_gain
+			sadistic = medium_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 0
+			ai_value_modifier = {
+				ai_zeal = 2
+				ai_compassion = -2
+				ai_boldness = 2
+				ai_honor = -0.25
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					has_trait = zealous
+					has_trait = callous
+					has_trait = ambitious
+					has_trait = sadistic
+				}
+			}
+		}
+	}
+
+	#Burn false idols as an offering
+	option = {
+		name = agot_religious_decision.3001.false_idols
+		custom_tooltip = agot_religious_decision.3001.false_idols.tt
+		set_variable = {
+			name = offering
+			value = flag:false_idols
+		}
+
+		add_character_flag = {
+			flag = look_into_flames_cooldown
+			days = 1825
+		}
+
+		remove_short_term_gold = medium_gold_value
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_zeal = 1
+			}
+			modifier = {
+				add = -50
+				has_trait = greedy
+			}
+			modifier = {
+				factor = 0
+				short_term_gold < medium_gold_value_check
+			}
+		}
+	}
+
+	#No offerings this time
+	option = {
+		name = agot_religious_decision.3001.a
+		custom_tooltip = agot_religious_decision.3001.a.tt
+		set_variable = {
+			name = offering
+			value = flag:none
+		}
+
+		add_character_flag = {
+			flag = look_into_flames_cooldown
+			days = 1825
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_zeal = -2
+				ai_boldness = -1
+				ai_compassion = 1
+
+			}
+		}
+
+	}
+
+	#Cancel, I'll do it another time
+	option = {
+		name = agot_religious_decision.3001.b
+		remove_character_flag = look_into_flames_cooldown
+		add_piety_no_experience = 100 #Refund piety cost
+
+		ai_chance = { #AI shouldn't opt out
+			base = 0
+		}
+	}
+
+	# Any type of offering unlocks the ability to gain 1 skill point permanently
+	# Choosing peasants or king's blood offering can additionally lead to fire obsessed
+
+	after = {
+		if = {
+			limit = { has_character_flag = look_into_flames_cooldown }
+
+			#Determine if vision or no vision
+			hidden_effect = {
+				random_list = {
+					#First, can ROOT anything be seen in the flames?
+					#Purposefully stacked against player has a reason to see a vision
+					20 = { #Yes!
+						#Priest influences the outcome/helps understand visions, higher learning = skilled priest might read something in the flames
+						compare_modifier = {
+							value = {
+								value = scope:red_priest.learning
+								multiply = 2
+							}
+						}
+						#Better chance if priest is mystic
+						modifier = {
+							add = 40
+							scope:red_priest = {
+								has_trait = lifestyle_mystic
+							}
+						}
+						modifier = {
+							add = 40
+							scope:red_priest = {
+								has_trait = lifestyle_mystic
+								has_trait_xp = {
+									trait = lifestyle_mystic
+									value >50
+								}
+							}
+						}
+						modifier = {
+							add = 40
+							scope:red_priest = {
+								has_trait = lifestyle_mystic
+								has_trait_xp = {
+									trait = lifestyle_mystic
+									value >=100
+								}
+							}
+						}
+						#Chance increase per level of devotion
+						modifier = {
+							add = 30
+							piety_level > 5
+						}
+						modifier = {
+							add = 30
+							piety_level > 4
+						}
+						modifier = {
+							add = 20
+							piety_level > 3
+						}
+						#Burned peasants
+						modifier = {
+							add = 40
+							var:offering ?= flag:peasants
+						}
+						#False idols offering
+						modifier = {
+							add = 20
+							var:offering ?= flag:false_idols
+						}
+						#Zealous characters are more likely to have a 'vision'
+						modifier = {
+							add = 60
+							has_trait = zealous
+						}
+						#Lunatic can see whatever they want
+						modifier = {
+							add = 60
+							OR = {
+								has_trait = lunatic_genetic
+								has_trait = lunatic_1
+							}
+						}
+						#Fire obsessed is much more likely to see something
+						modifier = {
+							add = 100
+							has_trait = fire_obsessed
+						}
+
+						###Determine content of the visions, the flames reveal:
+						random_list = {
+							#Something real
+							5 = { #5% chance if burned peasants, 20% if burned someone of king's blood
+								trigger = {
+									OR = {
+										var:offering ?= flag:kingsblood
+										var:offering ?= flag:peasants
+									}
+								}
+								modifier = {
+									add = 15
+									var:offering ?= flag:kingsblood
+								}
+
+								#Character sees actual vision: reveal hostile scheme
+								trigger_event = agot_religious_decision.3008
+							}
+							95 = {
+								modifier = {
+									add = -15
+									var:offering ?= flag:kingsblood
+								}
+								random_list = {
+									10 = { #Diplo vision
+										modifier = {
+											add = 20
+											has_lifestyle = diplomacy_lifestyle
+										}
+										trigger_event = agot_religious_decision.3003
+									}
+									10 = { #Martial vision
+										modifier = {
+											add = 20
+											has_lifestyle = martial_lifestyle
+										}
+										trigger_event = agot_religious_decision.3004
+									}
+									10 = { #Stewardship vision
+										modifier = {
+											add = 20
+											has_lifestyle = stewardship_lifestyle
+										}
+										trigger_event = agot_religious_decision.3005
+									}
+									10 = { #Intrigue vision
+										modifier = {
+											add = 20
+											has_lifestyle = intrigue_lifestyle
+										}
+										trigger_event = agot_religious_decision.3006
+									}
+									10 = { #Learning vision
+										modifier = {
+											add = 20
+											has_lifestyle = learning_lifestyle
+										}
+										trigger_event = agot_religious_decision.3007
+									}
+								}
+							}
+						}
+					}
+					# Red Priest sees nothing beyond the flames
+					80 = { #No...
+						modifier = { #Cynical characters would take much more convincing of any effects...
+							add = 120
+							has_trait = cynical
+						}
+						modifier = { #Less likely to see anything if low devotion
+							add = 60
+							piety_level < 1
+						}
+						modifier = { #King's blood offering nullifies this outcome
+							factor = 0
+							var:offering ?= flag:kingsblood
+						}
+						trigger_event = agot_religious_decision.3002
+					}
+				}
+			}
+		}
+	}
+}
+
+#No visions
+agot_religious_decision.3002 = {
+	type = character_event
+	title = agot_religious_decision.3002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { NOT = { var:offering = flag:none } }
+				desc = agot_religious_decision.3002.offering_desc
+			}
+			desc = agot_religious_decision.3002.desc
+		}
+	}
+	theme = faith
+	override_background = {
+		reference = bp1_bonfire
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { ai_zeal <= high_negative_ai_value }
+			animation = eyeroll
+		}
+		triggered_animation = {
+			trigger = { ai_zeal >= high_positive_ai_value }
+			animation = worry
+		}
+		animation = boredom
+	}
+	right_portrait = {
+		character = scope:red_priest
+		animation = personality_zealous
+	}
+
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { has_trait = zealous }
+						desc = agot_religious_decision.3002.zealous
+					}
+					triggered_desc = {
+						trigger = { has_trait = cynical }
+						desc = agot_religious_decision.3002.cynical
+					}
+					desc = agot_religious_decision.3002.a
+				}
+			}
+		}
+		look_into_flames_cleanup_effect = yes
+
+		stress_impact = {
+			cynical = medium_stress_impact_loss
+			zealous = medium_stress_impact_gain
+		}
+	}
+}
+
+#A strange shadow in the dark
+agot_religious_decision.3003 = {
+	type = character_event
+	title = agot_religious_decision.3003.t
+	desc = {
+		desc = agot_look_into_flames.vision_intro_desc
+		desc = agot_religious_decision.3003.desc
+		desc = agot_look_into_flames.vision_outro_desc
+	}
+
+	immediate = {
+		if = {
+			limit = { has_trait = cynical }
+			add_stress = medium_stress_impact_gain
+		}
+	}
+
+	theme = faith
+	override_background = {
+		reference = bp1_bonfire
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { ai_zeal <= high_negative_ai_value }
+			animation = fear
+		}
+		triggered_animation = {
+			trigger = { ai_zeal >= high_positive_ai_value }
+			animation = personality_zealous
+		}
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:red_priest
+		animation = personality_zealous
+	}
+
+	#A friend...
+	option = {
+		name = agot_religious_decision.3003.a
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					left_icon = root
+					add_diplomacy_skill = 1
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					left_icon = root
+					add_character_modifier = {
+						modifier = flames_visions_friendship
+						years = 5
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_lifestyle = diplomacy_lifestyle
+			}
+			modifier = {
+				add = 50
+				has_trait = gregarious
+			}
+			modifier = {
+				add = 50
+				has_trait = lifestyle_reveler
+			}
+			modifier = {
+				add = 25
+				has_trait = trusting
+			}
+		}
+	}
+	#... or a foe?
+	option = {
+		name = agot_religious_decision.3003.b
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_intrigue_skill = 1
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_character_modifier = {
+						modifier = flames_visions_ominous_visions
+						years = 5
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_lifestyle = intrigue_lifestyle
+			}
+			modifier = {
+				add = 50
+				has_trait = paranoid
+			}
+			modifier = {
+				add = 50
+				has_trait = craven
+			}
+			modifier = {
+				add = 25
+				has_trait = shy
+			}
+		}
+	}
+
+	after = {
+		look_into_flames_cleanup_effect = yes
+	}
+}
+
+#Martial vision
+agot_religious_decision.3004 = {
+	type = character_event
+	title = agot_religious_decision.3004.t
+	desc = {
+		desc = agot_look_into_flames.vision_intro_desc
+		desc = agot_religious_decision.3004.desc
+		desc = agot_look_into_flames.vision_outro_desc
+	}
+	theme = faith
+	override_background = {
+		reference = bp1_bonfire
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { ai_zeal <= high_negative_ai_value }
+			animation = fear
+		}
+		triggered_animation = {
+			trigger = { ai_zeal >= high_positive_ai_value }
+			animation = personality_zealous
+		}
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:red_priest
+		animation = personality_zealous
+	}
+
+	immediate = {
+		if = {
+			limit = { has_trait = cynical }
+			add_stress = medium_stress_impact_gain
+		}
+	}
+
+	#Martial inspiration
+	option = {
+		name = agot_religious_decision.3004.a
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				if = {
+					limit = { NOT = { has_trait = holy_warrior } }
+					add_trait = holy_warrior
+				}
+				else = {
+					send_interface_toast = {
+						title = agot_religious_decision.3003.tt
+						add_martial_skill = 1
+					}
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_character_modifier = {
+						modifier = flames_visions_of_conquest
+						years = 5
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_lifestyle = martial_lifestyle
+			}
+			modifier = {
+				add = 50
+				has_trait = brave
+			}
+			modifier = {
+				add = 50
+				has_trait = ambitious
+			}
+			modifier = {
+				add = 50
+				has_trait = wrathful
+			}
+			modifier = {
+				add = -50
+				has_trait = humble
+			}
+		}
+	}
+	#Steer away from strife
+	option = {
+		name = agot_religious_decision.3004.b
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				if = {
+					limit = { NOT = { has_trait = cautious_leader } }
+					add_trait = cautious_leader
+				}
+				else = {
+					send_interface_toast = {
+						title = agot_religious_decision.3003.tt
+						add_diplomacy_skill = 1
+					}
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_character_modifier = {
+						modifier = flames_visions_of_reconciliation
+						years = 5
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_lifestyle = diplomacy_lifestyle
+			}
+			modifier = {
+				add = 50
+				has_trait = compassionate
+			}
+			modifier = {
+				add = 50
+				has_trait = lazy
+			}
+			modifier = {
+				add = 50
+				has_trait = content
+			}
+		}
+	}
+
+	after = {
+		look_into_flames_cleanup_effect = yes
+	}
+}
+
+#A castle turned into golden embers
+agot_religious_decision.3005 = {
+	type = character_event
+	title = agot_religious_decision.3005.t
+	desc = {
+		desc = agot_look_into_flames.vision_intro_desc
+		desc = agot_religious_decision.3005.desc
+		desc = agot_look_into_flames.vision_outro_desc
+	}
+	theme = faith
+	override_background = {
+		reference = bp1_bonfire
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { ai_zeal <= high_negative_ai_value }
+			animation = fear
+		}
+		triggered_animation = {
+			trigger = { ai_zeal >= high_positive_ai_value }
+			animation = personality_zealous
+		}
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:red_priest
+		animation = personality_zealous
+	}
+
+	immediate = {
+		if = {
+			limit = { has_trait = cynical }
+			add_stress = medium_stress_impact_gain
+		}
+	}
+
+	#Echo of future fortune
+	option = {
+		name = agot_religious_decision.3005.a
+		custom_tooltip = agot_religious_decision.3005.a.tt
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_stewardship_skill = 1
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_character_modifier = {
+						modifier = flames_visions_fortune
+						years = 5
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_lifestyle = diplomacy_lifestyle
+			}
+			modifier = {
+				add = 50
+				has_trait = ambitious
+			}
+			modifier = {
+				add = 50
+				has_trait = diligent
+			}
+			modifier = {
+				add = 50
+				has_trait = greedy
+			}
+			modifier = {
+				add = -50
+				has_trait = temperate
+			}
+			modifier = {
+				add = -50
+				has_trait = humble
+			}
+		}
+	}
+	#A glimpse of a fallen empire
+	option = {
+		name = agot_religious_decision.3005.b
+		custom_tooltip = agot_religious_decision.3005.b.tt
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_learning_skill = 1
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_character_modifier = {
+						modifier = flames_visions_glimpse_of_past
+						years = 5
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_lifestyle = learning_lifestyle
+			}
+			modifier = {
+				add = 50
+				has_trait = scholar
+			}
+			modifier = {
+				add = 50
+				has_trait = content
+			}
+			modifier = {
+				add = 50
+				has_trait = lazy
+			}
+		}
+	}
+
+	after = {
+		look_into_flames_cleanup_effect = yes
+	}
+}
+
+#Daggers and shadows
+agot_religious_decision.3006 = {
+	type = character_event
+	title = agot_religious_decision.3006.t
+	desc = {
+		desc = agot_look_into_flames.vision_intro_desc
+		desc = agot_religious_decision.3006.desc
+		desc = agot_look_into_flames.vision_outro_desc
+	}
+	theme = faith
+	override_background = {
+		reference = bp1_bonfire
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { ai_zeal <= high_negative_ai_value }
+			animation = fear
+		}
+		triggered_animation = {
+			trigger = { ai_zeal >= high_positive_ai_value }
+			animation = personality_zealous
+		}
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:red_priest
+		animation = personality_zealous
+	}
+
+	immediate = {
+		if = {
+			limit = { has_trait = cynical }
+			add_stress = medium_stress_impact_gain
+		}
+	}
+
+	#Better be careful...
+	option = {
+		name = agot_religious_decision.3006.a
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_intrigue_skill = 1
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_character_modifier = {
+						modifier = flames_visions_lurking_dangers
+						years = 5
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_trait = paranoid
+			}
+			modifier = {
+				add = 50
+				has_trait = lazy
+			}
+			modifier = {
+				add = 50
+				has_trait = content
+			}
+		}
+	}
+
+	#Time to strike!
+	option = {
+		name = agot_religious_decision.3006.b
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_intrigue_skill = 1
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_character_modifier = {
+						modifier = flames_visions_hostile_schemes
+						years = 5
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_trait = ambitious
+			}
+			modifier = {
+				add = 50
+				has_trait = vengeful
+			}
+			modifier = {
+				add = 50
+				has_trait = arbitrary
+			}
+			modifier = {
+				add = -50
+				has_trait = just
+			}
+			modifier = {
+				add = -50
+				has_trait = compassionate
+			}
+		}
+	}
+
+	after = {
+		look_into_flames_cleanup_effect = yes
+	}
+}
+
+#Learning vision
+agot_religious_decision.3007 = {
+	type = character_event
+	title = agot_religious_decision.3007.t
+	desc = {
+		desc = agot_look_into_flames.vision_intro_desc
+		desc = agot_religious_decision.3007.desc
+		desc = agot_look_into_flames.vision_outro_desc
+	}
+	theme = faith
+	override_background = {
+		reference = bp1_bonfire
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { ai_zeal <= high_negative_ai_value }
+			animation = fear
+		}
+		triggered_animation = {
+			trigger = { ai_zeal >= high_positive_ai_value }
+			animation = personality_zealous
+		}
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:red_priest
+		animation = personality_zealous
+	}
+
+	immediate = {
+		if = {
+			limit = { has_trait = cynical }
+			add_stress = medium_stress_impact_gain
+		}
+	}
+
+	#Answers lie deeper in the flames!
+	option = {
+		name = agot_religious_decision.3007.a
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				if = {
+					limit = {
+						NOT = { has_trait = lifestyle_mystic }
+					}
+					add_trait = lifestyle_mystic
+				}
+				else_if = {
+					limit = {
+						has_trait = lifestyle_mystic
+						has_trait_xp = {
+							trait = lifestyle_mystic
+							value < 100
+						}
+					}
+					send_interface_toast = {
+						title = agot_religious_decision.3003.tt
+						add_trait_xp = {
+							trait = lifestyle_mystic
+							value = 20
+						}
+					}
+				}
+				else = {
+					send_interface_toast = {
+						title = agot_religious_decision.3003.tt
+						add_learning_skill = 1
+					}
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_character_modifier = {
+						modifier = flames_visions_studying_prophecies
+					}
+				}
+			}
+		}
+
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_trait = zealous
+			}
+			modifier = {
+				add = 50
+				has_trait = theologian
+			}
+		}
+	}
+	#Answers lie in ancient tomes!
+	option = {
+		name = agot_religious_decision.3007.b
+		random_list = {
+			10 = {
+				trigger = {
+					OR = {
+						var:offering ?= flag:kingsblood
+						var:offering ?= flag:peasants
+					}
+					NOT = { has_trait = fire_obsessed }
+				}
+				add_trait = fire_obsessed
+			}
+			15 = {
+				trigger = { NOT = { var:offering ?= flag:none } }
+				if = {
+					limit = {
+						NOT = { has_trait = shrewd }
+					}
+					add_trait = shrewd
+				}
+				else = {
+					send_interface_toast = {
+						title = agot_religious_decision.3003.tt
+						add_learning_skill = 1
+					}
+				}
+			}
+			85 = {
+				send_interface_toast = {
+					title = agot_religious_decision.3003.tt
+					add_character_modifier = {
+						modifier = flames_visions_studying_scriptures
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_trait = cynical
+			}
+			modifier = {
+				add = 50
+				has_trait = scholar
+			}
+		}
+	}
+
+	after = {
+		look_into_flames_cleanup_effect = yes
+	}
+}
+
+#REVEAL SECRETS
+agot_religious_decision.3008 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:scheme }
+				desc = agot_religious_decision.3008.t.scheme
+			}
+			desc = agot_religious_decision.3008.t
+		}
+	}
+	desc = {
+		desc = agot_religious_decision.3008.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { NOT = { exists = scope:scheme } }
+				desc = agot_religious_decision.3008.no_scheme_desc
+			}
+			triggered_desc = {
+				trigger = { scope:scheme ?= { scheme_type = murder } }
+				desc = agot_religious_decision.3008.scheme_murder_desc
+			}
+			triggered_desc = {
+				trigger = { scope:scheme ?= { scheme_type = abduct } }
+				desc = agot_religious_decision.3008.scheme_abduction_desc
+			}
+			triggered_desc = {
+				trigger = { scope:scheme ?= { scheme_type = steal_back_artifact } }
+				desc = agot_religious_decision.3008.scheme_steal_artifact_desc
+			}
+			triggered_desc = {
+				trigger = { exists = scope:scheme }
+				desc = agot_religious_decision.3008.scheme_fallback_desc
+			}
+			desc = agot_religious_decision.3008.no_scheme_desc
+		}
+	}
+	theme = faith
+	override_background = {
+		reference = bp1_bonfire
+	}
+	left_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { exists = scope:scheme }
+			animation = fear
+		}
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:red_priest
+		animation = worry
+	}
+	immediate = {
+		if = {
+			limit = {
+				any_targeting_scheme = {
+					hostile_scheme_trigger = yes
+					is_scheme_exposed = no
+				}
+			}
+			save_scope_as = target
+			random_targeting_scheme = {
+				limit = {
+					hostile_scheme_trigger = yes
+					is_scheme_exposed = no
+				}
+				save_scope_as = scheme
+				scheme_owner = {
+					save_scope_as = owner
+				}
+			}
+		}
+	}
+
+	option = {
+		name = {
+			trigger = { exists = scope:scheme }
+			text = agot_religious_decision.3008.b
+		}
+		name = {
+			trigger = { NOT = { exists = scope:scheme } }
+			text = agot_religious_decision.3008.a
+		}
+		if = { #A scheme exists against me
+			limit = { exists = scope:scheme }
+			hidden_effect = { #Don't show it twice in the tooltip, but needed for the interface_message
+				scope:scheme = {
+					expose_scheme = yes
+				}
+			}
+			show_as_tooltip = {
+				scope:owner = {
+					add_dread = minor_dread_gain
+				}
+				if = {
+					limit = {
+						scope:scheme = {
+							scheme_type = murder
+						}
+					}
+					attempted_murder_opinion_effect = {
+						VICTIM = scope:target
+						MURDERER = scope:owner
+					}
+				}
+				if = {
+					limit = { #Double check since it seems the scheme sometimes hangs around as a scope
+						exists = scope:scheme
+						exists = scope:scheme.scheme_target_character
+					}
+					scope:scheme = {
+						end_scheme = yes
+					}
+				}
+			}
+			scope:owner = {
+				trigger_event = { #Delayed cause for some reason root won't get the interface_message without it
+					id = hostile_scheme_discovery.3003
+					days = 1
+				}
+			}
+		}
+		else = { #No hostile scheme exists at this moment
+			add_character_modifier = {
+				modifier = flames_visions_falsehoods_revealed
+				years = 5
+			}
+		}
+	}
+
+	after = {
+		look_into_flames_cleanup_effect = yes
+	}
+}
+
+##############################
+# TRADE EXPEDITION DECISION #
+##############################
+
+#Fund Trade Expedition
+agot_religious_decision.4000 = {
+	type = character_event
+	title = agot_religious_decision.4000.t
+	desc = agot_religious_decision.4000.desc
+	theme = stewardship_wealth_focus
+	left_portrait = root
+	right_portrait = cp:councillor_admiral
+
+	option = {
+		name = agot_religious_decision.4000.a
+		flavor = agot_religious_decision.4000.a.flavor
+		trigger = { gold >= medium_gold_value }
+		show_as_unavailable = { gold < medium_gold_value }
+		remove_short_term_gold = medium_gold_value
+		create_story = story_fund_trade_expedition
+		random_owned_story = {
+			limit = { story_type = story_fund_trade_expedition }
+			set_variable = {
+				name = funding
+				value = flag:minimal
+			}
+		}
+
+		if = {
+			limit = {
+				faith = { has_doctrine_parameter = can_fund_trade_expeditions }
+			}
+			add_piety = miniscule_piety_value
+		}
+
+		if = {
+			limit = {
+				dynasty ?= { has_dynasty_perk = velaryon_legacy_1 }
+			}
+			add_prestige = miniscule_piety_value
+		}
+
+		ai_chance = {
+			base = 20
+		}
+	}
+
+	option = {
+		name = agot_religious_decision.4000.b
+		flavor = agot_religious_decision.4000.b.flavor
+		trigger = { gold >= major_gold_value }
+		show_as_unavailable = { gold < major_gold_value }
+		remove_short_term_gold = major_gold_value
+		create_story = story_fund_trade_expedition
+		random_owned_story = {
+			limit = { story_type = story_fund_trade_expedition }
+			set_variable = {
+				name = funding
+				value = flag:adequate
+			}
+		}
+
+		if = {
+			limit = {
+				faith = { has_doctrine_parameter = can_fund_trade_expeditions }
+			}
+			add_piety = minor_piety_value
+		}
+
+		if = {
+			limit = {
+				dynasty ?= { has_dynasty_perk = velaryon_legacy_1 }
+			}
+			add_prestige = minor_prestige_value
+		}
+
+		ai_chance = {
+			base = 20
+		}
+	}
+
+	option = {
+		name = agot_religious_decision.4000.c
+		flavor = agot_religious_decision.4000.c.flavor
+		trigger = { gold >= massive_gold_value }
+		show_as_unavailable = { gold < massive_gold_value }
+		remove_short_term_gold = massive_gold_value
+		create_story = story_fund_trade_expedition
+		random_owned_story = {
+			limit = { story_type = story_fund_trade_expedition }
+			set_variable = {
+				name = funding
+				value = flag:high
+			}
+		}
+
+		if = {
+			limit = {
+				faith = { has_doctrine_parameter = can_fund_trade_expeditions }
+			}
+			add_piety = medium_piety_value
+		}
+
+		if = {
+			limit = {
+				dynasty ?= { has_dynasty_perk = velaryon_legacy_1 }
+			}
+			add_prestige = medium_prestige_value
+		}
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	option = {
+		name = agot_religious_decision.4000.d
+		flavor = agot_religious_decision.4000.d.flavor
+		trigger = { gold >= monumental_gold_value }
+		show_as_unavailable = { gold < monumental_gold_value }
+		remove_short_term_gold = monumental_gold_value
+		create_story = story_fund_trade_expedition
+		random_owned_story = {
+			limit = { story_type = story_fund_trade_expedition }
+			set_variable = {
+				name = funding
+				value = flag:expensive
+			}
+		}
+
+		if = {
+			limit = {
+				faith = { has_doctrine_parameter = can_fund_trade_expeditions }
+			}
+			add_piety = major_piety_value
+		}
+
+		if = {
+			limit = {
+				dynasty ?= { has_dynasty_perk = velaryon_legacy_1 }
+			}
+			add_prestige = major_prestige_value
+		}
+
+		ai_chance = {
+			base = 10
+		}
+	}
+
+	option = {
+		name = agot_religious_decision.4000.e
+
+		remove_decision_cooldown = agot_fund_trade_expedition_decision
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+#Poor Trade Deal
+agot_religious_decision.4001 = {
+	type = character_event
+	title = agot_religious_decision.4001.t
+	desc = agot_religious_decision.4001.desc
+	theme = stewardship_wealth_focus
+	left_portrait = root
+	right_portrait = cp:councillor_admiral
+
+	immediate = {
+		if = {
+			limit = { exists = scope:expensive }
+			capital_county = {
+				add_county_modifier = {
+					modifier = satisfactory_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = scope:high }
+			capital_county = {
+				add_county_modifier = {
+					modifier = decent_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = scope:adequate }
+			capital_county = {
+				add_county_modifier = {
+					modifier = mediocre_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+
+	}
+	option = {
+		name = agot_religious_decision.4001.a
+	}
+}
+
+#Average Trade Deal
+agot_religious_decision.4002 = {
+	type = character_event
+	title = agot_religious_decision.4002.t
+	desc = agot_religious_decision.4002.desc
+	theme = stewardship_wealth_focus
+	left_portrait = root
+	right_portrait = cp:councillor_admiral
+
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_right_portrait
+	}
+
+	immediate = {
+		if = {
+			limit = { exists = scope:expensive }
+			capital_county = {
+				add_county_modifier = {
+					modifier = impressive_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = scope:high }
+			capital_county = {
+				add_county_modifier = {
+					modifier = satisfactory_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = scope:adequate }
+			capital_county = {
+				add_county_modifier = {
+					modifier = decent_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = scope:minimal }
+			capital_county = {
+				add_county_modifier = {
+					modifier = mediocre_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+
+		if = {
+			limit = { exists = scope:char_average_artifact }
+			random_list = {
+				10 = {
+					trigger = {
+						capital_province = {
+							NOT = { geographical_region = world_essos_myr }
+						}
+					}
+					agot_create_artifact_myrish_lace_effect = { OWNER = ROOT }
+				}
+				10 = {
+					#trigger = {
+					#	capital_province = {
+					#		NOT = { geographical_region = world_essos_norvos }
+					#	}
+					#}
+					agot_create_artifact_norvoshi_bear_carving_effect = { OWNER = ROOT }
+				}
+				10 = {
+					trigger = {
+						capital_province = {
+							NOT = { geographical_region = world_essos_pentos }
+						}
+					}
+					agot_create_artifact_pentoshi_cheese_effect = { OWNER = ROOT }
+				}
+				10 = {
+					trigger = {
+						any_artifact = {
+							count < 77
+							has_variable = crystal_carving
+						}
+					}
+					create_artifact_crystal_carving_effect = { OWNER = ROOT }
+				}
+				10 = {
+					agot_create_oily_black_stone_effect = { OWNER = ROOT }
+				}
+			}
+		}
+
+		if = {
+			limit = { exists = scope:char_medium_gold }
+			add_gold = medium_gold_value
+		}
+		else_if = {
+			limit = { exists = scope:char_low_gold }
+			add_gold = minor_gold_value
+		}
+
+	}
+	option = {
+		name = agot_religious_decision.4002.a
+	}
+}
+
+#Good Trade Deal
+agot_religious_decision.4003 = {
+	type = character_event
+	title = agot_religious_decision.4003.t
+	desc = agot_religious_decision.4003.desc
+	theme = stewardship_wealth_focus
+	left_portrait = root
+	right_portrait = cp:councillor_admiral
+
+	artifact = {
+		target = scope:newly_created_artifact
+		position = lower_right_portrait
+	}
+
+	immediate = {
+		if = {
+			limit = { exists = scope:expensive }
+			capital_county = {
+				add_county_modifier = {
+					modifier = flourishing_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = scope:high }
+			capital_county = {
+				add_county_modifier = {
+					modifier = impressive_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = scope:adequate }
+			capital_county = {
+				add_county_modifier = {
+					modifier = satisfactory_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = scope:minimal }
+			capital_county = {
+				add_county_modifier = {
+					modifier = decent_trade_deal_modifier
+					years = 5
+				}
+			}
+		}
+
+		if = {
+			limit = { exists = scope:char_good_artifact }
+			random_list = {
+				8 = { # Glass Candle
+					agot_create_random_glass_candle_effect = { OWNER = ROOT }
+				}
+				1 = { #Generic Valyrian Steel Sword
+					random_list = {
+						#Andal Variant
+						1 = {
+							agot_create_artifact_vs_andal_armingsword_gold_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_andal_armingsword_silver_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_andal_longsword_gold_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_andal_longsword_silver_historical_effect = { OWNER = ROOT }
+						}
+						# # First Man Variant
+						1 = {
+							agot_create_artifact_vs_firstman_armingsword_gold_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_firstman_armingsword_silver_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_firstman_armingsword_bronze_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_firstman_longsword_gold_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_firstman_longsword_silver_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_firstman_longsword_bronze_historical_effect = { OWNER = ROOT }
+						}
+						# Valyrian Variant
+						1 = {
+							agot_create_artifact_vs_valyrian_armingsword_gold_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_valyrian_armingsword_silver_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_valyrian_longsword_gold_historical_effect = { OWNER = ROOT }
+						}
+						1 = {
+							agot_create_artifact_vs_valyrian_longsword_silver_historical_effect = { OWNER = ROOT }
+						}
+					}
+				}
+				1 = { #Dragon Egg
+					random_list = {
+						1 = {
+							character:dragon_nessarion = { save_scope_as = dragon_parent }
+						}
+						1 = {
+							trigger = { game_start_date >= 7935.1.1 }
+							character:dragon_meraxes = { save_scope_as = dragon_parent }
+						}
+						1 = {
+							trigger = { game_start_date >= 7959.1.1 }
+							character:dragon_vhagar = { save_scope_as = dragon_parent }
+						}
+						1 = {
+							trigger = { game_start_date >= 8017.1.1 }
+							character:dragon_quicksilver = { save_scope_as = dragon_parent }
+						}
+						1 = {
+							trigger = { game_start_date >= 8046.1.1 }
+							character:dragon_meleys = { save_scope_as = dragon_parent }
+						}
+						1 = {
+							trigger = { game_start_date >= 8097.1.1 }
+							character:dragon_syrax = { save_scope_as = dragon_parent }
+						}
+					}
+					agot_create_weighted_dragon_egg_artifact = { OWNER = root }
+				}
+			}
+		}
+		else_if = {
+			limit = { exists = scope:char_average_artifact }
+			random_list = {
+				10 = {
+					trigger = {
+						capital_province = {
+							NOT = { geographical_region = world_essos_myr }
+						}
+					}
+					agot_create_artifact_myrish_lace_effect = { OWNER = ROOT }
+				}
+				10 = {
+					#trigger = {
+					#	capital_province = {
+					#		NOT = { geographical_region = world_essos_norvos }
+					#	}
+					#}
+					agot_create_artifact_norvoshi_bear_carving_effect = { OWNER = ROOT }
+				}
+				10 = {
+					trigger = {
+						capital_province = {
+							NOT = { geographical_region = world_essos_pentos }
+						}
+					}
+					agot_create_artifact_pentoshi_cheese_effect = { OWNER = ROOT }
+				}
+				10 = {
+					trigger = {
+						any_artifact = {
+							count < 77
+							has_variable = crystal_carving
+						}
+					}
+					create_artifact_crystal_carving_effect = { OWNER = ROOT }
+				}
+				10 = {
+					agot_create_oily_black_stone_effect = { OWNER = ROOT }
+				}
+			}
+		}
+
+		if = {
+			limit = { exists = scope:char_large_gold }
+			add_gold = major_gold_value
+		}
+		else_if = {
+			limit = { exists = scope:char_medium_gold }
+			add_gold = medium_gold_value
+		}
+		else_if = {
+			limit = { exists = scope:char_low_gold }
+			add_gold = minor_gold_value
+		}
+
+	}
+	option = {
+		name = agot_religious_decision.4003.a
+	}
+}
+
+##############################
+# WHALING EXPEDITION DECISION #
+##############################
+
+# Whaling Expedition
+agot_religious_decision.5000 = {
+	type = character_event
+	title = agot_religious_decision.5000.t
+	desc = agot_religious_decision.5000.desc
+	theme = hunt_activity
+	override_background = { reference = fp1_ocean }
+	right_portrait = root
+	immediate = {}
+
+	# I will launch a well-funded expedition
+	option = {
+		name = agot_religious_decision.5000.a
+		trigger = { gold >= major_gold_value }
+		show_as_unavailable = { gold < major_gold_value }
+		remove_short_term_gold = major_gold_value
+		set_variable = {
+			name = whaling_exp_funds
+			value = flag:well_funded
+		}
+		trigger_event = { id = agot_religious_decision.5001 days = 1 }
+		add_piety = medium_piety_value
+		ai_chance = {
+			base = 40
+		}
+	}
+
+	# I will launch a moderately-funded expedition
+	option = {
+		name = agot_religious_decision.5000.b
+		trigger = { gold >= medium_gold_value }
+		show_as_unavailable = { gold < medium_gold_value }
+		remove_short_term_gold = medium_gold_value
+		set_variable = {
+			name = whaling_exp_funds
+			value = flag:moderately_funded
+		}
+		trigger_event = { id = agot_religious_decision.5001 days = 1 }
+		add_piety = minor_piety_value
+		ai_chance = {
+			base = 60
+		}
+	}
+
+	# I will launch a sparsely-funded expedition
+	option = {
+		name = agot_religious_decision.5000.c
+		trigger = { gold >= minor_gold_value }
+		show_as_unavailable = { gold < minor_gold_value }
+		remove_short_term_gold = minor_gold_value
+		set_variable = {
+			name = whaling_exp_funds
+			value = flag:sparsely_funded
+		}
+		trigger_event = { id = agot_religious_decision.5001 days = 1 }
+		add_piety = miniscule_piety_value
+		ai_chance = {
+			base = 10
+			modifier = {
+				factor = 1.5
+				has_trait = greedy
+			}
+		}
+	}
+
+	option = {
+		name = agot_religious_decision.5000.d
+		remove_decision_cooldown = agot_launch_whaling_expedition_expedition_decision
+	}
+}
+
+agot_religious_decision.5001 = {
+	type = character_event
+	title = agot_religious_decision.5001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					var:whaling_success = flag:great
+				}
+				desc = agot_religious_decision.5001.desc_great
+			}
+			triggered_desc = {
+				trigger = {
+					var:whaling_success = flag:good
+				}
+				desc = agot_religious_decision.5001.desc_good
+			}
+			triggered_desc = {
+				trigger = {
+					var:whaling_success = flag:bad
+				}
+				desc = agot_religious_decision.5001.desc_bad
+			}
+		}
+	}
+	window = visit_settlement_window
+	theme = hunt_activity
+	override_background = { reference = fp1_ocean }
+	center_portrait = {
+		character = root
+		animation = survey
+	}
+	immediate = {
+		random_list = {
+			5 = {
+				set_variable = {
+					name = whaling_success
+					value = flag:great
+				}
+				modifier = {
+					add = 5
+					has_trait = lifestyle_hunter
+				}
+				modifier = {
+					add = 2
+					var:whaling_exp_funds = flag:well_funded
+				}
+			}
+			10 = {
+				set_variable = {
+					name = whaling_success
+					value = flag:good
+				}
+				modifier = {
+					add = 5
+					has_trait = lifestyle_hunter
+				}
+				modifier = {
+					add = 5
+					var:whaling_exp_funds = flag:moderately_funded
+				}
+			}
+			10 = {
+				set_variable = {
+					name = whaling_success
+					value = flag:bad
+				}
+				modifier = {
+					add = 5
+					var:whaling_exp_funds = flag:sparsely_funded
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_religious_decision.5001.a
+		trigger = {
+			var:whaling_success = flag:great
+		}
+		duel = {
+			skill = prowess
+			value = high_skill_rating
+			45 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				desc = agot_religious_decision.5001.a.tt_success
+				send_interface_toast = {
+					title = agot_religious_decision.5001.a.tt_success
+					left_icon = root
+					add_gold = 350
+					add_piety = 350
+					if = {
+						limit = {
+							has_trait = lifestyle_hunter
+						}
+						add_trait_xp = {
+							trait = lifestyle_hunter
+							track = hunter
+							value = {
+								integer_range = {
+									min = 15
+									max = 20
+								}
+							}
+						}
+					}
+				}
+			}
+			55 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				desc = agot_religious_decision.5001.a.tt_failure
+				send_interface_toast = {
+					title = agot_religious_decision.5001.a.tt_failure
+					left_icon = root
+					add_prestige = minor_prestige_loss
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_religious_decision.5001.b
+		trigger = {
+			var:whaling_success = flag:good
+		}
+		duel = {
+			skill = prowess
+			value = decent_skill_rating
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				desc = agot_religious_decision.5001.b.tt_success
+				send_interface_toast = {
+					title = agot_religious_decision.5001.a.tt_success
+					left_icon = root
+					add_gold = 150
+					add_piety = 150
+					if = {
+						limit = {
+							has_trait = lifestyle_hunter
+						}
+						add_trait_xp = {
+							trait = lifestyle_hunter
+							track = hunter
+							value = {
+								integer_range = {
+									min = 5
+									max = 10
+								}
+							}
+						}
+					}
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				desc = agot_religious_decision.5001.a.tt_failure
+				send_interface_toast = {
+					title = agot_religious_decision.5001.a.tt_failure
+					left_icon = root
+					add_prestige = minor_prestige_loss
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_religious_decision.5001.c
+		trigger = {
+			var:whaling_success = flag:bad
+		}
+		add_prestige = minor_prestige_loss
+	}
+	after = {
+		remove_variable = whaling_exp_funds
+		remove_variable = whaling_success
+	}
+}
+
+##############################
+# OILY BLACK STONE DECISION #
+##############################
+
+#Oily Black Stone Offering
+agot_religious_decision.5100 = {
+	type = character_event
+	title = agot_religious_decision.5100.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					faith = {
+						any_holy_site = {
+							OR = {
+								county.holder = root
+								county.holder.top_liege = { this = root }
+							}
+						}
+					}
+				}
+				desc = agot_religious_decision.5100.desc.holy_site
+			}
+			triggered_desc = {
+				trigger = {
+					any_character_artifact = {
+						has_variable = oily_black_stone_artifact
+					}
+				}
+				desc = agot_religious_decision.5100.desc.artifact
+			}
+		}
+	}
+	theme = faith
+	override_background = {
+		reference = agot_oily_black_stone_obelisk
+	}
+
+	right_portrait = {
+		character = root
+		animation = throne_room_kneel_1
+		camera = camera_event_center_away
+	}
+
+	immediate = {
+		play_music_cue = mood_shadowbinder
+	}
+
+	option = {
+		trigger = {
+			OR = {
+				is_ai = no
+				short_term_gold > major_gold_value
+			}
+		}
+		name = agot_religious_decision.5100.a
+		remove_short_term_gold = major_gold_value
+		flavor = agot_religious_decision.5100.a.tt
+		save_scope_value_as = {
+			name = offering
+			value = flag:expensive
+		}
+		stress_impact = {
+			greedy = medium_stress_gain
+			cynical = medium_stress_gain
+		}
+		trigger_event = {
+			id = agot_religious_decision.5101
+			days = { 2 3 }
+		}
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_zeal = 10
+				ai_greed = -10
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			OR = {
+				is_ai = no
+				short_term_gold > minor_gold_value
+			}
+		}
+		name = agot_religious_decision.5100.b
+		remove_short_term_gold = minor_gold_value
+		flavor = agot_religious_decision.5100.b.tt
+		save_scope_value_as = {
+			name = offering
+			value = flag:traditional
+		}
+		trigger_event = {
+			id = agot_religious_decision.5101
+			days = { 2 3 }
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = {
+		name = agot_religious_decision.5100.c
+		flavor = agot_religious_decision.5100.c.tt
+		save_scope_value_as = {
+			name = offering
+			value = flag:none
+		}
+		stress_impact = {
+			generous = medium_stress_gain
+			humble = medium_stress_gain
+		}
+		trigger_event = {
+			id = agot_religious_decision.5101
+			days = { 2 3 }
+		}
+
+		ai_chance = {
+			base = 0
+
+			ai_value_modifier = {
+				ai_boldness = 5
+				ai_greed = 5
+				ai_zeal = -10
+			}
+
+			modifier = {
+				add = 980
+				has_trait = arrogant
+			}
+		}
+	}
+
+	option = {
+		name = agot_religious_decision.5100.d
+		flavor = agot_religious_decision.5100.d.tt
+		remove_decision_cooldown = oily_black_stone_meditate_decision
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+agot_religious_decision.5101 = {
+	type = character_event
+	title = agot_religious_decision.5101.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:offering = flag:none
+				}
+				desc = agot_religious_decision.5101.desc.start_no_offering
+			}
+			desc = agot_religious_decision.5101.desc.start_offering
+		}
+		desc = agot_religious_decision.5101.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:outcome = flag:no_effect
+				}
+				desc = agot_religious_decision.5101.desc.end_no_change
+			}
+			desc = agot_religious_decision.5101.desc.end_changed
+		}
+	}
+	theme = faith
+	override_background = {
+		reference = agot_oily_black_stone_obelisk
+	}
+	right_portrait = {
+		character = root
+		triggered_animation = {
+			trigger = { scope:outcome = flag:shrewd }
+			animation = thinking
+		}
+		triggered_animation = {
+			trigger = { scope:outcome = flag:strong }
+			animation = wrestling_victory
+		}
+		triggered_animation = {
+			trigger = {
+				OR = {
+					scope:outcome = flag:whispering_stone_blessing
+					scope:outcome = flag:eternal_design_blessing
+					scope:outcome = flag:monolith_wisdom_blessing
+					scope:outcome = flag:black_heart_blessing
+					scope:outcome = flag:eldritch_presence_blessing
+				}
+			}
+			animation = happiness
+		}
+		triggered_animation = {
+			trigger = {
+				OR = {
+					scope:outcome = flag:ill
+					scope:outcome = flag:impotent
+					scope:outcome = flag:infirm
+				}
+			}
+			animation = sick_stomach
+		}
+		triggered_animation = {
+			trigger = { scope:outcome = flag:possessed }
+			animation = eccentric
+		}
+		triggered_animation = {
+			trigger = { scope:outcome = flag:lunatic }
+			animation = lunatic
+		}
+		triggered_animation = {
+			trigger = {
+				scope:outcome = flag:no_effect
+				has_trait = zealous
+			}
+			animation = sadness
+		}
+		triggered_animation = {
+			trigger = {
+				scope:outcome = flag:no_effect
+				NOT = { has_trait = zealous }
+			}
+			animation = disappointed
+		}
+	}
+
+	on_trigger_fail = {
+		# Refund the player's money if the ritual fails for some reason.
+		if = {
+			limit = {
+				scope:offering = flag:expensive
+			}
+			add_gold = major_gold_value
+		}
+		else_if = {
+			limit = {
+				scope:offering = flag:traditional
+			}
+			add_gold = minor_gold_value
+		}
+	}
+
+	immediate = {
+		# Determine what the impact of the ritual will be.
+		random_list = {
+			# Permanent Skill Boost
+			5 = {
+				trigger = {
+					NAND = {
+						AND = {
+							has_trait = shrewd
+							has_trait_rank = {
+								trait = intellect_bad
+								rank > 0
+							}
+						}
+						AND = {
+							has_trait = strong
+							has_trait_rank = {
+								trait = physique_bad
+								rank > 0
+							}
+						}
+					}
+				}
+				random_list = {
+					50 = {
+						trigger = {
+							NOR = {
+								has_trait = shrewd
+								has_trait_rank = {
+									trait = intellect_bad
+									rank > 0
+								}
+							}
+						}
+						save_scope_value_as = {
+							name = outcome
+							value = flag:shrewd
+						}
+					}
+					50 = {
+						trigger = {
+							NOR = {
+								has_trait = strong
+								has_trait_rank = {
+									trait = physique_bad
+									rank > 0
+								}
+							}
+						}
+						save_scope_value_as = {
+							name = outcome
+							value = flag:strong
+						}
+					}
+				}
+			}
+			# Temporary Skill Boost
+			15 = {
+				modifier = { # 0% chance with expensive offering.
+					add = 10
+					scope:offering = flag:expensive
+				}
+				modifier = { # 66% chance with no offering.
+					add = -5
+					scope:offering = flag:none
+				}
+				random_list = {
+					20 = {
+						save_scope_value_as = {
+							name = outcome
+							value = flag:whispering_stone_blessing
+						}
+					}
+					20 = {
+						save_scope_value_as = {
+							name = outcome
+							value = flag:eternal_design_blessing
+						}
+					}
+					20 = {
+						save_scope_value_as = {
+							name = outcome
+							value = flag:black_heart_blessing
+						}
+					}
+					20 = {
+						save_scope_value_as = {
+							name = outcome
+							value = flag:monolith_wisdom_blessing
+						}
+					}
+					20 = {
+						save_scope_value_as = {
+							name = outcome
+							value = flag:eldritch_presence_blessing
+						}
+					}
+				}
+			}
+			# No Effect
+			30 = {
+				modifier = { # 0% chance with expensive offering.
+					add = -10
+					scope:offering = flag:expensive
+				}
+				modifier = { # 66% chance with no offering.
+					add = 5
+					scope:offering = flag:none
+				}
+
+				save_scope_value_as = {
+					name = outcome
+					value = flag:no_effect
+				}
+			}
+			# Negative Effect
+			40 = {
+				random_list = {
+					25 = {
+						trigger = { NOT = { has_trait = possessed } }
+						modifier = {
+							add = 100
+							scope:offering = flag:expensive
+						}
+						save_scope_value_as = {
+							name = outcome
+							value = flag:possessed
+						}
+					}
+					25 = {
+						trigger = { NOT = { has_trait = lunatic_1 } }
+						modifier = {
+							add = 50
+							scope:offering = flag:none
+						}
+						save_scope_value_as = {
+							name = outcome
+							value = flag:lunatic
+						}
+					}
+					25 = {
+						trigger = { NOT = { has_trait = impotent } }
+						save_scope_value_as = {
+							name = outcome
+							value = flag:impotent
+						}
+					}
+					25 = {
+						trigger = { can_contract_disease_trigger = { DISEASE = ill } }
+						save_scope_value_as = {
+							name = outcome
+							value = flag:ill
+						}
+					}
+					25 = {
+						trigger = { NOT = { has_trait = infirm } }
+						save_scope_value_as = {
+							name = outcome
+							value = flag:infirm
+						}
+					}
+				}
+			}
+		}
+
+		# If we failed to set the outcome flag, set it now.
+		if = {
+			limit = {
+				NOT = { exists = scope:outcome }
+			}
+			save_scope_value_as = {
+				name = outcome
+				value = flag:no_effect
+			}
+		}
+	}
+
+	option = {
+		# Custom name text based on ritual outcome.
+		name = {
+			trigger = { scope:outcome = flag:shrewd }
+			text = agot_religious_decision.5101.shrewd
+		}
+		name = {
+			trigger = { scope:outcome = flag:strong }
+			text = agot_religious_decision.5101.strong
+		}
+		name = {
+			trigger = {
+				OR = {
+					scope:outcome = flag:whispering_stone_blessing
+					scope:outcome = flag:eternal_design_blessing
+					scope:outcome = flag:monolith_wisdom_blessing
+					scope:outcome = flag:black_heart_blessing
+					scope:outcome = flag:eldritch_presence_blessing
+				}
+			}
+			text = agot_religious_decision.5101.good
+		}
+		name = {
+			trigger = {
+				OR = {
+					scope:outcome = flag:ill
+					scope:outcome = flag:impotent
+					scope:outcome = flag:infirm
+				}
+			}
+			text = agot_religious_decision.5101.bad
+		}
+		name = {
+			trigger = { scope:outcome = flag:possessed }
+			text = agot_religious_decision.5101.possessed
+		}
+		name = {
+			trigger = { scope:outcome = flag:lunatic }
+			text = agot_religious_decision.5101.possessed
+		}
+		name = {
+			trigger = {
+				scope:outcome = flag:no_effect
+				has_trait = zealous
+			}
+			text = agot_religious_decision.5101.no_change.zealous
+		}
+		name = {
+			trigger = {
+				scope:outcome = flag:no_effect
+				NOT = { has_trait = zealous }
+			}
+			text = agot_religious_decision.5101.no_change
+		}
+		flavor = {
+			first_valid = {
+				triggered_desc = {
+					trigger = { scope:outcome = flag:shrewd }
+					desc = agot_religious_decision.5101.shrewd.tt
+				}
+				triggered_desc = {
+					trigger = { scope:outcome = flag:strong }
+					desc = agot_religious_decision.5101.strong.tt
+				}
+				triggered_desc = {
+					trigger = {
+						OR = {
+							scope:outcome = flag:whispering_stone_blessing
+							scope:outcome = flag:eternal_design_blessing
+							scope:outcome = flag:monolith_wisdom_blessing
+							scope:outcome = flag:black_heart_blessing
+							scope:outcome = flag:eldritch_presence_blessing
+						}
+					}
+					desc = agot_religious_decision.5101.good.tt
+				}
+				triggered_desc = {
+					trigger = {
+						OR = {
+							scope:outcome = flag:ill
+							scope:outcome = flag:impotent
+							scope:outcome = flag:infirm
+						}
+					}
+					desc = agot_religious_decision.5101.bad.tt
+				}
+				triggered_desc = {
+					trigger = { scope:outcome = flag:possessed }
+					desc = agot_religious_decision.5101.possessed.tt
+				}
+				triggered_desc = {
+					trigger = { scope:outcome = flag:lunatic }
+					desc = agot_religious_decision.5101.possessed.tt
+				}
+				triggered_desc = {
+					trigger = {
+						scope:outcome = flag:no_effect
+						has_trait = zealous
+					}
+					desc = agot_religious_decision.5101.no_change.zealous.tt
+				}
+				triggered_desc = {
+					trigger = {
+						scope:outcome = flag:no_effect
+						NOT = { has_trait = zealous }
+					}
+					desc = agot_religious_decision.5101.no_change.tt
+				}
+			}
+		}
+
+
+		# Apply the actual outcome effects:
+		# Good Outcomes
+		if = {
+			limit = { scope:outcome = flag:shrewd}
+			if = {
+				limit = { has_trait = dull}
+				remove_trait = dull
+			}
+			else = {
+				add_trait = shrewd
+			}
+		}
+		else_if = {
+			limit = { scope:outcome = flag:strong}
+			if = {
+				limit = { has_trait = weak}
+				remove_trait = weak
+			}
+			else = {
+				add_trait = strong
+			}
+		}
+		else_if = {
+			limit = { scope:outcome = flag:whispering_stone_blessing }
+			add_character_modifier = {
+				modifier = whispering_stone_blessing
+				years = 20
+			}
+		}
+		else_if = {
+			limit = { scope:outcome = flag:eternal_design_blessing }
+			add_character_modifier = {
+				modifier = eternal_design_blessing
+				years = 20
+			}
+		}
+		else_if = {
+			limit = { scope:outcome = flag:eldritch_presence_blessing }
+			add_character_modifier = {
+				modifier = eldritch_presence_blessing
+				years = 20
+			}
+		}
+		else_if = {
+			limit = { scope:outcome = flag:black_heart_blessing }
+			add_character_modifier = {
+				modifier = black_heart_blessing
+				years = 20
+			}
+		}
+		else_if = {
+			limit = { scope:outcome = flag:monolith_wisdom_blessing }
+			add_character_modifier = {
+				modifier = monolith_wisdom_blessing
+				years = 20
+			}
+		}
+		# Bad Outcomes
+		else_if = {
+			limit = { scope:outcome = flag:possessed}
+			add_trait = possessed_1
+			add_stress = medium_stress_impact_gain
+		}
+		else_if = {
+			limit = { scope:outcome = flag:lunatic}
+			add_trait = lunatic_1
+			add_stress = major_stress_impact_gain
+		}
+		else_if = {
+			limit = { scope:outcome = flag:impotent}
+			add_trait = impotent
+			add_stress = major_stress_impact_gain
+		}
+		else_if = {
+			limit = { scope:outcome = flag:ill}
+			contract_disease_effect = { DISEASE = ill TREATMENT_EVENT = yes }
+			add_stress = minor_stress_impact_gain
+		}
+		else_if = {
+			limit = { scope:outcome = flag:infirm}
+			add_trait = infirm
+			add_stress = major_stress_impact_gain
+		}
+	}
+}
+
+###################
+# BLOOD DECISIONS #
+###################
+
+# Blood Draining & Consuming
+agot_religious_decision.5200 = {
+	type = character_event
+	title = agot_religious_decision.5200.t
+	desc = agot_religious_decision.5200.desc
+	theme = faith
+	override_background = {
+		reference = dungeon
+	}
+
+	left_portrait = root
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				is_ai = no
+			}
+			every_prisoner = {
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+			ordered_in_list = {
+				variable = possible_characters
+				order_by = age
+				root = { set_variable = { name = si_selected_character value = prev } }
+				save_scope_as = living_blood_bag
+			}
+		}
+		else = {
+			random_prisoner = {
+				save_scope_as = living_blood_bag
+			}
+		}
+	}
+
+	option = {
+		trigger = { is_ai = no }
+		name = agot_religious_decision.5200.a
+		var:si_selected_character = {
+			save_scope_as = living_blood_bag
+			remove_variable = si_selecting_character
+		}
+		clear_variable_list = possible_characters
+	}
+
+	option = {
+		trigger = { is_ai = yes }
+		name = agot_religious_decision.5200.b
+	}
+	after = {
+		trigger_event = agot_religious_decision.5201
+	}
+}
+
+agot_religious_decision.5201 = {
+	type = character_event
+	title = agot_religious_decision.5201.t
+	desc = agot_religious_decision.5201.desc
+	theme = faith
+	override_background = {
+		reference = dungeon
+	}
+
+	left_portrait = { animation = schadenfreude character = root }
+	right_portrait = { animation = prisondungeon character = scope:living_blood_bag }
+
+	immediate = {}
+
+	option = {
+		name = agot_religious_decision.5201.a
+		scope:living_blood_bag = {
+			if = {
+				limit = {
+					NOR = {
+						has_character_modifier = blood_drained_malus_small_modifier
+						has_character_modifier = blood_drained_malus_moderate_modifier
+						has_character_modifier = blood_drained_malus_large_modifier
+					}
+				}
+				add_character_modifier = { modifier = blood_drained_malus_small_modifier years = 2 }
+			}
+			else_if = {
+				limit = {
+					has_character_modifier = blood_drained_malus_small_modifier
+				}
+				remove_character_modifier = blood_drained_malus_small_modifier
+				add_character_modifier = { modifier = blood_drained_malus_moderate_modifier years = 2 }
+			}
+			else_if = {
+				limit = {
+					has_character_modifier = blood_drained_malus_moderate_modifier
+				}
+				remove_character_modifier = blood_drained_malus_moderate_modifier
+				add_character_modifier = { modifier = blood_drained_malus_large_modifier years = 2 }
+			}
+			else_if = {
+				limit = {
+					has_character_modifier = blood_drained_malus_large_modifier
+				}
+				add_kinslayer_trait_or_nothing_effect = {
+					VICTIM = this
+				}
+				death = {
+					death_reason = death_blood_drained
+					killer = root
+				}
+			}
+		}
+		custom_tooltip = agot_religious_decision.5201.a_tt
+		if = {
+			limit = {
+				NOT = {
+					has_variable = blood_is_life_blood_counter
+				}
+			}
+			set_variable = {
+				name = blood_is_life_blood_counter
+				value = 20
+			}
+		}
+		else = {
+			change_variable = {
+				name = blood_is_life_blood_counter
+				add = 20
+			}
+		}
+	}
+}

@@ -1,0 +1,1428 @@
+﻿##########################
+# Defiance of Duskendale #
+##########################
+# agot_dd_scenario flags: started/engaged/resolved
+# agot_dd_selmy flags: waiting/requesting/allowed/denied/resolved
+# agot_dd_rhaegar flags: chilling/eligible/married
+
+story_agot_scenario_dd = {
+	on_setup = {
+		save_scope_as = scenario_dd_story
+
+		set_variable = { # Scenario
+			name = agot_dd_scenario
+			value = flag:started
+		}
+		set_variable = { # Rhaegar
+			name = agot_dd_rhaegar
+			value = flag:chilling
+		}
+		set_variable = { # Selmy
+			name = agot_dd_selmy
+			value = flag:waiting
+		}
+
+		# Outcest
+		character:Lannister_6 ?= {
+			add_trait = refusing_marriage
+			add_character_modifier = agot_rr_cersei_infertility
+		}
+
+		# Intro events
+		character:Lannister_1 ?= {
+			trigger_event = {
+				id = agot_scenario_dd.0001
+				delayed = yes
+			}
+		}
+		character:Targaryen_3 ?= {
+			add_trait = refusing_marriage
+			add_character_modifier = agot_dd_rhaegar_infertility
+			trigger_event = {
+				id = agot_scenario_dd.1000
+			}
+		}
+		character:Darklyn_47 ?= {
+			trigger_event = {
+				id = agot_scenario_dd.1000
+			}
+		}
+		character:Targaryen_1 ?= {
+			trigger_event = {
+				id = agot_scenario_dd.1000
+			}
+		}
+
+		if = {
+			limit = {
+				title:h_the_iron_throne.holder ?= character:Targaryen_1
+				character:Targaryen_1 ?= {
+					is_alive = yes
+					is_imprisoned = yes
+				}
+			}
+			character:Targaryen_1 = {
+				add_character_flag = keep_imprisoned
+				add_character_modifier = {
+					modifier = afraid_of_dying_modifier
+					years = 10
+				}
+				add_character_modifier = {
+					modifier = determined_to_live_modifier
+					years = 10
+				}
+			}
+		}
+		title:h_the_iron_throne.holder ?= { # Seven Kingdoms and the Crownlands Vassals
+			every_vassal = { # Prevent arbitrary travel
+				limit = {
+					primary_title.tier >= tier_duchy
+					NOR = {
+						primary_title = title:k_dragonstone
+						primary_title = title:k_the_most_devout
+						primary_title = title:e_the_westerlands
+						primary_title = title:d_duskendale
+						primary_title = title:d_kingsguard
+					}
+					is_ai = yes
+					is_human = yes
+				}
+				add_character_flag = planning_an_activity
+			}
+		}
+	}
+
+	on_end = {}
+
+	on_owner_death = {
+		if = {
+			limit = { exists = story_owner.player_heir }
+			make_story_owner = story_owner.player_heir
+		}
+		else_if = {
+			limit = { character:Lannister_1 ?= { is_alive = yes } }
+			make_story_owner = character:Lannister_1
+		}
+		else = { end_story = yes }
+	}
+
+	################################
+	########### Aerys the Sad King #
+	################################
+	# If when I say I might fade like a sigh if I stay
+	# You minimize my movement anyway
+	# I must persuade you another way
+
+	###################
+	# Council Related #
+	###################
+
+	########### Check for council to save scopes
+	effect_group = {
+		days = 20 # 18 days for AI Aerys to add a spymaster
+
+		trigger = {
+			NOT = { has_global_variable = council_saved }
+			character:Targaryen_1 ?= {
+				is_alive = yes
+				is_imprisoned = yes
+			}
+		}
+		triggered_effect = {
+			trigger = { character:Targaryen_1 ?= { NOT = { has_dead_character_flag = died_in_event } } }
+			effect = {
+				if = { # Chancellor
+					limit = { exists = character:Targaryen_1.cp:councillor_chancellor }
+					remove_variable = aerys_chancellor
+					set_variable = {
+						name = aerys_chancellor
+						value = character:Targaryen_1.cp:councillor_chancellor
+					}
+				}
+				if = { # Steward
+					limit = { exists = character:Targaryen_1.cp:councillor_steward }
+					remove_variable = aerys_steward
+					set_variable = {
+						name = aerys_steward
+						value = character:Targaryen_1.cp:councillor_steward
+					}
+				}
+				if = { # Marshal
+					limit = { exists = character:Targaryen_1.cp:councillor_marshal }
+					remove_variable = aerys_marshal
+					set_variable = {
+						name = aerys_marshal
+						value = character:Targaryen_1.cp:councillor_marshal
+					}
+				}
+				if = { # Spymaster
+					limit = { exists = character:Targaryen_1.cp:councillor_spymaster }
+					remove_variable = aerys_spymaster
+					set_variable = {
+						name = aerys_spymaster
+						value = character:Targaryen_1.cp:councillor_spymaster
+					}
+				}
+				if = { # Admiral
+					limit = { exists = character:Targaryen_1.cp:councillor_admiral }
+					remove_variable = aerys_admiral
+					set_variable = {
+						name = aerys_admiral
+						value = character:Targaryen_1.cp:councillor_admiral
+					}
+				}
+				if = { # Chaplain
+					limit = { exists = character:Targaryen_1.cp:councillor_court_chaplain }
+					remove_variable = aerys_chaplain
+					set_variable = {
+						name = aerys_chaplain
+						value = character:Targaryen_1.cp:councillor_court_chaplain
+					}
+				}
+				set_global_variable = council_saved
+			}
+		}
+	}
+
+	####################
+	# Fallback Related #
+	####################
+
+	########### Check for death in captivity
+	effect_group = {
+		days = 1
+
+		trigger = {
+			has_global_variable = aerys_imprisoned
+			NOT = { has_global_variable = aerys_died_in_event }
+			character:Targaryen_1 ?= {
+				is_alive = no
+				NOT = { has_dead_character_flag = died_in_event }
+			}
+			OR = {
+				character:Targaryen_3 ?= { is_alive = yes }
+				character:Targaryen_8 ?= { is_alive = yes }
+			}
+		}
+		triggered_effect = {
+			trigger = { NOT = { has_global_variable = aerys_council_recovered } }
+			effect = {
+				var:aerys_chancellor ?= { save_scope_as = chancellor }
+				var:aerys_steward ?= { save_scope_as = steward }
+				var:aerys_marshal ?= { save_scope_as = marshal }
+				var:aerys_spymaster ?= { save_scope_as = spymaster }
+				var:aerys_admiral ?= { save_scope_as = admiral }
+				var:aerys_chaplain ?= { save_scope_as = chaplain }
+				character:Targaryen_3 ?= { # Iron Throne Setup
+					trigger_event = {
+						id = agot_scenario_dd.0011
+					}
+				}
+				set_global_variable = aerys_council_recovered
+				agot_dd_remove_planning_flag = yes
+				set_variable = { # We don't need Selmy where we're going
+					name = agot_dd_selmy
+					value = flag:resolved
+				}
+			}
+		}
+	}
+
+	########### Check for Aerys dying during an important event chain
+	effect_group = {
+		days = 62
+		trigger = {
+			OR = {
+				var:agot_dd_scenario = flag:started
+				var:agot_dd_scenario = flag:engaged
+			}
+			OR = {
+				var:agot_dd_selmy = flag:waiting
+				var:agot_dd_selmy = flag:requesting
+				var:agot_dd_selmy = flag:allowed
+				var:agot_dd_selmy = flag:denied
+			}
+			has_global_variable = aerys_imprisoned
+			character:Targaryen_1 ?= {
+				is_alive = no
+				NOT = { has_dead_character_flag = died_in_event }
+			}
+			title:h_the_iron_throne.holder ?= {
+				NOT = { this = character:Targaryen_1 }
+				house = character:Targaryen_3.house
+				is_at_war = no
+				NOT = { has_character_flag = casualty_of_war }
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				NOT = { has_global_variable = aerys_died_in_event }
+				NOR = {
+					has_global_variable = duskendale_claimant_started
+					has_global_variable = duskendale_independence_started
+				}
+				NOR = {
+					has_global_variable = duskendale_war_first
+					has_global_variable = duskendale_war_second
+				}
+			}
+			effect = {
+				set_variable = {
+					name = agot_dd_scenario
+					value = flag:resolved
+				}
+				set_variable = {
+					name = agot_dd_selmy
+					value = flag:resolved
+				}
+				agot_dd_remove_planning_flag = yes
+			}
+		}
+	}
+
+	####################################
+	########### Denys the Actual Menys #
+	####################################
+
+	###############
+	# War Related #
+	###############
+
+	########### Check for wars that Hollards can join
+	effect_group = {
+		days = 14
+		trigger = {
+			var:agot_dd_scenario = flag:engaged
+			character:Hollard_10.house.house_head ?= {
+				is_alive = yes
+				is_landed = yes
+				is_ai = yes
+			}
+		}
+		triggered_effect = { # Rescue War
+			trigger = {
+				character:Darklyn_47.house.house_head ?= {
+					is_at_war = yes
+					any_character_war = {
+						using_cb = rv_duskendale_rescue_war
+						NOT = { is_defender = character:Hollard_10.house.house_head }
+					}
+				}
+			}
+			effect = {
+				character:Darklyn_47.house.house_head = { # Get in loser, we're going shopping
+					every_character_war = {
+						add_defender = character:Hollard_10.house.house_head
+					}
+				}
+			}
+		}
+		triggered_effect = { # Independence War
+			trigger = {
+				character:Darklyn_47.house.house_head ?= {
+					is_at_war = yes
+					any_character_war = {
+						using_cb = agot_duskendale_independence_war
+						NOT = { is_attacker = character:Hollard_10.house.house_head }
+					}
+				}
+			}
+			effect = {
+				character:Darklyn_47.house.house_head = { # Get in loser, we're going shopping
+					every_character_war = {
+						add_attacker = character:Hollard_10.house.house_head
+					}
+				}
+			}
+		}
+		triggered_effect = { # Claimant War
+			trigger = {
+				character:Darklyn_47.house.house_head ?= {
+					is_at_war = yes
+					any_character_war = {
+						using_cb = agot_duskendale_claimant_war
+						NOT = { is_defender = character:Hollard_10.house.house_head }
+					}
+				}
+			}
+			effect = {
+				character:Darklyn_47.house.house_head = { # Get in loser, we're going shopping
+					every_character_war = {
+						add_defender = character:Hollard_10.house.house_head
+					}
+				}
+			}
+		}
+	}
+
+	##################################
+	########### Tywin the Family Man #
+	##################################
+	# Wear the grudge like a crown of negativity
+	# Calculate what we will or will not tolerate
+	# Desperate to control all and everything
+	# Unable to forgive your scarlet lettermen
+
+	###############
+	# War Related #
+	###############
+
+	########### Check for Siege of Duskendale because war AI is dumb
+	effect_group = {
+		days = 30
+
+		trigger = {
+			NOT = { has_game_rule = agot_story_historical_events_historical_outcomes }
+			var:agot_dd_scenario = flag:engaged
+			character:Targaryen_1 ?= {
+				is_alive = yes
+				has_character_flag = keep_imprisoned
+				NOT = { has_character_flag = rescued_by_war }
+			}
+			title:d_duskendale.holder ?= { NOT = { has_character_flag = ravaged_by_war } }
+			character:Lannister_1 ?= { is_alive = yes }
+			NOT = { has_global_variable = selmy_saves }
+		}
+
+		triggered_effect = {
+			trigger = {
+				OR = {
+					character:Lannister_1 ?= { # Tywin's War
+						has_raised_armies = yes
+						any_army = {
+							is_army_in_siege = yes
+							is_army_in_combat = no
+							army_is_moving = no
+							location = title:b_dun_fort.title_province
+						}
+					}
+					character:Targaryen_3 ?= { # Rhaegar's War
+						has_raised_armies = yes
+						any_army = {
+							is_army_in_siege = yes
+							is_army_in_combat = no
+							army_is_moving = no
+							location = title:b_dun_fort.title_province
+						}
+					}
+				}
+			}
+			effect = {
+				if = {
+					limit = {
+						character:Lannister_1 ?= { # Tywin
+							is_at_war = yes
+							any_character_war = {
+								using_cb = rv_duskendale_rescue_war
+								primary_attacker = prev
+							}
+						}
+					}
+					character:Lannister_1 = { save_scope_as = rescue_war_winner }
+				}
+				else_if = {
+					limit = {
+						character:Targaryen_3 ?= { # Rhaegar
+							is_at_war = yes
+							any_character_war = {
+								using_cb = rv_duskendale_rescue_war
+								primary_attacker = prev
+							}
+						}
+					}
+					character:Targaryen_3 = { save_scope_as = rescue_war_winner }
+				}
+				character:Darklyn_47.house.house_head ?= { # Find Stalwart
+					if = {
+						limit = { any_character_artifact = { has_artifact_modifier = vs_stalwart_modifier } }
+						random_character_artifact = {
+							limit = { has_artifact_modifier = vs_stalwart_modifier }
+							save_scope_as = stalwart
+						}
+					}
+				}
+				if = {
+					limit = { scope:rescue_war_winner ?= { is_ai = no } }
+					scope:rescue_war_winner = { # Show Tywin/Rhaegar the War is Done
+						trigger_event = {
+							id = agot_scenario_dd.0111
+						}
+					}
+				}
+				title:d_duskendale.holder ?= { # Denys is Done For
+					trigger_event = {
+						id = agot_scenario_dd.0080
+						delayed = yes
+					}
+					add_character_flag = ravaged_by_war
+				}
+			}
+		}
+	}
+
+	#########################
+	########### Selmy Saves #
+	#########################
+	# Cold silence has
+	# A tendency to
+	# Atrophy any
+	# Sense of compassion
+
+	###################
+	# Request Related #
+	###################
+
+	########### Check for a Bold Opportunity
+	effect_group = {
+		days = { 7 14 }
+		trigger = {	var:agot_dd_scenario = flag:engaged }
+		triggered_effect = {
+			trigger = {	var:agot_dd_selmy = flag:waiting }
+
+			effect = {
+				if = {
+					limit = {
+						character:Targaryen_1 ?= { is_imprisoned = yes }
+						OR = {
+							character:Lannister_1 ?= { is_at_war = yes }
+							character:Targaryen_3 ?= { is_at_war = yes }
+						}
+					}
+					set_variable = { # It doesn't hurt to ask
+						name = agot_dd_selmy
+						value = flag:requesting
+					}
+				}
+			}
+		}
+	}
+
+	########### Check for a Bold Request
+	effect_group = {
+		days = { 7 14 }
+		trigger = {
+			var:agot_dd_selmy = flag:requesting
+			character:Lannister_1 ?= { NOT = { has_character_flag = selmy_asked } }
+		}
+		triggered_effect = { # Check for Selmy's Status and Start Rescue Operations
+			trigger = {
+				var:agot_dd_scenario = flag:engaged
+				NOR = {
+					var:agot_dd_selmy = flag:denied
+					var:agot_dd_selmy = flag:resolved
+				}
+			}
+
+			effect = {
+				if = {
+					limit = {
+						character:Lannister_1 ?= { # Is that rescue war still happening?
+							any_character_war = { using_cb = rv_duskendale_rescue_war }
+						}
+					}
+					character:Lannister_1 = { # Tywin Alerted to Barristan's Plan
+						trigger_event = {
+							id = agot_scenario_dd.0195
+							delayed = yes
+						}
+						add_character_flag = selmy_asked
+					}
+				}
+			}
+		}
+	}
+
+	#################
+	# Sneak Related #
+	#################
+
+	########### Check for permission to sneak
+	effect_group = {
+		days = 110
+		trigger = { var:agot_dd_selmy = flag:allowed }
+		triggered_effect = { # Check for Selmy's Status and Choose Result
+			trigger = {
+				var:agot_dd_scenario = flag:engaged
+				NOR = {
+					var:agot_dd_selmy = flag:denied
+					var:agot_dd_selmy = flag:resolved
+				}
+				NOT = { has_global_variable = selmy_saves }
+				character:Targaryen_1 ?= { NOT = { has_character_flag = rescued_by_war } }
+				OR = {
+					character:Lannister_1 ?= { # Tywin's War
+						NOT = { any_army = { location = title:b_dun_fort.title_province } }
+						any_character_war = {
+							using_cb = rv_duskendale_rescue_war
+							defender_war_score < 100
+						}
+					}
+					character:Targaryen_3 ?= { # Rhaegar's War
+						NOT = { any_army = { location = title:b_dun_fort.title_province } }
+						any_character_war = {
+							using_cb = rv_duskendale_rescue_war
+							defender_war_score < 100
+						}
+					}
+				}
+			}
+
+			effect = {
+				title:d_duskendale.holder ?= { # Denys Finds Out About Selmy
+					trigger_event = {
+						id = agot_scenario_dd.0081
+						days = 1 # Fired before so he's not executed before they can read the event
+					}
+				}
+				random_list = {
+					0 = {
+						modifier = { # Historical
+							add = agot_historic_outcome_2
+						}
+						character:Targaryen_1 = { # Selmy Saves
+							add_character_flag = selmy_saved
+							trigger_event = {
+								id = agot_scenario_dd.0197
+								days = 2
+							}
+						}
+					}
+					0 = {
+						modifier = { # Not Historical
+							add = agot_nonhistoric_outcome_2
+						}
+						character:Targaryen_1 = { # Selmy Fails, Chains to Rhaegar
+							add_character_flag = selmy_failed
+							trigger_event = {
+								id = agot_scenario_dd.0198
+								days = 2
+							}
+						}
+					}
+				}
+				set_global_variable = selmy_saves
+			}
+		}
+	}
+
+	####################
+	# Fallback Related #
+	####################
+
+	########### Check for worlds end
+	effect_group = {
+		days = 30
+		trigger = {
+			var:agot_dd_scenario = flag:engaged
+			var:agot_dd_selmy = flag:allowed
+			character:Selmy_3 ?= { is_alive = yes }
+		}
+		triggered_effect = {
+			trigger = {
+				OR = {
+					title:h_the_iron_throne.holder ?= character:Targaryen_3
+					title:h_the_iron_throne.holder ?= character:Targaryen_8
+				}
+				character:Targaryen_1 ?= { # Is Aerys dead or in prison?
+					OR = {
+						is_alive = no
+						is_imprisoned = yes
+					}
+				}
+			}
+			effect = {
+				if = {
+					limit = { character:Selmy_3 ?= { is_alive = yes } }
+					set_variable = { # We don't need Selmy where we're going
+						name = agot_dd_selmy
+						value = flag:resolved
+					}
+				}
+				if = {
+					limit = {
+						character:Selmy_3 ?= { # Is Selmy still hiding out?
+							is_alive = yes
+							has_character_flag = yearly_1010_abductor
+							has_character_flag = agot_is_at_unknown_place
+							has_character_flag = use_stealth_clothes
+						}
+					}
+					# Erase all pictures of Ron
+					agot_dd_set_aerys_free = yes
+				}
+			}
+		}
+	}
+
+	########### Check for resolved Selmy Scenario if Duskendale Sieged
+	effect_group = {
+		days = 60
+		trigger = {
+			AND = {
+				character:Targaryen_1 ?= { has_character_flag = rescued_by_war }
+				var:agot_dd_selmy = flag:resolved
+			}
+		}
+		triggered_effect = {
+			trigger = { var:agot_dd_scenario = flag:resolved }
+			effect = {
+				if = {
+					limit = {
+						character:Selmy_3 ?= { # Is Selmy still hiding out?
+							is_alive = yes
+							has_character_flag = yearly_1010_abductor
+							has_character_flag = agot_is_at_unknown_place
+							has_character_flag = use_stealth_clothes
+						}
+					}
+					# Erase all pictures of Ron
+					agot_dd_set_aerys_free = yes
+				}
+			}
+		}
+	}
+
+	###################
+	# Cleanup Related #
+	###################
+
+	########### Check for denied permission
+	effect_group = {
+		days = 30
+		trigger = {
+			OR = {
+				var:agot_dd_scenario = flag:engaged
+				var:agot_dd_scenario = flag:resolved
+			}
+			NOT = { var:agot_dd_selmy = flag:allowed }
+		}
+		triggered_effect = {
+			trigger = { var:agot_dd_selmy = flag:denied }
+			effect = {
+				if = {
+					limit = { character:Selmy_3 ?= { is_alive = yes } }
+					set_variable = { # We don't need Selmy where we're going
+						name = agot_dd_selmy
+						value = flag:resolved
+					}
+				}
+			}
+		}
+	}
+
+	#####################################
+	########### Rhaegar the Last Prince #
+	#####################################
+	# Overwhelmed, as one would be, placed in my position
+	# Such a heavy burden now to be The One
+	# Born to bear and read to all the details of our ending
+	# To write it down for all the world to see
+	# But I forgot my pen, shit the bed again, typical
+
+	###############
+	# War Related #
+	###############
+
+	########### Check for rescue war to join
+	effect_group = {
+		days = 14
+		trigger = {
+			var:agot_dd_scenario = flag:engaged
+			character:Targaryen_3 ?= { NOT = { has_character_flag = notified_of_war } }
+		}
+		triggered_effect = {
+			trigger = {
+				character:Lannister_1 ?= {
+					is_at_war = yes
+					any_character_war = {
+						using_cb = rv_duskendale_rescue_war
+						NOT = { is_attacker = character:Targaryen_3 }
+					}
+				}
+			}
+			effect = {
+				character:Targaryen_3 = { # Join the party you nerd
+					trigger_event = {
+						id = agot_scenario_dd.0095
+					}
+					add_character_flag = notified_of_war
+				}
+			}
+		}
+	}
+
+	########### Check for post-Aerys death iron throne claimant war for Tywin to join
+	effect_group = {
+		days = 14
+		trigger = {
+			var:agot_dd_scenario = flag:engaged
+			character:Lannister_1 ?= {
+				is_alive = yes
+				is_ai = yes
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				character:Targaryen_3 ?= { # Are we the baddies?
+					is_at_war = yes
+					any_character_war = {
+						OR = {
+							using_cb = agot_claimant_faction_war
+							using_cb = agot_duskendale_claimant_war
+						}
+						NOT = { is_attacker = character:Lannister_1 }
+					}
+				}
+			}
+			effect = {
+				title:h_the_iron_throne.holder ?= { # Join the party
+					every_character_war = {
+						add_attacker = character:Lannister_1
+					}
+				}
+			}
+		}
+	}
+
+	########### Check for post-Aerys death duskendale independence war for Tywin to join
+	effect_group = {
+		days = 14
+		trigger = {
+			var:agot_dd_scenario = flag:engaged
+			character:Lannister_1 ?= {
+				is_alive = yes
+				is_ai = yes
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				character:Darklyn_47.house.house_head ?= { # Did dis dude jus did dis?
+					is_at_war = yes
+					any_character_war = {
+						using_cb = agot_duskendale_independence_war
+						NOT = { is_defender = character:Lannister_1 }
+					}
+				}
+			}
+			effect = {
+				title:h_the_iron_throne.holder ?= { # Join the party
+					every_character_war = {
+						add_defender = character:Lannister_1
+					}
+				}
+			}
+		}
+	}
+
+	########### Check for post-Aerys death claimant war end
+	effect_group = {
+		days = 1
+		trigger = {
+			title:d_duskendale.holder ?= {
+				NOR = {
+					house ?= character:Darklyn_47.house
+					house ?= character:Hollard_34.house
+				}
+			}
+			NOT = { var:agot_dd_scenario = flag:resolved }
+		}
+		triggered_effect = {
+			trigger = {
+				var:agot_dd_scenario = flag:engaged
+				has_global_variable = duskendale_decided
+				title:h_the_iron_throne.holder = {
+					OR = {
+						this = character:Targaryen_3
+						this = character:Targaryen_8
+					}
+					is_at_war = no
+				}
+				character:Lannister_1 ?= { is_at_war = no }
+			}
+			effect = { # Boosted Vassal Contract for Lannister/Viserys
+				if = {
+					limit = {
+						title:d_duskendale.holder ?= {
+							OR = {
+								house ?= character:Lannister_1.house
+								house ?= character:Targaryen_1.house
+							}
+						}
+					}
+					title:d_duskendale.holder ?= {
+						vassal_contract_set_obligation_level = {
+							type = feudal_government_levies
+							level = feudal_levies_exempt_level
+						}
+						vassal_contract_set_obligation_level = {
+							type = feudal_government_taxes
+							level = feudal_tax_exempt_level
+						}
+						vassal_contract_set_obligation_level = {
+							type = coinage_rights
+							level = 1
+						}
+						vassal_contract_set_obligation_level = {
+							type = council_rights
+							level = 1
+						}
+						vassal_contract_set_obligation_level = {
+							type = fortification_rights
+							level = 1
+						}
+					}
+				}
+
+				# Take Their Claims
+				agot_dd_claimless_conspirators = yes
+
+				set_variable = { # The Scenario is Resolved
+					name = agot_dd_scenario
+					value = flag:resolved
+				}
+				set_variable = { # We don't need Selmy where we're going
+					name = agot_dd_selmy
+					value = flag:resolved
+				}
+			}
+		}
+	}
+
+	####################
+	# Fallback Related #
+	####################
+
+	#################################
+	############# Primary Failsafes #
+	#################################
+
+	########### Tywin requests Duskendale for his family in the event of early Aerys death
+	# First pass
+	effect_group = {
+		days = { 14 30 }
+		trigger = {
+			var:agot_dd_scenario = flag:engaged
+			character:Targaryen_1 ?= {
+				is_alive = no
+				NOT = { has_dead_character_flag = died_in_event }
+			}
+			has_global_variable = aerys_imprisoned
+			NOT = { has_global_variable = aerys_died_in_event }
+			NOR = {
+				has_global_variable = duskendale_claimant_started
+				has_global_variable = duskendale_independence_started
+			}
+			NOR = {
+				has_global_variable = duskendale_war_first
+				has_global_variable = duskendale_war_second
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				title:h_the_iron_throne.holder ?= {
+					house = character:Targaryen_3.house
+					is_at_war = no
+					NOT = { exists = involved_activity }
+					NOT = { has_character_flag = casualty_of_war }
+				}
+				title:d_duskendale.holder ?= { is_at_war = no }
+			}
+			effect = {
+				if = {
+					limit = { title:d_duskendale.holder ?= { is_independent_ruler = yes } }
+					title:h_the_iron_throne.holder ?= { # If he's somehow independent, start a war
+						trigger_event = {
+							id = agot_scenario_dd.0200
+							days = 7
+						}
+					}
+				}
+				else = {
+					title:d_duskendale.holder ?= { # If he's not independent, he'll come to us
+						trigger_event = {
+							id = agot_scenario_dd.0081
+							days = 7
+						}
+					}
+				}
+				debug_log = "AGOTDD: First Tywin request fired."
+			}
+		}
+	}
+
+	########### The Duskendale issue in the event of early Aerys death/invalidation of the war
+	# Second pass
+	effect_group = {
+		days = { 14 30 }
+		trigger = {
+			var:agot_dd_scenario = flag:engaged
+			character:Targaryen_1 ?= {
+				is_alive = no
+				NOT = { has_dead_character_flag = died_in_event }
+			}
+			has_global_variable = aerys_imprisoned
+			NOT = { has_global_variable = aerys_died_in_event }
+			NOT = { has_global_variable = duskendale_war_second }
+			OR = {
+				has_global_variable = duskendale_claimant_started
+				has_global_variable = duskendale_independence_started
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				has_global_variable = duskendale_war_first
+				title:h_the_iron_throne.holder ?= {
+					house = character:Targaryen_3.house
+					is_at_war = no
+					NOT = { exists = involved_activity }
+					NOT = { has_character_flag = casualty_of_war }
+				}
+				title:d_duskendale.holder ?= { is_at_war = no }
+			}
+			effect = {
+				if = {
+					limit = { title:d_duskendale.holder ?= { is_independent_ruler = yes } }
+					title:h_the_iron_throne.holder ?= { # If he's somehow independent, start a war
+						trigger_event = {
+							id = agot_scenario_dd.0200
+							days = 7
+						}
+					}
+				}
+				else = {
+					title:d_duskendale.holder ?= { # If he's not independent, he'll come to us
+						trigger_event = {
+							id = agot_scenario_dd.0081
+							days = 7
+						}
+					}
+				}
+				debug_log = "AGOTDD: Second Tywin request fired."
+			}
+		}
+	}
+
+	########### Duskendale granted to the Iron Throne because second invalidation/new war
+	# Third pass, invalidation circumstances prove this should just be done forcefully
+	effect_group = {
+		days = { 10 20 }
+		trigger = {
+			var:agot_dd_scenario = flag:engaged
+			character:Targaryen_1 ?= {
+				is_alive = no
+				NOT = { has_dead_character_flag = died_in_event }
+			}
+			has_global_variable = aerys_imprisoned
+			NOT = { has_global_variable = aerys_died_in_event }
+			NOT = { has_global_variable = duskendale_war_first }
+			OR = {
+				has_global_variable = duskendale_claimant_started
+				has_global_variable = duskendale_independence_started
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				has_global_variable = duskendale_war_second
+				title:h_the_iron_throne.holder ?= {
+					house = character:Targaryen_3.house
+					is_at_war = no
+					NOT = { has_character_flag = casualty_of_war }
+				}
+				title:d_duskendale.holder ?= { is_at_war = no }
+			}
+			effect = {
+				title:h_the_iron_throne.holder ?= { # Take it by force
+					trigger_event = {
+						id = agot_scenario_dd.0220
+						days = 7
+					}
+				}
+				set_variable = { # It's finally over
+					name = agot_dd_scenario
+					value = flag:resolved
+				}
+				debug_log = "AGOTDD: Special invalidation circumstance met."
+			}
+		}
+	}
+
+	####################
+	# Marriage Related #
+	####################
+
+	########### Check if Rhaegar can stop chilling and get married
+	effect_group = {
+		days = 14
+		trigger = { var:agot_dd_rhaegar = flag:chilling }
+		triggered_effect = {
+			trigger = { var:agot_dd_scenario = flag:resolved }
+			effect = {
+				set_variable = { # Quit chilling, the future of your house is at stake
+					name = agot_dd_rhaegar
+					value = flag:eligible
+				}
+			}
+		}
+	}
+
+	########### Check for the end of the scenario so Rhaegar can marry
+	effect_group = { # Rhaegar's Marriage Options
+		days = 30
+		trigger = {
+			NOT = { has_global_variable = rhaegar_marriage_started }
+			var:agot_dd_rhaegar = flag:eligible
+			title:h_the_iron_throne.holder ?= { is_at_war = no }
+			OR = {
+				character:Targaryen_3 ?= { # Is it Rhaegar?
+					is_alive = yes
+					is_at_war = no
+				}
+				character:Targaryen_8 ?= { # Is it Viserys?
+					is_alive = yes
+					is_at_war = no
+				}
+			}
+		}
+		triggered_effect = {
+			trigger = { var:agot_dd_scenario = flag:resolved }
+			effect = {
+				character:Lannister_1 ?= { save_scope_as = tywin }
+				character:Lannister_6 ?= { save_scope_as = cersei }
+				character:Stark_5 ?= { save_scope_as = lyanna }
+				character:Martell_7 ?= { save_scope_as = elia }
+				character:Dayne_4 ?= { save_scope_as = ashara }
+
+				agot_scenario_dd_get_bachelor_effect = yes
+
+				if = { # To Aerys with Cersei
+					limit = {
+						character:Targaryen_1 ?= { # Aerys is still alive and free
+							is_alive = yes
+							is_imprisoned = no
+						}
+						character:Lannister_1 ?= { is_alive = yes } # Tywin is also still alive
+						character:Lannister_6 ?= { # Cersei is also still alive and unmarried
+							is_alive = yes
+							is_married = no
+						}
+					}
+					character:Targaryen_1 = { # Tywin Offers Cersei/Sent to Aerys
+						trigger_event = {
+							id = agot_scenario_dd.0310
+							days = 7
+						}
+					}
+				}
+				else_if = { # To Aerys without Cersei
+					limit = {
+						character:Targaryen_1 ?= { # Aerys is still alive and free
+							is_alive = yes
+							is_imprisoned = no
+						}
+						character:Lannister_1 ?= { is_alive = yes } # Tywin is also still alive
+						character:Lannister_6 ?= { # Cersei is no longer alive or married
+							OR = {
+								is_alive = no
+								is_married = yes
+							}
+						}
+						OR = { # Check that at least one option will be available in the event
+							character:Stark_5 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Martell_7 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Dayne_4 ?= {
+								is_alive = yes
+								is_married = no
+							}
+						}
+					}
+					character:Targaryen_1 = { # Tywin Offers Cersei/Sent to Aerys
+						trigger_event = {
+							id = agot_scenario_dd.0311
+							days = 7
+						}
+					}
+				}
+				else_if = { # All options to Aerys without Tywin
+					limit = {
+						character:Targaryen_1 ?= { # Aerys is still alive and free
+							is_alive = yes
+							is_imprisoned = no
+						}
+						character:Lannister_1 ?= { is_alive = no } # Tywin is no longer alive
+						OR = { # Check that at least one option will be available in the event
+							character:Lannister_6 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Stark_5 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Martell_7 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Dayne_4 ?= {
+								is_alive = yes
+								is_married = no
+							}
+						}
+					}
+					character:Targaryen_1 = { # All Marriage Choices/Sent to Aerys
+						trigger_event = {
+							id = agot_scenario_dd.0305
+							days = 7
+						}
+					}
+				}
+				else_if = { # To Rhaegar with Cersei
+					limit = {
+						character:Targaryen_1 ?= { # Aerys is still imprisoned or no longer alive
+							OR = {
+								is_imprisoned = yes
+								is_alive = no
+							}
+						}
+						character:Lannister_1 ?= { is_alive = yes } # Tywin is still alive
+						OR = {
+							character:Targaryen_3 ?= { # Is it Rhaegar?
+								is_alive = yes
+								this = title:h_the_iron_throne.holder
+							}
+							character:Targaryen_8 ?= { # Is it Viserys?
+								is_alive = yes
+								this = title:h_the_iron_throne.holder
+							}
+						}
+						character:Lannister_6 ?= { # Cersei is also still alive and unmarried
+							is_alive = yes
+							is_married = no
+						}
+					}
+					title:h_the_iron_throne.holder ?= { # Tywin Offers Cersei/Sent to Rhaegar
+						trigger_event = {
+							id = agot_scenario_dd.0301
+							days = 7
+						}
+					}
+				}
+				else_if = { # To Rhaegar without Cersei
+					limit = {
+						character:Targaryen_1 ?= { # Aerys is still imprisoned or no longer alive
+							OR = {
+								is_imprisoned = yes
+								is_alive = no
+							}
+						}
+						character:Lannister_1 ?= { is_alive = yes } # Tywin is still alive
+						OR = {
+							character:Targaryen_3 ?= { # Is it Rhaegar?
+								is_alive = yes
+								this = title:h_the_iron_throne.holder
+							}
+							character:Targaryen_8 ?= { # Is it Viserys?
+								is_alive = yes
+								this = title:h_the_iron_throne.holder
+							}
+						}
+						character:Lannister_6 ?= { # Cersei is no longer alive or married
+							OR = {
+								is_alive = no
+								is_married = yes
+							}
+						}
+						OR = { # Check that at least one option will be available in the event
+							character:Stark_5 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Martell_7 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Dayne_4 ?= {
+								is_alive = yes
+								is_married = no
+							}
+						}
+					}
+					title:h_the_iron_throne.holder ?= { # Tywin Offers Cersei/Sent to Rhaegar
+						trigger_event = {
+							id = agot_scenario_dd.0302
+							days = 7
+						}
+					}
+				}
+				else_if = { # All options to Rhaegar without Tywin
+					limit = {
+						character:Targaryen_1 ?= { # Aerys is still imprisoned or no longer alive
+							OR = {
+								is_imprisoned = yes
+								is_alive = no
+							}
+						}
+						character:Lannister_1 ?= { is_alive = no } # Tywin is no longer alive
+						OR = {
+							character:Targaryen_3 ?= { # Is it Rhaegar?
+								is_alive = yes
+								this = title:h_the_iron_throne.holder
+							}
+							character:Targaryen_8 ?= { # Is it Viserys?
+								is_alive = yes
+								this = title:h_the_iron_throne.holder
+							}
+						}
+						OR = { # Check that at least one option will be available in the event
+							character:Lannister_6 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Stark_5 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Martell_7 ?= {
+								is_alive = yes
+								is_married = no
+							}
+							character:Dayne_4 ?= {
+								is_alive = yes
+								is_married = no
+							}
+						}
+					}
+					title:h_the_iron_throne.holder ?= { # Rhaegar Chooses on His Own
+						trigger_event = {
+							id = agot_scenario_dd.0300
+							days = 7
+						}
+					}
+				}
+				else_if = { # Fallback
+					limit = {
+						AND = { # Check if all options are not available
+							character:Lannister_6 ?= {
+								OR = {
+									is_alive = no
+									is_married = yes
+								}
+							}
+							character:Stark_5 ?= {
+								OR = {
+									is_alive = no
+									is_married = yes
+								}
+							}
+							character:Martell_7 ?= {
+								OR = {
+									is_alive = no
+									is_married = yes
+								}
+							}
+							character:Dayne_4 ?= {
+								OR = {
+									is_alive = no
+									is_married = yes
+								}
+							}
+						}
+					}
+					agot_rr_remove_cersei_infertility = yes
+					agot_dd_rhaegar_can_marry = yes
+				}
+				set_variable = { # Done deal
+					name = agot_dd_rhaegar
+					value = flag:married
+				}
+				set_global_variable = rhaegar_marriage_started
+			}
+		}
+	}
+
+	#####################
+	########### The End #
+	#####################
+	# If there were no rewards to reap
+	# No loving embrace to see me through
+	# This tedious path I've chosen here
+	# I certainly would've walked away
+	# By now
+	# Gonna wait it out
+
+	########### Are ya winning, son?
+	effect_group = {
+		years = 2
+		trigger = {
+			var:agot_dd_scenario = flag:resolved
+			var:agot_dd_selmy = flag:resolved
+			var:agot_dd_rhaegar = flag:married
+		}
+		triggered_effect = {
+			effect = {
+				if = {
+					limit = { has_global_variable = aerys_council_recovered }
+					remove_global_variable = aerys_council_recovered
+				}
+				if = {
+					limit = { has_global_variable = initial_council_saved }
+					remove_global_variable = initial_council_saved
+				}
+				if = {
+					limit = { has_global_variable = council_saved }
+					remove_global_variable = council_saved
+				}
+				if = {
+					limit = { has_global_variable = selmy_saves }
+					remove_global_variable = selmy_saves
+				}
+				if = {
+					limit = { has_global_variable = duskendale_war_first }
+					remove_global_variable = duskendale_war_first
+				}
+				if = {
+					limit = { has_global_variable = duskendale_war_second }
+					remove_global_variable = duskendale_war_second
+				}
+				if = {
+					limit = { has_global_variable = aerys_gc_started }
+					remove_global_variable = aerys_gc_started
+				}
+				if = {
+					limit = { has_global_variable = aerys_gc_voted }
+					remove_global_variable = aerys_gc_voted
+				}
+				if = {
+					limit = { has_global_variable = duskendale_decided }
+					remove_global_variable = duskendale_decided
+				}
+				if = {
+					limit = { has_global_variable = duskendale_claimant_started }
+					remove_global_variable = duskendale_claimant_started
+				}
+				if = {
+					limit = { has_global_variable = aerys_imprisoned }
+					remove_global_variable = aerys_imprisoned
+				}
+				if = {
+					limit = { has_global_variable = aerys_died_in_event }
+					remove_global_variable = aerys_died_in_event
+				}
+				if = {
+					limit = { has_global_variable = duskendale_independence_started }
+					remove_global_variable = duskendale_independence_started
+				}
+				if = {
+					limit = { has_global_variable = rhaegar_marriage_started }
+					remove_global_variable = rhaegar_marriage_started
+				}
+				end_story = yes
+			}
+		}
+	}
+}

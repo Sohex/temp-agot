@@ -1,0 +1,326 @@
+﻿#######
+# LMF #
+#######
+namespace = agot_elope
+
+scripted_effect agot_elope_1001_outcome_execution_or_tooltip_effect = {
+	if = {
+		limit = { root = scope:outcome_execution_scope }
+		elope_success_effect = {
+			TARGET = scope:target
+			OWNER = scope:owner
+		}
+	}
+	else = {
+		show_as_tooltip = {
+			elope_success_effect = {
+				TARGET = scope:target
+				OWNER = scope:owner
+			}
+		}
+	}
+}
+
+#Success event for target liege player who isn't a relative
+agot_elope.1004 = {
+	type = character_event
+	window = scheme_successful_event
+	title = agot_elope.1004.t
+	desc = {
+		desc = agot_elope.1004.start
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:liege_of_both }
+				desc = agot_elope.1004.both
+			}
+			desc = agot_elope.1004.target
+		}
+		desc = agot_elope.1004.mid
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:refused_permission }
+				desc = agot_elope.1004.refused
+			}
+			triggered_desc = {
+				trigger = { exists = scope:owner_liege_refused_permission }
+				desc = agot_elope.1004.owner.refused
+			}
+			triggered_desc = {
+				trigger = { exists = scope:target_liege_refused_permission }
+				desc = agot_elope.1004.target.refused
+			}
+			triggered_desc = {
+				trigger = { exists = scope:granted_permission }
+				desc = agot_elope.1004.granted
+			}
+			triggered_desc = {
+				trigger = { scope:target = { is_married = yes } }
+				desc = agot_elope.1004.married
+			}
+			desc = agot_elope.1004.end
+		}
+
+	}
+
+	theme = intrigue
+	override_background = { reference = wilderness }
+	left_portrait = {
+		character = scope:target
+		animation = admiration
+		outfit_tags = { travel_cloak }
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = personality_bold
+		outfit_tags = { travel_cloak }
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				exists = scope:owner_liege
+				root = scope:owner_liege
+			}
+			save_scope_value_as = {
+				name = liege_of_both
+				value = yes
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					reverse_has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:owner }
+					reverse_has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:target }
+				}
+			}
+			save_scope_value_as = {
+				name = refused_permission
+				value = yes
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:owner_liege
+				NOT = { scope:owner_liege = root }
+				scope:owner = {
+					has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:owner_liege }
+				}
+			}
+			save_scope_value_as = {
+				name = owner_liege_refused_permission
+				value = yes
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:target_liege
+				NOT = { scope:target_liege = root }
+				scope:target = {
+					has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:target_liege }
+				}
+			}
+			save_scope_value_as = {
+				name = target_liege_refused_permission
+				value = yes
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					reverse_has_opinion_modifier = { modifier = granted_marriage_permission_opinion target = scope:owner }
+					reverse_has_opinion_modifier = { modifier = granted_marriage_permission_opinion target = scope:target }
+				}
+			}
+			save_scope_value_as = {
+				name = granted_permission
+				value = yes
+			}
+		}
+	}
+
+	option = {
+		name = agot_elope.1004.a #I see
+		agot_elope_1001_outcome_execution_or_tooltip_effect = yes
+		if = {
+			limit = { is_ai = no }
+			add_opinion = {
+				target = scope:owner
+				modifier = elopement_opinion
+			}
+			add_opinion = {
+				target = scope:target
+				modifier = elopement_opinion
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					exists = scope:liege_of_both
+					scope:owner = {
+						is_playable_character = no
+						is_courtier = no
+					}
+				}
+			}
+			agot_elope_flee_court_effect = { OWNER = scope:owner TARGET = scope:target }
+		}
+	}
+	option = {
+		name = agot_elope.1004.b #They are welcome to return
+		trigger = {
+			exists = scope:liege_of_both
+			NOT = { exists = scope:refused_permission }
+		}
+
+		add_prestige = medium_prestige_loss
+		agot_elope_1001_outcome_execution_or_tooltip_effect = yes
+		consume_all_criminal_reasons_effect = {
+			LIEGE = root
+			CRIMINAL = scope:owner
+		}
+		consume_all_criminal_reasons_effect = {
+			LIEGE = root
+			CRIMINAL = scope:target
+		}
+	}
+}
+
+#Success event for owner liege player who isn't a relative
+agot_elope.1005 = {
+	type = character_event
+	window = scheme_successful_event
+	title = agot_elope.1005.t
+	desc = {
+		desc = agot_elope.1005.start
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:refused_permission }
+				desc = agot_elope.1005.refused
+			}
+			triggered_desc = {
+				trigger = { exists = scope:owner_liege_refused_permission }
+				desc = agot_elope.1004.owner.refused
+			}
+			triggered_desc = {
+				trigger = { exists = scope:target_liege_refused_permission }
+				desc = agot_elope.1004.target.refused
+			}
+			triggered_desc = {
+				trigger = { exists = scope:granted_permission }
+				desc = agot_elope.1005.granted
+			}
+			desc = agot_elope.1005.neither
+		}
+		triggered_desc = {
+			trigger = { NOT = { exists = scope:refused_permission } }
+			desc = agot_elope.1005.end
+		}
+	}
+
+	theme = intrigue
+	override_background = { reference = wilderness }
+	left_portrait = {
+		character = scope:target
+		animation = admiration
+		outfit_tags = { travel_cloak }
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = personality_bold
+		outfit_tags = { travel_cloak }
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				OR = {
+					reverse_has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:owner }
+					reverse_has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:target }
+				}
+			}
+			save_scope_value_as = {
+				name = refused_permission
+				value = yes
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:owner_liege
+				NOT = { scope:owner_liege = root }
+				scope:owner = {
+					has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:owner_liege }
+				}
+			}
+			save_scope_value_as = {
+				name = owner_liege_refused_permission
+				value = yes
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:target_liege
+				NOT = { scope:target_liege = root }
+				scope:target = {
+					has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:target_liege }
+				}
+			}
+			save_scope_value_as = {
+				name = target_liege_refused_permission
+				value = yes
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					reverse_has_opinion_modifier = { modifier = granted_marriage_permission_opinion target = scope:owner }
+					reverse_has_opinion_modifier = { modifier = granted_marriage_permission_opinion target = scope:target }
+				}
+			}
+			save_scope_value_as = {
+				name = granted_permission
+				value = yes
+			}
+		}
+	}
+
+	option = {
+		name = {
+			trigger = { NOT = { exists = scope:refused_permission } }
+			text = agot_elope.1005.a #I hope it was worth it
+		}
+		name = {
+			trigger = { exists = scope:refused_permission }
+			text = agot_elope.1005.b #They are no longer welcome here
+		}
+		agot_elope_1001_outcome_execution_or_tooltip_effect = yes
+		if = {
+			limit = { is_ai = no }
+			add_opinion = {
+				target = scope:owner
+				modifier = elopement_opinion
+			}
+			add_opinion = {
+				target = scope:target
+				modifier = elopement_opinion
+			}
+		}
+		agot_elope_flee_court_effect = { OWNER = scope:owner TARGET = scope:target }
+	}
+	option = {
+		name = agot_elope.1005.c #They are free to return
+		trigger = {
+			NOT = { exists = scope:refused_permission }
+		}
+
+		add_prestige = medium_prestige_loss
+		agot_elope_1001_outcome_execution_or_tooltip_effect = yes
+		consume_all_criminal_reasons_effect = {
+			LIEGE = root
+			CRIMINAL = scope:owner
+		}
+		consume_all_criminal_reasons_effect = {
+			LIEGE = root
+			CRIMINAL = scope:target
+		}
+	}
+}

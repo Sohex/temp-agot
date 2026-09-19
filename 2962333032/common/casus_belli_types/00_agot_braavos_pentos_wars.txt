@@ -1,0 +1,496 @@
+﻿# Braavos-Pentos Treaty Special CB
+reinstate_braavos_pentos_treaty = {
+	icon = vassalization
+	group = conquest
+	allow_hostages = yes
+	target_titles = no
+	white_peace_possible = yes
+
+	allowed_for_character = {
+		scope:attacker = {
+			has_title = title:k_braavos
+		}
+	}
+
+	allowed_against_character = {
+		scope:defender = {
+			primary_title = title:k_pentos
+			has_title = title:k_pentos
+			agot_is_independent_ruler = yes
+		}
+	}
+
+	valid_to_start = {
+		exists = global_var:braavos_treaty_broken
+	}
+	should_invalidate = {
+		NOT = {
+			exists = title:k_braavos.holder
+		}
+		NOT = {
+			exists = title:k_pentos.holder
+		}
+		scope:attacker != title:k_braavos.holder
+		scope:defender != title:k_pentos.holder
+	}
+
+	on_declaration = {
+		on_declared_war = yes
+	}
+
+	on_victory_desc = {
+		desc = reinstate_braavos_pentos_treaty_victory_desc
+	}
+
+	on_victory = {
+		remove_global_variable = braavos_treaty_broken
+		set_global_variable = {
+			name = braavos_treaty
+			value = yes
+		}
+		scope:defender = {
+			forcibly_end_realm_slavery_effect = yes
+			add_prestige = -1000
+			add_character_modifier = agot_pentos_braavos_treaty
+			every_vassal_or_below = {
+				add_character_modifier = agot_pentos_braavos_treaty
+			}
+			depose = yes
+		}
+
+		scope:attacker = { show_pow_release_message_effect = yes }
+		hidden_effect = {
+			scope:attacker = {
+				add_truce_both_ways = {
+					character = scope:defender
+					days = 1825
+					war = root.war
+					result = victory
+				}
+			}
+		}
+
+		scope:defender = {
+			consume_all_criminal_reasons_effect = {
+				LIEGE = scope:defender
+				CRIMINAL = scope:attacker
+			}
+		}
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		desc = reinstate_braavos_pentos_treaty_white_peace_desc
+	}
+
+	on_defeat_desc = {
+		desc = reinstate_braavos_pentos_treaty_defeat_desc
+	}
+
+	on_defeat = {
+		remove_global_variable = braavos_treaty_broken
+		custom_tooltip = reinstate_braavos_pentos_treaty_on_defeat_tt
+		scope:attacker = {
+			show_pow_release_message_effect = yes
+		}
+		scope:defender = {
+			add_dread = medium_dread_gain
+		}
+	}
+
+	on_invalidated_desc = msg_invalidate_war_title
+
+	check_attacker_inheritance_validity = no
+	check_defender_inheritance_validity = no
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	transfer_behavior = transfer
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = "reinstate_braavos_pentos_treaty_war_name"
+
+	interface_priority = 80
+
+	attacker_wargoal_percentage = 0.8
+
+	attacker_score_from_occupation_scale = 75
+	defender_score_from_occupation_scale = 75
+	max_attacker_score_from_battles = 100
+	max_defender_score_from_battles = 100
+}
+
+sixth_braavosi_pentoshi_war = {
+	icon = county_conquest_cb
+	group = conquest
+
+	combine_into_one = yes
+	should_show_war_goal_subview = yes
+	mutually_exclusive_titles = { always = yes }
+
+	attacker_score_from_occupation_scale = 150
+	attacker_score_from_battles_scale = 150
+	defender_score_from_battles_scale = 150
+
+	allowed_for_character = {
+		always = no
+	}
+
+	allowed_against_character = {
+	}
+
+	target_titles = neighbor_land
+	target_title_tier = all
+	target_de_jure_regions_above = yes
+	ignore_effect = change_title_holder
+
+	valid_to_start = {
+	}
+
+	should_invalidate = {
+		NOT = {
+			any_in_list = {
+				list = target_titles
+				any_in_de_jure_hierarchy = {
+					tier = tier_county
+					holder = {
+						OR = {
+							this = scope:defender
+							target_is_liege_or_above = scope:defender
+						}
+					}
+				}
+			}
+		}
+	}
+
+	on_invalidated_desc = msg_county_conquest_war_invalidated_message
+
+	on_invalidated = {
+	}
+
+	cost = {
+		piety = {
+			value = 0
+			add = common_cb_impious_piety_cost
+		}
+		prestige = {
+			value = 0
+			if = {
+				limit = {
+					scope:attacker.primary_title.tier <= tier_county
+				}
+				add = {
+					value = 50
+					desc = CB_BASE_COST
+				}
+			}
+			else = {
+				add = {
+					value = 100
+					desc = CB_BASE_COST
+				}
+			}
+
+			multiply = common_cb_prestige_cost_multiplier
+		}
+	}
+
+	on_declaration = {
+		on_declared_war = yes
+	}
+
+	on_victory_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:attacker = { is_local_player = yes } }
+				desc = ducal_conquest_cb_victory_desc_attacker
+			}
+			desc = ducal_conquest_cb_victory_desc
+		}
+	}
+
+	on_victory = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+		scope:defender = {
+			custom_tooltip = agot_create_braavos_pentos_treaty_effect_tt
+		}
+		scope:attacker = {
+			trigger_event = agot_decisions_events.0204
+		}
+		scope:defender = {
+			trigger_event = agot_decisions_events.0203
+		}
+		hidden_effect = {
+			title:k_pentos = {
+				holder = {
+					add_character_modifier = agot_pentos_braavos_treaty
+					forcibly_end_realm_slavery_effect = yes
+					every_vassal_or_below = {
+						add_character_modifier = agot_pentos_braavos_treaty
+						if = {
+							limit = {
+								is_ai = no
+							}
+							trigger_event = agot_decisions_events.0203
+						}
+					}
+				}
+			}
+		}
+
+		# Legitimacy
+		add_legitimacy_attacker_victory_effect = yes
+
+		#EP2 accolade glory gain for winning against higher ranked enemy
+		scope:attacker = { accolade_attacker_war_end_glory_gain_low_effect = yes }
+
+		create_title_and_vassal_change = {
+			type = conquest
+			save_scope_as = change
+			add_claim_on_loss = yes
+		}
+
+		# EP3 Laamp possibility warning
+		scope:defender = { ep3_war_loss_adventurer_tt_effect = yes }
+
+		# go through the dejure hierarchy under target titles, transfer titles with same or worse tolerance holders (their religion equaly or less tolerated than the defender's),
+		# take the holder as vassal otherwise and don't go deeper
+		every_in_list = {
+			list = target_titles
+			custom_tooltip = CONQUEST_CB_TITLE
+			every_in_de_jure_hierarchy = {
+				continue = {
+					OR = {
+						NOT = {
+							exists = holder
+						}
+						NOT = {
+							holder = {
+								target_is_liege_or_above = scope:defender
+							}
+						}
+						AND = {
+							scope:attacker.faith = {
+								faith_hostility_level_comparison = {
+									prev.holder.faith <= scope:defender.faith
+								}
+							}
+							holder = {
+								OR = {
+									this = scope:defender
+									target_is_liege_or_above = scope:defender
+								}
+							}
+						}
+					}
+					tier > tier_county
+				}
+				limit = {
+					tier = tier_county
+					exists = holder
+					holder = {
+						OR = {
+							this = scope:defender
+							target_is_liege_or_above = scope:defender
+						}
+					}
+				}
+
+				if = {
+					limit = {
+						OR = {
+							scope:attacker.faith = {
+								faith_hostility_level_comparison = {
+									prev.holder.faith >= scope:defender.faith
+								}
+							}
+							holder.primary_title.tier >= scope:attacker.primary_title.tier
+						}
+					}
+					add_to_temporary_list = titles_taken
+				}
+				else = {
+					holder = {
+						add_to_temporary_list = vassals_taken
+					}
+				}
+			}
+		}
+
+		every_in_list = {
+			list = titles_taken
+			change_title_holder = {
+				holder = scope:attacker
+				change = scope:change
+				take_baronies = yes
+			}
+		}
+
+		every_in_list = {
+			list = vassals_taken
+			change_liege = {
+				liege = scope:attacker
+				change = scope:change
+			}
+		}
+
+		resolve_title_and_vassal_change = scope:change
+
+		# Prestige Progress for the Attacker
+		every_in_list = {
+			list = target_titles
+			scope:attacker = {
+				add_prestige_experience = minor_prestige_value
+			}
+		}
+
+		# Allies on both sides get full prestige value for helping in the war, based on their war participation.
+		modify_allies_of_participants_fame_values = {
+			WINNER = scope:attacker
+			FAME_BASE = minor_prestige_value
+			IS_RELIGIOUS_WAR = no
+			WINNER_ALLY_FAME_SCALE = 1
+			LOSER_ALLY_FAME_SCALE = 1
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+
+		# FP1: note the victory for future memorialisation via stele (if applicable).
+		scope:attacker = { fp1_remember_recent_conquest_victory_effect = yes }
+
+		# EP3: note gold gained from military assistance/join war contracts and their war contribution threshold
+		laamp_as_mercenary_payout_tooltip_effect = yes
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:defender = { is_local_player = yes } }
+				desc = ducal_conquest_cb_white_peace_desc_defender
+			}
+			desc = ducal_conquest_cb_white_peace_desc
+		}
+	}
+
+	on_white_peace = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+		# Prestige loss for the attacker
+		scope:attacker = {
+			add_prestige = {
+				value = minor_prestige_value
+				multiply = -1.0
+			}
+		}
+
+		# Allies on both sides get full prestige value for helping in the war, based on their war participation.
+		modify_allies_of_participants_fame_values = {
+			WINNER = scope:attacker # not important as scale values are identical
+			FAME_BASE = minor_prestige_value
+			IS_RELIGIOUS_WAR = no
+			WINNER_ALLY_FAME_SCALE = 1
+			LOSER_ALLY_FAME_SCALE = 1
+		}
+
+		add_truce_white_peace_effect = yes
+
+		# EP3: note gold gained from military assistance/join war contracts and their war contribution threshold
+		laamp_as_mercenary_payout_tooltip_effect = yes
+	}
+
+	on_defeat_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:defender = { is_local_player = yes } }
+				desc = ducal_conquest_cb_defeat_desc_defender
+			}
+			triggered_desc = {
+				trigger = {
+					scope:attacker = {
+						is_local_player = yes
+						has_targeting_faction = yes
+					}
+				}
+				desc = ducal_conquest_cb_defeat_desc_attacker
+			}
+			desc = ducal_conquest_cb_defeat_desc
+		}
+	}
+
+	on_defeat = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		# Legitimacy
+		add_legitimacy_attacker_defeat_effect = yes
+
+		#EP2 accolade glory gain for winning against higher ranked enemy
+		scope:defender = { accolade_defender_war_end_glory_gain_low_effect = yes }
+
+		# Prestige loss for the attacker
+		scope:attacker = {
+			pay_short_term_gold_reparations_effect = {
+				GOLD_VALUE = 2
+			}
+			add_prestige = {
+				value = medium_prestige_value
+				multiply = -1.0
+			}
+		}
+
+		# Prestige for Defender
+		scope:defender = {
+			add_prestige_war_defender_effect = {
+				PRESTIGE_VALUE = medium_prestige_value
+			}
+		}
+
+		# Allies on both sides get full prestige value for helping in the war, based on their war participation.
+		modify_allies_of_participants_fame_values = {
+			WINNER = scope:defender
+			FAME_BASE = minor_prestige_value
+			IS_RELIGIOUS_WAR = no
+			WINNER_ALLY_FAME_SCALE = 1
+			LOSER_ALLY_FAME_SCALE = 1
+		}
+
+		add_truce_attacker_defeat_effect = yes
+
+		scope:attacker = {
+			save_temporary_scope_as = loser
+		}
+		on_lost_aggression_war_discontent_loss = yes
+
+		# EP3: note gold gained from military assistance/join war contracts and their war contribution threshold
+		laamp_as_mercenary_payout_tooltip_effect = yes
+	}
+
+	transfer_behavior = transfer
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = "war_sixth_BP"
+	war_name_base = "war_sixth_BP"
+	cb_name = "war_sixth_BP"
+
+	interface_priority = 79
+
+	use_de_jure_wargoal_only = yes
+
+	attacker_wargoal_percentage = 0.8
+
+	max_defender_score_from_occupation = 150
+	max_attacker_score_from_occupation = 150
+
+	max_ai_diplo_distance_to_title = 1500
+}

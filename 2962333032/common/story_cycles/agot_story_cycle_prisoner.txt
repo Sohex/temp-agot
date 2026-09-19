@@ -1,0 +1,216 @@
+﻿# Story for a potential Trial of Seven
+agot_prisoner_tos_story = {
+	on_setup = {
+		story_owner = {
+			save_scope_as = tos_prisoner
+			add_character_flag = keep_imprisoned
+			#Save the imprisoner
+			if = {
+				limit = { exists = imprisoner }
+				imprisoner = { save_scope_as = tos_imprisoner }
+			}
+			#Save the friend
+			if = {
+				limit = {
+					any_relation = {
+						type = friend
+						is_close_or_extended_family_of = scope:tos_imprisoner
+						is_ai = yes
+						age >= 8
+					}
+				}
+				random_relation = {
+					type = friend
+					limit = {
+						is_close_or_extended_family_of = scope:tos_imprisoner
+						is_ai = yes
+						age >= 8
+					}
+					save_scope_as = tos_friend
+				}
+			}
+			#Or the lover
+			else_if = {
+				limit = {
+					any_relation = {
+						type = lover
+						is_close_or_extended_family_of = scope:tos_imprisoner
+						is_ai = yes
+						age >= 8
+					}
+				}
+				random_relation = {
+					type = lover
+					limit = {
+						is_close_or_extended_family_of = scope:tos_imprisoner
+						is_ai = yes
+						age >= 8
+					}
+					save_scope_as = tos_friend
+				}
+			}
+			#Fire the initial event
+			if = {
+				limit = {
+					exists = scope:tos_prisoner
+					exists = scope:tos_imprisoner
+					exists = scope:tos_friend
+				}
+				scope:story = {
+					set_variable = {
+						name = tos_friend
+						value = scope:tos_friend
+					}
+				}
+				if = {
+					limit = { agot_valid_tos_dishonorable_imprisonment_scenario_trigger = { ACTOR = scope:tos_prisoner RECIPIENT = scope:tos_imprisoner } }
+					scope:tos_prisoner = { trigger_event = { id = agot_trial_of_seven.0202 days = 1 } }
+				}
+				else = {
+					random_list = {
+						25 = {
+							scope:tos_prisoner = { trigger_event = { id = agot_trial_of_seven.0202 days = 1 } }
+						}
+						75 = { scope:story = { end_story = yes } }
+					}
+				}
+			}
+		}
+	}
+
+	on_end = {
+		story_owner = {
+			if = {
+				limit = { is_alive = yes }
+				agot_remove_imprisonment_flags = yes
+				if = {
+					limit = { has_character_flag = tos_king_considering }
+					remove_character_flag = tos_king_considering
+				}
+				if = {
+					limit = { has_character_flag = tos_204_received }
+					remove_character_flag = tos_204_received
+				}
+				if = {
+					limit = { has_character_flag = tos_imprisonment_initial_event_sent }
+					remove_character_flag = tos_imprisonment_initial_event_sent
+				}
+			}
+		}
+	}
+
+	on_owner_death = {
+		scope:story = { end_story = yes }
+	}
+
+	### DAILY
+	effect_group = {
+		days = 1
+
+		#Send the Main Event
+		triggered_effect = {
+			trigger = {
+				scope:story = { NOT = { has_variable = stop_tos_prison_story } }
+				story_owner = {
+					save_temporary_scope_as = tos_prisoner
+					exists = imprisoner
+					is_imprisoned = yes
+					imprisoner = { save_temporary_scope_as = tos_imprisoner }
+					is_imprisoned_by = scope:tos_imprisoner
+					scope:tos_imprisoner = { NOT = { is_at_war = yes } }
+					exists = scope:story.var:tos_friend
+					scope:story.var:tos_friend = { is_alive = yes }
+					OR = {
+						has_relation_friend = scope:story.var:tos_friend
+						has_relation_lover = scope:story.var:tos_friend
+					}
+					NOT = { has_character_flag = tos_refused_help_from_friend }
+					has_character_flag = tos_king_considering
+					has_character_flag = tos_imprisonment_initial_event_sent
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = tos_prisoner
+					#Save the imprisoner
+					if = {
+						limit = { exists = imprisoner }
+						imprisoner = { save_scope_as = tos_imprisoner }
+					}
+					#Save the friend
+					if = {
+						limit = { exists = scope:story.var:tos_friend }
+						scope:story.var:tos_friend = { save_scope_as = tos_friend }
+					}
+					#Fire the event
+					if = {
+						limit = {
+							exists = scope:tos_prisoner
+							exists = scope:tos_imprisoner
+							exists = scope:tos_friend
+						}
+						scope:story = {
+							set_variable = stop_tos_prison_story
+							set_variable = {
+								name = stop_tos_prison_story_timer
+								days = 7
+							}
+						}
+						scope:tos_prisoner = {
+							if = {
+								limit = { NOT = { has_character_flag = flag_hostile_actions_disabled_delay } }
+								add_character_flag = flag_hostile_actions_disabled_delay
+							}
+							add_character_flag = {
+								flag = tos_from_story
+								days = 40
+							}
+						}
+						remove_character_flag = tos_imprisonment_initial_event_sent
+						scope:tos_imprisoner = {
+							trigger_event = {
+								id = agot_trial_of_seven.0204
+								days = 5
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Checking if the story is still valid
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					OR = {
+						NOT = { is_imprisoned = yes }
+						NOT = { is_alive = yes }
+						NOT = { agot_can_be_ruler = yes }
+						NOT = { exists = scope:story.var:tos_friend }
+						trigger_if = {
+							limit = { exists = scope:story.var:tos_friend }
+							OR = {
+								scope:story.var:tos_friend = { NOT = { is_alive = yes } }
+								AND = {
+									NOT = { has_relation_friend = scope:story.var:tos_friend }
+									NOT = { has_relation_lover = scope:story.var:tos_friend }
+								}
+							}
+						}
+						trigger_if = {
+							limit = { scope:story = { has_variable = stop_tos_prison_story } }
+							scope:story = { NOT = { has_variable = stop_tos_prison_story_timer } }
+						}
+						trigger_if = {
+							limit = { has_character_flag = tos_204_received }
+							NOT = { has_character_flag = check_if_tos_prisoner_story_is_over }
+						}
+					}
+				}
+			}
+			effect = {
+				scope:story = { end_story = yes }
+			}
+		}
+	}
+}

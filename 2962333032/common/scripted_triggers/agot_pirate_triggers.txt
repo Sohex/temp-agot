@@ -1,0 +1,148 @@
+﻿agot_dlc_check_for_landless_pirates = {
+	has_dlc_feature = khans_of_the_steppe
+	has_dlc_feature = landless_playable
+}
+
+agot_located_in_traditional_pirate_region_trigger = {
+	location = { geographical_region = world_stepstones }
+}
+
+agot_is_pirate_domicile_title_trigger = {
+	has_variable = is_pirate_domicile
+}
+
+agot_pirate_landless_succession_jank_courtier_checker = {
+	is_human = yes
+	is_courtier_of = $DYING_PIRATE$
+	agot_can_be_ruler = yes
+}
+
+agot_landless_pirate_absolute_control_perk_trigger = {
+	agot_is_landless_pirate_character = yes
+	has_perk = absolute_control_perk
+}
+
+agot_ai_pirate_wants_to_move = {
+	save_temporary_scope_as = pirate
+	exists = domicile.domicile_location.county
+	OR = {
+		domicile.domicile_location.county.holder = {
+			opinion = {
+				target = scope:pirate
+				value <= -25
+			}
+		}
+		opinion = {
+			target = domicile.domicile_location.county.holder
+			value <= -25
+		}
+		trigger_if = {
+			limit = {
+				domicile.domicile_location.county.holder = {
+					has_realm_law = pirate_tax_rate_01
+				}
+			}
+			gold < {
+				value = location.monthly_income
+				multiply = 25
+			}
+		}
+		trigger_else_if = {
+			limit = {
+				domicile.domicile_location.county.holder = {
+					has_realm_law = pirate_tax_rate_02
+				}
+			}
+			gold < {
+				value = location.monthly_income
+				multiply = 50
+			}
+		}
+		trigger_else_if = {
+			limit = {
+				domicile.domicile_location.county.holder = {
+					has_realm_law = pirate_tax_rate_03
+				}
+			}
+			gold < {
+				value = location.monthly_income
+				multiply = 75
+			}
+		}
+		trigger_else_if = {
+			limit = {
+				domicile.domicile_location.county.holder = {
+					has_realm_law = pirate_tax_rate_04
+				}
+			}
+			gold < {
+				value = location.monthly_income
+				multiply = 100
+			}
+		}
+		trigger_else = {
+			always = yes
+		}
+		AND = {
+			ai_rationality < 15
+			domicile.domicile_location.county.holder = {
+				has_realm_law = pirate_tax_rate_04
+			}
+		}
+	}
+}
+
+agot_potential_pirate = {
+	is_available_ai_adult = yes
+	is_playable_character = no
+	culture = { agot_is_wildling_culture = no }
+	OR = {
+		any_heir_title = { count = 0 }
+		AND = {
+			save_temporary_scope_as = potential
+			any_heir_title = {
+				place_in_line_of_succession = {
+					target = scope:potential
+					value >= 3
+				}
+			}
+		}
+	}
+	OR = {
+		has_trait = education_martial_prowess_3
+		has_trait = education_martial_prowess_4
+		has_trait = education_martial_prowess_5
+	}
+	prowess > 20
+	martial > 15
+	ai_boldness > high_positive_boldness
+	agot_has_clergy_trait = no
+	NOR = {
+		has_trait = nightswatch
+		has_trait = kingsguard
+		has_trait = maester
+	}
+	trigger_if = {
+		limit = { is_courtier = yes }
+		NOT = {
+			employer = title:c_ruins.holder
+		}
+		employer = { save_temporary_scope_as = liege }
+		any_traveling_family_member = {
+			count = all
+			courtier_allowed_to_leave_trigger = yes
+		}
+	}
+	trigger_if = {
+		limit = { is_foreign_court_or_pool_guest = yes }
+		save_temporary_scope_as = guest
+		host = { save_temporary_scope_as = host }
+		NOT = {
+			host = title:c_ruins.holder
+		}
+		any_traveling_family_member = {
+			count = all
+			guest_allowed_to_leave_trigger = yes
+		}
+	}
+}

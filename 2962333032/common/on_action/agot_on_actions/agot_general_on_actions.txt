@@ -1,0 +1,520 @@
+﻿# An artifact has changed ownership
+# root = the artifact
+# scope:owner = the person who now holds the artifact
+# scope:old_owner = the person who used to hold the artifact
+on_artifact_changed_owner = {
+	on_actions = {
+		agot_blackfyre_bastard_formation_on_action
+	}
+}
+
+agot_blackfyre_bastard_formation_on_action = {
+	trigger = {
+		NOT = {
+			exists = house:house_Blackfyre.house_founder
+		}
+		has_artifact_modifier = vs_blackfyre_modifier
+		scope:owner = {
+			house ?= dynasty:dynn_Targaryen.dynasty_founder.house
+			has_trait = bastard
+			OR = {
+				age >= 12
+				has_variable = blackfyre_formation_BOW_BM_bypass
+			}
+		}
+	}
+	effect = {
+		scope:owner = {
+			trigger_event = { id = agot_birth_events.2000 days = 1 }
+		}
+	}
+}
+
+agot_visit_house_of_baw = {
+	effect = {
+		save_scope_as = face_to_add
+		if = {
+			limit = {
+				any_owned_story = {
+					story_type = story_wear_face
+					has_variable = old_face
+					save_temporary_scope_as = story
+				}
+			}
+
+			if = {
+				limit = {
+					scope:story = {
+						has_variable = original_char
+					}
+				}
+				# before we add our face to the hall, we return to our natural face
+				copy_inheritable_appearance_from = scope:story.var:old_face
+				set_age = scope:story.var:old_face.age
+
+				scope:story = {
+					set_variable = {
+						name = old_face
+						value = prev
+					}
+				}
+			}
+
+			global_var:hall_of_faces = {
+				title_province = {
+					add_to_variable_list = {
+						name = faces
+						target = scope:story.var:old_face
+					}
+				}
+			}
+
+			death = {
+				death_reason = death_house_of_baw
+			}
+			#only a player can take a new face, we made them unprunable already
+		}
+		else = { # We have not taken a new face, we can add this one easy
+			global_var:hall_of_faces = {
+				title_province = {
+					add_to_variable_list = {
+						name = faces
+						target = scope:face_to_add
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					OR = {
+						is_ai = no
+
+						global_var:hall_of_faces = {
+							title_province = {
+								any_in_list = {
+									variable = faces
+									count < 40
+								}
+							}
+						}
+					}
+				}
+
+				death = {
+					death_reason = death_house_of_baw
+				}
+
+				agot_make_unpruneable = yes
+			}
+			else = {
+				death = {
+					death_reason = death_house_of_baw
+				}
+			}
+		}
+
+	}
+}
+
+on_prestige_level_gain = {
+	on_actions = {
+		agot_personal_coa_fame_frame_update
+	}
+}
+on_prestige_level_loss = {
+	on_actions = {
+		agot_personal_coa_fame_frame_update_loss
+	}
+}
+agot_personal_coa_fame_frame_update = {
+	trigger = {
+		has_variable = my_personal_coa
+	}
+	effect = {
+		agot_personal_coa_frame_updater_effect = yes
+	}
+}
+
+agot_personal_coa_fame_frame_update_loss = {
+	trigger = {
+		has_variable = my_personal_coa
+	}
+	effect = {
+		agot_personal_coa_frame_updater_effect = yes
+	}
+}
+
+on_character_culture_change = {
+	on_actions = {
+		agot_personal_coa_culture_frame_update
+		agot_stone_men_gray_scale_culture_change
+	}
+}
+
+agot_personal_coa_culture_frame_update = {
+	trigger = {
+		var:my_personal_coa ?= {
+			culture != root.culture
+		}
+	}
+	effect = {
+		var:my_personal_coa = {
+			set_culture = root.culture
+		}
+	}
+}
+on_travel_plan_start = {
+	on_actions = {
+		agot_pirate_domicile_start
+	}
+}
+
+on_travel_plan_complete = {
+	on_actions = {
+		agot_pirate_domicile_complete
+	}
+}
+
+agot_pirate_domicile_start = {
+	effect = {
+		if = {
+			limit = {
+				current_travel_plan = { is_travel_with_domicile = yes }
+				government_has_flag = government_is_pirate
+				location.county = {
+					OR = {
+						has_county_modifier = pirate_level_1_control_modifier
+						has_county_modifier = pirate_level_2_control_modifier
+						has_county_modifier = pirate_level_3_control_modifier
+						has_county_modifier = pirate_level_4_control_modifier
+						has_county_modifier = pirate_level_5_control_modifier
+					}
+				}
+			}
+			save_scope_as = departing_pirate_ship_holder
+			location = {
+				county = {
+					save_scope_as = departing_pirate_ship_location
+					holder = {
+						send_interface_message = {
+							type = msg_pirate_ship_departed_port
+							title = agot_pirate_domicile_departed_port.t
+							desc = agot_pirate_domicile_departed_port.desc
+							right_icon = scope:departing_pirate_ship_holder
+						}
+					}
+				}
+				every_province_domicile = {
+					limit = {
+						is_domicile_type = agot_pirate_ship
+					}
+					add_to_list = pirate_size
+				}
+				if = {
+					limit = {
+						county = { has_county_modifier = pirate_level_5_control_modifier }
+						list_size:pirate_size.agotsub1 < 13
+					}
+					county = { remove_county_modifier = pirate_level_5_control_modifier }
+					county = { add_county_modifier = pirate_level_4_control_modifier }
+				}
+				else_if = {
+					limit = {
+						county = { has_county_modifier = pirate_level_4_control_modifier }
+						list_size:pirate_size.agotsub1 < 12
+					}
+					county = { remove_county_modifier = pirate_level_4_control_modifier }
+					county = { add_county_modifier = pirate_level_3_control_modifier }
+				}
+				else_if = {
+					limit = {
+						county = { has_county_modifier = pirate_level_3_control_modifier }
+						list_size:pirate_size.agotsub1 < 9
+					}
+					county = { remove_county_modifier = pirate_level_3_control_modifier }
+					county = { add_county_modifier = pirate_level_2_control_modifier }
+				}
+				else_if = {
+					limit = {
+						county = { has_county_modifier = pirate_level_2_control_modifier }
+						list_size:pirate_size.agotsub1 < 6
+					}
+					county = { remove_county_modifier = pirate_level_2_control_modifier }
+					county = { add_county_modifier = pirate_level_1_control_modifier }
+				}
+				else_if = {
+					limit = {
+						county = { has_county_modifier = pirate_level_1_control_modifier }
+						list_size:pirate_size.agotsub1 = 3
+					}
+					county = { remove_county_modifier = pirate_level_1_control_modifier }
+				}
+			}
+		}
+	}
+}
+
+agot_pirate_domicile_complete = {
+	effect = {
+		if = {
+			limit = {
+				current_travel_plan = { is_travel_with_domicile = yes }
+				government_has_flag = government_is_pirate
+			}
+			location = {
+				county = {
+					change_county_control = -5
+				}
+				every_province_domicile = {
+					limit = {
+						is_domicile_type = agot_pirate_ship
+					}
+					add_to_list = pirate_size
+				}
+				if = {
+					limit = {
+						list_size:pirate_size >= 1
+						list_size:pirate_size <= 3
+					}
+					county = { add_county_modifier = pirate_level_1_control_modifier }
+					county = {
+						if = {
+							limit = {
+								OR = {
+									has_county_modifier = pirate_level_2_control_modifier
+									has_county_modifier = pirate_level_3_control_modifier
+									has_county_modifier = pirate_level_4_control_modifier
+									has_county_modifier = pirate_level_5_control_modifier
+								}
+							}
+							remove_county_modifier = pirate_level_2_control_modifier
+							remove_county_modifier = pirate_level_3_control_modifier
+							remove_county_modifier = pirate_level_4_control_modifier
+							remove_county_modifier = pirate_level_5_control_modifier
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						list_size:pirate_size >= 4
+						list_size:pirate_size <= 6
+					}
+					county = { add_county_modifier = pirate_level_2_control_modifier }
+					county = {
+						if = {
+							limit = {
+								OR = {
+									has_county_modifier = pirate_level_1_control_modifier
+									has_county_modifier = pirate_level_3_control_modifier
+									has_county_modifier = pirate_level_4_control_modifier
+									has_county_modifier = pirate_level_5_control_modifier
+								}
+							}
+							remove_county_modifier = pirate_level_1_control_modifier
+							remove_county_modifier = pirate_level_3_control_modifier
+							remove_county_modifier = pirate_level_4_control_modifier
+							remove_county_modifier = pirate_level_5_control_modifier
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						list_size:pirate_size >= 7
+						list_size:pirate_size <= 9
+					}
+					county = { add_county_modifier = pirate_level_3_control_modifier }
+					county = {
+						if = {
+							limit = {
+								OR = {
+									has_county_modifier = pirate_level_2_control_modifier
+									has_county_modifier = pirate_level_1_control_modifier
+									has_county_modifier = pirate_level_4_control_modifier
+									has_county_modifier = pirate_level_5_control_modifier
+								}
+							}
+							remove_county_modifier = pirate_level_2_control_modifier
+							remove_county_modifier = pirate_level_1_control_modifier
+							remove_county_modifier = pirate_level_4_control_modifier
+							remove_county_modifier = pirate_level_5_control_modifier
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						list_size:pirate_size >= 10
+						list_size:pirate_size <= 12
+					}
+					county = { add_county_modifier = pirate_level_4_control_modifier }
+					county = {
+						if = {
+							limit = {
+								OR = {
+									has_county_modifier = pirate_level_2_control_modifier
+									has_county_modifier = pirate_level_3_control_modifier
+									has_county_modifier = pirate_level_1_control_modifier
+									has_county_modifier = pirate_level_5_control_modifier
+								}
+							}
+							remove_county_modifier = pirate_level_2_control_modifier
+							remove_county_modifier = pirate_level_3_control_modifier
+							remove_county_modifier = pirate_level_1_control_modifier
+							remove_county_modifier = pirate_level_5_control_modifier
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						list_size:pirate_size >= 13
+					}
+					county = { add_county_modifier = pirate_level_5_control_modifier }
+					county = {
+						if = {
+							limit = {
+								OR = {
+									has_county_modifier = pirate_level_2_control_modifier
+									has_county_modifier = pirate_level_3_control_modifier
+									has_county_modifier = pirate_level_4_control_modifier
+									has_county_modifier = pirate_level_1_control_modifier
+								}
+							}
+							remove_county_modifier = pirate_level_2_control_modifier
+							remove_county_modifier = pirate_level_3_control_modifier
+							remove_county_modifier = pirate_level_4_control_modifier
+							remove_county_modifier = pirate_level_1_control_modifier
+						}
+					}
+				}
+			}
+			trigger_event = agot_pirate_events.0003
+		}
+	}
+}
+
+# root - Character who changed government
+# scope:old_government - Character's old government type
+on_government_change = {
+	on_actions = {
+		pirate_on_government_change_manager
+	}
+}
+
+pirate_on_government_change_manager = {
+	effect = {
+		if = {
+			limit = {
+				any_held_title = {
+					agot_is_pirate_domicile_title_trigger = yes
+				}
+				NOT = {
+					government_has_flag = government_is_pirate
+				}
+			}
+			every_held_title = {
+				limit = {
+					agot_is_pirate_domicile_title_trigger = yes
+				}
+				prev = {
+					destroy_title = prev
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:old_government = government_type:pirate_government
+				any_held_title = {
+					tier = tier_county
+					OR = {
+						has_county_modifier = pirate_tax_rate_04_displayer_modifier
+						has_county_modifier = pirate_tax_rate_03_displayer_modifier
+						has_county_modifier = pirate_tax_rate_02_displayer_modifier
+						has_county_modifier = pirate_tax_rate_01_displayer_modifier
+					}
+				}
+				is_landed = yes
+			}
+			every_held_title = {
+				limit = {
+					tier = tier_county
+					OR = {
+						has_county_modifier = pirate_tax_rate_04_displayer_modifier
+						has_county_modifier = pirate_tax_rate_03_displayer_modifier
+						has_county_modifier = pirate_tax_rate_02_displayer_modifier
+						has_county_modifier = pirate_tax_rate_01_displayer_modifier
+					}
+				}
+				remove_county_modifier = pirate_tax_rate_04_displayer_modifier
+				remove_county_modifier = pirate_tax_rate_03_displayer_modifier
+				remove_county_modifier = pirate_tax_rate_02_displayer_modifier
+				remove_county_modifier = pirate_tax_rate_01_displayer_modifier
+			}
+		}
+	}
+}
+
+
+agot_stone_men_gray_scale_culture_change = {
+	trigger = {
+		culture = {
+			has_cultural_parameter = immune_to_all_diseases_except_greyscale
+		}
+		NOT = {
+			has_trait = greyscale
+		}
+	}
+	effect = {
+		add_trait = greyscale
+	}
+}
+
+on_birth_child = {
+	on_actions = {
+		agot_stone_men_gray_scale_birth
+		agot_malformed_babies_roll
+	}
+}
+
+agot_stone_men_gray_scale_birth = {
+	trigger = {
+		culture = {
+			has_cultural_parameter = immune_to_all_diseases_except_greyscale
+		}
+		NOT = {
+			has_trait = greyscale
+		}
+	}
+	effect = {
+		add_trait = greyscale
+	}
+}
+
+# Albino, Giant, Dwarf, Wheezing, Spindly, hunchbacked, scaly, clubfooted
+agot_malformed_babies_roll = {
+	trigger = {
+		culture = {
+			has_cultural_parameter = malformed_infants_more_common
+		}
+	}
+	effect = {
+		random = {
+			chance = 85
+			random_list = {
+				#1 Trait
+				1 = {
+					agot_add_random_congenital_defect_effect = yes
+				}
+				#2 Traits
+				2 = {
+					agot_add_random_congenital_defect_effect = yes
+					agot_add_random_congenital_defect_effect = yes
+				}
+				#3 Traits
+				3 = {
+					agot_add_random_congenital_defect_effect = yes
+					agot_add_random_congenital_defect_effect = yes
+					agot_add_random_congenital_defect_effect = yes
+				}
+			}
+		}
+	}
+}

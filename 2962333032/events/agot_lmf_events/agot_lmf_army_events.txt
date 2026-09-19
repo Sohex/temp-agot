@@ -1,0 +1,5926 @@
+﻿namespace = lmf_army
+
+###############
+# ARMY EVENTS #
+###############
+
+scripted_effect add_recent_army_event_flags = {
+	if = {
+		limit = { is_ai = no }
+		add_character_flag = { flag = had_recent_army_event months = 6 }
+	}
+	else = {
+		add_character_flag = { flag = had_recent_army_event years = 2 }
+	}
+}
+
+scripted_trigger is_appropriate_army_lover_with = {
+	is_below_ai_lover_soft_cap_trigger = yes
+	NOR = {
+		has_trait = infirm
+		is_malformed_trigger = yes
+		is_unattractive_trigger = yes
+		is_involved_in_any_romantic_scheme = yes
+		has_character_flag = had_army_event_1080
+	}
+	trigger_if = {
+		limit = {
+			$TARGET$ = {
+				is_female = yes
+				age < 25
+			}
+		}
+		age <= $TARGET$.age_plus_25
+		age >= $TARGET$.age_minus_10
+	}
+	trigger_else_if = {
+		limit = {
+			$TARGET$ = {
+				is_female = yes
+				age >= 25
+			}
+		}
+		age <= $TARGET$.age_plus_10
+		age >= $TARGET$.age_minus_10
+	}
+	trigger_else = {
+		age <= $TARGET$.age
+		age >= $TARGET$.age_minus_25
+	}
+	can_set_relation_lover_trigger = { CHARACTER = $TARGET$ }
+	might_cheat_on_every_partner_trigger = yes
+	save_temporary_scope_as = potential_lover
+	willing_to_take_character_as_lover = { LOVER = $TARGET$ }
+	$TARGET$ = {
+		willing_to_take_character_as_lover = { LOVER = scope:potential_lover }
+	}
+	trigger_if = {
+		limit = { scope:selected_knight = { ai_boldness < 20 } }
+		NOR = {
+			primary_spouse ?= { is_liege_or_above_of = $TARGET$ }
+			any_parent = { is_liege_or_above_of = $TARGET$ }
+		}
+	}
+	trigger_if = {
+		limit = { $TARGET$ = { ai_honor >= 0 } }
+		is_married = no
+	}
+	accepts_incest_with_each_other_trigger = {
+		CHARACTER_1 = scope:potential_lover
+		CHARACTER_2 = $TARGET$
+	}
+	trigger_if = {
+		limit = {
+			OR = {
+				is_clergy = yes
+				agot_has_religious_trait = yes
+				has_council_position = councillor_court_chaplain
+			}
+		}
+		OR = {
+			faith = { has_doctrine = tenet_carnal_exaltation }
+			is_deviant_trigger = yes
+			has_trait = lustful
+			ai_zeal <= medium_negative_ai_value
+		}
+	}
+	is_human = yes
+	agot_is_available_for_anything = yes
+}
+
+# Triggered from on_army_monthly
+lmf_army.1000 = {
+	hidden = yes
+
+	trigger = {
+		scope:army.location = {
+			is_sea_province = no
+			NOT = { this = root.capital_province }
+		}
+	}
+
+	immediate = {
+		# clear lists, just in case
+		every_in_list = {
+			list = event_knights
+			remove_from_list = event_knights
+		}
+		every_in_list = {
+			list = liege_knights
+			remove_from_list = liege_knights
+		}
+		# create list of possible knights to receive event & all AI knights in same location
+		if = {
+			limit = {
+				scope:army.army_commander ?= root
+				has_short_disease_trigger = no
+				NOR = {
+					has_trait = infirm
+					has_character_flag = had_recent_army_event
+				}
+			}
+			add_to_list = event_knights
+		}
+		every_knight = {
+			limit = {
+				is_in_army = yes
+				has_short_disease_trigger = no
+				NOT = { has_trait = infirm }
+			}
+			if = {
+				limit = {
+					OR = {
+						commanding_army ?= scope:army
+						knight_army ?= scope:army
+					}
+				}
+				if = {
+					limit = {
+						NOT = { has_character_flag = had_recent_army_event }
+					}
+					add_to_list = event_knights
+				}
+				if = {
+					limit = { is_ai = yes }
+					add_to_list = liege_knights
+				}
+			}
+			else_if = {
+				limit = {
+					is_ai = yes
+					OR = {
+						commanding_army.location ?= scope:army.location
+						knight_army.location ?= scope:army.location
+					}
+				}
+				add_to_list = liege_knights
+			}
+		}
+
+		if = {
+			limit = {
+				list_size = { name = event_knights value > 0 }
+				list_size = { name = liege_knights value > 4 }
+			}
+			random_in_list = {
+				list = event_knights
+				weight = {
+					base = 1
+					modifier = {
+						has_dynasty = yes
+						add = 2
+					}
+					modifier = {
+						is_playable_character = yes
+						add = 3
+					}
+					modifier = {
+						exists = commanding_army
+						commanding_army = scope:army
+						add = 4
+					}
+					modifier = {
+						stress < lower_than_baseline_stress
+						add = -1
+					}
+					modifier = {
+						stress > higher_than_baseline_stress
+						add = 1
+					}
+					min = 1
+				}
+				save_temporary_scope_as = selected_knight
+				if = {
+					limit = { is_in_list = liege_knights }
+					remove_from_list = liege_knights
+				}
+
+				# then fire an event for the selected knight
+				random_list = {
+					250 = {
+						modifier = {
+							is_ai = no
+							add = -50
+						}
+						modifier = {
+							OR = {
+								scope:army.location.county.holder = root
+								scope:army.location.county.holder = { is_vassal_or_below_of = root }
+							}
+							factor = 2
+						}
+						modifier = {
+							NOT = { scope:army.location.county.holder.top_liege = root.top_liege }
+							factor = 0.5
+						}
+					}
+					50 = { # The Camp Follower
+						trigger = {
+							NOR = {
+								has_trait = celibate
+								has_sexuality = asexual
+								is_malformed_trigger = yes
+								has_character_flag = had_army_event_1010
+							}
+						}
+						modifier = {
+							factor = 2
+							stress > normal_baseline_stress
+						}
+						modifier = {
+							factor = 2
+							likely_to_take_lover_trigger = yes
+						}
+						modifier = {
+							add = {
+								value = attraction
+								multiply = 5
+								max = 100
+							}
+							always = yes
+						}
+						modifier = {
+							factor = 0.5
+							has_trait = chaste
+						}
+						modifier = {
+							factor = 0.5
+							NOR = {
+								stress > 0
+								likely_to_take_lover_trigger = yes
+							}
+						}
+						trigger_event = lmf_army.1010
+					}
+					50 = { # The Tavern Wench
+						trigger = {
+							scope:army = { is_army_in_siege = no }
+							is_attracted_to_women = yes
+							NOR = {
+								has_trait = celibate
+								is_malformed_trigger = yes
+								has_character_flag = had_army_event_1020
+							}
+						}
+						modifier = {
+							factor = 2
+							likely_to_take_lover_trigger = yes
+						}
+						modifier = {
+							add = {
+								value = attraction
+								multiply = 5
+								max = 100
+							}
+							always = yes
+						}
+						modifier = {
+							factor = 0.5
+							has_trait = chaste
+						}
+						modifier = {
+							factor = 0.5
+							NOR = {
+								stress > 0
+								likely_to_take_lover_trigger = yes
+							}
+						}
+						trigger_event = lmf_army.1020
+					}
+					50 = { # Rowdy Night at the Tavern
+						trigger = {
+							scope:army = { is_army_in_siege = no }
+							has_personality_submissive_trigger = no
+							has_personality_levelheaded_trigger = no
+							NOT = { has_character_flag = had_army_event_1030 }
+						}
+						ai_value_modifier = {
+							ai_vengefulness = 0.5
+						}
+						trigger_event = lmf_army.1030
+					}
+					50 = { # A Night of Merriment
+						trigger = {
+							stress >= lower_than_baseline_stress
+							NOR = {
+								has_trait = temperate
+								has_character_flag = had_army_event_1040
+							}
+						}
+						modifier = {
+							has_trait = drunkard
+							factor = 2
+						}
+						modifier = {
+							factor = 2
+							stress >= lower_than_baseline_stress
+						}
+						modifier = {
+							factor = 2
+							stress >= medium_stress
+						}
+						trigger_event = lmf_army.1040
+					}
+					100 = { # Friends in Arms
+						trigger = {
+							NOT = { has_character_flag = had_army_event_1050 }
+							trigger_if = {
+								limit = { is_ai = no }
+								num_of_relation_friend <= 5
+							}
+							trigger_else = {
+								num_of_relation_friend <= 3
+							}
+							any_in_list = {
+								list = liege_knights
+								num_of_relation_friend <= 3
+								can_set_relation_friend_trigger = { CHARACTER = scope:selected_knight }
+								OR = {
+									has_relation_potential_friend = scope:selected_knight
+									AND = {
+										trait_compatibility = { target = scope:selected_knight value >= 15 }
+										opinion = { target = scope:selected_knight value >= 0 }
+										reverse_opinion = { target = scope:selected_knight value >= 0 }
+									}
+									AND = {
+										trait_compatibility = { target = scope:selected_knight value >= 5 }
+										opinion = { target = scope:selected_knight value >= 20 }
+										reverse_opinion = { target = scope:selected_knight value >= 20 }
+									}
+								}
+							}
+						}
+						ai_value_modifier = {
+							ai_sociability = 1.0
+						}
+						trigger_event = lmf_army.1050
+					}
+					50 = { # Rivals in Arms
+						trigger = {
+							NOT = { has_character_flag = had_army_event_1060 }
+							trigger_if = {
+								limit = { is_ai = no }
+								num_of_relation_rival <= 4
+							}
+							trigger_else = {
+								num_of_relation_rival <= 2
+							}
+							any_in_list = {
+								list = liege_knights
+								num_of_relation_rival <= 2
+								can_set_relation_rival_trigger = { CHARACTER = scope:selected_knight }
+								OR = {
+									ai_vengefulness > 0
+									is_hot_headed_trigger = yes
+								}
+								trigger_if = {
+									limit = { scope:selected_knight = { is_playable_character = yes } }
+									has_dynasty = yes
+									OR = {
+										is_relevant_family_member = { CHARACTER = scope:selected_knight }
+										is_playable_character = yes
+									}
+								}
+								OR = {
+									has_relation_potential_rival = scope:selected_knight
+									has_relation_bully = scope:selected_knight
+									has_relation_grudge = scope:selected_knight
+									has_revenge_motivation_against = { CHARACTER = scope:selected_knight }
+									is_resentful_of_impious_character = { CHARACTER = scope:selected_knight }
+									is_resentful_of_pious_character = { CHARACTER = scope:selected_knight }
+									is_resentful_of_hostile_faith_character = { CHARACTER = scope:selected_knight }
+									is_resentful_of_pious_astray_faith_character = { CHARACTER = scope:selected_knight }
+									has_hatred_towards = { CHARACTER = scope:selected_knight }
+									has_major_incompatibility_with = { CHARACTER = scope:selected_knight }
+									is_jealous_of_their_lover = { CHARACTER = scope:selected_knight }
+									is_jealous_of_their_court_position = { CHARACTER = scope:selected_knight }
+									is_jealous_of_their_council_position = { CHARACTER = scope:selected_knight }
+									is_jealous_of_their_heir_position = { CHARACTER = scope:selected_knight }
+								}
+							}
+						}
+						modifier = {
+							is_ai = yes
+							factor = 2
+						}
+						ai_value_modifier = {
+							ai_sociability = -1.0
+							ai_vengefulness = 0.5
+						}
+						min = 0
+						trigger_event = lmf_army.1060
+					}
+					50 = { # Boiling Over
+						trigger = {
+							NOR = {
+								has_character_flag = had_army_event_1070
+								has_trait = wounded
+							}
+							any_in_list = {
+								list = liege_knights
+								has_relation_rival = scope:selected_knight
+								NOT = { has_trait = wounded }
+								OR = {
+									ai_vengefulness > 0
+									is_hot_headed_trigger = yes
+								}
+								trigger_if = {
+									limit = {
+										OR = {
+											liege = scope:selected_knight
+											top_liege = scope:selected_knight
+											knight_army.army_commander ?= scope:selected_knight
+											AND = {
+												scope:army.army_commander = scope:selected_knight
+												NOT = { exists = commanding_army }
+											}
+										}
+									}
+									ai_rationality <= very_high_negative_ai_value
+								}
+								trigger_if = {
+									limit = { prowess_plus_5 <= scope:selected_knight.prowess }
+									OR = {
+										ai_boldness >= very_high_positive_ai_value
+										ai_rationality <= very_high_negative_ai_value
+									}
+								}
+							}
+						}
+						modifier = {
+							add = 150
+							any_in_list = {
+								list = liege_knights
+								has_relation_nemesis = scope:selected_knight
+								NOT = { has_trait = wounded }
+								OR = {
+									ai_vengefulness > 0
+									is_hot_headed_trigger = yes
+								}
+							}
+						}
+						ai_value_modifier = {
+							ai_sociability = -0.5
+							ai_vengefulness = 1.0
+						}
+						min = 0
+						trigger_event = lmf_army.1070
+					}
+					50 = { # Lovers in Arms
+						trigger = {
+							scope:army = { is_army_in_siege = no }
+							NOR = {
+								has_trait = chaste
+								has_trait = celibate
+								has_sexuality = asexual
+								has_trait = infirm
+								is_malformed_trigger = yes
+								num_of_relation_soulmate > 0
+								is_involved_in_any_romantic_scheme = yes
+								has_character_flag = had_army_event_1080
+							}
+							is_old_age_or_not_have_children = no
+							trigger_if = {
+								limit = { is_ai = yes }
+								ai_boldness >= 0
+								is_below_ai_lover_soft_cap_trigger = yes
+								might_cheat_on_every_partner_trigger = yes
+							}
+							trigger_if = {
+								limit = {
+									OR = {
+										is_clergy = yes
+										agot_has_religious_trait = yes
+										has_council_position = councillor_court_chaplain
+									}
+								}
+								OR = {
+									faith = { has_doctrine = tenet_carnal_exaltation }
+									is_deviant_trigger = yes
+									has_trait = lustful
+									ai_zeal <= medium_negative_ai_value
+								}
+							}
+							any_in_list = {
+								list = liege_knights
+								is_appropriate_army_lover_with = { TARGET = scope:selected_knight }
+							}
+						}
+						modifier = {
+							add = 50
+							has_sexuality = homosexual
+							num_of_relation_lover < 1
+						}
+						ai_value_modifier = {
+							ai_sociability = 0.5
+						}
+						modifier = {
+							factor = 2
+							likely_to_take_lover_trigger = yes
+						}
+						modifier = {
+							add = {
+								value = attraction
+								multiply = 5
+								max = 100
+							}
+							always = yes
+						}
+						modifier = {
+							factor = 0.5
+							has_trait = chaste
+						}
+						modifier = {
+							factor = 0.5
+							NOR = {
+								stress > 0
+								likely_to_take_lover_trigger = yes
+							}
+						}
+						min = 0
+						trigger_event = lmf_army.1080
+					}
+					50 = { # A Moment of Respite
+						trigger = {
+							scope:army = { is_army_in_siege = no }
+							NOT = { has_character_flag = had_army_event_1090 }
+							stress > 0
+						}
+						modifier = {
+							factor = 2
+							stress > normal_baseline_stress
+						}
+						trigger_event = lmf_army.1090
+					}
+					100 = { # The Nights Grow Long
+						trigger = {
+							NOT = { has_character_flag = had_army_event_1100 }
+						}
+						modifier = {
+							factor = 0.5
+							stress >= lower_than_baseline_stress
+						}
+						modifier = {
+							factor = 0.5
+							stress >= higher_than_baseline_stress
+						}
+						trigger_event = lmf_army.1100
+					}
+					50 = { # Rainy Days
+						trigger = {
+							NOR = {
+								has_character_flag = had_army_event_1110
+								has_trait = whole_of_body
+							}
+						}
+						modifier = {
+							factor = 2
+							age >= 50
+						}
+						modifier = {
+							factor = 2
+							age >= 65
+						}
+						modifier = {
+							factor = 0.5
+							OR = {
+								has_perk = iron_constitution_perk
+								has_perk = healthy_perk
+							}
+						}
+						modifier = {
+							factor = 0.5
+							OR = {
+								has_perk = wash_your_hands_perk
+								AND = {
+									is_courtier = yes
+									liege ?= { has_perk = wash_your_hands_perk }
+								}
+							}
+						}
+						trigger_event = lmf_army.1110
+					}
+					50 = { # A Step Too Far
+						trigger = {
+							NOT = { has_character_flag = had_army_event_1120 }
+							scope:army = {
+								is_army_in_siege = no
+								NOT = { location.county.holder.top_liege = army_owner.top_liege }
+							}
+							trigger_if = {
+								limit = { is_ai = yes }
+								ai_compassion <= 0
+							}
+							any_in_list = {
+								list = liege_knights
+								ai_compassion <= medium_negative_ai_value
+								NOT = { has_relation_rival = scope:selected_knight }
+							}
+						}
+						ai_value_modifier = {
+							ai_compassion = 0.5
+						}
+						trigger_event = lmf_army.1120
+					}
+					50 = { # A Lucky Catch
+						trigger = {
+							NOR = {
+								has_character_flag = had_army_event_1130
+								has_character_modifier = enemy_siege_info_modifier
+							}
+							scope:army = { is_army_in_siege = yes }
+							exists = commanding_army
+							commanding_army = scope:army
+						}
+						trigger_event = lmf_army.1130
+					}
+					50 = { # A Promising Soldier
+						trigger = {
+							NOT = { has_character_flag = had_army_event_1140 }
+							is_playable_character = yes
+						}
+						modifier = {
+							factor = 2
+							number_of_knights < max_number_of_knights
+						}
+						modifier = {
+							factor = 0.5
+							NOR = {
+								number_of_knights < max_number_of_knights
+								any_knight = { prowess <= 12 }
+							}
+						}
+						trigger_event = lmf_army.1140
+					}
+					50 = { # A Chance Encounter
+						trigger = {
+							NOR = {
+								has_character_flag = had_army_event_1150
+								has_character_flag = had_army_event_1160
+								scope:army = { is_army_in_siege = yes }
+								scope:army.location.county.culture = scope:army.army_owner.capital_county.culture
+								scope:army.location.county.culture = scope:selected_knight.culture
+								scope:army.location.county.holder.top_liege = scope:army.army_owner.top_liege
+							}
+							is_playable_character = yes
+							trigger_if = {
+								limit = { is_ai = yes }
+								ai_compassion >= 0
+							}
+						}
+						trigger_event = lmf_army.1150
+					}
+					50 = { # Saved by a Stranger
+						trigger = {
+							NOR = {
+								has_character_flag = had_army_event_1150
+								has_character_flag = had_army_event_1160
+								scope:army = { is_army_in_siege = yes }
+								scope:army.location.county.culture = scope:army.army_owner.capital_county.culture
+								scope:army.location.county.culture = scope:selected_knight.culture
+								scope:army.location.county.holder.top_liege = scope:army.army_owner.top_liege
+							}
+							is_playable_character = yes
+						}
+						modifier = {
+							factor = 2
+							number_of_knights < max_number_of_knights
+						}
+						trigger_event = lmf_army.1160
+					}
+					50 = { # The Supply Problem
+						trigger = {
+							NOR = {
+								has_character_flag = had_army_event_1170
+								scope:army = { is_army_in_siege = yes }
+								scope:army.location = { has_province_modifier = recently_looted_modifier }
+							}
+							scope:army = {
+								army_size >= 2000
+								army_supply <= 50
+								location.county.holder.top_liege = { is_at_war_with = scope:army.army_owner }
+							}
+							exists = commanding_army
+							commanding_army = scope:army
+						}
+						modifier = {
+							factor = 2
+							scope:army = { army_supply <= 25 }
+						}
+						ai_value_modifier = {
+							ai_compassion = -1
+						}
+						min = 0
+						trigger_event = lmf_army.1170
+					}
+					50 = { # Lost and Found
+						trigger = {
+							scope:army = { is_army_in_siege = no }
+							NOR = {
+								has_trait = chaste
+								has_trait = celibate
+								has_sexuality = asexual
+								has_trait = infirm
+								is_malformed_trigger = yes
+								num_of_relation_soulmate > 0
+								is_involved_in_any_romantic_scheme = yes
+								has_character_flag = had_army_event_1180
+							}
+							is_old_age_or_not_have_children = no
+							trigger_if = {
+								limit = { is_ai = yes }
+								is_below_ai_lover_soft_cap_trigger = yes
+								might_cheat_on_every_partner_trigger = yes
+							}
+							trigger_if = {
+								limit = {
+									OR = {
+										is_clergy = yes
+										agot_has_religious_trait = yes
+										has_council_position = councillor_court_chaplain
+									}
+								}
+								OR = {
+									faith = { has_doctrine = tenet_carnal_exaltation }
+									is_deviant_trigger = yes
+									has_trait = lustful
+									ai_zeal <= medium_negative_ai_value
+								}
+							}
+						}
+						modifier = {
+							factor = 0.5
+							NOR = {
+								stress > 0
+								likely_to_take_lover_trigger = yes
+							}
+						}
+						trigger_event = lmf_army.1180
+					}
+					50 = { # The Foreign Physician
+						trigger = {
+							NOR = {
+								has_character_flag = had_army_event_1190
+								has_character_modifier = excellent_army_physician_modifier
+								scope:army = { is_army_in_siege = yes }
+								scope:army.location.county.culture = scope:army.army_owner.capital_county.culture
+								scope:army.location.county.culture = scope:selected_knight.culture
+							}
+							location.county.holder.top_liege = { is_at_war_with = scope:army.army_owner }
+							exists = commanding_army
+							commanding_army = scope:army
+						}
+						modifier = {
+							factor = 2
+							has_perk = anatomical_studies_perk
+						}
+						trigger_event = lmf_army.1190
+					}
+					50 = { # The Training Regimen
+						trigger = {
+							scope:army = { is_army_in_siege = no }
+							NOT = { has_character_flag = had_army_event_1200 }
+							exists = commanding_army
+							commanding_army = scope:army
+							# for army owner, can't have any commanders with the modifier already
+							trigger_if = {
+								limit = { scope:army.army_owner = scope:selected_knight }
+								NOT = {
+									any_knight = {
+										is_in_army = yes
+										exists = commanding_army
+										commanding_army.army_owner = scope:selected_knight
+										OR = {
+											has_character_modifier = army_training_hard_modifier
+											has_character_modifier = army_training_easy_modifier
+										}
+									}
+								}
+							}
+							# otherwise, we're just checking for the commander themself
+							trigger_else = {
+								scope:army.army_owner = {
+									NOR = {
+										has_character_modifier = army_training_hard_modifier
+										has_character_modifier = army_training_easy_modifier
+									}
+								}
+							}
+						}
+						trigger_event = lmf_army.1200
+					}
+					50 = { # A Lost Knight
+						trigger = {
+							NOR = {
+								has_character_flag = had_army_event_1210
+								has_trait = wounded
+							}
+							scope:army = {
+								is_army_in_siege = no
+								location.county.holder.top_liege = { is_at_war_with = scope:army.army_owner }
+							}
+							any_in_list = {
+								list = liege_knights
+								knight_army ?= scope:army
+								is_courtier = yes
+								has_any_court_position = no
+								is_councillor = no
+								is_ruler = no
+								NOR = {
+									has_trait = wounded
+									has_relation_rival = scope:selected_knight
+									has_character_flag = had_army_event_1210
+								}
+							}
+						}
+						trigger_event = lmf_army.1210
+					}
+					50 = { # Knight in Training 1
+						trigger = {
+							NOT = { has_character_flag = had_army_event_1220 }
+							any_in_list = {
+								list = liege_knights
+								prowess > scope:selected_knight.prowess
+								NOT = { has_relation_rival = scope:selected_knight }
+							}
+						}
+						modifier = {
+							factor = 2
+							OR = {
+								scope:army.army_owner = { has_character_modifier = army_training_hard_modifier }
+								scope:army.army_commander ?= { has_character_modifier = army_training_hard_modifier }
+							}
+						}
+						modifier = {
+							factor = 0.5
+							OR = {
+								scope:army.army_owner = { has_character_modifier = army_training_easy_modifier }
+								scope:army.army_commander ?= { has_character_modifier = army_training_easy_modifier }
+							}
+						}
+						trigger_event = lmf_army.1220
+					}
+					50 = { # Knight in Training 2
+						trigger = {
+							NOT = { has_character_flag = had_army_event_1230 }
+							any_in_list = {
+								list = liege_knights
+								martial > scope:selected_knight.martial
+								NOT = { has_relation_rival = scope:selected_knight }
+							}
+						}
+						modifier = {
+							factor = 2
+							OR = {
+								scope:army.army_owner = { has_character_modifier = army_training_hard_modifier }
+								scope:army.army_commander ?= { has_character_modifier = army_training_hard_modifier }
+							}
+						}
+						modifier = {
+							factor = 0.5
+							OR = {
+								scope:army.army_owner = { has_character_modifier = army_training_easy_modifier }
+								scope:army.army_commander ?= { has_character_modifier = army_training_easy_modifier }
+							}
+						}
+						trigger_event = lmf_army.1230
+					}
+					50 = { # Knight in Training 3
+						trigger = {
+							NOR = {
+								has_character_flag = had_army_event_1240
+								has_trait = lifestyle_blademaster
+							}
+							any_in_list = {
+								list = liege_knights
+								has_trait = lifestyle_blademaster
+								prowess > scope:selected_knight.prowess
+								NOT = { has_relation_rival = scope:selected_knight }
+							}
+						}
+						modifier = {
+							factor = 2
+							OR = {
+								scope:army.army_owner = { has_character_modifier = army_training_hard_modifier }
+								scope:army.army_commander ?= { has_character_modifier = army_training_hard_modifier }
+							}
+						}
+						modifier = {
+							factor = 0.5
+							OR = {
+								scope:army.army_owner = { has_character_modifier = army_training_easy_modifier }
+								scope:army.army_commander ?= { has_character_modifier = army_training_easy_modifier }
+							}
+						}
+						trigger_event = lmf_army.1240
+					}
+					50 = { # The Eye of a Soldier
+						trigger = {
+							NOR = {
+								has_trait = celibate
+								has_sexuality = asexual
+								is_malformed_trigger = yes
+								has_character_flag = had_army_event_1250
+							}
+							stress >= lower_than_baseline_stress
+							trigger_if = {
+								limit = {
+									is_attracted_to_women = yes
+									is_attracted_to_men = no
+								}
+								dummy_female = {
+									can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:army.army_owner }
+								}
+							}
+							trigger_if = {
+								limit = {
+									is_attracted_to_women = no
+									is_attracted_to_men = yes
+								}
+								dummy_male = {
+									can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:army.army_owner }
+								}
+							}
+						}
+						modifier = {
+							factor = 2
+							likely_to_take_lover_trigger = yes
+						}
+						modifier = {
+							factor = 2
+							stress >= medium_stress
+						}
+						modifier = {
+							add = {
+								value = attraction
+								multiply = 5
+								max = 100
+							}
+							always = yes
+						}
+						modifier = {
+							factor = 0.5
+							has_trait = chaste
+						}
+						modifier = {
+							factor = 0.5
+							NOR = {
+								stress > 0
+								likely_to_take_lover_trigger = yes
+							}
+						}
+						trigger_event = lmf_army.1250
+					}
+					50 = { # Caught at the Spring
+						trigger = {
+							scope:army = { is_army_in_siege = no }
+							NOR = {
+								has_trait = celibate
+								has_sexuality = asexual
+								is_malformed_trigger = yes
+								has_character_flag = had_army_event_1260
+							}
+						}
+						modifier = {
+							factor = 2
+							likely_to_take_lover_trigger = yes
+						}
+						modifier = {
+							add = {
+								value = attraction
+								multiply = 5
+								max = 100
+							}
+							always = yes
+						}
+						modifier = {
+							factor = 0.5
+							has_trait = chaste
+						}
+						modifier = {
+							factor = 0.5
+							NOR = {
+								stress > 0
+								likely_to_take_lover_trigger = yes
+							}
+						}
+						trigger_event = lmf_army.1260
+					}
+				}
+			}
+		}
+	}
+}
+
+# The Camp Follower
+lmf_army.1010 = {
+	type = character_event
+	title = lmf_army.1010.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:follower = { is_female = yes }
+				}
+				desc = lmf_army.1010.female.start
+			}
+			desc = lmf_army.1010.male.start
+		}
+		desc = lmf_army.1010.end
+	}
+	theme = seduction
+
+	left_portrait = {
+		character = scope:follower
+		animation = flirtation
+	}
+	override_background = { reference = ep3_campfire }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1010 years = 10 }
+			random_list = {
+				10 = {
+					trigger = { is_attracted_to_men = yes }
+					create_character = {
+						template = lmf_beautiful_local
+						gender = male
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = follower
+						after_creation = {
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = homosexual
+							}
+							else = {
+								set_sexuality = heterosexual
+							}
+						}
+					}
+				}
+				15 = {
+					trigger = { is_attracted_to_men = yes }
+					create_character = {
+						template = lmf_beautiful_local
+						gender = male
+						location = scope:army.location
+						faith = scope:army.army_owner.faith
+						culture = scope:army.army_owner.culture
+						save_scope_as = follower
+						after_creation = {
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = homosexual
+							}
+							else = {
+								set_sexuality = heterosexual
+							}
+						}
+					}
+				}
+				10 = {
+					trigger = { is_attracted_to_women = yes }
+					create_character = {
+						template = lmf_prostitute
+						gender = female
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = follower
+						after_creation = {
+							set_variable = { name = army_camp_follower value = yes }
+							set_sexuality = bisexual
+						}
+					}
+				}
+				15 = {
+					trigger = { is_attracted_to_women = yes }
+					create_character = {
+						template = lmf_prostitute
+						gender = female
+						location = scope:army.location
+						faith = scope:army.army_owner.faith
+						culture = scope:army.army_owner.culture
+						save_scope_as = follower
+						after_creation = {
+							set_variable = { name = army_camp_follower value = yes }
+							set_sexuality = bisexual
+						}
+					}
+				}
+				25 = {
+					trigger = { is_attracted_to_women = yes }
+					create_character = {
+						template = lmf_beautiful_local
+						gender = female
+						location = scope:army.location
+						faith = scope:army.army_owner.faith
+						culture = scope:army.army_owner.culture
+						save_scope_as = follower
+						after_creation = {
+							set_variable = { name = army_camp_follower value = yes }
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = heterosexual
+							}
+							else = {
+								set_sexuality = homosexual
+							}
+						}
+					}
+				}
+				25 = {
+					trigger = { is_attracted_to_women = yes }
+					create_character = {
+						template = lmf_beautiful_local
+						gender = female
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = follower
+						after_creation = {
+							set_variable = { name = army_camp_follower value = yes }
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = heterosexual
+							}
+							else = {
+								set_sexuality = homosexual
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1010.a #Why not? I'll pay her a visit
+		lmf_random_sex_and_possible_stray_effect = { CHARACTER = scope:follower }
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = major_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = major_stress_impact_loss
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = -0.5
+				ai_boldness = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 2
+				any_child = { count < 1 }
+				OR = {
+					is_playable_character = yes
+					any_close_family_member = { is_playable_character = yes }
+				}
+			}
+			modifier = {
+				factor = 2
+				is_married = no
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					is_ruler = yes
+					any_heir_title = { exists = holder }
+					any_pretender_title = {
+						exists = holder
+						place_in_line_of_succession = { target = root value < 3 }
+					}
+				}
+				NOT = { any_child = { is_male = yes } }
+			}
+			modifier = {
+				factor = 3
+				has_trait = drunkard
+			}
+			modifier = {
+				factor = 3
+				likely_to_take_lover_trigger = yes
+			}
+			modifier = {
+				factor = 0.5
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+				stress < normal_baseline_stress
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1010.b #Best not
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				just = minor_stress_impact_loss
+				honest = medium_stress_impact_loss
+				chaste = medium_stress_impact_loss
+				lustful = medium_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				deceitful = minor_stress_impact_gain
+			}
+		}
+		else = {
+			stress_impact = {
+				lustful = medium_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				chaste = medium_stress_impact_loss
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 3
+				has_trait = chaste
+			}
+			modifier = {
+				factor = 2
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+			}
+			modifier = {
+				factor = 0.5
+				stress >= lower_than_baseline_stress
+			}
+			modifier = {
+				factor = 0.5
+				stress >= medium_stress
+			}
+			min = 1
+		}
+	}
+
+	after = {
+		# make the camp follower disappear if she's not pregnant after all
+		if = {
+			limit = {
+				exists = scope:follower
+				NOR = {
+					scope:follower = { any_owned_story = { story_type = lmf_stray_seed_story_cycle } }
+					scope:follower = { is_pregnant = yes }
+					any_owned_story = { story_type = story_peasant_affair }
+					is_pregnant = yes
+					is_ai = no
+				}
+			}
+			scope:follower = {
+				hidden_effect = {
+					death = { death_reason = death_vanished }
+				}
+			}
+		}
+	}
+}
+
+# The Tavern Girl
+lmf_army.1020 = {
+	type = character_event
+	title = lmf_army.1020.t
+	desc = lmf_army.1020.desc
+	theme = seduction
+
+	left_portrait = {
+		character = scope:tavern_girl
+		animation = toast_goblet
+	}
+	override_background = { reference = tavern }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1020 years = 10 }
+			random_list = {
+				50 = {
+					create_character = {
+						template = lmf_prostitute
+						gender = female
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = tavern_girl
+						after_creation = {
+							set_variable = { name = army_tavern_girl value = yes }
+							set_sexuality = bisexual
+						}
+					}
+				}
+				50 = {
+					create_character = {
+						template = lmf_beautiful_local
+						gender = female
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = tavern_girl
+						after_creation = {
+							set_variable = { name = army_tavern_girl value = yes }
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = heterosexual
+							}
+							else = {
+								set_sexuality = homosexual
+							}
+						}
+					}
+				}
+			}
+			scope:tavern_girl = { save_scope_as = bg_override_char }
+		}
+	}
+
+	option = {
+		name = lmf_army.1020.a #Don't mind if I do!
+		lmf_random_sex_and_possible_stray_effect = { CHARACTER = scope:tavern_girl }
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = major_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = major_stress_impact_loss
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = -0.5
+				ai_boldness = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 2
+				any_child = { count < 1 }
+				OR = {
+					is_playable_character = yes
+					any_close_family_member = { is_playable_character = yes }
+				}
+			}
+			modifier = {
+				factor = 2
+				is_married = no
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					is_ruler = yes
+					any_heir_title = { exists = holder }
+					any_pretender_title = {
+						exists = holder
+						place_in_line_of_succession = { target = root value < 3 }
+					}
+				}
+				NOT = { any_child = { is_male = yes } }
+			}
+			modifier = {
+				factor = 3
+				has_trait = drunkard
+			}
+			modifier = {
+				factor = 3
+				likely_to_take_lover_trigger = yes
+			}
+			modifier = {
+				factor = 0.5
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+				stress < normal_baseline_stress
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1020.b #I'm not interested
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				just = minor_stress_impact_loss
+				honest = medium_stress_impact_loss
+				chaste = medium_stress_impact_loss
+				lustful = medium_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				deceitful = minor_stress_impact_gain
+			}
+		}
+		else = {
+			stress_impact = {
+				lustful = medium_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				chaste = medium_stress_impact_loss
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 3
+				has_trait = chaste
+			}
+			modifier = {
+				factor = 2
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+			}
+			modifier = {
+				factor = 0.5
+				stress >= lower_than_baseline_stress
+			}
+			modifier = {
+				factor = 0.5
+				stress >= medium_stress
+			}
+			modifier = {
+				factor = 0.5
+				stress >= high_stress
+			}
+			min = 1
+		}
+	}
+
+	after = {
+		# make the tavern girl disappear if she's not pregnant after all
+		if = {
+			limit = {
+				exists = scope:tavern_girl
+				NOR = {
+					scope:tavern_girl = { any_owned_story = { story_type = lmf_stray_seed_story_cycle } }
+					scope:tavern_girl = { is_pregnant = yes }
+					any_owned_story = { story_type = story_peasant_affair }
+					is_pregnant = yes
+					is_ai = no
+				}
+			}
+			scope:tavern_girl = {
+				hidden_effect = {
+					death = { death_reason = death_vanished }
+				}
+			}
+		}
+	}
+}
+
+# Rowdy Night at the Tavern
+lmf_army.1030 = {
+	type = character_event
+	title = lmf_army.1030.t
+	desc = lmf_army.1030.desc
+	theme = unfriendly
+
+	left_portrait = {
+		character = scope:thug
+		animation = threatening
+		outfit_tags = { western_stealth_hood }
+		hide_info = yes
+	}
+	right_portrait = {
+		character = root
+		animation = aggressive_unarmed
+	}
+	override_background = { reference = tavern }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1030 years = 10 }
+			create_character = {
+				template = ep3_murderer_template
+				gender = male
+				location = scope:army.location
+				faith = scope:army.location.county.faith
+				culture = scope:army.location.county.culture
+				save_scope_as = thug
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1030.a # Time to let some fists fly!
+		add_prestige = minor_prestige_gain
+		random = {
+			chance = 50
+			increase_wounds_effect = { REASON = fight }
+
+			# inform a player army owner
+			if = {
+				limit = {
+					scope:army.army_owner = {
+						NOT = { this = root }
+						is_ai = no
+					}
+				}
+				save_scope_as = champion
+				scope:army.location = { save_scope_as = province }
+				scope:army.army_owner = {
+					save_scope_as = player
+					send_interface_message = {
+						type = event_generic_bad_with_text
+						title = lmf_army.1030.a.injury.tt
+						desc = lmf_army.1030.a.injury.desc
+						left_icon = scope:champion
+					}
+				}
+			}
+		}
+		stress_impact = {
+			base = medium_stress_impact_loss
+			wrathful = medium_stress_impact_loss
+			brave = minor_stress_impact_loss
+			vengeful = minor_stress_impact_loss
+			calm = medium_stress_impact_gain
+			craven = minor_stress_impact_gain
+			forgiving = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 30
+			ai_value_modifier = {
+				ai_boldness = 1.0
+				ai_vengefulness = 0.5
+			}
+			modifier = {
+				add = 70
+				stress > normal_baseline_stress
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1030.b # I'll talk things down and buy a round of drinks
+		trigger = { diplomacy >= 12 }
+		show_as_unavailable = { diplomacy < 12 }
+		skill = diplomacy
+		add_prestige = medium_prestige_gain
+		add_diplomacy_lifestyle_xp = 100
+		stress_impact = {
+			base = minor_stress_impact_loss
+			wrathful = medium_stress_impact_gain
+			vengeful = minor_stress_impact_gain
+			calm = medium_stress_impact_loss
+			forgiving = minor_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 30
+			ai_value_modifier = {
+				ai_vengefulness = -0.5
+				ai_rationality = 1.0
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1030.c # Walk away before things get too heated
+		add_prestige = minor_prestige_loss
+		stress_impact = {
+			wrathful = medium_stress_impact_gain
+			brave = minor_stress_impact_gain
+			vengeful = minor_stress_impact_gain
+			calm = medium_stress_impact_loss
+			craven = minor_stress_impact_loss
+			forgiving = minor_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 30
+			ai_value_modifier = {
+				ai_boldness = -1.0
+				ai_vengefulness = -0.5
+			}
+		}
+	}
+
+	after = {
+		scope:thug = {
+			hidden_effect = {
+				death = { death_reason = death_vanished }
+			}
+		}
+	}
+}
+
+# A Night of Merriment
+lmf_army.1040 = {
+	type = character_event
+	title = lmf_army.1040.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army = { is_army_in_siege = yes }
+				}
+				desc = lmf_army.1040.siege.start
+			}
+			desc = lmf_army.1040.march.start
+		}
+		desc = lmf_army.1040.end
+	}
+	theme = friendly
+
+	left_portrait = {
+		character = root
+		animation = toast_goblet
+	}
+	override_background = {
+		trigger = {
+			scope:army = { is_army_in_siege = no }
+		}
+		reference = tavern
+	}
+	override_background = {
+		trigger = {
+			scope:army = { is_army_in_siege = yes }
+		}
+		reference = bp1_bonfire
+	}
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1040 years = 10 }
+			random_list = {
+				1 = {
+					trigger = { has_sexuality = asexual }
+				}
+				25 = {
+					trigger = {
+						is_attracted_to_men = yes
+						scope:army = { is_army_in_siege = yes }
+					}
+					create_character = {
+						template = lmf_beautiful_local
+						gender = male
+						location = scope:army.location
+						faith = root.faith
+						culture = root.culture
+						save_scope_as = follower
+						after_creation = {
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = homosexual
+							}
+							else = {
+								set_sexuality = heterosexual
+							}
+						}
+					}
+				}
+				25 = {
+					trigger = {
+						is_attracted_to_men = yes
+						scope:army = { is_army_in_siege = no }
+					}
+					create_character = {
+						template = lmf_beautiful_local
+						gender = male
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = follower
+						after_creation = {
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = homosexual
+							}
+							else = {
+								set_sexuality = heterosexual
+							}
+						}
+					}
+				}
+				25 = {
+					trigger = {
+						is_attracted_to_women = yes
+						scope:army = { is_army_in_siege = yes }
+					}
+					create_character = {
+						template = lmf_prostitute
+						gender = female
+						location = scope:army.location
+						faith = root.faith
+						culture = root.culture
+						save_scope_as = follower
+						after_creation = {
+							set_variable = { name = army_camp_follower value = yes }
+							set_sexuality = bisexual
+						}
+					}
+				}
+				50 = {
+					trigger = {
+						is_attracted_to_women = yes
+						scope:army = { is_army_in_siege = yes }
+					}
+					create_character = {
+						template = lmf_beautiful_local
+						gender = female
+						location = scope:army.location
+						faith = root.faith
+						culture = root.culture
+						save_scope_as = follower
+						after_creation = {
+							set_variable = { name = army_camp_follower value = yes }
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = heterosexual
+							}
+							else = {
+								set_sexuality = homosexual
+							}
+						}
+					}
+				}
+				50 = {
+					trigger = {
+						is_attracted_to_women = yes
+						scope:army = { is_army_in_siege = no }
+					}
+					create_character = {
+						template = lmf_prostitute
+						gender = female
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = follower
+						after_creation = {
+							set_variable = { name = army_tavern_girl value = yes }
+							set_sexuality = bisexual
+						}
+					}
+				}
+				50 = {
+					trigger = {
+						is_attracted_to_women = yes
+						scope:army = { is_army_in_siege = no }
+					}
+					create_character = {
+						template = lmf_beautiful_local
+						gender = female
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = follower
+						after_creation = {
+							set_variable = { name = army_tavern_girl value = yes }
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = heterosexual
+							}
+							else = {
+								set_sexuality = homosexual
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1040.a # I'll find someone to spend the night with, instead
+		trigger = {
+			NOR = {
+				has_trait = rakish
+				has_trait = chaste
+				has_trait = celibate
+				has_sexuality = asexual
+			}
+		}
+		if = {
+			limit = {
+				scope:follower = { is_male = yes }
+				scope:army = { is_army_in_siege = yes }
+			}
+			custom_tooltip = lmf_army.1040.a.male.camp
+		}
+		else_if = {
+			limit = {
+				scope:follower = { is_male = yes }
+			}
+			custom_tooltip = lmf_army.1040.a.male.tavern
+		}
+		else_if = {
+			limit = {
+				scope:follower = { is_female = yes }
+				scope:army = { is_army_in_siege = yes }
+			}
+			custom_tooltip = lmf_army.1040.a.female.camp
+		}
+		else = {
+			custom_tooltip = lmf_army.1040.a.female.tavern
+		}
+		hidden_effect = {
+			lmf_random_sex_and_possible_stray_effect = { CHARACTER = scope:follower }
+		}
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = medium_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = minor_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = medium_stress_impact_loss
+				lustful = minor_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = -0.5
+				ai_boldness = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 2
+				any_child = { count < 1 }
+				OR = {
+					is_playable_character = yes
+					any_close_family_member = { is_playable_character = yes }
+				}
+			}
+			modifier = {
+				factor = 2
+				is_married = no
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					is_ruler = yes
+					any_heir_title = { exists = holder }
+					any_pretender_title = {
+						exists = holder
+						place_in_line_of_succession = { target = root value < 3 }
+					}
+				}
+				NOT = {
+					any_child = { is_male = yes }
+				}
+			}
+			modifier = {
+				factor = 3
+				likely_to_take_lover_trigger = yes
+			}
+			modifier = {
+				factor = 0.5
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+				stress < normal_baseline_stress
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1040.a # I'll find someone to spend the night with, instead
+		trigger = { has_trait = rakish }
+		trait = rakish
+		if = {
+			limit = {
+				scope:follower = { is_male = yes }
+				scope:army = { is_army_in_siege = yes }
+			}
+			custom_tooltip = lmf_army.1040.a.male.camp
+		}
+		else_if = {
+			limit = {
+				scope:follower = { is_male = yes }
+			}
+			custom_tooltip = lmf_army.1040.a.male.tavern
+		}
+		else_if = {
+			limit = {
+				scope:follower = { is_female = yes }
+				scope:army = { is_army_in_siege = yes }
+			}
+			custom_tooltip = lmf_army.1040.a.female.camp
+		}
+		else = {
+			custom_tooltip = lmf_army.1040.a.female.tavern
+		}
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = major_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = minor_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = major_stress_impact_loss
+				lustful = minor_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+		hidden_effect = {
+			lmf_random_sex_and_possible_stray_effect = { CHARACTER = scope:follower }
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+	option = {
+		name = lmf_army.1040.b # I'll go find someone to spar with, instead
+		trigger = { has_trait = athletic }
+		trait = athletic
+		add_character_modifier = {
+			modifier = travel_sore_muscles_modifier
+			days = 30
+		}
+		stress_impact = {
+			base = medium_stress_impact_loss
+			diligent = minor_stress_impact_loss
+			lazy = medium_stress_impact_gain
+			drunkard = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 75
+		}
+	}
+	option = {
+		name = lmf_army.1040.c # Surely there's some gambling to join, instead?
+		trigger = { has_trait = profligate }
+		trait = profligate
+		random_list = {
+			50 = { remove_short_term_gold = medium_gold_value }
+			50 = { add_short_term_gold = medium_gold_value }
+		}
+		stress_impact = {
+			base = medium_stress_impact_loss
+			greedy = minor_stress_impact_loss
+			generous = minor_stress_impact_gain
+			drunkard = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 75
+		}
+	}
+	option = {
+		name = lmf_army.1040.d # I'll go raid the mess tent, instead
+		trigger = { has_trait = comfort_eater }
+		trait = comfort_eater
+		change_current_weight = 10
+		add_character_modifier = {
+			modifier = ate_myself_sick_modifier
+			days = 30
+		}
+		stress_impact = {
+			base = medium_stress_impact_loss
+			gluttonous = minor_stress_impact_loss
+			lazy = minor_stress_impact_loss
+			diligent = minor_stress_impact_gain
+			drunkard = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 75
+		}
+	}
+	option = {
+		name = lmf_army.1040.e # A night of excess is exactly what I need!
+		add_character_modifier = {
+			modifier = revelry_consequences_modifier
+			days = 30
+		}
+		if = {
+			limit = {
+				NOT = { has_trait = drunkard }
+				can_be_drunkard = yes
+			}
+			random = {
+				chance = 20
+				add_trait_force_tooltip = drunkard
+			}
+		}
+		stress_impact = {
+			base = major_stress_impact_loss
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				has_trait = drunkard
+				factor = 3
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1040.f # I can resist the temptation. Best to retire now.
+		trigger = {
+			NOR = {
+				has_trait = drunkard
+				stress_level >= 2
+			}
+		}
+		show_as_unavailable = {
+			OR = {
+				has_trait = drunkard
+				stress_level >= 2
+			}
+		}
+		stress_impact = {
+			base = medium_stress_impact_gain
+			gregarious = minor_stress_impact_gain
+			shy = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 25
+		}
+	}
+
+	after = {
+		# make the camp follower disappear if she's not pregnant after all
+		if = {
+			limit = {
+				exists = scope:follower
+				NOR = {
+					scope:follower = { any_owned_story = { story_type = lmf_stray_seed_story_cycle } }
+					scope:follower = { is_pregnant = yes }
+					any_owned_story = { story_type = story_peasant_affair }
+					is_pregnant = yes
+					is_ai = no
+				}
+			}
+			scope:follower = {
+				hidden_effect = {
+					death = { death_reason = death_vanished }
+				}
+			}
+		}
+	}
+}
+
+# Friends in Arms
+lmf_army.1050 = {
+	type = character_event
+	title = lmf_army.1050.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army = { is_army_in_siege = yes }
+				}
+				desc = lmf_army.1050.siege.start
+			}
+			desc = lmf_army.1050.march.start
+		}
+		desc = lmf_army.1050.end
+	}
+	theme = friendly
+
+	left_portrait = {
+		character = scope:army_friend
+		animation = debating
+	}
+	right_portrait = {
+		character = root
+		animation = laugh
+	}
+	override_background = { reference = army_camp }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1050 years = 10 }
+			random_in_list = {
+				list = liege_knights
+				limit = {
+					num_of_relation_friend <= 3
+					can_set_relation_friend_trigger = { CHARACTER = root }
+					OR = {
+						has_relation_potential_friend = root
+						AND = {
+							trait_compatibility = { target = root value >= 15 }
+							opinion = { target = root value >= 0 }
+							reverse_opinion = { target = root value >= 0 }
+						}
+						AND = {
+							trait_compatibility = { target = root value >= 5 }
+							opinion = { target = root value >= 20 }
+							reverse_opinion = { target = root value >= 20 }
+						}
+					}
+				}
+				weight = {
+					base = 1
+					opinion_modifier = {
+						who = root
+						opinion_target = this
+						multiplier = 0.5
+					}
+					opinion_modifier = {
+						who = this
+						opinion_target = root
+						multiplier = 0.5
+					}
+					compatibility_modifier = {
+						compatibility_target = root
+						multiplier = 5
+					}
+					ai_value_modifier = {
+						ai_sociability = 0.5
+					}
+					modifier = {
+						has_relation_potential_friend = root
+						add = 50
+					}
+					modifier = {
+						is_playable_character = yes
+						root = { is_playable_character = yes }
+						add = 25
+					}
+					modifier = {
+						is_lowborn = yes
+						root = { is_lowborn = no }
+						factor = 0.5
+					}
+					min = 1
+				}
+				save_scope_as = army_friend
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1050.a # It is! A new friend.
+		set_relation_friend = {
+			target = scope:army_friend
+			reason = made_friend_at_army_camp
+			province = scope:army.location
+		}
+
+		# inform a player army owner
+		if = {
+			limit = {
+				scope:army.army_owner = {
+					NOT = { this = root }
+					is_ai = no
+				}
+				OR = {
+					is_close_family_of = scope:army.army_owner
+					is_vassal_of = scope:army.army_owner
+					scope:army_friend = { is_close_family_of = scope:army.army_owner }
+					scope:army_friend = { is_vassal_of = scope:army.army_owner }
+				}
+			}
+			save_scope_as = champion
+			scope:army.location = { save_scope_as = province }
+			scope:army.army_owner = {
+				save_scope_as = player
+				send_interface_message = {
+					type = event_generic_good_with_text
+					title = lmf_army.1050.a.friend.tt
+					desc = lmf_army.1050.a.friend.desc
+					left_icon = scope:champion
+					right_icon = scope:army_friend
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 70
+			modifier = {
+				has_dynasty = yes
+				scope:army_friend = { is_lowborn = yes }
+				add = -20
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1050.b # I enjoyed his company, but let's not get crazy.
+		if = {
+			limit = {
+				NOT = { has_relation_potential_friend = scope:army_friend }
+			}
+			set_relation_potential_friend = scope:army_friend
+		}
+		reverse_add_opinion = { modifier = friendliness_opinion target = scope:army_friend opinion = 20 }
+		hidden_effect = {
+			add_opinion = { modifier = friendliness_opinion target = scope:army_friend opinion = 20 }
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				has_dynasty = yes
+				scope:army_friend = { is_lowborn = yes }
+				add = 100
+			}
+		}
+	}
+}
+
+# Rivals in Arms
+lmf_army.1060 = {
+	type = character_event
+	title = lmf_army.1060.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army = { is_army_in_siege = yes }
+				}
+				desc = lmf_army.1050.siege.start
+			}
+			desc = lmf_army.1050.march.start
+		}
+		desc = lmf_army.1060.mid
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army_rival = { has_revenge_motivation_against = { CHARACTER = root } }
+				}
+				desc = lmf_army.1060.revenge
+			}
+			triggered_desc = {
+				trigger = {
+					scope:army_rival = {
+						OR = {
+							is_jealous_of_their_lover = { CHARACTER = root }
+							is_jealous_of_their_court_position = { CHARACTER = root }
+							is_jealous_of_their_council_position = { CHARACTER = root }
+							is_jealous_of_their_heir_position = { CHARACTER = root }
+						}
+					}
+				}
+				desc = lmf_army.1060.jealous
+			}
+			triggered_desc = {
+				trigger = {
+					scope:army_rival = { is_resentful_of_impious_character = { CHARACTER = root } }
+				}
+				desc = lmf_army.1060.impious
+			}
+			triggered_desc = {
+				trigger = {
+					scope:army_rival = { is_resentful_of_pious_character = { CHARACTER = root } }
+				}
+				desc = lmf_army.1060.pious
+			}
+			triggered_desc = {
+				trigger = {
+					scope:army_rival = {
+						OR = {
+							is_resentful_of_hostile_faith_character = { CHARACTER = root }
+							is_resentful_of_pious_astray_faith_character = { CHARACTER = root }
+						}
+					}
+				}
+				desc = lmf_army.1060.faith
+			}
+			triggered_desc = {
+				trigger = {
+					scope:army_rival = { has_major_incompatibility_with = { CHARACTER = root } }
+				}
+				desc = lmf_army.1060.differences
+			}
+			desc = lmf_army.1060.hatred
+		}
+		desc = lmf_army.1060.end
+	}
+	theme = unfriendly
+
+	left_portrait = {
+		character = scope:army_rival
+		animation = aggressive_unarmed
+	}
+	right_portrait = {
+		character = root
+		animation = anger
+	}
+	override_background = { reference = ep3_campfire }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1060 years = 10 }
+			random_in_list = {
+				list = liege_knights
+				limit = {
+					num_of_relation_rival <= 2
+					can_set_relation_rival_trigger = { CHARACTER = root }
+					OR = {
+						ai_vengefulness > 0
+						is_hot_headed_trigger = yes
+					}
+					trigger_if = {
+						limit = { root = { is_playable_character = yes } }
+						has_dynasty = yes
+						OR = {
+							is_relevant_family_member = { CHARACTER = root }
+							is_playable_character = yes
+						}
+					}
+					OR = {
+						has_relation_potential_rival = root
+						has_relation_bully = root
+						has_relation_grudge = root
+						has_revenge_motivation_against = { CHARACTER = root }
+						is_resentful_of_impious_character = { CHARACTER = root }
+						is_resentful_of_pious_character = { CHARACTER = root }
+						is_resentful_of_hostile_faith_character = { CHARACTER = root }
+						is_resentful_of_pious_astray_faith_character = { CHARACTER = root }
+						has_hatred_towards = { CHARACTER = root }
+						has_major_incompatibility_with = { CHARACTER = root }
+						is_jealous_of_their_lover = { CHARACTER = root }
+						is_jealous_of_their_court_position = { CHARACTER = root }
+						is_jealous_of_their_council_position = { CHARACTER = root }
+						is_jealous_of_their_heir_position = { CHARACTER = root }
+					}
+				}
+				weight = {
+					base = 1
+					opinion_modifier = {
+						opinion_target = root
+						multiplier = -2
+					}
+				}
+				save_scope_as = army_rival
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1060.a # This is unforgiveable!
+		set_relation_rival = {
+			target = scope:army_rival
+			reason = became_rivals_army_camp
+			province = scope:army.location
+		}
+
+		# inform a player army owner
+		if = {
+			limit = {
+				scope:army.army_owner = {
+					NOT = { this = root }
+					is_ai = no
+				}
+				OR = {
+					is_close_family_of = scope:army.army_owner
+					is_vassal_of = scope:army.army_owner
+					scope:army_rival = { is_close_family_of = scope:army.army_owner }
+					scope:army_rival = { is_vassal_of = scope:army.army_owner }
+				}
+			}
+			save_scope_as = champion
+			scope:army.location = { save_scope_as = province }
+			scope:army.army_owner = {
+				save_scope_as = player
+				send_interface_message = {
+					type = event_generic_bad_with_text
+					title = lmf_army.1060.a.rival.tt
+					desc = lmf_army.1060.a.rival.desc
+					left_icon = scope:champion
+					right_icon = scope:army_rival
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = 1
+				min = -49
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1060.b # Perhaps I can talk him down, have a drink...
+		trigger = { diplomacy >= 12 }
+		show_as_unavailable = { diplomacy < 12 }
+		skill = diplomacy
+		add_diplomacy_lifestyle_xp = 50
+		reverse_add_opinion = { target = scope:army_rival modifier = upset_opinion opinion = -20 }
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = 1
+				ai_compassion = 0.5
+				min = -50
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1060.c # I won't let him provoke me.
+		if = {
+			limit = {
+				NOT = { has_relation_potential_rival = root }
+			}
+			set_relation_potential_rival = scope:army_rival
+		}
+		reverse_add_opinion = { modifier = hate_opinion target = scope:army_rival opinion = -40 }
+		hidden_effect = {
+			add_opinion = { modifier = irritated_opinion target = scope:army_rival opinion = -20 }
+		}
+		stress_impact = {
+			base = medium_stress_impact_gain
+			wrathful = medium_stress_impact_gain
+			vengeful = medium_stress_impact_gain
+			calm = minor_stress_impact_loss
+			forgiving = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = -1
+				min = -50
+			}
+		}
+	}
+}
+
+# Boiling Over
+lmf_army.1070 = {
+	type = character_event
+	title = lmf_army.1070.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army = { is_army_in_siege = yes }
+				}
+				desc = lmf_army.1050.siege.start
+			}
+			desc = lmf_army.1050.march.start
+		}
+		desc = lmf_army.1070.mid
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					OR = {
+						scope:army_rival.top_liege = root
+						scope:army_rival.liege = root
+					}
+				}
+				desc = lmf_army.1070.liege
+			}
+			triggered_desc = {
+				trigger = { scope:army_rival.knight_army.army_commander ?= root }
+				desc = lmf_army.1070.commander
+			}
+			desc = lmf_army.1070.knight
+		}
+	}
+	theme = unfriendly
+
+	left_portrait = {
+		character = scope:army_rival
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = root
+		animation = disapproval
+	}
+	override_background = { reference = ep3_campfire }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1070 years = 10 }
+			random_in_list = {
+				list = liege_knights
+				limit = {
+					has_relation_rival = root
+					NOT = { has_trait = wounded }
+					OR = {
+						ai_vengefulness > 0
+						is_hot_headed_trigger = yes
+					}
+					trigger_if = {
+						limit = {
+							OR = {
+								liege = root
+								top_liege = root
+								knight_army.army_commander ?= root
+								AND = {
+									scope:army.army_commander = root
+									NOT = { exists = commanding_army }
+								}
+							}
+						}
+						ai_rationality <= very_high_negative_ai_value
+					}
+					trigger_if = {
+						limit = { prowess_plus_5 <= root.prowess }
+						OR = {
+							ai_boldness >= very_high_positive_ai_value
+							ai_rationality <= very_high_negative_ai_value
+						}
+					}
+				}
+				weight = {
+					base = 1
+					opinion_modifier = {
+						opinion_target = root
+						multiplier = -2
+					}
+					modifier = {
+						has_relation_nemesis = root
+						add = 200
+					}
+				}
+				save_scope_as = army_rival
+			}
+
+			root = { save_scope_as = duel_opponent }
+			if = {
+				limit = { is_ai = no }
+				root = { save_scope_as = update_char }
+			}
+			else = {
+				scope:army.army_owner = { save_scope_as = update_char }
+			}
+
+			# will they progress to nemesis if the duel goes ahead?
+			if = {
+				limit = {
+					scope:army_rival = {
+						can_set_relation_nemesis_trigger = { CHARACTER = scope:duel_opponent }
+					}
+				}
+				random = {
+					chance = 20
+					modifier = {
+						add = 20
+						scope:army_rival = {
+							OR = {
+								has_personality_malicious_trigger = yes
+								is_hot_headed_trigger = yes
+							}
+						}
+					}
+					modifier = {
+						add = 20
+						scope:duel_opponent = {
+							OR = {
+								has_personality_malicious_trigger = yes
+								is_hot_headed_trigger = yes
+							}
+						}
+					}
+					modifier = {
+						factor = 0.5
+						scope:army_rival = {
+							OR = {
+								has_personality_benevolent_trigger = yes
+								has_personality_levelheaded_trigger = yes
+							}
+						}
+					}
+					modifier = {
+						factor = 0.5
+						scope:duel_opponent = {
+							OR = {
+								has_personality_benevolent_trigger = yes
+								has_personality_levelheaded_trigger = yes
+							}
+						}
+					}
+					save_scope_value_as = {
+						name = nemesis_check
+						value = flag:yes
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1070.a # If it's a duel he wants, so be it!
+		duel = {
+			skill = prowess
+			target = scope:army_rival
+			5 = {
+				trigger = {
+					NOR = {
+						has_trait = compassionate
+						has_trait = forgiving
+						has_trait = gallant #you don't kill people in duels!
+						AND = {
+							NOT = { has_relation_nemesis = scope:army_rival }
+							has_trait = lifestyle_blademaster #I am too careful with blades... unless I WANT to kill them
+						}
+					}
+				}
+				desc = lmf_army.1070.a.root.kill.tt
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.5
+				}
+				modifier = {
+					factor = 2
+					has_relation_nemesis = scope:army_rival
+				}
+				modifier = {
+					factor = 2
+					has_personality_malicious_trigger = yes
+				}
+				modifier = {
+					factor = 0.5
+					OR = {
+						has_personality_benevolent_trigger = yes
+						has_personality_levelheaded_trigger = yes
+					}
+				}
+				scope:update_char = {
+					send_interface_message = {
+						type = event_generic_bad_with_text
+						title = lmf_army.1070.a.root.kill.title
+						desc = {
+							first_valid = {
+								triggered_desc = {
+									trigger = {
+										OR = {
+											scope:army_rival.top_liege = scope:duel_opponent
+											scope:army_rival.liege = scope:duel_opponent
+											scope:army_rival.knight_army.army_commander ?= scope:duel_opponent
+										}
+									}
+									desc = lmf_army.1070.a.root.kill.sanctioned.desc
+								}
+								desc = lmf_army.1070.a.root.kill.desc
+							}
+						}
+						left_icon = scope:duel_opponent
+						right_icon = scope:army_rival
+						scope:army_rival = {
+							death = {
+								death_reason = death_duel
+								killer = scope:duel_opponent
+							}
+						}
+					}
+				}
+			}
+			55 = {
+				desc = lmf_army.1070.a.root.win.tt
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.5
+				}
+				scope:update_char = {
+					send_interface_message = {
+						type = event_generic_neutral_with_text
+						title = lmf_army.1070.a.root.win.title
+						desc = {
+							first_valid = {
+								triggered_desc = {
+									trigger = {
+										OR = {
+											scope:army_rival.top_liege = scope:duel_opponent
+											scope:army_rival.liege = scope:duel_opponent
+											scope:army_rival.knight_army.army_commander ?= scope:duel_opponent
+										}
+									}
+									desc = lmf_army.1070.a.root.win.sanctioned.desc
+								}
+								desc = lmf_army.1070.a.root.win.desc
+							}
+						}
+						left_icon = scope:duel_opponent
+						right_icon = scope:army_rival
+						scope:army_rival = {
+							increase_wounds_effect = { REASON = duel }
+							if = {
+								limit = { exists = scope:nemesis_check }
+								set_relation_nemesis = {
+									target = scope:duel_opponent
+									reason = army_camp_duel_rivalry
+								}
+							}
+						}
+					}
+				}
+			}
+			35 = {
+				desc = lmf_army.1070.a.rival.win.tt
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.5
+				}
+				scope:update_char = {
+					send_interface_message = {
+						type = event_generic_neutral_with_text
+						title = lmf_army.1070.a.rival.win.title
+						desc = {
+							first_valid = {
+								triggered_desc = {
+									trigger = {
+										OR = {
+											scope:army_rival.top_liege = scope:duel_opponent
+											scope:army_rival.liege = scope:duel_opponent
+											scope:army_rival.knight_army.army_commander ?= scope:duel_opponent
+										}
+									}
+									desc = lmf_army.1070.a.rival.win.sanctioned.desc
+								}
+								desc = lmf_army.1070.a.rival.win.desc
+							}
+						}
+						left_icon = scope:duel_opponent
+						right_icon = scope:army_rival
+						scope:duel_opponent = {
+							increase_wounds_effect = { REASON = duel }
+							if = {
+								limit = { exists = scope:nemesis_check }
+								set_relation_nemesis = {
+									target = scope:army_rival
+									reason = army_camp_duel_rivalry
+								}
+							}
+						}
+					}
+				}
+			}
+			5 = {
+				trigger = {
+					scope:army_rival = {
+						NOR = {
+							has_trait = compassionate
+							has_trait = forgiving
+							has_trait = gallant #you don't kill people in duels!
+							AND = {
+								NOT = { has_relation_nemesis = scope:duel_opponent }
+								has_trait = lifestyle_blademaster #I am too careful with blades... unless I WANT to kill them
+							}
+						}
+					}
+				}
+				desc = lmf_army.1070.a.rival.kill.tt
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.5
+				}
+				modifier = {
+					factor = 2
+					scope:army_rival = { has_relation_nemesis = scope:duel_opponent }
+				}
+				modifier = {
+					factor = 2
+					scope:army_rival = {
+						has_personality_malicious_trigger = yes
+					}
+				}
+				modifier = {
+					factor = 0.5
+					scope:army_rival = {
+						OR = {
+							has_personality_benevolent_trigger = yes
+							has_personality_levelheaded_trigger = yes
+						}
+					}
+				}
+				scope:update_char = {
+					send_interface_message = {
+						type = event_generic_bad_with_text
+						title = lmf_army.1070.a.rival.kill.title
+						desc = {
+							first_valid = {
+								triggered_desc = {
+									trigger = {
+										OR = {
+											scope:army_rival.top_liege = scope:duel_opponent
+											scope:army_rival.liege = scope:duel_opponent
+											scope:army_rival.knight_army.army_commander ?= scope:duel_opponent
+										}
+									}
+									desc = lmf_army.1070.a.rival.kill.sanctioned.desc
+								}
+								desc = lmf_army.1070.a.rival.kill.desc
+							}
+						}
+						left_icon = scope:duel_opponent
+						right_icon = scope:army_rival
+						scope:duel_opponent = {
+							death = {
+								death_reason = death_duel
+								killer = scope:army_rival
+							}
+						}
+					}
+				}
+			}
+		}
+		stress_impact = {
+			brave = medium_stress_impact_loss
+			craven = medium_stress_impact_gain
+		}
+		if = {
+			limit = {
+				NOR = {
+					scope:army_rival.top_liege = scope:duel_opponent
+					scope:army_rival.liege = scope:duel_opponent
+					scope:army_rival.knight_army.army_commander ?= scope:duel_opponent
+					scope:duel_opponent = scope:update_char
+				}
+			}
+			scope:update_char = {
+				hidden_effect = {
+					add_opinion = { modifier = unsanctioned_duel_opinion target = scope:duel_opponent }
+					add_opinion = { modifier = unsanctioned_duel_opinion target = scope:army_rival }
+				}
+			}
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 2
+				prowess > scope:army_rival.prowess
+			}
+			modifier = {
+				factor = 2
+				prowess >= scope:army_rival.prowess_plus_5
+			}
+			ai_value_modifier = {
+				ai_boldness = 1
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1070.b # He dares?! Clap him in chains!
+		trigger = {
+			OR = {
+				scope:army_rival.top_liege = root
+				scope:army_rival.liege = root
+			}
+		}
+		rightfully_imprison_character_effect = { TARGET = scope:army_rival IMPRISONER = root }
+
+		# inform a player army owner
+		if = {
+			limit = {
+				scope:army.army_owner = {
+					NOT = { this = root }
+					is_ai = no
+				}
+			}
+			save_scope_as = champion
+			scope:army.location = { save_scope_as = province }
+			scope:army.army_owner = {
+				save_scope_as = player
+				send_interface_message = {
+					type = event_generic_bad_with_text
+					title = lmf_army.1070.b.imprison.tt
+					desc = lmf_army.1070.b.imprison.desc
+					left_icon = scope:champion
+					right_icon = scope:army_rival
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = 1
+				ai_boldness = -0.5
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1070.c # I will walk away, the bigger man
+		stress_impact = {
+			base = medium_stress_impact_gain
+			wrathful = medium_stress_impact_gain
+			vengeful = medium_stress_impact_gain
+			brave = medium_stress_impact_gain
+			craven = medium_stress_impact_loss
+			calm = minor_stress_impact_loss
+			forgiving = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 3
+				prowess < scope:army_rival.prowess
+			}
+			modifier = {
+				factor = 3
+				prowess_plus_5 < scope:army_rival.prowess
+			}
+			ai_value_modifier = {
+				trigger = {
+					is_courtier = yes
+					NOT = { exists = commanding_army }
+				}
+				ai_rationality = 1
+			}
+			ai_value_modifier = {
+				ai_boldness = -1
+				ai_vengefulness = -1
+			}
+			min = 1
+		}
+	}
+}
+
+# Lovers in Arms
+lmf_army.1080 = {
+	type = character_event
+	title = lmf_army.1080.t
+	desc = lmf_army.1080.desc
+	theme = seduction
+
+	left_portrait = {
+		character = scope:army_lover
+		animation = flirtation
+	}
+	right_portrait = {
+		character = root
+		animation = interested_left
+	}
+	override_background = { reference = ep3_relaxing_tent }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1080 years = 10 }
+
+			every_in_list = {
+				list = potential_army_lovers
+				remove_from_list = potential_army_lovers
+			}
+
+			# make a list of all available knights
+			every_in_list = {
+				list = liege_knights
+				limit = {
+					is_appropriate_army_lover_with = { TARGET = root }
+				}
+
+				# first figure out how much the current character is attracted to them
+				save_temporary_scope_as = candidate
+				root = {
+					save_temporary_opinion_value_as = { name = match_opinion target = scope:candidate }
+					save_temporary_scope_as = match
+				}
+				set_variable = { name = sexual_interest_value value = sexual_attraction_value days = 1 }
+
+				# now how much they're attracted to the current character
+				root = { save_scope_as = candidate }
+				save_temporary_opinion_value_as = { name = match_opinion target = scope:candidate }
+				save_temporary_scope_as = match
+
+				change_variable = { name = sexual_interest_value add = scope:candidate.sexual_attraction_value }
+
+				# check and see if attraction is too low for them to be regular lovers
+				if = {
+					limit = {
+						OR = {
+							var:sexual_interest_value <= 0
+							scope:candidate.sexual_attraction_value <= 0
+						}
+					}
+					set_variable = { name = will_not_be_lover value = yes days = 1 }
+				}
+				add_to_list = potential_army_lovers
+			}
+
+			# now find the one most likely to be the lover
+			ordered_in_list = {
+				list = potential_army_lovers
+				order_by = {
+					value = var:sexual_interest_value
+					if = {
+						limit = { has_relation_potential_lover = root }
+						add = 50
+					}
+					if = {
+						limit = { has_relation_crush = root }
+						add = 25
+					}
+					if = {
+						limit = { likely_to_take_lover_trigger = yes }
+						add = 25
+					}
+				}
+				save_scope_as = army_lover
+				make_naked_effect = yes
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1080.a # This might be the beginning of something special.
+		trigger = {
+			can_set_relation_lover_trigger = { CHARACTER = scope:army_lover }
+		}
+		had_sex_with_effect = { CHARACTER = scope:army_lover PREGNANCY_CHANCE = pregnancy_chance }
+		set_relation_lover = {
+			target = scope:army_lover
+			reason = army_camp_rendezvous
+			province = scope:army.location
+		}
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = major_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = major_stress_impact_loss
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+		ai_chance = {
+			base = 30
+			modifier = {
+				factor = 0
+				is_ai = yes
+				exists = scope:army_lover.var:will_not_be_lover
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1080.b # Take him in my arms, but just for tonight.
+		had_sex_with_effect = { CHARACTER = scope:army_lover PREGNANCY_CHANCE = pregnancy_chance }
+		reverse_add_opinion = { modifier = tryst_opinion target = scope:army_lover opinion = 20 }
+		hidden_effect = {
+			add_opinion = { modifier = tryst_opinion target = scope:army_lover opinion = 20 }
+		}
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = medium_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = medium_stress_impact_loss
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+		ai_chance = {
+			base = 20
+		}
+	}
+	option = {
+		name = lmf_army.1080.c # No, this isn't going to happen.
+		reverse_add_opinion = { modifier = disappointed_opinion target = scope:army_lover opinion = -10 }
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = -30
+				likely_to_take_lover_trigger = yes
+			}
+			modifier = {
+				factor = 0.5
+				stress > normal_baseline_stress
+			}
+			modifier = {
+				factor = 0.5
+				stress >= high_medium_stress
+			}
+		}
+	}
+
+	after = {
+		scope:army_lover = { remove_naked_effect = yes }
+	}
+}
+
+# A Moment of Respite
+lmf_army.1090 = {
+	type = character_event
+	title = lmf_army.1090.t
+	desc = lmf_army.1090.desc
+	theme = friendly
+
+	left_portrait = {
+		character = scope:army_entertainer
+		animation = dancing
+	}
+	right_portrait = {
+		character = root
+		animation = laugh
+	}
+	override_background = { reference = bp1_bonfire }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1090 years = 10 }
+
+			# pick out a knight to be entertainer
+			random_in_list = {
+				list = liege_knights
+				limit = {
+					diplomacy >= 12
+					ai_sociability > 0
+					NOT = { has_relation_rival = root }
+				}
+				alternative_limit = {
+					diplomacy > 8
+					ai_sociability > 0
+				}
+				alternative_limit = {
+					ai_sociability > 0
+				}
+				alternative_limit = {
+					always = yes
+				}
+				weight = {
+					base = 1
+					modifier = {
+						always = yes
+						add = {
+							value = diplomacy
+							subtract = 5
+							multiply = 5
+						}
+					}
+					modifier = {
+						always = yes
+						add = ai_sociability
+					}
+					min = 1
+				}
+				save_scope_as = army_entertainer
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1090.a
+		stress_impact = {
+			base = medium_stress_impact_loss
+			gregarious = medium_stress_impact_loss
+			shy = minor_stress_impact_gain
+			reclusive = minor_stress_impact_gain
+		}
+	}
+}
+
+# The Nights Grow Long
+lmf_army.1100 = {
+	type = character_event
+	title = lmf_army.1100.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army = { is_army_in_siege = yes }
+				}
+				desc = lmf_army.1050.siege.start
+			}
+			desc = lmf_army.1050.march.start
+		}
+		desc = lmf_army.1100.end
+	}
+	theme = unfriendly
+
+	left_portrait = {
+		character = root
+		animation = eyeroll
+	}
+	override_background = { reference = ep3_campfire }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1100 years = 10 }
+		}
+	}
+
+	option = {
+		name = lmf_army.1100.a
+		stress_impact = {
+			base = medium_stress_impact_gain
+			lazy = minor_stress_impact_loss
+			patient = minor_stress_impact_loss
+			diligent = minor_stress_impact_gain
+			impatient = minor_stress_impact_gain
+		}
+	}
+}
+
+# Rainy Days
+lmf_army.1110 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army.location = { graphical_wilderness_desert_trigger = yes }
+				}
+				desc = lmf_army.1110.t.desert
+			}
+			desc = lmf_army.1110.t
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army = { is_army_in_siege = yes }
+				}
+				desc = lmf_army.1050.siege.start
+			}
+			desc = lmf_army.1050.march.start
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army.location = { graphical_wilderness_desert_trigger = yes }
+				}
+				desc = lmf_army.1110.desert
+			}
+			desc = lmf_army.1110.normal
+		}
+		desc = lmf_army.1110.end
+	}
+	theme = physical_health
+
+	left_portrait = {
+		character = root
+		animation = cough
+	}
+	override_background = { reference = ep3_campfire }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1110 years = 10 }
+
+			# see if they get pneumonia instead
+			random = {
+				chance = 20
+				save_scope_value_as = { name = gets_pneumonia value = yes }
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1110.a
+		if = {
+			limit = { exists = scope:gets_pneumonia }
+			contract_disease_effect = { DISEASE = pneumonic TREATMENT_EVENT = yes }
+		}
+		else = {
+			contract_disease_effect = { DISEASE = ill TREATMENT_EVENT = yes }
+		}
+	}
+}
+
+# A Step Too Far
+lmf_army.1120 = {
+	type = character_event
+	title = lmf_army.1120.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army.location.county.holder.top_liege = { is_at_war_with = scope:army.army_owner }
+				}
+				desc = lmf_army.1120.war
+			}
+			desc = lmf_army.1120.nowar
+		}
+		desc = lmf_army.1120.end
+	}
+	theme = unfriendly
+
+	left_portrait = {
+		character = scope:local_peasant
+		animation = beg
+		outfit_tags = { travel_cloak }
+		hide_info = yes
+	}
+	right_portrait = {
+		character = scope:army_bully
+		animation = aggressive_sword
+	}
+
+	override_background = {
+		trigger = {
+			scope:army.location.county.holder.top_liege = { is_at_war_with = scope:army.army_owner }
+		}
+		reference = ce1_condemned_village
+	}
+	override_background = {
+		trigger = {
+			scope:army.location.county.holder.top_liege = {
+				NOT = { is_at_war_with = scope:army.army_owner }
+			}
+		}
+		reference = market
+	}
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1120 years = 10 }
+
+			# pick out the bully
+			random_in_list = {
+				list = liege_knights
+				limit = {
+					ai_compassion <= medium_negative_ai_value
+					NOT = { has_relation_rival = root }
+				}
+				weight = {
+					base = 1
+					modifier = {
+						always = yes
+						add = {
+							value = ai_compassion
+							multiply = 5
+						}
+					}
+					modifier = {
+						factor = 0.5
+						is_lowborn = yes
+						root = { has_dynasty = yes }
+					}
+				}
+				save_scope_as = army_bully
+				add_character_flag = forced_knight_armor
+			}
+
+			# create the local peasant
+			create_character = {
+				gender = female
+				age = { 35 50 }
+				dynasty = none
+				random_traits = yes
+				location = scope:army.location
+				faith = scope:army.location.county.faith
+				culture = scope:army.location.county.culture
+				save_scope_as = local_peasant
+				after_creation = {
+					change_current_weight = -50
+					save_scope_as = bg_override_char
+					if = {
+						limit = {
+							scope:army.location.county.holder.top_liege = { is_at_war_with = scope:army.army_owner }
+						}
+						add_trait = wounded_1
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1120.a # Stop him before this goes too far
+		worsen_relationship_effect = {
+			TARGET = scope:army_bully
+			REASON = interfered_with_army_bully
+		}
+		stress_impact = {
+			compassionate = medium_stress_impact_loss
+			just = medium_stress_impact_gain
+			brave = minor_stress_impact_loss
+			sadistic = minor_stress_impact_gain
+			craven = minor_stress_impact_gain
+			arbitrary = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = 1
+				ai_boldness = 0.5
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1120.b # That's his business, not mine
+		stress_impact = {
+			compassionate = medium_stress_impact_gain
+			brave = medium_stress_impact_gain
+			just = minor_stress_impact_gain
+			sadistic = minor_stress_impact_loss
+			craven = minor_stress_impact_loss
+			arbitrary = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = -1
+				ai_boldness = -0.5
+			}
+			min = 1
+		}
+	}
+
+	after = {
+		scope:army_bully = { remove_character_flag = forced_knight_armor }
+		scope:local_peasant = {
+			hidden_effect = {
+				death = { death_reason = death_vanished }
+			}
+		}
+	}
+}
+
+# A Lucky Catch
+lmf_army.1130 = {
+	type = character_event
+	title = lmf_army.1130.t
+	desc = lmf_army.1130.desc
+	theme = war
+
+	left_portrait = {
+		character = root
+		animation = reading
+	}
+	right_portrait = {
+		character = scope:army_prisoner
+		animation = prisondungeon
+		outfit_tags = { beggar_rags }
+		hide_info = yes
+	}
+	override_background = { reference = ep3_relaxing_tent }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1130 years = 10 }
+			create_character = {
+				template = ep3_murderer_template
+				gender = male
+				location = scope:army.location
+				faith = scope:army.location.county.faith
+				culture = scope:army.location.county.culture
+				save_scope_as = army_prisoner
+				after_creation = {
+					add_trait = wounded_1
+				}
+			}
+			save_scope_as = commander
+		}
+	}
+
+	option = {
+		name = lmf_army.1130.a
+		add_character_modifier = {
+			modifier = enemy_siege_info_modifier
+			months = 3
+		}
+		scope:army.location = {
+			every_army_in_location = {
+				limit = {
+					army_owner = scope:army.army_owner
+					exists = army_commander
+					NOR = {
+						this = scope:army
+						army_commander = { has_character_modifier = enemy_siege_info_modifier }
+					}
+				}
+				army_commander = {
+					if = {
+						limit = { is_ai = no }
+						send_interface_message = {
+							type = event_generic_good_with_text
+							title = lmf_army.1130.a.title
+							desc = lmf_army.1130.a.desc
+							left_icon = scope:commander
+							right_icon = scope:army_prisoner
+							add_character_modifier = {
+								modifier = enemy_siege_info_modifier
+								months = 3
+							}
+						}
+					}
+					else = {
+						add_character_modifier = {
+							modifier = enemy_siege_info_modifier
+							months = 3
+						}
+					}
+				}
+			}
+		}
+	}
+
+	after = {
+		scope:army_prisoner = {
+			hidden_effect = {
+				death = {
+					killer = scope:commander
+					death_reason = death_execution
+				}
+			}
+		}
+	}
+}
+
+# A Promising Soldier
+lmf_army.1140 = {
+	type = character_event
+	title = lmf_army.1140.t
+	desc = lmf_army.1140.desc
+	theme = friendly
+
+	left_portrait = {
+		character = scope:army_potential
+		animation = throne_room_bow_1
+	}
+	right_portrait = {
+		character = root
+		animation = thinking
+	}
+	override_background = { reference = ep3_relaxing_tent }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1140 years = 10 }
+			scope:army.army_owner.capital_county = { save_scope_as = county_template }
+			create_character = {
+				template = lmf_promising_warrior_template
+				location = scope:army.location
+				save_scope_as = army_potential
+				after_creation = {
+					add_character_flag = forced_knight_armor
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1140.a # I'll find a place for him among my knights
+		show_as_tooltip = {
+			add_courtier = scope:army_potential
+		}
+		scope:army_potential = {
+			remove_character_flag = forced_knight_armor
+			hidden_effect = { set_employer = root } #the tooltip this displays is wrong
+			add_opinion = { target = root modifier = grateful_opinion opinion = 20 }
+			if = {
+				limit = {
+					can_be_knight_trigger = { ARMY_OWNER = root }
+				}
+				set_knight_status = force
+			}
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 0
+				NOR = {
+					number_of_knights < max_number_of_knights
+					any_knight = { prowess < scope:army_potential.prowess }
+				}
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1140.b # No, I've no need of his services
+		hidden_effect = {
+			scope:army_potential = {
+				death = { death_reason = death_vanished }
+			}
+		}
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	after = {
+		# make the potential disappear if he's not a courtier
+		if = {
+			limit = {
+				exists = scope:army_potential
+				scope:army_potential = { is_courtier = no }
+			}
+			scope:army_potential = {
+				hidden_effect = {
+					death = { death_reason = death_vanished }
+				}
+			}
+		}
+	}
+}
+
+# A Chance Encounter
+lmf_army.1150 = {
+	type = character_event
+	title = lmf_army.1150.t
+	desc = {
+		desc = lmf_army.1150.begin
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:stranger_origin = flag:poet }
+				desc = lmf_army.1150.poet
+			}
+			triggered_desc = {
+				trigger = { scope:stranger_origin = flag:monk }
+				desc = lmf_army.1150.monk
+			}
+			triggered_desc = {
+				trigger = { scope:stranger_origin = flag:scholar }
+				desc = lmf_army.1150.scholar
+			}
+			triggered_desc = {
+				trigger = { scope:stranger_origin = flag:pilgrim }
+				desc = lmf_army.1150.pilgrim
+			}
+			triggered_desc = {
+				trigger = { scope:stranger_origin = flag:merchant }
+				desc = lmf_army.1150.merchant
+			}
+			triggered_desc = {
+				trigger = { scope:stranger_origin = flag:architect }
+				desc = lmf_army.1150.architect
+			}
+			desc = lmf_army.1150.gallowsbait
+		}
+		desc = lmf_army.1150.end
+	}
+	theme = friendly
+
+	left_portrait = {
+		character = root
+		animation = throne_room_conversation_4
+	}
+	right_portrait = {
+		character = scope:army_stranger
+		animation = throne_room_bow_1
+		outfit_tags = { travel_cloak }
+	}
+	override_background = { reference = ep3_campfire }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1150 years = 10 }
+			scope:army.location.county = { save_scope_as = county_template }
+
+			# create the stranger
+			random_list = {
+				10 = { # Poet
+					create_character = {
+						template = ep3_poet_template
+						age = { 20 40 }
+						gender = male
+						culture = scope:county_template.culture
+						faith = scope:county_template.faith
+						location = scope:army.location
+						dynasty = none
+						save_scope_as = army_stranger
+					}
+					save_scope_value_as = { name = stranger_origin value = flag:poet }
+				}
+				10 = { # Monk/Nun
+					trigger = {
+						scope:county_template.faith = { has_doctrine_parameter = take_vows_active }
+					}
+					create_character = {
+						age = { 30 60 }
+						gender_female_chance = 50
+						random_traits_list = {
+							count = 1
+							education_learning_2 = {}
+							education_learning_3 = {}
+							education_learning_4 = {}
+						}
+						random_traits_list = {
+							count = 1
+							patient = {}
+							diligent = {}
+							calm = {}
+						}
+						learning = {
+							min_template_medium_skill
+							max_template_high_skill
+						}
+						trait = devoted
+						random_traits = yes
+						dynasty = none
+						culture = scope:county_template.culture
+						faith = scope:county_template.faith
+						location = scope:army.location
+						save_scope_as = army_stranger
+					}
+					save_scope_value_as = { name = stranger_origin value = flag:monk }
+				}
+				10 = { # Scholar
+					create_character = {
+						template = foreign_scholar_template
+						gender = male
+						culture = scope:county_template.culture
+						faith = scope:county_template.faith
+						location = scope:army.location
+						save_scope_as = army_stranger
+					}
+					save_scope_value_as = { name = stranger_origin value = flag:scholar }
+				}
+				10 = { # Pilgrim
+					trigger = {
+						scope:county_template.faith = {
+							OR = {
+								has_doctrine = doctrine_pilgrimage_encouraged
+								has_doctrine = doctrine_pilgrimage_mandatory
+							}
+						}
+					}
+					create_character = {
+						template = traveler_character
+						gender = male
+						culture = scope:county_template.culture
+						faith = scope:county_template.faith
+						location = scope:army.location
+						dynasty = none
+						save_scope_as = army_stranger
+					}
+					save_scope_value_as = { name = stranger_origin value = flag:pilgrim }
+				}
+				10 = { # Merchant
+					create_character = {
+						age = { 25 50 }
+						gender = male
+						random_traits_list = {
+							count = 1
+							education_stewardship_2 = {}
+							education_stewardship_3 = {}
+							education_stewardship_4 = {}
+						}
+						random_traits_list = {
+							count = { 0 1 }
+							intellect_good_1 = {}
+							intellect_good_2 = {}
+							shrewd = {}
+							greedy = {}
+						}
+						stewardship = {
+							min_template_medium_skill
+							max_template_high_skill
+						}
+						random_traits = yes
+						dynasty = generate
+						culture = scope:county_template.culture
+						faith = scope:county_template.faith
+						location = scope:army.location
+						save_scope_as = army_stranger
+					}
+					save_scope_value_as = { name = stranger_origin value = flag:merchant }
+				}
+				10 = { # Architect
+					create_character = {
+						template = foreign_architect_template
+						gender = male
+						culture = scope:county_template.culture
+						faith = scope:county_template.faith
+						location = scope:army.location
+						save_scope_as = army_stranger
+					}
+					save_scope_value_as = { name = stranger_origin value = flag:architect }
+				}
+				10 = { # Gallowsbait
+					create_character = {
+						template = celebration_spy_character
+						gender = male
+						culture = scope:county_template.culture
+						faith = scope:county_template.faith
+						location = scope:army.location
+						save_scope_as = army_stranger
+						after_creation = {
+							add_trait = gallowsbait
+						}
+					}
+					#save_scope_value_as = { name = stranger_origin value = flag:gallowsbait }
+				}
+			}
+			scope:army_stranger = { add_trait = wounded_1 }
+		}
+	}
+
+	option = {
+		name = lmf_army.1150.a # I'd be glad for him to join me
+		scope:army_stranger = { add_trait_force_tooltip = loyal }
+		add_courtier = scope:army_stranger
+		reverse_add_opinion = { modifier = grateful_opinion target = scope:army_stranger opinion = 40 }
+		hidden_effect = {
+			add_opinion = { modifier = friendliness_opinion target = scope:army_stranger opinion = 40 }
+		}
+		set_relation_potential_friend = scope:army_stranger
+		ai_chance = {
+			base = 75
+			modifier = {
+				add = 25
+				trait_compatibility = { target = scope:army_stranger value >= 5 }
+			}
+			modifier = {
+				add = 50
+				trait_compatibility = { target = scope:army_stranger value >= 15 }
+			}
+			modifier = {
+				factor = 0.5
+				trait_compatibility = { target = scope:army_stranger value <= -10 }
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1150.b # No, it's time for him to be on his way
+		reverse_add_opinion = { modifier = grateful_opinion target = scope:army_stranger opinion = 20 }
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 50
+				faith = {
+					faith_hostility_level = {
+						target = scope:army_stranger.faith
+						value >= faith_evil_level
+					}
+				}
+			}
+		}
+	}
+}
+
+# Saved by a Stranger
+lmf_army.1160 = {
+	type = character_event
+	title = lmf_army.1160.t
+	desc = {
+		desc = lmf_army.1160.begin
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:stranger_origin = flag:mercenary }
+				desc = lmf_army.1160.mercenary
+			}
+			triggered_desc = {
+				trigger = { scope:stranger_origin = flag:gallowsbait }
+				desc = lmf_army.1160.gallowsbait
+			}
+			desc = lmf_army.1160.gallowsbait
+		}
+		desc = lmf_army.1160.end
+	}
+	theme = friendly
+
+	left_portrait = {
+		character = scope:army_stranger
+		animation = celebrate_sword
+		outfit_tags = { travel_cloak }
+	}
+	right_portrait = {
+		character = root
+		animation = thinking
+	}
+	override_background = { reference = terrain }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1160 years = 10 }
+			scope:army.location.county = { save_scope_as = county_template }
+
+			# create the stranger
+			random_list = {
+				10 = {
+					create_character = {
+						template = lmf_promising_warrior_template
+						gender_female_chance = root_soldier_female_chance
+						location = scope:army.location
+						random_traits_list = {
+							count = 1
+							compassionate = {}
+							brave = {}
+							just = {}
+							humble = {}
+							ambitious = {}
+						}
+						save_scope_as = army_stranger
+						after_creation = {
+							add_character_flag = forced_knight_armor
+						}
+					}
+					save_scope_value_as = { name = stranger_origin value = flag:mercenary }
+				}
+				10 = {
+					create_character = {
+						template = lmf_promising_warrior_template
+						gender_female_chance = root_soldier_female_chance
+						location = scope:army.location
+						random_traits_list = {
+							count = 1
+							vengeful = {}
+							wrathful = {}
+							deceitful = {}
+							cynical = {}
+							ambitious = {}
+						}
+						intrigue = { min_template_decent_skill max_template_high_skill }
+						save_scope_as = army_stranger
+						after_creation = {
+							add_trait = gallowsbait
+							add_character_flag = forced_knight_armor
+						}
+					}
+					save_scope_value_as = { name = stranger_origin value = flag:gallowsbait }
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1160.a # I'll gladly have another friend at court
+		add_courtier = scope:army_stranger
+		set_relation_friend = {
+			target = scope:army_stranger
+			reason = saved_by_army_stranger
+			province = scope:army.location
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 50
+				trait_compatibility = { target = scope:army_stranger value >= 5 }
+			}
+			modifier = {
+				add = 100
+				trait_compatibility = { target = scope:army_stranger value >= 15 }
+			}
+			modifier = {
+				factor = 0.5
+				trait_compatibility = { target = scope:army_stranger value < 0 }
+			}
+			modifier = {
+				factor = 0.5
+				trait_compatibility = { target = scope:army_stranger value <= -10 }
+			}
+			modifier = {
+				factor = 0
+				num_of_relation_friend > 3
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1160.b # I'm happy to have him serve in my court
+		add_courtier = scope:army_stranger
+		reverse_add_opinion = { modifier = friendliness_opinion target = scope:army_stranger opinion = 20 }
+		hidden_effect = {
+			add_opinion = { modifier = grateful_opinion target = scope:army_stranger opinion = 40 }
+		}
+		set_relation_potential_friend = scope:army_stranger
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 0
+				NOR = {
+					number_of_knights < max_number_of_knights
+					any_knight = { prowess < scope:army_stranger.prowess }
+				}
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1160.c # I thank him for his help and go on my way
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 30
+				faith = {
+					faith_hostility_level = {
+						target = scope:army_stranger.faith
+						value >= faith_evil_level
+					}
+				}
+			}
+		}
+	}
+
+	after = {
+		scope:army_stranger = { remove_character_flag = forced_knight_armor }
+	}
+}
+
+# The Supply Problem
+lmf_army.1170 = {
+	type = character_event
+	title = lmf_army.1170.t
+	desc = lmf_army.1170.desc
+	theme = war
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	override_background = { reference = ce1_condemned_village }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1170 years = 10 }
+		}
+	}
+
+	option = {
+		name = lmf_army.1170.a # The suffering of peasants is not my concern
+		scope:army = { refill_supply = yes }
+		scope:army.location = {
+			add_province_modifier = {
+				modifier = recently_looted_modifier
+				months = 12
+			}
+		}
+		stress_impact = {
+			base = minor_stress_impact_gain
+			sadistic = minor_stress_impact_loss
+			callous = minor_stress_impact_loss
+			arbitrary = minor_stress_impact_loss
+			compassionate = medium_stress_impact_gain
+			just = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 2
+				scope:army = { army_supply <= 25 }
+			}
+			ai_value_modifier = {
+				ai_compassion = -1
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1170.b # No, we'll make do with what we have
+		stress_impact = {
+			diligent = minor_stress_impact_gain
+			sadistic = minor_stress_impact_gain
+			just = minor_stress_impact_loss
+			compassionate = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = 1
+			}
+			min = 1
+		}
+	}
+}
+
+# Lost and Found
+lmf_army.1180 = {
+	type = character_event
+	title = lmf_army.1180.t
+	desc = lmf_army.1180.desc
+	theme = friendly
+
+	left_portrait = {
+		character = scope:army_stranger
+		animation = survey
+		outfit_tags = { travel_cloak }
+	}
+	right_portrait = {
+		character = root
+		animation = throne_room_conversation_4
+		outfit_tags = { travel_cloak }
+	}
+	override_background = { reference = terrain }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1180 years = 10 }
+			random_list = {
+				25 = {
+					trigger = { is_attracted_to_men = yes }
+					create_character = {
+						template = lmf_beautiful_local
+						gender = male
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = army_stranger
+						after_creation = {
+							add_trait = lifestyle_traveler
+							every_character_trait = {
+								limit = { bad_maiden_trait_trigger = yes }
+								scope:army_stranger = { remove_trait = prev }
+							}
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = homosexual
+							}
+							else = {
+								set_sexuality = heterosexual
+							}
+						}
+					}
+				}
+				75 = {
+					trigger = { is_attracted_to_women = yes }
+					create_character = {
+						template = lmf_beautiful_local
+						gender = female
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = army_stranger
+						after_creation = {
+							set_variable = { name = army_lost_guide value = yes }
+							add_trait = lifestyle_traveler
+							every_character_trait = {
+								limit = { bad_maiden_trait_trigger = yes }
+								scope:army_stranger = { remove_trait = prev }
+							}
+							if = {
+								limit = { root = { is_male = yes } }
+								set_sexuality = heterosexual
+							}
+							else = {
+								set_sexuality = homosexual
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1180.a # We'll spend a night together, but then I must move on
+		lmf_random_sex_and_possible_stray_effect = { CHARACTER = scope:army_stranger }
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = medium_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = medium_stress_impact_loss
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = -0.5
+				ai_boldness = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 2
+				any_child = { count < 1 }
+				OR = {
+					is_playable_character = yes
+					any_close_family_member = { is_playable_character = yes }
+				}
+			}
+			modifier = {
+				factor = 2
+				is_married = no
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					is_ruler = yes
+					any_heir_title = { exists = holder }
+					any_pretender_title = {
+						exists = holder
+						place_in_line_of_succession = { target = root value < 3 }
+					}
+				}
+				NOT = { any_child = { is_male = yes } }
+			}
+			modifier = {
+				factor = 3
+				likely_to_take_lover_trigger = yes
+			}
+			modifier = {
+				factor = 0.5
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+				stress < normal_baseline_stress
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1180.b # She can join me in X, as my lover
+		trigger = {
+			is_playable_character = yes
+			is_below_ai_lover_soft_cap_trigger = yes
+		}
+		add_courtier = scope:army_stranger
+		set_relation_lover = {
+			target = scope:army_stranger
+			reason = army_camp_lost_guide
+			province = scope:army.location
+		}
+		lmf_random_sex_and_possible_stray_effect = { CHARACTER = scope:army_stranger }
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = major_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = major_stress_impact_loss
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = -1
+				ai_boldness = 1
+			}
+			modifier = {
+				factor = 2
+				any_child = { count < 1 }
+				OR = {
+					is_playable_character = yes
+					any_close_family_member = { is_playable_character = yes }
+				}
+			}
+			modifier = {
+				factor = 3
+				is_married = no
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					is_ruler = yes
+					any_heir_title = { exists = holder }
+					any_pretender_title = {
+						exists = holder
+						place_in_line_of_succession = { target = root value < 3 }
+					}
+				}
+				NOT = { any_child = { is_male = yes } }
+			}
+			modifier = {
+				factor = 3
+				likely_to_take_lover_trigger = yes
+			}
+			modifier = {
+				factor = 0
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+				stress < normal_baseline_stress
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1180.c # I'll thank her for her help, but that's it
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				just = minor_stress_impact_loss
+				honest = medium_stress_impact_loss
+				chaste = medium_stress_impact_loss
+				lustful = medium_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				deceitful = minor_stress_impact_gain
+			}
+		}
+		else = {
+			stress_impact = {
+				lustful = medium_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				chaste = medium_stress_impact_loss
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 3
+				has_trait = chaste
+			}
+			modifier = {
+				factor = 2
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+			}
+			modifier = {
+				factor = 0.5
+				stress >= lower_than_baseline_stress
+			}
+			modifier = {
+				factor = 0.5
+				stress >= medium_stress
+			}
+			min = 1
+		}
+	}
+
+	after = {
+		# make the stranger disappear if she's not pregnant after all
+		if = {
+			limit = {
+				exists = scope:army_stranger
+				NOR = {
+					scope:army_stranger = { any_owned_story = { story_type = lmf_stray_seed_story_cycle } }
+					scope:army_stranger = { is_pregnant = yes }
+					scope:army_stranger = { is_courtier = yes }
+					any_owned_story = { story_type = story_peasant_affair }
+					is_pregnant = yes
+					is_ai = no
+				}
+			}
+			scope:army_stranger = {
+				hidden_effect = {
+					death = { death_reason = death_vanished }
+				}
+			}
+		}
+	}
+}
+
+# The Foreign Physician
+lmf_army.1190 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:physician_type = flag:physician }
+				desc = lmf_army.1190.t
+			}
+			desc = lmf_army.1190.t.maester
+		}
+	}
+	desc = {
+		desc = lmf_army.1190.start
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:physician_type = flag:maester }
+				desc = lmf_army.1190.maester
+			}
+			triggered_desc = {
+				trigger = { scope:physician_type = flag:disgraced_maester }
+				desc = lmf_army.1190.disgraced
+			}
+			desc = lmf_army.1190.physician
+		}
+		desc = lmf_army.1190.end
+	}
+	theme = friendly
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:candidate
+		animation = throne_room_bow_3
+	}
+	override_background = { reference = army_camp }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = had_army_event_1190
+			scope:army.location.county = { save_scope_as = county_template }
+
+			random_list = {
+				25 = {
+					trigger = {
+						scope:county_template.culture = { has_innovation = innovation_maesters }
+					}
+					create_character = {
+						template = maester_character
+						age = { 30 50 }
+						location = scope:army.location
+						trait = compassionate
+						save_scope_as = candidate
+						after_creation = {
+							if = {
+								limit = {
+									NOT = { has_trait = lifestyle_physician }
+								}
+								add_trait = lifestyle_physician
+								add_random_tiered_trait_xp_effect = {
+									TRAIT = lifestyle_physician
+									LEVEL_1 = yes
+									LEVEL_3 = yes
+								}
+							}
+						}
+					}
+					save_scope_value_as = { name = physician_type value = flag:maester }
+				}
+				25 = {
+					trigger = {
+						scope:county_template.culture = { has_innovation = innovation_maesters }
+					}
+					create_character = {
+						template = disgraced_maester_character
+						age = { 30 50 }
+						location = scope:army.location
+						trait = compassionate
+						save_scope_as = candidate
+						after_creation = {
+							if = {
+								limit = {
+									NOT = { has_trait = lifestyle_physician }
+								}
+								add_trait = lifestyle_physician
+								add_random_tiered_trait_xp_effect = {
+									TRAIT = lifestyle_physician
+									LEVEL_1 = yes
+									LEVEL_3 = yes
+								}
+							}
+						}
+					}
+					save_scope_value_as = { name = physician_type value = flag:disgraced_maester }
+				}
+				50 = {
+					trigger = {
+						scope:county_template.culture = {
+							NOT = { has_innovation = innovation_maesters }
+						}
+					}
+					create_character = {
+						template = physician_excellent_character_template
+						age = { 30 50 }
+						location = scope:army.location
+						culture = scope:county_template.culture
+						faith = scope:county_template.faith
+						trait = compassionate
+						save_scope_as = candidate
+						after_creation = {
+							if = {
+								limit = {
+									faith = { has_doctrine_parameter = take_vows_active }
+								}
+								random = {
+									chance = 50
+									add_trait = devoted
+								}
+							}
+						}
+					}
+					save_scope_value_as = { name = physician_type value = flag:physician }
+				}
+			}
+
+			# keep record of current physician back at court, if one exists
+			if = {
+				limit = {
+					scope:physician_type = flag:physician
+					is_playable_character = yes
+					any_court_position_holder = { type = court_physician_court_position count > 0 }
+				}
+				court_position:court_physician_court_position = { save_scope_as = old_holder }
+			}
+			# grab current county's holder
+			scope:army.location.county.holder.top_liege = {
+				save_scope_as = enemy
+				set_relation_grudge = scope:candidate
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1190.a # We could definitely use his services here.
+		add_character_modifier = { modifier = excellent_army_physician_modifier months = 12 }
+		ai_chance = {
+			base = 50
+		}
+	}
+	option = {
+		name = lmf_army.1190.b # In fact, I could use his services back home.
+		trigger = {
+			is_playable_character = yes
+			scope:physician_type = flag:physician
+			can_employ_court_position_type = court_physician_court_position
+		}
+		if = {
+			limit = { exists = scope:old_holder }
+			custom_tooltip = court_physician_old_holder_aptitude_tooltip
+		}
+		else = {
+			custom_tooltip = court_physician_aptitude_tooltip
+		}
+		if = {
+			limit = {
+				OR = {
+					is_ai = no
+					short_term_gold >= low_skill_court_physician_cost
+				}
+			}
+			pay_short_term_gold = {
+				target = scope:candidate
+				gold = low_skill_court_physician_cost
+			}
+		}
+		set_court_physician_effect = {
+			EMPLOYER = root
+			PHYSICIAN = scope:candidate
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 0
+				exists = scope:old_holder
+				scope:old_holder.aptitude:court_physician_court_position > scope:candidate.aptitude:court_physician_court_position
+			}
+		}
+	}
+	option = {
+		name = lmf_army.1190.c # We could use someone with his skills in my court
+		trigger = {
+			is_playable_character = yes
+			OR = {
+				NOT = { scope:physician_type = flag:physician }
+				NOT = { can_employ_court_position_type = court_physician_court_position }
+			}
+		}
+		add_courtier = scope:candidate
+		reverse_add_opinion = { modifier = friendliness_opinion target = scope:candidate opinion = 20 }
+		hidden_effect = {
+			add_opinion = { modifier = friendliness_opinion target = scope:candidate opinion = 20 }
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 25
+				trait_compatibility = { target = scope:candidate value >= 5 }
+			}
+			modifier = {
+				add = 50
+				trait_compatibility = { target = scope:candidate value >= 15 }
+			}
+			modifier = {
+				factor = 0.5
+				trait_compatibility = { target = scope:candidate value <= -10 }
+			}
+		}
+	}
+}
+
+# The Training Regimen
+lmf_army.1200 = {
+	type = character_event
+	title = lmf_army.1200.t
+	desc = lmf_army.1200.desc
+	theme = war
+
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	override_background = { reference = army_camp }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1200 years = 10 }
+		}
+	}
+
+	option = {
+		name = lmf_army.1200.a # Train them hard. They need to be prepared.
+		add_character_modifier = { modifier = army_training_hard_modifier months = 12 }
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = -0.5
+				ai_boldness = 0.5
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1200.b # Let them save their strength for when they need it.
+		add_character_modifier = { modifier = army_training_easy_modifier months = 12 }
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = 0.5
+				ai_boldness = -0.5
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1200.c # Don't change anything. We're fine.
+		ai_chance = {
+			base = 25
+		}
+	}
+}
+
+scripted_effect notify_knight_lost_effect = {
+	if = {
+		limit = {
+			scope:army.army_owner = { is_ai = no }
+		}
+		scope:army.army_owner = {
+			send_interface_message = {
+				type = event_generic_bad_with_text
+				title = lmf_army.1210.knight.lost.title
+				desc = lmf_army.1210.knight.lost.desc
+				right_icon = scope:army_friend
+				scope:army_friend = {
+					if = {
+						limit = { exists = scope:has_wound }
+						if = {
+							limit = { exists = scope:is_severe }
+							hunt_wound_apply_effect = { SEVERE = yes }
+						}
+						else = {
+							hunt_wound_apply_effect = { SEVERE = no }
+						}
+					}
+					hidden_effect = {
+						scope:army_friend.liege = { save_scope_as = old_liege }
+						scope:army.location = { save_scope_as = lost_in }
+						trigger_event = { id = lmf_army.1211 days = { 7 60 } }
+					}
+					scope:army_friend.liege = { remove_courtier_or_guest = scope:army_friend }
+				}
+			}
+		}
+	}
+	else = {
+		send_interface_message = {
+			type = event_generic_bad_with_text
+			title = lmf_army.1210.knight.lost.title
+			desc = lmf_army.1210.knight.lost.desc
+			right_icon = scope:army_friend
+			scope:army_friend = {
+				if = {
+					limit = { exists = scope:has_wound }
+					if = {
+						limit = { exists = scope:is_severe }
+						hunt_wound_apply_effect = { SEVERE = yes }
+					}
+					else = {
+						hunt_wound_apply_effect = { SEVERE = no }
+					}
+				}
+				hidden_effect = {
+					scope:army_friend.liege = { save_scope_as = old_liege }
+					scope:army.location = { save_scope_as = lost_in }
+					trigger_event = { id = lmf_army.1211 days = { 7 60 } }
+				}
+				scope:army_friend.liege = { remove_courtier_or_guest = scope:army_friend }
+			}
+		}
+	}
+}
+
+# A Lost Knight
+lmf_army.1210 = {
+	type = character_event
+	title = lmf_army.1210.t
+	desc = lmf_army.1210.desc
+	theme = unfriendly
+
+	left_portrait = {
+		character = root
+		animation = survey
+		outfit_tags = { travel_cloak }
+	}
+	lower_right_portrait = scope:army_friend
+	override_background = { reference = terrain }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1210 years = 10 }
+
+			random_in_list = {
+				list = liege_knights
+				limit = {
+					knight_army ?= scope:army
+					is_courtier = yes
+					has_any_court_position = no
+					is_councillor = no
+					is_ruler = no
+					NOR = {
+						has_trait = wounded
+						has_relation_rival = root
+						has_character_flag = had_army_event_1210
+					}
+				}
+				weight = {
+					base = 10
+					modifier = {
+						add = -5
+						has_trait = intellect_good
+					}
+					modifier = {
+						add = -5
+						OR = {
+							has_trait = lifestyle_hunter
+							has_trait = lifestyle_traveler
+						}
+					}
+					modifier = {
+						add = 5
+						has_trait = dull
+					}
+					modifier = {
+						add = 5
+						has_trait = intellect_bad_1
+					}
+					modifier = {
+						add = 10
+						has_trait = intellect_bad_2
+					}
+					modifier = {
+						add = 15
+						has_trait = intellect_bad_3
+					}
+					min = 1
+				}
+				save_scope_as = army_friend
+				add_character_flag = { flag = had_army_event_1210 years = 10 }
+				random = {
+					chance = 75
+					save_scope_value_as = { name = has_wound value = yes }
+					hunt_wound_select_effect = yes
+					random = {
+						chance = 25
+						save_scope_value_as = { name = is_severe value = yes }
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1210.a # I'll search for him myself
+		random_list = {
+			10 = {
+				custom_tooltip = lmf_army.1210.wounded.tt
+				increase_wounds_effect = { REASON = fight }
+				notify_knight_lost_effect = yes
+			}
+			30 = {
+				custom_tooltip = lmf_army.1210.fail.tt
+				notify_knight_lost_effect = yes
+			}
+			60 = {
+				# finds him
+				custom_tooltip = lmf_army.1210.succeed.tt
+				send_interface_message = {
+					type = event_generic_bad_with_text
+					title = lmf_army.1210.knight.found.title
+					desc = lmf_army.1210.knight.found.desc
+					right_icon = scope:army_friend
+					scope:army_friend = {
+						improve_relationship_effect = {
+							TARGET = root
+							REASON = searched_for_me_after_lost
+						}
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = 1.0
+				ai_boldness = 1.0
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1210.b # I'll race back to the camp and organize a search party
+		random_list = {
+			60 = {
+				custom_tooltip = lmf_army.1210.fail.tt
+				notify_knight_lost_effect = yes
+			}
+			40 = {
+				custom_tooltip = lmf_army.1210.succeed.tt
+				send_interface_message = {
+					type = event_generic_bad_with_text
+					title = lmf_army.1210.knight.found.title
+					desc = lmf_army.1210.knight.found.desc
+					right_icon = scope:army_friend
+				}
+			}
+		}
+		stress_impact = {
+			brave = medium_stress_impact_gain
+			craven = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_boldness = -1.0
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1210.c # He's a grown man. He can take care of himself.
+		notify_knight_lost_effect = yes
+		stress_impact = {
+			compassionate = medium_stress_impact_gain
+			brave = minor_stress_impact_gain
+			callous = minor_stress_impact_loss
+			sadistic = minor_stress_impact_loss
+			craven = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = -1.0
+			}
+			min = 1
+		}
+	}
+}
+
+lmf_army.1211 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		scope:old_liege = {
+			is_playable_character = yes
+		}
+		scope:army_friend = {
+			is_alive = yes
+			is_playable_character = no
+			NOT = { is_courtier_of = scope:old_liege }
+			trigger_if = {
+				limit = { is_courtier = yes }
+				would_leave_liege_trigger = { CURRENT_LIEGE = scope:army_friend.liege NEW_LIEGE = scope:old_liege }
+			}
+		}
+	}
+
+	on_trigger_fail = {
+		if = {
+			limit = {
+				scope:army_friend = {
+					is_alive = yes
+					is_playable_character = no
+					is_courtier = yes
+					NOR = {
+						is_courtier_of = scope:old_liege
+						would_leave_liege_trigger = { CURRENT_LIEGE = scope:army_friend.liege NEW_LIEGE = scope:old_liege }
+					}
+				}
+			}
+			scope:old_liege = {
+				send_interface_message = {
+					type = event_generic_bad_with_text
+					title = lmf_army.1210.knight.found.title
+					desc = lmf_army.1211.knight.newliege.desc
+					right_icon = scope:army_friend
+				}
+			}
+		}
+	}
+
+	immediate = {
+		scope:old_liege = {
+			send_interface_message = {
+				type = event_generic_good_with_text
+				title = lmf_army.1210.knight.found.title
+				desc = lmf_army.1211.knight.found.desc
+				right_icon = scope:army_friend
+				scope:old_liege = {
+					add_courtier = scope:army_friend
+				}
+			}
+		}
+	}
+}
+
+# Knight in Training 1
+lmf_army.1220 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = commanding_army }
+				desc = lmf_army.1220.t.commander
+			}
+			desc = lmf_army.1220.t.knight
+		}
+	}
+	desc = lmf_army.1220.desc
+	theme = war
+
+	left_portrait = {
+		character = scope:army_friend
+		animation = inspect_weapon
+	}
+	right_portrait = {
+		character = root
+		animation = thinking
+	}
+	override_background = { reference = army_camp }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1220 years = 10 }
+
+			random_in_list = {
+				list = liege_knights
+				limit = {
+					prowess > root.prowess
+					NOT = { has_relation_rival = root }
+				}
+				weight = {
+					base = 1
+					modifier = {
+						always = yes
+						add = {
+							value = prowess
+							multiply = 5
+						}
+					}
+					modifier = {
+						factor = 2
+						has_relation_friend = root
+					}
+					modifier = {
+						factor = 1.5
+						has_relation_potential_friend = root
+					}
+				}
+				save_scope_as = army_friend
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1220.a
+		add_prowess_skill = 1
+		reverse_add_opinion = { modifier = friendliness_opinion target = scope:army_friend opinion = 20 }
+		hidden_effect = {
+			add_opinion = { modifier = friendliness_opinion target = scope:army_friend opinion = 20 }
+		}
+
+		# inform a player army owner
+		if = {
+			limit = {
+				scope:army.army_owner = {
+					NOT = { this = root }
+					is_ai = no
+				}
+			}
+			save_scope_as = champion
+			scope:army.army_owner = {
+				save_scope_as = player
+				send_interface_message = {
+					type = event_generic_good_with_text
+					title = lmf_army.1220.a.improves.tt
+					desc = lmf_army.1220.a.prowess.desc
+					left_icon = scope:champion
+					right_icon = scope:army_friend
+				}
+			}
+		}
+	}
+}
+
+# Knight in Training 2
+lmf_army.1230 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = commanding_army }
+				desc = lmf_army.1220.t.commander
+			}
+			desc = lmf_army.1220.t.knight
+		}
+	}
+	desc = lmf_army.1230.desc
+	theme = war
+
+	left_portrait = {
+		character = scope:army_friend
+		animation = debating
+	}
+	right_portrait = {
+		character = root
+		animation = thinking
+	}
+	override_background = { reference = army_camp }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1230 years = 10 }
+
+			random_in_list = {
+				list = liege_knights
+				limit = {
+					martial > root.martial
+					NOT = { has_relation_rival = root }
+				}
+				weight = {
+					base = 1
+					modifier = {
+						always = yes
+						add = {
+							value = martial
+							multiply = 5
+						}
+					}
+					modifier = {
+						factor = 2
+						has_relation_friend = root
+					}
+					modifier = {
+						factor = 1.5
+						has_relation_potential_friend = root
+					}
+				}
+				save_scope_as = army_friend
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1220.a
+		add_martial_skill = 1
+		reverse_add_opinion = { modifier = friendliness_opinion target = scope:army_friend opinion = 20 }
+		hidden_effect = {
+			add_opinion = { modifier = friendliness_opinion target = scope:army_friend opinion = 20 }
+		}
+
+		# inform a player army owner
+		if = {
+			limit = {
+				scope:army.army_owner = {
+					NOT = { this = root }
+					is_ai = no
+				}
+			}
+			save_scope_as = champion
+			scope:army.army_owner = {
+				save_scope_as = player
+				send_interface_message = {
+					type = event_generic_good_with_text
+					title = lmf_army.1220.a.improves.tt
+					desc = lmf_army.1230.a.martial.desc
+					left_icon = scope:champion
+					right_icon = scope:army_friend
+				}
+			}
+		}
+	}
+}
+
+# Knight in Training 3
+lmf_army.1240 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = commanding_army }
+				desc = lmf_army.1220.t.commander
+			}
+			desc = lmf_army.1220.t.knight
+		}
+	}
+	desc = lmf_army.1240.desc
+	theme = war
+
+	left_portrait = {
+		character = scope:army_friend
+		animation = inspect_weapon
+	}
+	right_portrait = {
+		character = root
+		animation = thinking
+	}
+	override_background = { reference = army_camp }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1240 years = 10 }
+
+			random_in_list = {
+				list = liege_knights
+				limit = {
+					has_trait = lifestyle_blademaster
+					prowess > root.prowess
+					NOT = { has_relation_rival = root }
+				}
+				weight = {
+					base = 1
+					modifier = {
+						always = yes
+						add = {
+							value = prowess
+							multiply = 5
+						}
+					}
+					modifier = {
+						factor = 2
+						has_relation_friend = root
+					}
+					modifier = {
+						factor = 1.5
+						has_relation_potential_friend = root
+					}
+				}
+				save_scope_as = army_friend
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1220.a
+		add_trait_force_tooltip = lifestyle_blademaster
+		reverse_add_opinion = { modifier = friendliness_opinion target = scope:army_friend opinion = 20 }
+		hidden_effect = {
+			add_opinion = { modifier = friendliness_opinion target = scope:army_friend opinion = 20 }
+		}
+
+		# inform a player army owner
+		if = {
+			limit = {
+				scope:army.army_owner = {
+					NOT = { this = root }
+					is_ai = no
+				}
+			}
+			save_scope_as = champion
+			scope:army.army_owner = {
+				save_scope_as = player
+				send_interface_message = {
+					type = event_generic_good_with_text
+					title = lmf_army.1220.a.improves.tt
+					desc = lmf_army.1240.a.blademaster.desc
+					left_icon = scope:champion
+					right_icon = scope:army_friend
+				}
+			}
+		}
+	}
+}
+
+# The Eye of a Soldier
+lmf_army.1250 = {
+	type = character_event
+	title = lmf_army.1250.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army = { is_army_in_siege = yes }
+				}
+				desc = lmf_army.1050.siege.start
+			}
+			desc = lmf_army.1050.march.start
+		}
+		desc = lmf_army.1250.mid
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army_lover = { is_male = yes }
+				}
+				desc = lmf_army.1250.male
+			}
+			desc = lmf_army.1250.female
+		}
+		desc = lmf_army.1250.end
+	}
+	theme = seduction
+
+	left_portrait = {
+		character = scope:army_lover
+		animation = flirtation_left
+	}
+	right_portrait = {
+		character = root
+		animation = interested_left
+	}
+	override_background = { reference = ep3_campfire }
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = { flag = had_army_event_1250 years = 10 }
+			scope:army.army_owner.capital_county = { save_scope_as = county_template }
+			create_character = {
+				template = lmf_handsome_soldier_template
+				location = scope:army.location
+				save_scope_as = army_lover
+				after_creation = {
+					add_character_flag = wear_armor
+					add_character_flag = no_hat
+					set_variable = { name = army_camp_caught_eye value = yes days = 5 }
+					if = {
+						limit = { sex_same_as = root }
+						set_sexuality = homosexual
+					}
+					else = {
+						set_sexuality = heterosexual
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1250.a # Why not? I'll take him back to my tent.
+		trigger = {
+			is_playable_character = yes
+			is_below_ai_lover_soft_cap_trigger = yes
+		}
+		lmf_random_sex_and_possible_stray_effect = { CHARACTER = scope:army_lover }
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = major_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = major_stress_impact_loss
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = -0.5
+				ai_boldness = 0.5
+				min = -40
+			}
+			modifier = {
+				add = 100
+				scope:army_lover = { sex_same_as = root }
+			}
+			modifier = {
+				factor = 2
+				any_child = { count < 1 }
+				OR = {
+					is_playable_character = yes
+					any_close_family_member = { is_playable_character = yes }
+				}
+			}
+			modifier = {
+				factor = 2
+				is_married = no
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					is_ruler = yes
+					any_heir_title = { exists = holder }
+					any_pretender_title = {
+						exists = holder
+						place_in_line_of_succession = { target = root value < 3 }
+					}
+				}
+				NOT = { any_child = { is_male = yes } }
+			}
+			modifier = {
+				factor = 3
+				has_trait = drunkard
+			}
+			modifier = {
+				factor = 3
+				likely_to_take_lover_trigger = yes
+			}
+			modifier = {
+				factor = 0.5
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+				stress < normal_baseline_stress
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1250.b # Actually, this lad deserves a permanent place in my court.
+		trigger = {
+			is_playable_character = yes
+			is_below_ai_lover_soft_cap_trigger = yes
+		}
+		show_as_tooltip = {
+			add_courtier = scope:army_lover
+		}
+		scope:army_lover = {
+			hidden_effect = { set_employer = root } #the tooltip this displays is wrong
+			if = {
+				limit = {
+					can_be_knight_trigger = { ARMY_OWNER = root }
+				}
+				set_knight_status = force
+			}
+			set_relation_lover = {
+				target = root
+				reason = army_camp_caught_eye
+				province = scope:army.location
+			}
+		}
+		lmf_random_sex_and_possible_stray_effect = { CHARACTER = scope:army_lover }
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = major_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = major_stress_impact_loss
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = -1
+				ai_boldness = 1
+			}
+			modifier = {
+				add = 50
+				scope:army_lover = { sex_same_as = root }
+			}
+			modifier = {
+				factor = 2
+				any_child = { count < 1 }
+				OR = {
+					is_playable_character = yes
+					any_close_family_member = { is_playable_character = yes }
+				}
+			}
+			modifier = {
+				factor = 3
+				is_married = no
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					is_ruler = yes
+					any_heir_title = { exists = holder }
+					any_pretender_title = {
+						exists = holder
+						place_in_line_of_succession = { target = root value < 3 }
+					}
+				}
+				NOT = { any_child = { is_male = yes } }
+			}
+			modifier = {
+				factor = 3
+				likely_to_take_lover_trigger = yes
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					number_of_knights < max_number_of_knights
+					any_knight = { prowess < scope:army_lover.prowess }
+				}
+			}
+			modifier = {
+				factor = 0.5
+				NOR = {
+					number_of_knights < max_number_of_knights
+					any_knight = { prowess < scope:army_lover.prowess }
+				}
+			}
+			modifier = {
+				factor = 0
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+				stress < normal_baseline_stress
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1250.c # No, it's really not a good idea.
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				just = minor_stress_impact_loss
+				honest = medium_stress_impact_loss
+				chaste = medium_stress_impact_loss
+				lustful = medium_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				deceitful = minor_stress_impact_gain
+			}
+		}
+		else = {
+			stress_impact = {
+				lustful = medium_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				chaste = medium_stress_impact_loss
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 3
+				has_trait = chaste
+			}
+			modifier = {
+				factor = 2
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+			}
+			modifier = {
+				factor = 0.5
+				stress >= lower_than_baseline_stress
+			}
+			modifier = {
+				factor = 0.5
+				stress >= medium_stress
+			}
+			modifier = {
+				factor = 0.5
+				stress >= high_stress
+			}
+			min = 1
+		}
+	}
+
+	after = {
+		scope:army_lover = {
+			remove_character_flag = wear_armor
+			remove_character_flag = no_hat
+		}
+		# make the soldier disappear if unneeded
+		if = {
+			limit = {
+				NOR = {
+					scope:army_lover = { any_owned_story = { story_type = lmf_stray_seed_story_cycle } }
+					scope:army_lover = { is_pregnant = yes }
+					scope:army_lover = { is_courtier = yes }
+					any_owned_story = { story_type = story_peasant_affair }
+					is_pregnant = yes
+				}
+			}
+			scope:army_lover = {
+				hidden_effect = {
+					death = { death_reason = death_vanished }
+				}
+			}
+		}
+	}
+}
+
+# Caught at the Spring
+lmf_army.1260 = {
+	type = character_event
+	title = lmf_army.1260.t
+	desc = {
+		desc = lmf_army.1260.begin
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army.location = { graphical_wilderness_desert_trigger = yes }
+				}
+				desc = lmf_army.1260.oasis
+			}
+			desc = lmf_army.1260.spring
+		}
+		desc = lmf_army.1260.mid
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:army_stranger = {
+						has_trait = septon
+						is_female = yes
+					}
+				}
+				desc = lmf_army.1260.septon.female
+			}
+			triggered_desc = {
+				trigger = {
+					scope:army_stranger = {
+						has_trait = septon
+						is_male = yes
+					}
+				}
+				desc = lmf_army.1260.septon.male
+			}
+			triggered_desc = {
+				trigger = {
+					scope:army_stranger = {
+						has_trait = devoted
+						is_female = yes
+					}
+				}
+				desc = lmf_army.1260.devoted.female
+			}
+			triggered_desc = {
+				trigger = {
+					scope:army_stranger = {
+						has_trait = devoted
+						is_male = yes
+					}
+				}
+				desc = lmf_army.1260.devoted.male
+			}
+			desc = lmf_army.1260.peasant
+		}
+		desc = lmf_army.1260.end
+	}
+	theme = seduction
+
+	left_portrait = {
+		character = scope:army_stranger
+		animation = flirtation
+		outfit_tags = { travel_cloak }
+	}
+	right_portrait = {
+		character = root
+		animation = shock
+	}
+	override_background = {
+		trigger = {
+			scope:army.location = { graphical_wilderness_desert_trigger = yes }
+		}
+		reference = ce1_legendary_oasis
+	}
+	override_background = {
+		trigger = {
+			scope:army.location = { graphical_wilderness_desert_trigger = no }
+		}
+		reference = ce1_legendary_spring
+	}
+
+	immediate = {
+		hidden_effect = {
+			add_recent_army_event_flags = yes
+			add_character_flag = had_army_event_1260
+			make_naked_effect = yes
+			random_list = {
+				25 = {
+					trigger = { is_attracted_to_men = yes }
+					create_character = {
+						template = lmf_beautiful_local
+						gender = male
+						trait = lustful
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = army_stranger
+						after_creation = {
+							every_character_trait = {
+								limit = { bad_maiden_trait_trigger = yes }
+								scope:army_stranger = { remove_trait = prev }
+							}
+							if = {
+								limit = {
+									faith = {
+										has_doctrine_parameter = take_vows_active
+										religion = religion:the_seven_religion
+									}
+								}
+								random = {
+									chance = 50
+									add_trait = septon
+								}
+							}
+							else_if = {
+								limit = {
+									faith = { has_doctrine = tenet_monasticism }
+								}
+								random = {
+									chance = 50
+									add_trait = devoted
+								}
+							}
+							if = {
+								limit = { sex_same_as = root }
+								set_sexuality = homosexual
+							}
+							else = {
+								set_sexuality = heterosexual
+							}
+						}
+					}
+				}
+				75 = {
+					trigger = { is_attracted_to_women = yes }
+					create_character = {
+						template = lmf_beautiful_local
+						gender = female
+						trait = lustful
+						location = scope:army.location
+						faith = scope:army.location.county.faith
+						culture = scope:army.location.county.culture
+						save_scope_as = army_stranger
+						after_creation = {
+							set_variable = { name = army_found_pool value = yes }
+							every_character_trait = {
+								limit = { bad_maiden_trait_trigger = yes }
+								scope:army_stranger = { remove_trait = prev }
+							}
+							if = {
+								limit = {
+									faith = {
+										has_doctrine_parameter = take_vows_active
+										religion = religion:the_seven_religion
+									}
+								}
+								random = {
+									chance = 50
+									add_trait = septon
+								}
+							}
+							else_if = {
+								limit = {
+									faith = { has_doctrine = tenet_monasticism }
+								}
+								random = {
+									chance = 50
+									add_trait = devoted
+								}
+							}
+							if = {
+								limit = { sex_same_as = root }
+								set_sexuality = homosexual
+							}
+							else = {
+								set_sexuality = heterosexual
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = lmf_army.1260.a # Perhaps she'll join me in the water?
+		lmf_random_sex_and_possible_stray_effect = { CHARACTER = scope:army_stranger }
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				base = major_stress_impact_loss
+				just = minor_stress_impact_gain
+				honest = medium_stress_impact_gain
+				chaste = medium_stress_impact_gain
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				deceitful = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+			}
+		}
+		else = {
+			stress_impact = {
+				base = major_stress_impact_loss
+				lustful = medium_stress_impact_loss
+				arbitrary = minor_stress_impact_loss
+				greedy = minor_stress_impact_loss
+				chaste = medium_stress_impact_gain
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = -0.5
+				ai_boldness = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 2
+				any_child = { count < 1 }
+				OR = {
+					is_playable_character = yes
+					any_close_family_member = { is_playable_character = yes }
+				}
+			}
+			modifier = {
+				factor = 2
+				is_married = no
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					is_ruler = yes
+					any_heir_title = { exists = holder }
+					any_pretender_title = {
+						exists = holder
+						place_in_line_of_succession = { target = root value < 3 }
+					}
+				}
+				NOT = { any_child = { is_male = yes } }
+			}
+			modifier = {
+				factor = 3
+				has_trait = drunkard
+			}
+			modifier = {
+				factor = 3
+				likely_to_take_lover_trigger = yes
+			}
+			modifier = {
+				factor = 0.5
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+				stress < normal_baseline_stress
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = lmf_army.1260.b # I'll get my clothes on and go, just in case
+		if = {
+			limit = { is_married = yes }
+			stress_impact = {
+				just = minor_stress_impact_loss
+				honest = medium_stress_impact_loss
+				chaste = medium_stress_impact_loss
+				lustful = medium_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				deceitful = minor_stress_impact_gain
+			}
+		}
+		else = {
+			stress_impact = {
+				lustful = medium_stress_impact_gain
+				arbitrary = minor_stress_impact_gain
+				greedy = minor_stress_impact_gain
+				chaste = medium_stress_impact_loss
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = 0.5
+				min = -40
+			}
+			modifier = {
+				factor = 3
+				has_trait = chaste
+			}
+			modifier = {
+				factor = 2
+				is_married = yes
+				might_cheat_on_every_partner_trigger = no
+			}
+			modifier = {
+				factor = 0.5
+				stress >= lower_than_baseline_stress
+			}
+			modifier = {
+				factor = 0.5
+				stress >= medium_stress
+			}
+			modifier = {
+				factor = 0.5
+				stress >= high_stress
+			}
+			min = 1
+		}
+	}
+
+	after = {
+		remove_naked_effect = yes
+		# make the stranger disappear if she's not pregnant after all
+		if = {
+			limit = {
+				exists = scope:army_stranger
+				NOR = {
+					scope:army_stranger = { any_owned_story = { story_type = lmf_stray_seed_story_cycle } }
+					scope:army_stranger = { is_pregnant = yes }
+					any_owned_story = { story_type = story_peasant_affair }
+					is_pregnant = yes
+				}
+			}
+			scope:army_stranger = {
+				hidden_effect = {
+					death = { death_reason = death_vanished }
+				}
+			}
+		}
+	}
+}

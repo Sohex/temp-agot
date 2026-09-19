@@ -1,0 +1,321 @@
+﻿## AGOT Squire Ongoing Story Cycle by Dylan
+# Set up taken from Badger's widowed story cycle
+
+story_agot_squire_ongoing = {
+
+	on_setup = {
+		story_owner = {
+			add_character_flag = had_ongoing_squire_story
+			set_variable = {
+				name = years_as_squire
+				value = 0
+			}
+		}
+	}
+
+	on_end = {
+		if = {
+			limit = {
+				story_owner = {
+					is_alive = yes
+				}
+			}
+			story_owner = {
+				remove_character_flag = had_ongoing_squire_story
+				remove_variable = years_as_squire
+				if = {
+					limit = {
+						is_agot_knight_trigger = yes
+					}
+					if = {
+						limit = {
+							has_variable = squirehood_skill_inc_check_diplomacy
+						}
+						remove_variable = squirehood_skill_inc_check_diplomacy
+					}
+					if = {
+						limit = {
+							has_variable = squirehood_skill_inc_check_martial
+						}
+						remove_variable = squirehood_skill_inc_check_martial
+					}
+					if = {
+						limit = {
+							has_variable = squirehood_skill_inc_check_stewardship
+						}
+						remove_variable = squirehood_skill_inc_check_stewardship
+					}
+					if = {
+						limit = {
+							has_variable = squirehood_skill_inc_check_learning
+						}
+						remove_variable = squirehood_skill_inc_check_learning
+					}
+					if = {
+						limit = {
+							has_variable = squirehood_skill_inc_check_prowess
+						}
+						remove_variable = squirehood_skill_inc_check_prowess
+					}
+				}
+			}
+		}
+	}
+
+	on_owner_death = {
+		scope:story = { end_story = yes }
+	}
+
+	###################################
+	## Squire Training Effect Groups ##
+	###################################
+
+	# Train Squire Simulation for Unlanded/Unplayable AI (Since they cannot use interactions)
+	effect_group = {
+		days = { 21 32 }
+		trigger = {
+			story_owner = {
+				has_trait_xp = {
+					trait = squire
+					track = knight
+					value >= 0
+				}
+				NOT = {
+					has_trait_xp = {
+						trait = squire
+						track = knight
+						value >= 66
+					}
+				}
+				any_relation = {
+					type = agot_knight
+					is_alive = yes
+					is_playable_character = no
+				}
+			}
+		}
+
+		first_valid = {
+			triggered_effect = {
+				trigger = {
+					always = yes
+				}
+				effect = {
+					story_owner = {
+						save_scope_as = my_squire
+						random_relation = {
+							type = agot_knight
+							limit = {
+								is_playable_character = no
+							}
+							save_scope_as = my_knight
+						}
+					}
+					scope:my_knight ?= {
+						trigger_event = agot_squirehood_ongoing.0400
+					}
+				}
+			}
+		}
+	}
+
+	# PTK Squire Ongoing Events
+	effect_group = {
+		days = 100
+		chance = 65
+
+		trigger = {
+			story_owner = {
+				has_trait = squire
+				num_of_relation_agot_knight = 1
+			}
+		}
+
+		first_valid = {
+			triggered_effect = {
+				trigger = { always = yes }
+				effect = {
+					story_owner = {
+						trigger_event = {
+							on_action = ongoing_squire_events
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#############################
+	## Promotion Effect Groups ##
+	#############################
+
+	# Promotion to Knight For AI That is Not Landed
+	effect_group = {
+		days = { 1 1 }
+		trigger = {
+			story_owner = {
+				num_of_relation_agot_knight = 1
+				has_trait_xp = {
+					trait = squire
+					track = knight
+					value >= 66
+				}
+				agot_can_become_a_knight_trigger = yes
+				any_relation = {
+					type = agot_knight
+					is_ai = yes
+				}
+			}
+		}
+
+		first_valid = {
+			triggered_effect = {
+				trigger = {
+					always = yes
+				}
+				effect = {
+					story_owner = {
+						save_scope_as = my_squire
+						random_relation = {
+							type = agot_knight
+							limit = { is_ai = yes }
+							save_scope_as = my_knight
+						}
+					}
+					scope:my_knight = {
+						trigger_event = agot_knighthood.0300
+					}
+				}
+			}
+		}
+	}
+
+	# Promotion to Knight for AI that IS LANDED
+	effect_group = {
+		days = { 91 92 }
+		trigger = {
+			story_owner = {
+				is_playable_character = yes
+				highest_held_title_tier >= tier_county
+				age >= 16
+			}
+		}
+
+		first_valid = {
+			triggered_effect = {
+				trigger = {
+					always = yes
+				}
+				effect = {
+					story_owner = {
+						save_scope_as = my_squire
+					}
+					scope:my_squire = {
+						trigger_event = agot_knighthood_maintenance.0500
+					}
+				}
+			}
+		}
+	}
+
+	#################################
+	## Bad PTK Checks Effect Group ##
+	#################################
+
+	## This system: every year, after the age limit for squirehood (22), a squire recieves an increment to the variable 'years_as_squire'.
+	## if this variable is >= to 15 years of being a squire, they will have their squirehood cancelled.
+	## ages 9-22, the age range for squirehood, is a 13 year period where the character is expected to finish their squirehood journey.
+	## We round 13 up to 15 to give leverage to any straggler, but still eligible, characters. 15 years as a squire and it's like, what are you even doing bro?
+
+	# EG That increments the variable
+	effect_group = {
+		days = 365
+		trigger = {
+			story_owner = {
+				has_variable = years_as_squire
+			}
+		}
+		first_valid = {
+			triggered_effect = {
+				trigger = {
+					story_owner = {
+						age >= 22
+					}
+				}
+				effect = {
+					story_owner = {
+						change_variable = {
+							name = years_as_squire
+							add = 1
+						}
+					}
+				}
+			}
+		}
+	}
+
+	# EG That Fires the Squire
+	effect_group = {
+		days = 365
+		trigger = {
+			story_owner = {
+				age >= 22
+				var:years_as_squire >= 15
+			}
+		}
+		triggered_effect = {
+			trigger = {
+				always = yes
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_knighthood_maintenance.0400
+				}
+			}
+		}
+	}
+
+	########################################
+	## Knight-Squire Removal Effect Group ##
+	########################################
+
+	# Ends the knight-squire relation if the two of them are at war
+	effect_group = {
+		days = { 91 92 } # Check every quarter
+		trigger = {
+			story_owner = {
+				agot_is_squire_with_knight = yes
+				any_relation = {
+					type = agot_knight
+				}
+			}
+		}
+		first_valid = {
+			triggered_effect = {
+				trigger = {
+					story_owner = {
+						any_relation = {
+							type = agot_knight
+						}
+					}
+				}
+				effect = {
+					story_owner = {
+						save_scope_as = my_squire
+						random_relation = {
+							type = agot_knight
+							save_scope_as = my_knight
+						}
+						if = {
+							limit = {
+								exists = scope:my_knight
+								agot_hostile_relations_for_squire_knights_trigger = { KNIGHT = scope:my_knight }
+							}
+							trigger_event = agot_knighthood_maintenance.0007
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,827 @@
+﻿agot_mw_gui_join_selected_leader = {
+	scope = character
+
+	saved_scopes = {
+		selected_leader
+	}
+
+	is_shown = {
+		is_alive = yes
+		exists = scope:selected_leader
+		NOR = {
+			agot_mw_rebel_leader_trigger = yes
+			agot_mw_crown_trigger = yes
+		}
+		OR = {
+			# Show for loyalists
+			agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:selected_leader TYPE = crown LIST_NAME = mw_loyalist_list TARGET = root }
+			any_ruler = {
+				any_owned_story = {
+					story_type = story_agot_mw_crown
+					is_target_in_variable_list = { name = mw_loyalist_list target = root }
+					save_temporary_scope_as = mw_crown_story
+					agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown_story.story_owner TYPE = crown LIST_NAME = mw_rebel_leader_list TARGET = scope:selected_leader }
+				}
+			}
+			# Show for neutrals
+			agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:selected_leader TYPE = crown LIST_NAME = mw_neutral_list TARGET = root }
+			any_ruler = {
+				any_owned_story = {
+					story_type = story_agot_mw_crown
+					is_target_in_variable_list = { name = mw_neutral_list target = root }
+					save_temporary_scope_as = mw_crown_story
+					agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown_story.story_owner TYPE = crown LIST_NAME = mw_rebel_leader_list TARGET = scope:selected_leader }
+				}
+			}
+			# Show for rebels
+			agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:selected_leader TYPE = rebel LIST_NAME = mw_rebel_supporter_list TARGET = root }
+			scope:selected_leader ?= {
+				any_owned_story = {
+					story_type = story_agot_mw_crown
+					save_temporary_scope_as = mw_crown_story
+					any_ruler = {
+						any_owned_story = {
+							story_type = story_agot_mw_rebel
+							is_target_in_variable_list = { name = mw_rebel_supporter_list target = root }
+							save_temporary_scope_as = mw_rebel_story
+							agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_rebel_story.story_owner TYPE = rebel LIST_NAME = mw_rebel_supporter_list TARGET = root }
+						}
+					}
+				}
+			}
+		}
+
+		OR = {
+			# Start up trigger
+			AND = {
+				game_start_date = 8282.9.15
+				current_date = 8282.9.15
+				NOR = {
+					AND = {
+						agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:selected_leader TYPE = crown LIST_NAME = mw_loyalist_list TARGET = root }
+						NOT = { agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:selected_leader TYPE = rebel LIST_NAME = mw_rebel_supporter_list TARGET = root } }
+					}
+					AND = {
+						agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:selected_leader TYPE = rebel LIST_NAME = mw_rebel_supporter_list TARGET = root }
+						NOT = { agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:selected_leader TYPE = crown LIST_NAME = mw_loyalist_list TARGET = root } }
+					}
+				}
+			}
+			# Neutral trigger; selected leader is crown
+			agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:selected_leader TYPE = crown LIST_NAME = mw_neutral_list TARGET = root }
+			# Neutral trigger; selected leader is rebel leader
+			any_ruler = {
+				any_owned_story = {
+					story_type = story_agot_mw_crown
+					is_target_in_variable_list = { name = mw_neutral_list target = root }
+					save_temporary_scope_as = mw_crown_story
+					agot_mw_in_LIST_of_trigger = { STORY_OWNER = scope:mw_crown_story.story_owner TYPE = crown LIST_NAME = mw_rebel_leader_list TARGET = scope:selected_leader }
+				}
+			}
+		}
+	}
+
+	effect = {
+		close_all_views = yes # DON'T REMOVE THIS!!!! Else the game might CTD!
+		if = {
+			limit = {
+				exists = scope:selected_leader
+				scope:selected_leader ?= {
+					agot_mw_crown_trigger = yes
+				}
+			}
+			agot_mw_join_loyalists_effect = { RULER = root CROWN = scope:selected_leader }
+		}
+		if = {
+			limit = {
+				exists = scope:selected_leader
+				scope:selected_leader ?= {
+					agot_mw_rebel_leader_trigger = yes
+				}
+			}
+			agot_mw_join_rebels_effect = { RULER = root REBEL_LEADER = scope:selected_leader }
+		}
+	}
+}
+
+#### MEGA WARS TRAITORS ####
+
+#
+agot_mw_gui_punish_traitor = {
+	scope = character
+
+	is_valid = {
+		exists = var:selected_traitor
+	}
+
+	effect = {
+		var:selected_traitor = { save_scope_as = selected_traitor }
+		agot_mw_gui_transfer_punishment_vars_to_traitor = yes
+
+		agot_mw_apply_opinion_modifiers = { CROWN_TARGET = root TRAITOR_TARGET = root.var:selected_traitor }
+
+		show_as_tooltip = { agot_mw_gui_punish_traitor_effect = { CROWN_TARGET = root TRAITOR_TARGET = root.var:selected_traitor } }
+		remove_list_variable = {
+			name = mw_traitors_list
+			target = var:selected_traitor
+		}
+		var:selected_traitor = {
+			set_variable = { name = crown_target value = root }
+			trigger_event = agot_mega_wars.0603
+		}
+		agot_mw_gui_next_traitor_effect = yes
+	}
+}
+
+### TAKE TITLES
+
+agot_mw_gui_traitors_take_titles = {
+	scope = character
+
+	is_valid = {
+		custom_tooltip = {
+			text = AGOT_MW_TRAITORS_SPEC_TITLES_TT
+			has_variable_list = mw_traitors_demesne_list
+		}
+	}
+
+	is_shown = {
+		var:mw_punishment_window ?= flag:take_titles
+	}
+
+	effect = {
+		if = {
+			limit = {
+				has_variable = mw_punishment_window
+				var:mw_punishment_window = flag:take_titles
+			}
+
+			remove_variable = mw_punishment_window
+		}
+		else = {
+			set_variable = { name = mw_punishment_window value = flag:take_titles }
+		}
+	}
+}
+
+# Select title from list
+agot_mw_gui_traitors_take_specific_title = {
+	scope = character
+
+	is_valid = {
+		custom_tooltip = {
+			text = AGOT_MW_TRAITORS_SPEC_TITLES_TT
+			agot_mw_penalty_specific_title_trigger = yes
+		}
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		agot_mw_gui_selection_button_main = {
+			ACTION_NAME = take_specific_title
+			SELECTING = selecting_specific_title
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+
+		set_variable = { name = mw_punishment_scrollbox value = flag:title_selection }
+	}
+}
+
+# Show title scrollbox?
+agot_mw_gui_traitors_take_specific_title_trigger = {
+	scope = character
+
+	is_shown = {
+		var:mw_punishment_scrollbox ?= flag:title_selection
+	}
+}
+
+# Clear title selection
+agot_mw_gui_traitors_take_specific_title_clear = {
+	scope = character
+
+	is_valid = {
+		OR = {
+			has_variable = selected_specific_title
+			has_variable = selecting_specific_title
+		}
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		agot_mw_gui_selection_clear_button = {
+			ACTION_NAME = take_specific_title
+			SELECTING = selecting_specific_title
+			SELECTED = selected_specific_title
+		}
+
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+
+		remove_variable = mw_punishment_scrollbox
+	}
+}
+
+# Select title from list
+agot_mw_gui_traitors_take_specific_title_selecting = {
+	scope = character
+
+	is_valid = {
+	}
+
+	is_shown = {
+		var:selected_specific_title ?= scope:selected_specific_title
+	}
+
+	effect = {
+		agot_mw_gui_selection_selecting = {
+			ACTION_NAME = take_specific_title
+			SELECTING = selecting_specific_title
+			SELECTED = selected_specific_title
+		}
+	}
+}
+
+# Takes traitor's primary title and all title of same tier from traitor (traitor should get strong claim on them)
+agot_mw_gui_traitors_take_main_titles = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_main_titles_trigger = yes
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = take_main_titles }
+			remove_variable = take_main_titles
+		}
+		else = {
+			set_variable = take_main_titles
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+#
+agot_mw_gui_traitors_take_secondary_titles = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_secondary_title_trigger = yes
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = take_secondary_titles }
+			remove_variable = take_secondary_titles
+		}
+		else = {
+			set_variable = take_secondary_titles
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+# Take entire demesne
+agot_mw_gui_traitors_take_entire_demesne = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_entire_demesne_trigger = yes
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = take_entire_demesne }
+			remove_variable = take_entire_demesne
+			remove_variable = take_entire_demesne_except_capital
+		}
+		else = {
+			set_variable = take_entire_demesne
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+# Take entire demesne except capital
+agot_mw_gui_traitors_take_entire_demesne_except_capital = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_entire_demesne_capital_trigger = yes
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = take_entire_demesne_except_capital }
+			remove_variable = take_entire_demesne_except_capital
+		}
+		else = {
+			set_variable = take_entire_demesne_except_capital
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+# Take half demesne
+agot_mw_gui_traitors_take_half_demesne = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_half_demesne_trigger = yes
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = take_half_demesne }
+			remove_variable = take_half_demesne
+		}
+		else = {
+			set_variable = take_half_demesne
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+		agot_mw_traitor_gui_generate_traitor_data_lists_effect = { CROWN_TARGET = root TRAITOR_TARGET = root.var:selected_traitor }
+	}
+}
+
+### MISC
+
+agot_mw_gui_traitors_misc = {
+	scope = character
+
+	is_valid = {
+		OR = {
+			custom_tooltip = {
+				text = AGOT_MW_TRAITORS_HOSTAGES_TT
+				var:selected_traitor = { agot_mw_has_possible_hostages_trigger = yes }
+			}
+			custom_tooltip = {
+				text = AGOT_MW_TRAITORS_ARTIFACT_TT
+				var:selected_traitor = {
+					any_character_artifact = { exists = this }
+				}
+			}
+		}
+	}
+
+	is_shown = {
+		var:mw_punishment_window ?= flag:misc
+	}
+
+	effect = {
+		if = {
+			limit = {
+				has_variable = mw_punishment_window
+				var:mw_punishment_window = flag:misc
+			}
+
+			remove_variable = mw_punishment_window
+		}
+		else = {
+			set_variable = { name = mw_punishment_window value = flag:misc }
+		}
+	}
+}
+
+# Select hostage from list
+agot_mw_gui_traitors_take_hostage = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_hostage_trigger = yes
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		agot_mw_gui_selection_button_main = {
+			ACTION_NAME = take_hostage
+			SELECTING = selecting_hostage
+		}
+
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+
+		set_variable = { name = mw_punishment_scrollbox value = flag:hostage_selection }
+	}
+}
+
+# Show hostage scrollbox?
+agot_mw_gui_traitors_take_hostage_trigger = {
+	scope = character
+
+	is_shown = {
+		var:mw_punishment_scrollbox ?= flag:hostage_selection
+	}
+}
+
+# Clear hostage selection
+agot_mw_gui_traitors_take_hostage_clear = {
+	scope = character
+
+	is_valid = {
+		#OR = {
+		#	has_variable = selected_hostage
+		#	has_variable = selecting_hostage
+		#}
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		agot_mw_gui_selection_clear_button = {
+			ACTION_NAME = take_hostage
+			SELECTING = selecting_hostage
+			SELECTED = selected_hostage
+		}
+
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+
+		remove_variable = mw_punishment_scrollbox
+	}
+}
+
+# Select hostage from list
+agot_mw_gui_traitors_take_hostage_selecting = {
+	scope = character
+
+	is_shown = {
+		var:selected_hostage ?= scope:selected_hostage
+	}
+
+	effect = {
+		agot_mw_gui_selection_selecting = {
+			ACTION_NAME = take_hostage
+			SELECTING = selecting_hostage
+			SELECTED = selected_hostage
+		}
+	}
+}
+
+# Take Artifact
+agot_mw_gui_traitors_take_artifact = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_artifact_trigger = yes
+	}
+
+	is_shown = {
+		agot_mw_gui_general_hide_button_trigger = yes
+	}
+
+	effect = {
+		agot_mw_gui_selection_button_main = {
+			ACTION_NAME = take_artifact
+			SELECTING = selecting_artifact
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+
+		set_variable = { name = mw_punishment_scrollbox value = flag:artifact_selection }
+	}
+}
+
+# Show artifact scrollbox?
+agot_mw_gui_traitors_take_artifact_trigger = {
+	scope = character
+
+	is_shown = {
+		var:mw_punishment_scrollbox ?= flag:artifact_selection
+	}
+}
+
+# Take Artifact; Clear
+agot_mw_gui_traitors_take_artifact_clear = {
+	scope = character
+
+	is_valid = {
+		OR = {
+			has_variable = selected_artifact
+			has_variable = selecting_artifact
+		}
+	}
+
+	is_shown = {
+		NOR = {
+			has_variable = selecting_hostage
+			has_variable = selecting_artifact
+		}
+	}
+
+	effect = {
+		agot_mw_gui_selection_clear_button = {
+			ACTION_NAME = take_artifact
+			SELECTING = selecting_artifact
+			SELECTED = selected_artifact
+		}
+
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+
+		remove_variable = mw_punishment_scrollbox
+	}
+}
+
+# Take Artifact; Selecting
+agot_mw_gui_traitors_take_artifact_selecting = {
+	scope = character
+
+	is_valid = {
+	}
+
+	is_shown = {
+		var:selected_artifact ?= scope:selected_artifact
+	}
+
+	effect = {
+		agot_mw_gui_selection_selecting = {
+			ACTION_NAME = take_artifact
+			SELECTING = selecting_artifact
+			SELECTED = selected_artifact
+		}
+	}
+}
+
+### Right side ###
+
+### EXECUTION
+
+agot_mw_gui_traitors_execution = {
+	scope = character
+
+	is_valid = {
+	}
+
+	is_shown = {
+		var:mw_punishment_window ?= flag:execution
+	}
+
+	effect = {
+		if = {
+			limit = {
+				has_variable = mw_punishment_window
+				var:mw_punishment_window = flag:execution
+			}
+
+			remove_variable = mw_punishment_window
+		}
+		else = {
+			set_variable = { name = mw_punishment_window value = flag:execution }
+		}
+	}
+}
+
+# Execute traitor
+agot_mw_gui_traitors_execute = {
+	scope = character
+
+	is_valid = {
+		NOT = {
+			faith = {
+				has_doctrine_parameter = cannot_execute_criminals
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = execution_traitor }
+			remove_variable = execution_traitor
+			remove_variable = expel_family
+			remove_variable = expel_house
+		}
+		else = {
+			set_variable = execution_traitor
+			remove_variable = expel_traitor
+			remove_variable = sent_to_wall
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+# Execute traitor and traitor's family
+agot_mw_gui_traitors_execution_family = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_execution_family_trigger = { TARGET = root.var:selected_traitor }
+		NOT = {
+			faith = {
+				has_doctrine_parameter = cannot_execute_criminals
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = execution_family }
+			remove_variable = execution_family
+		}
+		else = {
+			set_variable = execution_family
+			remove_variable = expel_family
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+# Execute traitor and traitor's dynasty
+agot_mw_gui_traitors_execution_house = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_execution_house_trigger = { TARGET = root.var:selected_traitor }
+		NOT = {
+			faith = {
+				has_doctrine_parameter = cannot_execute_criminals
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = execution_house }
+			remove_variable = execution_house
+		}
+		else = {
+			set_variable = execution_house
+			remove_variable = expel_house
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+### BANISHMENT
+
+agot_mw_gui_traitors_banishment = {
+	scope = character
+
+	is_valid = {
+	}
+
+	is_shown = {
+		var:mw_punishment_window ?= flag:banishment
+	}
+
+	effect = {
+		if = {
+			limit = {
+				has_variable = mw_punishment_window
+				var:mw_punishment_window = flag:banishment
+			}
+
+			remove_variable = mw_punishment_window
+		}
+		else = {
+			set_variable = { name = mw_punishment_window value = flag:banishment }
+		}
+	}
+}
+
+# Send traitor to Wall
+agot_mw_gui_traitors_wall = {
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_wall_trigger = { TARGET = root.var:selected_traitor }
+	}
+
+	is_shown = {
+		exists = title:k_the_wall.holder
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = sent_to_wall }
+			remove_variable = sent_to_wall
+		}
+		else = {
+			set_variable = sent_to_wall
+			remove_variable = execution_traitor
+			remove_variable = expel_traitor
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+# Expel traitor
+agot_mw_gui_traitors_expel = { # TODO update this as soon as we have a general "exile" effect
+	scope = character
+
+	is_valid = {
+		custom_tooltip = {
+			text = AGOT_MW_TRAITORS_EXPEL_TT
+			NOT = {
+				var:selected_traitor = {
+					has_trait = nightswatch
+				}
+			}
+		}
+	}
+
+	is_shown = {
+		NOT = {
+			capital_province = {
+				geographical_region = world_essos
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = expel_traitor }
+			remove_variable = expel_traitor
+		}
+		else = {
+			set_variable = expel_traitor
+			remove_variable = sent_to_wall
+			remove_variable = execution_traitor
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+# Expel traitor and traitor's family
+agot_mw_gui_traitors_expel_family = { # TODO update this as soon as we have a general "exile" effect
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_expel_family_trigger = { TARGET = root.var:selected_traitor }
+	}
+
+	is_shown = {
+		NOT = {
+			capital_province = {
+				geographical_region = world_essos
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = expel_family }
+			remove_variable = expel_family
+		}
+		else = {
+			set_variable = expel_family
+			remove_variable = execution_family
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}
+
+# Expel traitor and traitor's house
+agot_mw_gui_traitors_expel_house = { # TODO update this as soon as we have a general "exile" effect
+	scope = character
+
+	is_valid = {
+		agot_mw_penalty_expel_house_trigger = { TARGET = root.var:selected_traitor }
+	}
+
+	is_shown = {
+		NOT = {
+			capital_province = {
+				geographical_region = world_essos
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = expel_house }
+			remove_variable = expel_house
+		}
+		else = {
+			set_variable = expel_house
+			remove_variable = execution_house
+		}
+		agot_mw_traitor_gui_update_indicator_and_flags_effect = yes
+	}
+}

@@ -1,0 +1,1652 @@
+﻿# This is a separate file to avoid potential overlap between characters - happy to integrate if
+# people want to. There's probably some sensible places these could be instead - Sililex
+
+namespace = agot_historical_inspiration
+
+############################
+# Name: The Legacy of The Conqueror
+# Desc: The Targaryen conquest is one that left a huge cultural impact. This event gives some flavor to reflect that.
+############################
+
+agot_historical_inspiration.0001 = { # I ponder the targaryen conquest
+	type = character_event
+	title = agot_historical_inspiration.0001.t
+	desc = {
+		desc = agot_historical_inspiration.0001.opening
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					root.dynasty ?= dynasty:dynn_Targaryen
+				}
+				desc = agot_historical_inspiration.0001.targ
+			}
+			desc = agot_historical_inspiration.0001.nontarg
+		}
+	}
+	theme = crown
+	left_portrait = {
+		character = ROOT
+		triggered_animation = {
+			trigger = { ai_boldness >= medium_positive_ai_value }
+			animation = admiration
+		}
+		triggered_animation = {
+			trigger = { ai_compassion >= high_positive_ai_value }
+			animation = disapproval
+		}
+		animation = boredom  # if agnostic
+	}
+	right_portrait = {
+		character = character:Targaryen_27
+		animation = personality_bold
+	}
+	trigger = {
+		is_available_adult = yes
+		OR = { # My liege is a Targaryen, I live in the seven kingdoms, or I live in westeros sans Dorne
+			ROOT.top_liege.dynasty ?= dynasty:dynn_Targaryen
+			ROOT.top_liege.primary_title = title:h_the_iron_throne
+			AND = {
+				is_landed = yes
+				capital_province = { geographical_region = world_westeros_seven_kingdoms_without_dorne }
+			}
+		}
+		game_start_date >= 8003.1.1 # After Aegon's crowning
+		current_date >= 8053.1.1  # Time for the conquest to build infamy + word to spread
+	}
+
+	immediate = {
+		set_variable = {
+			name = AegonTheConqueror
+			value = character:Targaryen_27
+		}
+	}
+
+	option = { # It makes me want to learn high valyrian
+		name = agot_historical_inspiration.0001.a
+		trigger = {
+			OR = {
+				has_trait = shrewd
+				has_trait = intellect_good_1
+				has_trait = intellect_good_2
+				has_trait = intellect_good_3
+				has_trait = education_learning_2
+				has_trait = education_learning_3
+				has_trait = education_learning_4
+				has_trait = education_diplomacy_3
+				has_trait = education_diplomacy_4
+			}
+			culture:high_valyrian.culture_head ?= { # Culture head can teach player
+				is_available = yes
+				is_within_diplo_range = {
+					CHARACTER = root
+				}
+			}
+			NOR = { # Don't have this if I'm already learning a language or already know high valyrian
+				knows_language_of_culture = culture:high_valyrian
+				any_scheme = {
+					scheme_type = learn_language
+				}
+			}
+		}
+		ai_chance = { # This looks complex but most are mutually exclusive, max is 300
+			base = 100
+			modifier = {
+				add = 25
+				OR = {
+					has_trait = shrewd
+					has_trait = intellect_good_1
+					has_trait = education_learning_2
+					has_trait = education_diplomacy_3
+				}
+			}
+			modifier = {
+				add = 50
+				OR = {
+					has_trait = intellect_good_2
+					has_trait = education_learning_3
+					has_trait = education_diplomacy_4
+				}
+			}
+			modifier = {
+				add = 100
+				OR = {
+					has_trait = intellect_good_3
+					has_trait = education_learning_4
+				}
+			}
+			modifier = { # Don't choose this if it'd push them over the cap
+				add = -1000
+				num_of_known_languages >= language_soft_cap
+			}
+		}
+		start_scheme = {
+			type = learn_language
+			target_character = culture:high_valyrian.culture_head
+		}
+	}
+
+	option = { # I will strive to change the world as Aegon did
+		name = agot_historical_inspiration.0001.b
+		trigger = {
+			number_of_personality_traits < personality_trait_limit
+			has_trait = ambitious
+			NOR = {
+				has_trait = diligent
+				has_trait = lazy
+			}
+		}
+		ai_chance = {
+			base = 100
+			modifier = { # Martial characters are more inspired
+				add = 100
+				has_education_martial_trigger = yes
+			}
+		}
+		add_stress = medium_stress_gain
+		random_list = {
+			40 = { # It works
+				desc = agot_historical_inspiration.0001.b.a
+				add_trait = diligent
+				modifier = {
+					add = learning
+				}
+				modifier = {
+					add = ai_zeal
+				}
+			}
+			60 = { # It doesnt
+				desc = agot_historical_inspiration.0001.b.b
+				add_stress = 20
+			}
+		}
+	}
+
+	option = { # I'll comission a small shrine to the lost
+		name = agot_historical_inspiration.0001.c
+		trigger = {
+			OR = {
+				has_trait = compassionate
+				has_trait = zealous
+			}
+			NOT = {
+				has_trait = humble
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+		add_piety = 150
+		remove_short_term_gold = 15
+		# NOTE: Could add checks to this, like if in a county that opposed Aegon, they'll be mad
+		#       or similar effects
+		location.county = {
+			add_county_modifier = { modifier = helped_construct_makeshift_temple }
+			random_list = {
+				50 = { # Good shrine
+					add_county_modifier = {
+						modifier = accurate_statue
+						years = 5
+					}
+				}
+				50 = { # Bad shrine
+					add_county_modifier = {
+						modifier = ugly_statue
+						years = 5
+					}
+				}
+			}
+		}
+	}
+
+	option = { # It is good to admire those who achieved much
+		name = agot_historical_inspiration.0001.d
+		trigger = {
+			has_trait = humble
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = root.stress
+			}
+		}
+		add_stress = minor_stress_loss
+	}
+
+	option = { # Such a foundation for our realm honors us all
+		name = {
+			trigger = {
+				root.dynasty ?= dynasty:dynn_Targaryen
+			}
+			text = agot_historical_inspiration.0001.e.targ
+		}
+		name = {
+			trigger = {
+				NOT = {
+					root.dynasty ?= dynasty:dynn_Targaryen
+				}
+			}
+			text = agot_historical_inspiration.0001.e
+		}
+		ai_chance = {
+			base = 100
+		}
+		if = {
+			limit = {
+				root.dynasty ?= dynasty:dynn_Targaryen
+			}
+			add_prestige = medium_prestige_gain
+		}
+		else = {
+			add_prestige = minor_prestige_gain
+		}
+	}
+
+	after = {
+		remove_variable = AegonTheConqueror
+	}
+}
+
+############################
+# Name: Reflections of Cleverness
+# Desc: Lann the Clever is popular amoungst singers, a famous Lannister, and potentially a bastard. This gives some reflections for people of appropriate traits.
+############################
+
+agot_historical_inspiration.0002 = {
+	type = character_event
+	title = agot_historical_inspiration.0002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					has_trait = bastard
+				}
+				desc = agot_historical_inspiration.0002.desc.bastard
+			}
+			triggered_desc = {
+				trigger = {
+					OR = {
+						has_trait = bastard_founder
+						has_trait = legitimized_bastard
+					}
+				}
+				desc = agot_historical_inspiration.0002.desc.bastard_legitimized
+			}
+			triggered_desc = {
+				trigger = {
+					root.dynasty ?= dynasty:dynn_Lannister
+				}
+				desc = agot_historical_inspiration.0002.desc.lannister
+			}
+			triggered_desc = {
+				trigger = {
+					has_trait = lifestyle_poet
+				}
+				desc = agot_historical_inspiration.0002.desc.poet
+			}
+		}
+	}
+	theme = dynasty
+	override_background = { reference = courtyard }
+	override_background = {
+		trigger = { has_trait = lifestyle_poet }
+		reference = bedchamber
+	}
+	left_portrait = {
+		character = ROOT
+		animation = boredom
+		triggered_animation = {
+			trigger = {
+				OR = {
+					has_trait = bastard
+					has_trait = bastard_founder
+					has_trait = legitimized_bastard
+				}
+			}
+			animation = anger
+		}
+		triggered_animation = {
+			trigger = {
+				has_trait = lifestyle_poet
+			}
+			animation = stress
+		}
+	}
+	right_portrait = {
+		character = character:Lannister_29
+		animation = scheme
+	}
+	trigger = {
+		is_landed = yes
+		is_available_adult = yes
+		capital_province = { geographical_region = world_westeros_seven_kingdoms }
+		OR = {
+			root.dynasty ?= dynasty:dynn_Lannister
+			has_trait = lifestyle_poet
+			has_trait = bastard
+			has_trait = bastard_founder
+			has_trait = legitimized_bastard
+		}
+	}
+
+	immediate = {
+		set_variable = {
+			name = LannTheClever
+			value = character:Lannister_29
+		}
+	}
+
+	option = { # I should learn to master my words as he did
+		name = agot_historical_inspiration.0002.a
+		trigger = {
+			NOT = {
+				has_trait = shy
+			}
+		}
+		ai_chance = {
+			base = 90
+			modifier = {
+				add = root.diplomacy
+			}
+			modifier = {
+				add = ai_sociability
+			}
+		}
+		random_list = {
+			40 = { # It works
+				desc = agot_historical_inspiration.0002.a.a
+				if = {
+					limit = {
+						has_trait = lifestyle_poet
+					}
+					add_diplomacy_skill = 3
+				}
+				else = {
+					add_trait = lifestyle_poet
+					add_diplomacy_skill = 1
+				}
+				modifier = {
+					add = diplomacy
+				}
+				modifier = {
+					add = 20
+					has_trait = diligent
+				}
+			}
+			60 = { # It doesnt
+				desc = agot_historical_inspiration.0002.a.b
+				add_stress = 20
+				modifier = {
+					add = 20
+					has_trait = lazy
+				}
+				stress_impact = {
+					base = 20
+					diligent = 20
+				}
+			}
+		}
+		stress_impact = {
+			lazy = 15
+		}
+	}
+
+	option = { # Such guile is inspiring!
+		name = agot_historical_inspiration.0002.b
+		trigger = {
+			NOT = {
+				has_trait = honest
+			}
+		}
+		ai_chance = {
+			base = 90
+			modifier = {
+				add = root.intrigue
+			}
+			modifier = { # NOTE: May need tuning
+				add = {
+					value = 0
+					subtract = ai_honor
+				}
+			}
+		}
+		random_list = {
+			40 = { # It works
+				desc = agot_historical_inspiration.0002.b.a
+				if = {
+					limit = {
+						has_trait = deceitful
+					}
+					add_intrigue_skill = 3
+				}
+				else_if = {
+					limit = {
+						number_of_personality_traits < personality_trait_limit
+					}
+					add_trait = deceitful
+				}
+				else = {
+					add_intrigue_skill = 1
+				}
+				modifier = {
+					add = intrigue
+				}
+				modifier = {
+					add = 20
+					has_trait = diligent
+				}
+			}
+			60 = { # It doesnt
+				desc = agot_historical_inspiration.0002.b.b
+				modifier = {
+					add = 20
+					has_trait = lazy
+				}
+				modifier = { # NOTE: May need tuning
+					add = {
+						value = 0
+						subtract = ai_honor
+					}
+				}
+				stress_impact = {
+					base = 20
+					diligent = 20
+				}
+			}
+		}
+		stress_impact = {
+			lazy = 15
+		}
+	}
+
+	option = { # The thought inspires me!
+		name = agot_historical_inspiration.0002.c
+		trigger = {
+			has_trait = lifestyle_poet
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = root.stress
+			}
+		}
+		add_stress = minor_stress_loss
+	}
+
+	option = { # I can work off this stain as he did!
+		name = agot_historical_inspiration.0002.d
+		trigger = {
+			OR = {
+				has_trait = bastard
+				has_trait = bastard_founder
+				has_trait = legitimized_bastard
+			}
+			NOT = {
+				root.dynasty ?= dynasty:dynn_Lannister
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+		if = {
+			limit = {
+				has_trait = diligent
+			}
+			add_character_modifier = {
+				modifier = agot_working_off_bastardry
+				months = 36
+			}
+		}
+		else = {
+			add_character_modifier = {
+				modifier = agot_working_off_bastardry
+				months = 24
+			}
+		}
+	}
+
+	option = { # Lannister response
+		name = {
+			trigger = {
+				has_trait = cynical
+			}
+			text = agot_historical_inspiration.0002.e.cynical
+		}
+		name = {
+			trigger = {
+				NOT = {
+					has_trait = cynical
+				}
+			}
+			text = agot_historical_inspiration.0002.e
+		}
+		trigger = {
+			root.dynasty ?= dynasty:dynn_Lannister
+		}
+		ai_chance = {
+			base = 100
+		}
+		add_prestige = minor_prestige_gain
+	}
+
+	after = {
+		remove_variable = LannTheClever
+	}
+}
+
+############################
+# Name: The Last of a Dynasty
+# Desc: The last of a reach dynasty ponders what it means and what to do
+############################
+agot_historical_inspiration.0003 = {
+	type = character_event
+	title = agot_historical_inspiration.0003.t
+	desc = agot_historical_inspiration.0003.desc
+	theme = family
+	left_portrait = {
+		character = ROOT
+		animation = boredom
+		triggered_animation = {
+			trigger = { has_trait = lustful }
+			animation = flirtation_left
+		}
+	}
+	right_portrait = {
+		character = character:Gardener_95
+		animation = flirtation
+	}
+	trigger = {
+		is_available_adult = yes
+		is_landed = yes
+		OR = {
+			culture = culture:reachman
+			capital_province = { geographical_region = world_westeros_the_reach }
+		}
+		dynasty ?= { # They are the only living member of their dynasty
+			any_dynasty_member = {
+				count = 1
+			}
+		}
+		game_start_date >= 8003.1.1 # After Aegon's crowning
+		current_date >= 8013.1.1  # Time for news of House Gardner's demise to spread
+	}
+
+	immediate = {
+		create_character = {
+			template = beautiful_peasant_character
+			opposite_gender = root
+			location = root.location
+			culture = root.location.county.culture
+			faith = root.location.county.faith
+			save_scope_as = marry_scope
+		}
+		random_courtier_or_guest = {
+			limit = {
+				can_set_relation_lover_trigger = {
+					CHARACTER = ROOT
+				}
+				fertility > 0
+				NOT = { # No incest / wife seducing here!
+					is_close_family_of = ROOT
+					primary_spouse = ROOT
+				}
+				trigger_if = { # Check they can have kids
+					limit = {
+						is_male = yes
+					}
+					root = {
+						is_male = no
+					}
+				}
+				trigger_else = {
+					root = {
+						is_male = yes
+					}
+				}
+			}
+			save_scope_as = willing_courtier
+		}
+		set_variable = {
+			name = MernIX
+			value = character:Gardener_95
+		}
+		set_variable = {
+			name = AegonTheConqueror
+			value = character:Targaryen_27
+		}
+	}
+
+	option = { # I must marry someone! Anyone!
+		name = agot_historical_inspiration.0003.a
+		trigger = {
+			scope:marry_scope ?= {
+				can_marry_character_trigger = {
+					CHARACTER = root
+				}
+				root = {
+					can_marry_character_trigger = {
+						CHARACTER = scope:marry_scope
+					}
+				}
+			}
+		}
+		flavor = agot_historical_inspiration.0003.a.flavor
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -50
+				has_trait = arrogant
+			}
+		}
+		if = {
+			limit = {
+				is_male = yes
+			}
+			marry = scope:marry_scope
+		}
+		else = {
+			marry_matrilineal = scope:marry_scope
+		}
+		stress_impact = {
+			arrogant = 20
+		}
+		save_scope_as = married_created_char
+	}
+
+	option = { # I'm sure I can find a willing courtier...
+		name = agot_historical_inspiration.0003.b
+		trigger = {
+			scope:willing_courtier ?= {
+				root = {
+					can_set_relation_lover_trigger = {
+						CHARACTER = scope:willing_courtier
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 100
+				has_trait = lustful
+			}
+		}
+		scope:willing_courtier = {
+			set_relation_lover = {
+				reason = lover_seduced
+				target = root
+			}
+		}
+		show_as_tooltip = {
+			had_sex_with_effect = {
+				CHARACTER = scope:willing_courtier
+				PREGNANCY_CHANCE = 50
+			}
+		}
+		if = {
+			limit = {
+				has_sexuality = heterosexual
+			}
+			stress_impact = {
+				chaste = 20
+				lustful = -20
+			}
+		}
+		else = { # Non-heterosexual characters find this stressful
+			stress_impact = {
+				base = 20
+				chaste = 20
+				lustful = -20
+			}
+		}
+	}
+
+	option = { # Come here wife/husband!
+		name = {
+			trigger = {
+				primary_spouse ?= {
+					is_male = yes
+				}
+			}
+			text = agot_historical_inspiration.0003.c.husband
+		}
+		name = {
+			trigger = {
+				primary_spouse ?= {
+					is_male = no
+				}
+			}
+			text = agot_historical_inspiration.0003.c.wife
+		}
+		flavor = agot_historical_inspiration.0003.c.flavor
+		trigger = {
+			trigger_if = {
+				limit = {
+					is_male = yes
+				}
+				primary_spouse ?= {
+					is_female = yes
+					fertility > 0
+					age < 50
+				}
+			}
+			trigger_else = {
+				is_female = no  # TODO: Needed?
+				primary_spouse ?= {
+					fertility > 0
+				}
+				age < 50
+			}
+			fertility > 0
+		}
+		ai_chance = {
+			base = 100
+			opinion_modifier = {
+				opinion_target = primary_spouse
+			}
+		}
+		show_as_tooltip = {
+			had_sex_with_effect = {
+				CHARACTER = primary_spouse
+				PREGNANCY_CHANCE = 50
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					has_sexuality = heterosexual
+					has_sexuality = bisexual
+				}
+			}
+			stress_impact = {
+				chaste = 20
+				lustful = -20
+			}
+		}
+		else = { # Non-heterosexual characters find this stressful
+			stress_impact = {
+				base = 20
+				chaste = 20
+				lustful = -20
+			}
+		}
+	}
+
+	option = { # Perhaps this is an opportunity for greatness?
+		name = agot_historical_inspiration.0003.d
+		flavor = agot_historical_inspiration.0003.d.flavor
+		ai_chance = {
+			base = 0  # We don't want the AI to do this as it goes against their purpose
+		}
+		dynasty = { add_dynasty_prestige = medium_prestige_gain }
+		set_nickname_effect = { NICKNAME = nick_agot_the_last }
+		if = {
+			limit = { is_married = no }
+			add_trait = refusing_marriage
+		}
+		stress_impact = {
+			base = medium_stress_gain
+			gregarious = minor_stress_gain
+			shy = minor_stress_loss
+			content = minor_stress_loss
+			ambitious = minor_stress_gain
+			family_first = minor_stress_gain
+			seducer = minor_stress_gain
+			reclusive = minor_stress_loss
+			celibate = minor_stress_loss
+		}
+	}
+
+	after = {
+		remove_variable = MernIX
+		remove_variable = AegonTheConqueror
+		if = { # Remove the created character since they were unused
+			limit = { NOT = { exists = scope:married_created_char } }
+			scope:marry_scope = { silent_disappearance_effect = yes }
+		}
+	}
+}
+
+############################
+# Name: Lost Light, Stars Remembered
+# Desc: A blind character in Westeros thinks on Symeon Star-Eyes
+############################
+agot_historical_inspiration.0004 = {
+	type = character_event
+	title = agot_historical_inspiration.0004.t
+	desc = agot_historical_inspiration.0004.desc
+	theme = medicine
+	override_background = {
+		reference = corridor_night
+	}
+	left_portrait = {
+		character = ROOT
+		animation = disapproval
+	}
+	right_portrait = {
+		character = scope:random_courtier
+		animation = shame
+	}
+	trigger = {
+		is_available_adult = yes
+		has_trait = blind
+		exists = scope:random_courtier
+		AND = {
+			is_landed = yes
+			capital_province = { geographical_region = world_westeros_seven_kingdoms }
+		}
+	}
+	immediate = {
+		random_courtier_or_guest = {
+			limit = { # Can speak properly and is available
+				age >= 12
+				is_available = yes
+				NAND = {
+					has_trait = mute
+					has_trait = impotent
+					has_trait = incapable
+				}
+				knows_language_of_culture = root.culture
+			}
+			save_scope_as = random_courtier
+		}
+		set_variable = {
+			name = SymeonStarEyes
+			value = character:Heroes_24
+		}
+	}
+
+	option = { #This won't defeat me, I should train just as he did!
+		name = agot_historical_inspiration.0004.a
+		ai_chance = {
+			base = 100
+			modifier = { # Martial characters are more inspired
+				add = 100
+				has_education_martial_trigger = yes
+			}
+		}
+		add_character_modifier = {
+			modifier = training_hard_modifier
+			desc = agot_historical_inspiration.0004.modifier_desc
+			months = 12
+		}
+		# TODO: Chance to upgrade trait, or gain new one?
+		remove_variable = SymeonStarEyes
+	}
+
+	option = { # Maybe I, too, should get a pair of jeweled eyes?
+		name = agot_historical_inspiration.0004.b
+		flavor = agot_historical_inspiration.0004.b.flavor
+		trigger_event = {
+			id = agot_historical_inspiration.0005
+			days = { 2 16 }
+		}
+	}
+
+	option = { # That they forgot means I must be doing well
+		name = agot_historical_inspiration.0004.c
+		flavor = agot_historical_inspiration.0004.c.flavor
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 100
+				has_trait = arrogant
+			}
+		}
+		add_prestige = medium_prestige_gain
+		stress_impact = {
+			arrogant = medium_stress_loss
+		}
+		remove_variable = SymeonStarEyes
+	}
+
+	option = { # No point worrying about what can't be changed
+		name = agot_historical_inspiration.0004.d
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 40
+				has_trait = humble
+			}
+			modifier = {
+				add = root.stress
+			}
+		}
+		stress_impact = {
+			base = medium_stress_loss
+			humble = medium_stress_loss
+			arrogant = minor_stress_gain
+		}
+		remove_variable = SymeonStarEyes
+	}
+}
+
+agot_historical_inspiration.0005 = { # Creating gem eyes decision AGOT TODO: There is a gem eye for one-eyed characters that this should work with instead
+	type = character_event
+	title = agot_historical_inspiration.0005.t
+	desc = agot_historical_inspiration.0005.desc
+	theme = medicine
+	override_background = {
+		reference = council_chamber
+	}
+	left_portrait = {
+		character = ROOT
+		animation = thinking
+	}
+	right_portrait = {
+		character = character:Heroes_24
+		animation = celebrate_spear
+	}
+
+	option = { # Create a pair of sapphire eyes
+		name = agot_historical_inspiration.0005.a
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 100
+				diplomacy >= 12
+			}
+			modifier = {
+				add = 50
+				has_trait = gregarious
+			}
+			modifier = {
+				add = -50
+				has_trait = shy
+			}
+			modifier = {
+				add = 1000
+				dynasty ?= dynasty:dynn_Tarth
+			}
+		}
+		remove_short_term_gold = 100
+		create_artifact = {
+			name = agot_sapphire_eyes_name
+			description = agot_sapphire_eyes_desc
+			rarity = masterwork
+			modifier = artifact_diplomacy_2_modifier
+			modifier = artifact_personal_scheme_phase_duration_add_2_modifier
+			modifier = artifact_monthly_prestige_1_modifier
+			type = miscellaneous
+			visuals = sapphire_eyes
+			template = AGOT_gem_eyes
+		}
+	}
+
+	option = { # Create a pair of ruby eyes
+		name = agot_historical_inspiration.0005.b
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 100
+				martial >= 12
+			}
+			modifier = {
+				add = 50
+				has_trait = sadistic
+			}
+			modifier = {
+				add = -50
+				has_trait = compassionate
+			}
+		}
+		remove_short_term_gold = 100
+		create_artifact = {
+			name = agot_ruby_eyes_name
+			description = agot_ruby_eyes_desc
+			rarity = masterwork
+			modifier = artifact_dread_gain_mult_2_modifier
+			modifier = artifact_prowess_1_modifier
+			modifier = artifact_monthly_prestige_1_modifier
+			type = miscellaneous
+			visuals = ruby_eyes
+			template = AGOT_gem_eyes
+		}
+	}
+
+	option = { # Create unnearving amethyst eyes
+		name = agot_historical_inspiration.0005.c
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 100
+				intrigue >= 12
+			}
+			modifier = {
+				add = 50
+				has_trait = paranoid
+			}
+			modifier = {
+				add = -50
+				has_trait = trusting
+			}
+		}
+		remove_short_term_gold = 100
+		create_artifact = {
+			name = agot_amethyst_eyes_name
+			description = agot_amethyst_eyes_desc
+			rarity = masterwork
+			modifier = artifact_intrigue_2_modifier
+			modifier = artifact_owned_scheme_secrecy_add_2_modifier
+			modifier = artifact_monthly_prestige_1_modifier
+			type = miscellaneous
+			visuals = amethyst_eyes
+			template = AGOT_gem_eyes
+		}
+	}
+
+	option = { # Create impressive diamond eyes
+		name = agot_historical_inspiration.0005.d
+		ai_chance = {
+			base = 0 # To equal out the extra gold cost
+			modifier = {
+				add = 100
+				has_trait = arrogant
+			}
+			modifier = {
+				add = -100
+				has_trait = greedy
+			}
+			modifier = {
+				add = gold
+			}
+		}
+		remove_short_term_gold = 250
+		create_artifact = {
+			name = agot_diamond_eyes_name
+			description = agot_diamond_eyes_desc
+			rarity = masterwork
+			modifier = artifact_courtly_vassal_opinion_3_modifier
+			modifier = artifact_monthly_prestige_5_modifier
+			type = miscellaneous
+			visuals = diamond_eyes
+			template = AGOT_gem_eyes
+		}
+	}
+
+	option = { # On second thought, this is a bit expensive.
+		name = agot_historical_inspiration.0005.e
+	}
+
+	after = {
+		remove_variable = SymeonStarEyes
+	}
+}
+
+############################
+# Name: Remembering Alicent Hightower
+# Desc: Female reachmen and hightowers decide in hindsight if they agree with Alicent or not
+############################
+agot_historical_inspiration.0006 = {
+	type = character_event
+	title = agot_historical_inspiration.0006.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					dynasty ?= dynasty:dynn_Hightower
+					is_female = yes
+				}
+				desc = agot_historical_inspiration.0006.desc.hightower_woman
+			}
+			triggered_desc = {
+				trigger = {
+					dynasty ?= dynasty:dynn_Hightower
+				}
+				desc = agot_historical_inspiration.0006.desc.hightower_man
+			}
+			desc = agot_historical_inspiration.0006.desc
+		}
+	}
+	theme = family
+	left_portrait = {
+		character = ROOT
+		animation = idle
+		triggered_animation = {
+			trigger = { ai_boldness >= medium_positive_ai_value }
+			animation = admiration
+		}
+	}
+	right_portrait = {
+		character = character:Hightower_97
+		animation = personality_bold
+	}
+	trigger = {
+		is_available_adult = yes
+		OR = {
+			dynasty ?= dynasty:dynn_Hightower
+			AND = {
+				is_female = yes
+				is_landed = yes
+				capital_province = { geographical_region = world_westeros_the_reach }
+			}
+		}
+		game_start_date > 8133.6.1 # After Alicent's death
+		current_date >= 8153.1.1  # Time for news of life to spread and her impact to be felt
+	}
+
+	immediate = {
+		set_variable = {
+			name = AlicentHightower
+			value = character:Hightower_97
+		}
+	}
+
+	option = { # Support Alicent
+		name = {
+			trigger = {
+				is_male = yes
+			}
+			text = agot_historical_inspiration.0006.a.man
+		}
+		name = {
+			trigger = {
+				is_male = no
+			}
+			text = agot_historical_inspiration.0006.a.woman
+		}
+		flavor = agot_historical_inspiration.0006.a.flavor
+		if = {
+			limit = {
+				dynasty ?= dynasty:dynn_Hightower
+			}
+			custom_tooltip = agot_historical_inspiration.0006.a.tt.a
+			dynasty = {
+				add_dynasty_prestige = minor_prestige_gain
+				hidden_effect = {
+					every_dynasty_member = {
+						limit = {
+							is_female = yes
+						}
+						add_opinion = {
+							target = root
+							modifier = pleased_opinion
+							opinion = 15
+						}
+					}
+				}
+			}
+			add_prestige = minor_prestige_loss
+		}
+		custom_tooltip = agot_historical_inspiration.0006.a.tt.b
+		hidden_effect = {
+			every_vassal_or_below = {
+				limit = {
+					is_female = yes
+				}
+				add_opinion = {
+					target = root
+					modifier = pleased_opinion
+					opinion = 10
+				}
+			}
+			every_courtier_or_guest = {
+				limit = {
+					is_female = yes
+				}
+				add_opinion = {
+					target = root
+					modifier = pleased_opinion
+					opinion = 5
+				}
+			}
+		}
+	}
+
+	option = { # Decry Alicent
+		name = {
+			trigger = {
+				is_male = yes
+			}
+			text = agot_historical_inspiration.0006.b.man
+		}
+		name = {
+			trigger = {
+				is_male = no
+			}
+			text = agot_historical_inspiration.0006.b.woman
+		}
+		flavor = agot_historical_inspiration.0006.b.flavor
+		if = {
+			limit = {
+				dynasty ?= dynasty:dynn_Hightower
+			}
+			dynasty = {
+				add_dynasty_prestige = minor_prestige_loss
+			}
+		}
+		add_prestige = medium_prestige_gain
+	}
+
+	after = {
+		remove_variable = AlicentHightower
+	}
+}
+
+############################
+# Name: Daemon Targaryen Reborn
+# Desc: Characters like Daemon are compared to him
+############################
+agot_historical_inspiration.0007 = {
+	type = character_event
+	title = agot_historical_inspiration.0007.t
+	desc = agot_historical_inspiration.0007.desc
+	theme = war
+	left_portrait = {
+		character = ROOT
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = character:Targaryen_61
+		animation = celebrate_sword  # war_attacker war_over_win personality_cynical
+	}
+	trigger = {
+		is_male = yes
+		is_available_healthy_adult = yes
+		is_landed = yes
+		capital_province = { geographical_region = world_westeros_seven_kingdoms_without_dorne }
+		game_start_date > 8130.5.22 # Daemon's death
+		current_date >= 8150.1.1  # Time for news of his exploits
+		OR = {
+			AND = {
+				has_trait = dragonrider
+				number_of_personality_traits_in_common = {
+					target = character:Targaryen_61
+					value >= 2
+				}
+			}
+			number_of_personality_traits_in_common = {
+				target = character:Targaryen_61
+				value >= 3
+			}
+		}
+		prestige_level >= 3
+		prowess > 15
+	}
+
+	immediate = {
+		set_variable = {
+			name = DaemonTargaryen
+			value = character:Targaryen_61
+		}
+	}
+
+	option = { # Why am I doubting this? Of course I do!
+		name = agot_historical_inspiration.0007.a
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -50
+				has_any_nickname = yes
+			}
+			modifier = {
+				add = 150
+				has_bad_nickname = yes
+			}
+			modifier = {
+				add = 50
+				has_trait = callous
+			}
+			modifier = {
+				add = 50
+				has_trait = sadistic
+			}
+		}
+		set_nickname_effect = { NICKNAME = nick_agot_the_rogue_prince_reborn }
+		add_prestige = medium_prestige_gain
+	}
+
+	option = { # What a comparison! I'll have to be worthy of it.
+		name = agot_historical_inspiration.0007.b
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_education_martial_trigger = yes
+			}
+		}
+		if = {
+			limit = {
+				has_any_nickname = no
+			}
+			set_nickname_effect = { NICKNAME = nick_agot_the_rogue_prince_reborn }
+		}
+		add_character_modifier = {
+			modifier = training_hard_modifier
+			desc = agot_historical_inspiration.0007.modifier_desc
+			months = 12
+		}
+		add_prestige = minor_prestige_gain
+	}
+
+	option = { # Daemon was a fool. I shall be better than he ever was.
+		name = agot_historical_inspiration.0007.c
+		flavor = agot_historical_inspiration.0007.c.flavor
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -50
+				has_trait = humble
+			}
+			modifier = {
+				add = 150
+				has_trait = arrogant
+			}
+		}
+		add_prestige = minor_prestige_gain
+		every_knight = {
+			if = {
+				limit = {
+					number_of_personality_traits_in_common = {
+						target = character:Targaryen_61
+						value >= 3
+					}
+				}
+				add_opinion = {
+					target = root
+					modifier = hurt_opinion
+					opinion = -15
+				}
+			}
+			else = {
+				add_opinion = {
+					target = root
+					modifier = admiration_opinion
+					opinion = 15
+				}
+			}
+		}
+		stress_impact = {
+			arrogant = medium_stress_loss
+			humble = medium_stress_gain
+		}
+	}
+
+	option = { # Perhaps...perhaps I should mellow myself.
+		name = agot_historical_inspiration.0007.d
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				has_trait = humble
+			}
+		}
+		trigger = {
+			OR = {
+				has_trait = wrathful
+				has_trait = ambitious
+				has_trait = callous
+			}
+		}
+		if = {
+			limit = {
+				has_trait = wrathful
+			}
+			random_list = {
+				50 = {}
+				40 = {
+					remove_trait = wrathful
+					add_trait = stubborn
+				}
+				10 = {
+					remove_trait = wrathful
+					add_trait = calm
+				}
+			}
+		}
+		if = {
+			limit = {
+				has_trait = ambitious
+			}
+			random_list = {
+				50 = {}
+				40 = {
+					remove_trait = ambitious
+					add_trait = diligent
+				}
+				10 = {
+					remove_trait = ambitious
+					add_trait = content
+				}
+			}
+		}
+		if = {
+			limit = {
+				has_trait = callous
+			}
+			random_list = {
+				50 = {}
+				40 = {
+					remove_trait = callous
+					add_trait = cynical
+				}
+				10 = {
+					remove_trait = wrathful
+					add_trait = compassionate
+				}
+			}
+		}
+	}
+
+	after = {
+		remove_variable = DaemonTargaryen
+	}
+}
+
+############################
+# Name: The Legacy of The Builder
+# Desc: Bran the Builder's impact cannot be understated... The Wall, Winterfell, Storm's End (alleged), Hightower (alleged)
+############################
+agot_historical_inspiration.0008 = { # I ponder the greatest architect to ever live
+	type = character_event
+	title = agot_historical_inspiration.0008.t
+	desc = {
+		desc = agot_historical_inspiration.0008.desc
+		triggered_desc = {
+			trigger = {
+				dynasty ?= dynasty:dynn_Stark
+			}
+			desc = agot_historical_inspiration.0008.desc.Stark
+		}
+		desc = agot_historical_inspiration.0008.desc.2
+	}
+	theme = stewardship
+	left_portrait = {
+		character = ROOT
+		animation = thinking
+	}
+	right_portrait = {
+		character = character:Stark_12
+		animation = steward
+	}
+	trigger = {
+		is_available_adult = yes
+		OR = { # I am a Stark, or...
+			dynasty ?= dynasty:dynn_Stark
+			AND = { # I am focused on stewardship, and...
+				has_lifestyle = stewardship_lifestyle
+				OR = { # My liege is a Stark/King of Westeros, or I live in Westeros
+					top_liege.dynasty ?= dynasty:dynn_Stark
+					top_liege.primary_title = title:h_the_iron_throne
+					AND = {
+						is_landed = yes
+						capital_province = { geographical_region = world_westeros_seven_kingdoms }
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		set_variable = {
+			name = BranTheBuilder
+			value = character:Stark_12
+		}
+		set_variable = {
+			name = TheWall
+			value = title:k_the_wall
+		}
+		set_variable = {
+			name = Winterfell
+			value = title:c_winterfell
+		}
+	}
+
+	option = { # It makes me want to learn architecture
+		name = agot_historical_inspiration.0008.a
+		trigger = {
+			OR = {
+				learning >= medium_skill_rating
+				has_education_learning_trigger = yes
+				has_education_stewardship_trigger = yes
+				has_trait = shrewd
+				has_trait_rank = {
+					trait = intellect_good
+					rank >= 1
+				}
+			}
+		}
+		ai_chance = { # Clearly the best option, so if available, it should be chosen
+			base = 10000
+		}
+		random_list = {
+			5 = { # Gain trait 'architect'
+				trigger = { NOT = { has_trait = architect } }
+				modifier = {
+					add = 10
+					OR = {
+						AND = {
+							learning >= high_skill_rating
+							learning < extremely_high_skill_rating
+						}
+						has_trait = shrewd
+						has_trait = intellect_good_2
+						has_trait = education_learning_3
+						has_trait = education_stewardship_3
+					}
+				}
+				modifier = {
+					add = 15
+					OR = {
+						learning >= extremely_high_skill_rating
+						has_trait = intellect_good_3
+						has_trait = education_learning_4
+						has_trait = education_stewardship_4
+					}
+				}
+				add_trait = architect
+			}
+			20 = { # Gain massive stewardship exp.
+				add_stewardship_lifestyle_xp = massive_lifestyle_xp
+			}
+			40 = { # Gain big stewardship exp.
+				add_stewardship_lifestyle_xp = major_lifestyle_xp
+			}
+			35 = { # Gain character modifier
+				add_character_modifier = {
+					modifier = confident_organizer
+					desc = agot_historical_inspiration.0008.modifier_desc
+					years = 3
+				}
+				add_character_modifier = {
+					modifier = useful_insights_modifier
+					desc = agot_historical_inspiration.0008.modifier_desc
+					years = 3
+				}
+			}
+		}
+	}
+
+	option = { # I will strive to be a better steward
+		name = agot_historical_inspiration.0008.b
+		trigger = { has_lifestyle = stewardship_lifestyle }
+		ai_chance = {
+			base = 100
+		}
+		random_list = {
+			20 = { # Gain big stewardship exp.
+				add_stewardship_lifestyle_xp = major_lifestyle_xp
+			}
+			40 = { # Gain medium stewardship exp.
+				add_stewardship_lifestyle_xp = medium_lifestyle_xp
+			}
+			40 = { # Gain little stewardship exp.
+				add_stewardship_lifestyle_xp = minor_lifestyle_xp
+			}
+		}
+	}
+
+	option = { # I can learn a thing or two from him (gain char modifier)
+		name = agot_historical_inspiration.0008.c
+		ai_chance = {
+			base = 50
+		}
+		random_list = {
+			20 = {
+				add_character_modifier = {
+					modifier = focused_modifier
+					desc = agot_historical_inspiration.0008.modifier_desc
+					years = 1
+				}
+			}
+			40 = {
+				add_character_modifier = {
+					modifier = confident_organizer
+					desc = agot_historical_inspiration.0008.modifier_desc
+					years = 3
+				}
+			}
+			40 = {
+				add_character_modifier = {
+					modifier = useful_insights_modifier
+					desc = agot_historical_inspiration.0008.modifier_desc
+					years = 3
+				}
+			}
+		}
+	}
+
+	option = { # I can learn a thing or two from him (gain county modifier)
+		name = agot_historical_inspiration.0008.d
+		ai_chance = {
+			base = 50
+			# modifier = {
+			# 	add = 25
+			# 	has_county_corruption_trigger = yes
+			# }
+			modifier = {
+				add = 25
+				location.county = {
+					county_opinion < neutral_opinion
+				}
+			}
+		}
+		location.county = {
+			add_county_modifier = {
+				modifier = inspired_by_tales
+				years = 25
+			}
+			add_county_modifier = {
+				modifier = encouraged_improvement_modifier
+				years = 5
+			}
+		}
+	}
+
+	after = {
+		remove_variable = BranTheBuilder
+		remove_variable = TheWall
+		remove_variable = Winterfell
+	}
+}
+
+# Name: The Legacy of The Conqueror
+# Name: Reflections of Cleverness
+# Name: The Last of a Dynasty (death of House Gardener)
+# Name: Lost Light, Stars Remembered (Symeon Star-Eyes)
+# Name: Remembering Alicent Hightower
+# Name: Daemon Targaryen Reborn
+# Name: Bran the Builder - Starks and steward northman
+#TODO
+# Duncan the Tall - tall/good physique characters
+# Nymeria - female martial or dornish rulers
+# Jaehaerys the Conciliator - Targaryens and diplomats

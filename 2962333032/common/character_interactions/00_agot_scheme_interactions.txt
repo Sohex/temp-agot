@@ -1,0 +1,265 @@
+﻿# Raid Pirate Domiciles Scheme Start
+start_pirate_raid_domicile_interaction = {
+	icon = icon_raid_estate
+	interface_priority = 90
+	category = interaction_category_hostile
+	send_name = START_SCHEME
+	scheme = agot_raid_pirate_domicile
+	ignores_pending_interaction_block = yes
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 60
+		duchy = 60
+		kingdom = 60
+		empire = 100
+		hegemony = 100
+	}
+
+	ai_targets = { ai_recipients = liege }
+	ai_targets = {
+		ai_recipients = peer_vassals
+		max = 10
+	}
+	ai_targets = {
+		ai_recipients = neighboring_rulers
+		max = 10
+	}
+	cooldown = { years = 5 }
+
+	is_shown = {
+		scope:actor = { government_has_flag = government_is_pirate }
+		scope:recipient = {
+			this != scope:actor
+			government_has_flag = government_is_pirate
+			any_held_title = { agot_is_pirate_domicile_title_trigger = yes }
+		}
+		scope:actor = {
+			is_human = yes
+		}
+		scope:recipient = {
+			is_human = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_adult = yes
+			is_imprisoned = no
+		}
+		scope:recipient = {
+			is_adult = yes
+			is_imprisoned = no
+		}
+		trigger_if = {
+			limit = {
+				scope:recipient = {
+					is_landed = yes
+				}
+			}
+			NOT = { scope:actor.domicile.domicile_location.county.holder = scope:recipient }
+		}
+	}
+
+	desc = start_pirate_raid_domicile_interaction_desc
+
+	# Scheme Starter Packages
+	options_heading = schemes.t.agent_packages
+	send_options_exclusive = yes
+	## Balanced agents.
+	send_option = {
+		flag = agent_focus_balance
+		current_description = start_raid_estate_interaction.tt.agent_focus_balance
+	}
+	## Focused on Success Chance.
+	send_option = {
+		flag = agent_focus_success
+		current_description = start_raid_estate_interaction.tt.agent_focus_success
+	}
+	## Focused on Speed.
+	send_option = {
+		flag = agent_focus_speed
+		current_description = start_raid_estate_interaction.tt.agent_focus_speed
+	}
+	## Focused on Secrecy.
+	send_option = {
+		flag = agent_focus_secrecy
+		current_description = start_raid_estate_interaction.tt.agent_focus_secrecy
+	}
+
+	on_accept = {
+		scope:recipient = {
+			custom_tooltip = agot_raid_pirate_kill_courtiers_tt
+			custom_tooltip = agot_raid_pirate_destroy_buildings_tt
+			random_held_title = {
+				limit = { agot_is_pirate_domicile_title_trigger = yes }
+				save_scope_as = target_title
+			}
+		}
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_neutral
+				title = start_pirate_raid_domicile_notification
+				left_icon = scope:recipient
+				right_icon = scope:target_title
+				# Success.
+				if = {
+					limit = { scope:agent_focus_success ?= yes }
+					begin_scheme_with_agents_effect = {
+						SCHEME_TYPE = agot_raid_pirate_domicile
+						TARGET_TYPE = target_character
+						TARGET_SCOPE = scope:recipient
+						# Success.
+						AGENT_1 = agent_scout
+						AGENT_2 = agent_scout
+						AGENT_3 = agent_muscle
+						# Speed.
+						AGENT_4 = agent_infiltrator
+						# Secrecy.
+						AGENT_5 = agent_lookout
+					}
+				}
+				# Speed.
+				else_if = {
+					limit = { scope:agent_focus_speed ?= yes }
+					begin_scheme_with_agents_effect = {
+						SCHEME_TYPE = agot_raid_pirate_domicile
+						TARGET_TYPE = target_character
+						TARGET_SCOPE = scope:recipient
+						# Speed.
+						AGENT_1 = agent_infiltrator
+						AGENT_2 = agent_infiltrator
+						AGENT_3 = agent_footpad
+						# Success.
+						AGENT_4 = agent_scout
+						# Secrecy.
+						AGENT_5 = agent_lookout
+					}
+				}
+				# Secrecy.
+				else_if = {
+					limit = { scope:agent_focus_secrecy ?= yes }
+					begin_scheme_with_agents_effect = {
+						SCHEME_TYPE = agot_raid_pirate_domicile
+						TARGET_TYPE = target_character
+						TARGET_SCOPE = scope:recipient
+						# Secrecy.
+						AGENT_1 = agent_lookout
+						AGENT_2 = agent_lookout
+						AGENT_3 = agent_alibi
+						# Success.
+						AGENT_4 = agent_scout
+						# Speed.
+						AGENT_5 = agent_infiltrator
+					}
+				}
+				# Balanced.
+				else = {
+					begin_scheme_with_agents_effect = {
+						SCHEME_TYPE = agot_raid_pirate_domicile
+						TARGET_TYPE = target_character
+						TARGET_SCOPE = scope:recipient
+						# Success.
+						AGENT_1 = agent_scout
+						AGENT_2 = agent_muscle
+						# Speed.
+						AGENT_3 = agent_infiltrator
+						AGENT_4 = agent_footpad
+						# Secrecy.
+						AGENT_5 = agent_lookout
+					}
+				}
+			}
+			# Scheme progress bonus from education
+			education_5_scheme_progress_effect = { SKILL = intrigue }
+
+			custom_tooltip = agot_raid_pirate_ship_gain_coin_tt
+			custom_tooltip = agot_raid_pirate_ship_gain_dread_tt
+			custom_tooltip = agot_raid_pirate_ship_gain_artifacts_tt
+
+			stress_impact = {
+				content = medium_stress_impact_gain
+			}
+			if = {
+				limit = {
+					has_relation_nemesis = scope:recipient
+				}
+				stress_impact = { base = major_stress_impact_loss }
+			}
+			else_if = {
+				limit = {
+					has_relation_rival = scope:recipient
+				}
+				stress_impact = { base = medium_stress_impact_loss }
+			}
+		}
+	}
+
+	ai_potential = {
+		NOT = {
+			any_scheme = { is_hostile = yes }
+		}
+		any_held_title = { agot_is_pirate_domicile_title_trigger = yes }
+	}
+
+	auto_accept = yes
+
+	ai_will_do = {
+		base = -20
+		modifier = {
+			OR = {
+				scope:actor.domicile.domicile_location.county.holder = {
+					government_has_flag = government_is_pirate
+					has_realm_law = pirate_tax_rate_03
+				}
+				scope:recipient.domicile.domicile_location.county.holder = {
+					government_has_flag = government_is_pirate
+					has_realm_law = pirate_tax_rate_03
+				}
+			}
+			add = -5
+		}
+		#Personality
+		modifier = {
+			has_trait = vengeful
+			add = 15
+		}
+		modifier = {
+			has_trait = forgiving
+			add = -15
+		}
+		modifier = {
+			has_trait = brave
+			add = 15
+		}
+		modifier = {
+			has_trait = craven
+			add = -15
+		}
+		# Relationships
+		modifier = {
+			add = -25
+			has_any_moderate_good_relationship_with_character_trigger = { CHARACTER = scope:recipient }
+		}
+		modifier = {
+			add = -50
+			has_any_best_good_relationship_with_character_trigger = { CHARACTER = scope:recipient }
+		}
+		modifier = {
+			add = 15
+			has_any_mild_bad_relationship_with_character_trigger = { CHARACTER = scope:recipient }
+		}
+		modifier = {
+			add = 25
+			has_any_moderate_bad_relationship_with_character_trigger = { CHARACTER = scope:recipient }
+		}
+		modifier = {
+			add = 50
+			has_any_worst_bad_relationship_with_character_trigger = { CHARACTER = scope:recipient }
+		}
+		opinion_modifier = {
+			who = scope:actor
+			opinion_target = scope:recipient
+			multiplier = -0.25
+		}
+	}
+}

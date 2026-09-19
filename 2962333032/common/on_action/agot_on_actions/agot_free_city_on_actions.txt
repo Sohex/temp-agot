@@ -1,0 +1,187 @@
+﻿on_game_start = { # Initial term end
+	on_actions = {
+		free_city_term_empire
+		free_city_term_kingdom
+		norvos_set_up
+	}
+}
+
+on_title_gain = {
+	on_actions = {
+		norvos_bearded_priest_handler
+	}
+}
+
+random_yearly_playable_pulse = {
+	on_actions = {
+		norvos_yearly_bearded_priest_judgement_on_action
+	}
+}
+
+# Code on-action: character converts faith. Only fired when using the convert window, or the script effect that uses the same logic
+# Root is the converted character
+# scope:old_faith is the faith they used to have
+# scope:actor is the character instigating the conversion
+on_faith_conversion = {
+	on_actions = {
+		norvos_faith_manager
+	}
+}
+
+free_city_term_empire = { # Triggers every ten years to elect a new First Magister
+	effect = {
+		every_empire = { # By doing this every empire, kingdom, duchy, county, I get every title in the game which could possible have the law
+			limit = {
+				exists = holder
+				holder = { agot_has_free_city_succession_law_type_general_check = yes }
+			}
+			check_for_free_city_election = yes # Scripted effect in common/scripted_effects/agot_free_city_effects.txt
+		}
+	}
+	on_actions = {
+		delay = { years = 1 } # Triggers the next one in ten years
+		free_city_term_empire
+	}
+}
+
+free_city_term_kingdom = { # Triggers every ten years to elect a new First Magister
+	effect = {
+		every_kingdom = {
+			limit = {
+				exists = holder
+				holder = { agot_has_free_city_succession_law_type_general_check = yes }
+			}
+			check_for_free_city_election = yes
+		}
+	}
+	on_actions = {
+		delay = { years = 1 } # Triggers the next one in ten years
+		free_city_term_kingdom
+	}
+}
+
+norvos_set_up = {
+	effect = {
+		if = {
+			limit = {
+				title:k_norvos.holder ?= {
+					government_has_flag = government_is_norvos
+				}
+				exists = title:d_norvos_high_priesthood.holder
+				norvos_are_the_bearded_priests_the_real_power_trigger = no
+			}
+			set_global_variable = norvos_has_priesthood_shadowy_leadership
+		}
+	}
+}
+
+norvos_bearded_priest_handler = {
+	trigger = {
+		scope:title = title:d_norvos_high_priesthood
+	}
+	effect = {
+		if = {
+			limit = {
+				primary_title = scope:title
+				NOT = { has_trait = bearded_priest }
+			}
+			add_trait = bearded_priest
+		}
+		if = {
+			limit = {
+				norvos_are_the_bearded_priests_the_real_power_trigger = yes
+				title:k_norvos.holder = {
+					primary_title = title:k_norvos
+					government_has_flag = government_is_norvos
+					has_realm_law = norvos_regency_succession_law
+				}
+			}
+			title:k_norvos.holder = {
+				end_diarchy = yes
+				designate_diarch = title:d_norvos_high_priesthood.holder
+				try_start_diarchy = norvos_high_priestship
+				set_diarchy_swing = 100
+			}
+		}
+	}
+}
+
+norvos_yearly_bearded_priest_judgement_on_action = {
+	trigger = {
+		norvos_are_the_bearded_priests_the_real_power_trigger = yes
+		primary_title = title:d_norvos_high_priesthood
+		top_liege ?= title:k_norvos.holder
+		title:k_norvos.holder ?= {
+			government_has_flag = government_is_norvos
+		}
+	}
+	effect = {
+		if = {
+			limit = {
+				title:k_norvos.holder = {
+					NOT = { has_character_modifier = disfavored_by_bearded_priests_modifier }
+				}
+				OR = {
+					faith != root.faith
+					piety_level = 0
+					has_two_or_more_sinner_traits_in_norvos_trigger = { CHARACTER = title:k_norvos.holder }
+				}
+			}
+			title:k_norvos.holder = {
+				add_to_list = potential_respondents
+			}
+		}
+		title:k_norvos.holder = {
+			every_vassal_or_below = {
+				limit = {
+					NOT = { has_character_modifier = disfavored_by_bearded_priests_modifier }
+					is_alive = yes
+					save_temporary_scope_as = vassal
+					OR = {
+						faith != root.faith
+						piety_level = 0
+						has_two_or_more_sinner_traits_in_norvos_trigger = { CHARACTER = scope:vassal }
+					}
+					government_has_flag = government_is_norvos
+				}
+				add_to_list = potential_respondents
+			}
+		}
+		ordered_in_list = {
+			list = potential_respondents
+			order_by = influence
+			max = 5
+			add_to_list = respondents
+		}
+		every_in_list = {
+			list = respondents
+			limit = {
+				is_alive = yes
+			}
+			trigger_event = norvos_government_events.0001
+		}
+	}
+}
+
+norvos_faith_manager = {
+	trigger = {
+		norvos_are_the_bearded_priests_the_real_power_trigger = yes
+		faith != faith:fc_pan_bearded
+		top_liege ?= title:k_norvos.holder
+		title:k_norvos.holder = {
+			government_has_flag = government_is_norvos
+		}
+	}
+	effect = {
+		if = {
+			limit = {
+				is_ruler = yes
+				highest_held_title_tier >= tier_county
+			}
+			trigger_event = {
+				id = norvos_government_events.0050
+				days = { 1 4 }
+			}
+		}
+	}
+}

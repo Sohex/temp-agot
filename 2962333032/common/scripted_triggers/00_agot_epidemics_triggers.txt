@@ -1,0 +1,259 @@
+﻿###################################
+### Forced Epidemic Containment ###
+###################################
+# agot_epidemic_spread_containment_effect
+
+# Check for valid forced containment regions
+agot_epidemic_spread_containment_trigger = {
+	OR = {
+		AND = { # Spreading out of BTW
+			scope:epidemic ?= { var:epidemic_containment ?= flag:btw }
+			NOT = { geographical_region = world_westeros_beyond_the_wall }
+		}
+		AND = { # Spreading out of LLT
+			scope:epidemic ?= { var:epidemic_containment ?= flag:llt }
+			NOT = { geographical_region = world_lands_less_traveled }
+		}
+		AND = { # Spreading to LLT or BTW
+			scope:epidemic ?= { var:epidemic_containment ?= flag:not_btw_or_llt }
+			OR = {
+				geographical_region = world_westeros_beyond_the_wall
+				geographical_region = world_lands_less_traveled
+			}
+		}
+		AND = { # Spring Sickness Spreading to Essos and Stepstones
+			scope:epidemic ?= { var:epidemic_containment_bubonic ?= flag:not_stepstones_or_essos }
+			OR = {
+				geographical_region = world_essos
+				geographical_region = world_stepstones
+			}
+		}
+		# Don't spread to hidden holdings
+		has_holding_type = ruin_holding
+		has_holding_type = unknown_holding
+		has_holding_type = wilderness_holding
+	}
+}
+
+#######################################
+### Epidemic Isolate Realm Decision ###
+#######################################
+# agot_epidemic_spread_containment_decision_effect
+
+# Check for epidemic_can_be_blocked and blocked within each region; used in on_province_infected
+agot_epidemic_spread_containment_decision_trigger = {
+	any_epidemic = {
+		outbreak_intensity = apocalyptic
+		this ?= scope:epidemic
+	}
+	OR = {
+		AND = {
+			global_var:epidemics_contained_via_decision_dorne ?= flag:blocked
+			scope:epidemic.var:epidemic_containment_decision_dorne ?= flag:epidemic_can_be_blocked
+			scope:epidemic = {
+				outbreak_intensity = apocalyptic
+				NOT = { outbreak_province = { geographical_region = world_westeros_dorne } }
+			}
+			geographical_region = world_westeros_dorne
+		}
+		AND = {
+			global_var:epidemics_contained_via_decision_the_vale ?= flag:blocked
+			scope:epidemic.var:epidemic_containment_decision_the_vale ?= flag:epidemic_can_be_blocked
+			scope:epidemic = {
+				outbreak_intensity = apocalyptic
+				NOT = { outbreak_province = { geographical_region = world_westeros_the_vale } }
+			}
+			geographical_region = world_westeros_the_vale
+		}
+		AND = {
+			global_var:epidemics_contained_via_decision_the_north ?= flag:blocked
+			scope:epidemic.var:epidemic_containment_decision_the_north ?= flag:epidemic_can_be_blocked
+			scope:epidemic = {
+				outbreak_intensity = apocalyptic
+				NOT = { outbreak_province = { geographical_region = world_westeros_the_north } }
+			}
+			geographical_region = world_westeros_the_north
+		}
+		AND = {
+			global_var:epidemics_contained_via_decision_the_iron_islands ?= flag:blocked
+			scope:epidemic.var:epidemic_containment_decision_the_iron_islands ?= flag:epidemic_can_be_blocked
+			scope:epidemic = {
+				outbreak_intensity = apocalyptic
+				NOT = { outbreak_province = { geographical_region = world_westeros_the_iron_islands } }
+			}
+			geographical_region = world_westeros_the_iron_islands
+		}
+	}
+}
+
+########### Realm Isolation Decision Triggers
+# Check for valid blockable plagues and not already isolated
+agot_realm_is_not_isolated_trigger = {
+	OR = {
+		AND = {
+			NOT = { global_var:epidemics_contained_via_decision_dorne ?= flag:blocked }
+			capital_province ?= { geographical_region = world_westeros_dorne }
+		}
+		AND = {
+			NOT = { global_var:epidemics_contained_via_decision_the_vale ?= flag:blocked }
+			capital_province ?= { geographical_region = world_westeros_the_vale }
+		}
+		AND = {
+			NOT = { global_var:epidemics_contained_via_decision_the_north ?= flag:blocked }
+			capital_province ?= { geographical_region = world_westeros_the_north }
+		}
+		AND = {
+			NOT = { global_var:epidemics_contained_via_decision_the_iron_islands ?= flag:blocked }
+			capital_province ?= { geographical_region = world_westeros_the_iron_islands }
+		}
+	}
+	any_epidemic = {
+		count >= 1
+		save_temporary_scope_as = epidemic
+		agot_epidemic_can_be_blocked_trigger = yes
+		agot_epidemic_originated_outside_realm = yes
+		root = {
+			NOT = {
+				any_sub_realm_county = {
+					count = 1
+					any_county_province = {
+						count = 1
+						any_province_epidemic = {
+							count = 1
+							outbreak_intensity = apocalyptic
+							this ?= scope:epidemic
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# Check if your realm is already isolated
+agot_realm_is_isolated_trigger = {
+	OR = {
+		AND = {
+			global_var:epidemics_contained_via_decision_dorne ?= flag:blocked
+			capital_province ?= { geographical_region = world_westeros_dorne }
+		}
+		AND = {
+			global_var:epidemics_contained_via_decision_the_vale ?= flag:blocked
+			capital_province ?= { geographical_region = world_westeros_the_vale}
+		}
+		AND = {
+			global_var:epidemics_contained_via_decision_the_north ?= flag:blocked
+			capital_province ?= { geographical_region = world_westeros_the_north }
+		}
+		AND = {
+			global_var:epidemics_contained_via_decision_the_iron_islands ?= flag:blocked
+			capital_province ?= { geographical_region = world_westeros_the_iron_islands }
+		}
+	}
+}
+
+# Check if the epidemic can still be blocked
+agot_epidemic_can_be_blocked_trigger = {
+	OR = {
+		AND = {
+			this.var:epidemic_containment_decision_dorne ?= flag:epidemic_can_be_blocked
+			NOT = { this.outbreak_province = { geographical_region = world_westeros_dorne } }
+		}
+		AND = {
+			this.var:epidemic_containment_decision_the_vale ?= flag:epidemic_can_be_blocked
+			NOT = { this.outbreak_province = { geographical_region = world_westeros_the_vale } }
+		}
+		AND = {
+			this.var:epidemic_containment_decision_the_north ?= flag:epidemic_can_be_blocked
+			NOT = { this.outbreak_province = { geographical_region = world_westeros_the_north } }
+		}
+		AND = {
+			this.var:epidemic_containment_decision_the_iron_islands ?= flag:epidemic_can_be_blocked
+			NOT = { this.outbreak_province = { geographical_region = world_westeros_the_iron_islands } }
+		}
+	}
+}
+
+# Check if the epidemic cannot be blocked anymore
+agot_epidemic_cannot_be_blocked_trigger = {
+	OR = {
+		AND = {
+			this.var:epidemic_containment_decision_dorne ?= flag:epidemic_cannot_be_blocked
+			global_var:epidemics_contained_via_decision_dorne ?= flag:blocked
+		}
+		AND = {
+			this.var:epidemic_containment_decision_the_vale ?= flag:epidemic_cannot_be_blocked
+			global_var:epidemics_contained_via_decision_the_vale ?= flag:blocked
+		}
+		AND = {
+			this.var:epidemic_containment_decision_the_north ?= flag:epidemic_cannot_be_blocked
+			global_var:epidemics_contained_via_decision_the_north ?= flag:blocked
+		}
+		AND = {
+			this.var:epidemic_containment_decision_the_iron_islands ?= flag:epidemic_cannot_be_blocked
+			global_var:epidemics_contained_via_decision_the_iron_islands ?= flag:blocked
+		}
+	}
+}
+
+# Check if the epidemic spawned outside of your realm
+agot_epidemic_originated_outside_realm = {
+	OR = {
+		AND = {
+			NOT = { outbreak_province = { geographical_region = world_westeros_dorne } }
+			root.capital_province ?= { geographical_region = world_westeros_dorne }
+		}
+		AND = {
+			NOT = { outbreak_province = { geographical_region = world_westeros_the_vale } }
+			root.capital_province ?= { geographical_region = world_westeros_the_vale }
+		}
+		AND = {
+			NOT = { outbreak_province = { geographical_region = world_westeros_the_north } }
+			root.capital_province ?= { geographical_region = world_westeros_the_north }
+		}
+		AND = {
+			NOT = { outbreak_province = { geographical_region = world_westeros_the_iron_islands } }
+			root.capital_province ?= { geographical_region = world_westeros_the_iron_islands }
+		}
+	}
+}
+
+agot_epidemic_recovery_event_trigger = {
+	highest_held_title_tier >= tier_county
+	NOT = { any_sub_realm_county = { any_county_province_epidemic = {} } }
+}
+
+# Check for hegemony related epidemics to curb event spam
+agot_hegemony_tier_epidemic_check = {
+	OR = {
+		NOT = { highest_held_title_tier = tier_hegemony }
+		AND = {
+			this ?= title:h_the_iron_throne.holder
+			any_vassal_or_below = {
+				primary_title.tier <= tier_kingdom
+				any_sub_realm_county = {
+					any_county_province = {
+						any_province_epidemic = {
+							count >= 1
+							this = scope:epidemic
+						}
+					}
+				}
+			}
+		}
+		AND = {
+			highest_held_title_tier = tier_hegemony
+			any_vassal_or_below = {
+				primary_title.tier <= tier_empire
+				any_sub_realm_county = {
+					any_county_province = {
+						any_province_epidemic = {
+							count >= 1
+							this = scope:epidemic
+						}
+					}
+				}
+			}
+		}
+	}
+}

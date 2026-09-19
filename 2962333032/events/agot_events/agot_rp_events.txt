@@ -1,0 +1,3714 @@
+﻿namespace = agot_rp_event
+
+####################################
+# 		  	RP event      		   #
+#        ZombieSchrodCat		   #
+#            001-008               #
+####################################
+
+scripted_trigger westeros_descriptions = {
+	any_held_county = {
+		title_province = {
+			geographical_region = world_westeros_seven_kingdoms
+		}
+	}
+}
+scripted_trigger not_westeros_descriptions = {
+	NOR = {
+		any_held_county = {
+			title_province = {
+				geographical_region = world_westeros_seven_kingdoms
+			}
+		}
+		any_held_county = {
+			title_province = {
+				geographical_region = world_westeros_beyond_the_wall
+			}
+		}
+	}
+}
+agot_rp_event.0001 = { #start
+	type = character_event
+	title = agot_rp_event.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					westeros_descriptions = yes
+				}
+				desc = agot_rp_event.0001.desc_westeros
+			}
+			desc = agot_rp_event.0001.desc
+		}
+	}
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = throne_room_writer
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_succession_instrumental"
+		hidden_effect = {
+			if = {
+				limit = {
+					global_var:citadel_title.holder = {
+						any_courtier_or_guest = {
+							has_trait_xp = {
+								trait = maester
+								value = 100
+							}
+							NOR = {
+								has_trait = archmaester
+								has_character_flag = maester_researcher
+							}
+							is_adult = yes
+						}
+					}
+				}
+				global_var:citadel_title.holder = {
+					random_courtier_or_guest = {
+						limit = {
+							has_trait_xp = {
+								trait = maester
+								value = 100
+							}
+							NOR = {
+								has_trait = archmaester
+								has_character_flag = maester_researcher
+							}
+							is_adult = yes
+						}
+						save_scope_as = rp_maester
+						if = {
+							limit = {
+								has_character_flag = blocked_from_leaving
+							}
+							remove_character_flag = blocked_from_leaving
+						}
+					}
+				}
+			}
+			else = {
+				create_character = {
+					template = maester_character
+					location = root.capital_province
+					dynasty = none
+					save_scope_as = rp_maester
+				}
+			}
+			scope:rp_maester = {
+				add_character_flag = traveling_maester
+			}
+		}
+	}
+
+	option = { #I'll tell my tale
+		name = agot_rp_event.0001.a
+		if = {
+			limit = {
+				westeros_descriptions = yes
+			}
+			custom_tooltip = agot_rp_event.0001.a.tt_westeros
+		}
+		else = {
+			custom_tooltip = agot_rp_event.0001.a.tt
+		}
+
+		trigger = {
+			NOR = {
+				has_culture = culture:high_valyrian
+				has_culture = culture:westerosi_valyrian
+			}
+		}
+		trigger_event = agot_rp_event.0002
+	}
+
+	option = { #I'll tell my tale
+		name = agot_rp_event.0001.b
+		if = {
+			limit = {
+				westeros_descriptions = yes
+			}
+			custom_tooltip = agot_rp_event.0001.a.tt_westeros
+		}
+		else = {
+			custom_tooltip = agot_rp_event.0001.a.tt
+		}
+		trigger = {
+			OR = {
+				has_culture = culture:high_valyrian
+				has_culture = culture:westerosi_valyrian
+			}
+		}
+		trigger_event = agot_rp_event.0010
+	}
+
+	# Maester, please record my dynastic appearance
+	option = {
+		name = agot_rp_event.0001.d
+		custom_tooltip = agot_rp_event.0001.d.tt
+		custom_tooltip = agot_rp_event.0001.d.tt_warning
+		trigger_event = agot_rp_event.0100
+	}
+
+	option = { #begone maester
+		name = {
+			text = agot_rp_event.0001.c
+		}
+		name = {
+			text = agot_rp_event.0001.c_westeros
+			trigger = {
+				westeros_descriptions = yes
+			}
+		}
+		custom_tooltip = agot_rp_event.0001.c.tt
+		hidden_effect = {
+			scope:rp_maester ?= {
+				save_scope_as = maester
+				send_traveling_maester_to_citadel = yes
+			}
+		}
+	}
+}
+
+agot_rp_event.0002 = {
+	type = character_event
+	title = agot_rp_event.0002.t
+	desc = agot_rp_event.0002.desc
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = throne_room_writer
+	}
+
+	option = { #A hunter who saved my lord
+		name = agot_rp_event.0002.a
+		custom_tooltip = agot_rp_event.0002.a.tt
+		trigger = {
+			has_trait = lifestyle_hunter
+		}
+		add_prestige = medium_prestige_gain
+		add_hook = {
+			target = root.liege
+			type = favor_hook
+		}
+		create_artifact = {
+			name = rp_hunters_spear
+			description = rp_hunters_spear_desc
+			type = spear
+			visuals = spear
+			modifier = artifact_prowess_3_modifier
+			modifier = artifact_martial_1_modifier
+			save_scope_as = rp_hunters_spear
+		}
+		reverse_add_opinion = {
+			modifier = grateful_opinion
+			target = root.liege
+			opinion = 50
+		}
+		add_character_modifier = {
+			modifier = rp_hunter_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_hunter
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #a soldier
+		name = agot_rp_event.0002.b
+		custom_tooltip = agot_rp_event.0002.b.tt
+		trigger = {
+			OR = {
+				prowess > 9
+				martial > 9
+				has_trait = lifestyle_blademaster
+			}
+		}
+		add_prestige = medium_prestige_gain
+		add_dread = minor_dread_gain
+		reverse_add_opinion = {
+			modifier = respect_opinion
+			target = root.liege
+			opinion = 20
+		}
+		add_character_modifier = {
+			modifier = rp_exsoldier_modifier
+			years = 35
+		}
+		create_artifact = {
+			name = rp_spear
+			description = rp_spear_desc
+			type = spear
+			visuals = spear
+			quality = 80
+			modifier = artifact_prowess_4_modifier
+			save_scope_as = rp_spear
+		}
+		add_character_flag = agot_rp_soldier
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #a merchant
+		name = agot_rp_event.0002.c
+		custom_tooltip = agot_rp_event.0002.c.tt
+		trigger = {
+			OR = {
+				stewardship > 9
+				has_trait = diligent
+				has_trait = greedy
+				has_trait = temperate
+				has_trait = shrewd
+			}
+		}
+		add_prestige = minor_prestige_loss
+		add_gold = 200
+		add_character_modifier = {
+			modifier = rp_merchant_modifier
+			years = 35
+		}
+		reverse_add_opinion = {
+			modifier = envy_opinion
+			target = root.liege
+			opinion = -10
+		}
+		add_character_flag = agot_rp_merchant
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #a blackmailer
+		name = agot_rp_event.0002.d
+		custom_tooltip = agot_rp_event.0002.d.tt
+		trigger = {
+			OR = {
+				intrigue > 9
+				has_trait = deceitful
+				has_trait = paranoid
+				has_trait = ambitious
+			}
+		}
+		add_prestige = minor_prestige_loss
+		add_piety = minor_piety_loss
+		add_dread = major_dread_gain
+		add_gold = 150
+		create_artifact = {
+			name = rp_torture_dagger
+			description = rp_torture_dagger_desc
+			type = dagger
+			visuals = dagger
+			modifier = artifact_prowess_2_modifier
+			modifier = artifact_intrigue_1_modifier
+			save_scope_as = rp_torture_dagger
+		}
+		add_hook = {
+			target = root.liege
+			type = loyalty_hook
+		}
+		reverse_add_opinion = {
+			modifier = suspicion_opinion
+			target = root.liege
+			opinion = -35
+		}
+		add_character_modifier = {
+			modifier = rp_blackmailer_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_blackmailer
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #lover
+		name = agot_rp_event.0002.e
+		custom_tooltip = agot_rp_event.0002.e.tt
+		trigger = {
+			root.liege = {
+				is_attracted_to_gender_of = root
+				is_adult = yes
+			}
+			is_adult = yes
+		}
+		add_piety = major_piety_loss
+		add_character_modifier = {
+			modifier = rp_paramore_modifier
+			years = 35
+		}
+		set_relation_lover = {reason = lover_friend_to_lover target = root.liege}
+		add_character_flag = agot_rp_merchant
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #more options
+		name = agot_rp_event.0002.f
+		custom_tooltip = agot_rp_event.0002.f.tt
+		trigger_event = agot_rp_event.0003
+	}
+}
+
+agot_rp_event.0003 = {
+	type = character_event
+	title = agot_rp_event.0003.t
+	desc = agot_rp_event.0003.desc
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = throne_room_writer
+	}
+
+	option = { #A hedge knight
+		name = agot_rp_event.0003.a
+		custom_tooltip = agot_rp_event.0003.a.tt
+		trigger = {
+			is_agot_knight_trigger = yes
+		}
+		add_prestige = major_prestige_gain
+		add_piety = minor_piety_gain
+		add_gold = 150
+		add_character_modifier = {
+			modifier = rp_knight_modifier
+			years = 35
+		}
+		reverse_add_opinion = {
+			modifier = impressed_opinion
+			target = root.liege
+			opinion = 20
+		}
+		create_artifact = {
+			name = rp_sword
+			description = rp_sword_desc
+			type = sword
+			visuals = sword
+			quality = 150
+			modifier = artifact_prowess_5_modifier
+			save_scope_as = rp_sword
+		}
+		add_character_flag = agot_rp_knight
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #a sailor
+		name = agot_rp_event.0003.b
+		trigger = {
+			any_sub_realm_county = {
+				any_county_province = {
+					is_coastal = yes
+				}
+			}
+		}
+		custom_tooltip = agot_rp_event.0003.b.tt
+		add_prestige = medium_prestige_gain
+		reverse_add_opinion = {
+			modifier = pleased_opinion
+			target = root.liege
+			opinion = 20
+		}
+		add_character_modifier = {
+			modifier = rp_sailor_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_sailor
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #a healer
+		name = agot_rp_event.0003.c
+		custom_tooltip = agot_rp_event.0003.c.tt
+		trigger = {
+			OR = {
+				learning > 9
+				has_trait = lifestyle_mystic
+				has_trait = lifestyle_physician
+				has_trait = greensight
+			}
+		}
+		add_prestige = minor_prestige_loss
+		add_piety = major_piety_gain
+		reverse_add_opinion = {
+			modifier = grateful_opinion
+			target = root.liege
+			opinion = 40
+		}
+		add_character_modifier = {
+			modifier = rp_healer_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_healer
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #orphan
+		name = agot_rp_event.0003.d
+		custom_tooltip = agot_rp_event.0003.d.tt
+		add_prestige = minor_prestige_gain
+		add_piety = minor_piety_gain
+		reverse_add_opinion = {
+			modifier = grateful_opinion
+			target = root.liege
+			opinion = 30
+		}
+		add_character_modifier = {
+			modifier = rp_orphan_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_orphan
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #a reaver
+		name = agot_rp_event.0003.e
+		custom_tooltip = agot_rp_event.0003.e.tt
+		trigger = {
+			OR = {
+				has_culture = culture:ironborn
+				has_religion = religion:the_ways_religion
+			}
+		}
+		add_prestige = major_prestige_gain
+		add_dread = medium_dread_gain
+		reverse_add_opinion = {
+			modifier = respect_opinion
+			target = root.liege
+			opinion = 20
+		}
+		add_character_modifier = {
+			modifier = rp_reaver_modifier
+			years = 35
+		}
+		create_artifact = {
+			name = rp_axe
+			description = rp_axe_desc
+			type = axe
+			visuals = axe
+			quality = 80
+			modifier = artifact_prowess_4_modifier
+			save_scope_as = rp_axe
+		}
+		add_character_flag = agot_rp_reaver
+		trigger_event = agot_rp_event.0009
+	}
+
+	option = { #more options
+		name = agot_rp_event.0003.f
+		custom_tooltip = agot_rp_event.0003.f.tt
+		trigger_event = agot_rp_event.0004
+	}
+}
+
+agot_rp_event.0004 = {
+	type = character_event
+	title = agot_rp_event.0004.t
+	desc = agot_rp_event.0004.desc
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = throne_room_writer
+	}
+
+	option = { #sellsword
+		name = agot_rp_event.0004.a
+		custom_tooltip = agot_rp_event.0004.a.tt
+		trigger = {
+			prowess > 10
+		}
+		add_prestige = major_prestige_loss
+		add_piety = minor_piety_loss
+		add_dread = minor_dread_gain
+		add_gold = 50
+		add_character_modifier = {
+			modifier = rp_sellsword_modifier
+			years = 35
+		}
+		reverse_add_opinion = {
+			modifier = suspicion_opinion
+			target = root.liege
+			opinion = -10
+		}
+		create_artifact = {
+			name = rp_sell_sword
+			description = rp_sell_sword_desc
+			type = sword
+			visuals = sword
+			quality = 80
+			modifier = artifact_prowess_4_modifier
+			save_scope_as = rp_sell_sword
+		}
+		add_character_flag = agot_rp_sellsword
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #steward
+		name = agot_rp_event.0004.b
+		trigger = {
+			OR = {
+				stewardship > 10
+			}
+		}
+		custom_tooltip = agot_rp_event.0004.b.tt
+		add_prestige = medium_prestige_gain
+		add_gold = 75
+		reverse_add_opinion = {
+			modifier = pleased_opinion
+			target = root.liege
+			opinion = 20
+		}
+		add_character_modifier = {
+			modifier = rp_steward_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_steward
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #fool
+		name = agot_rp_event.0004.c
+		custom_tooltip = agot_rp_event.0004.c.tt
+		trigger = {
+			root.liege = {
+				can_employ_court_position_type = court_jester_court_position
+			}
+			is_adult = yes
+		}
+		add_prestige = minor_prestige_loss
+		add_piety = major_piety_loss
+		root.liege = {
+			appoint_court_position = {
+				recipient = root
+				court_position = court_jester_court_position
+			}
+		}
+		add_character_modifier = {
+			modifier = rp_fool_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_fool
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #mercenary
+		name = agot_rp_event.0004.d
+		custom_tooltip = agot_rp_event.0004.d.tt
+		trigger = {
+			martial > 10
+		}
+		add_prestige = minor_prestige_gain
+		add_piety = minor_piety_loss
+		add_dread = medium_dread_gain
+		reverse_add_opinion = {
+			modifier = suspicion_opinion
+			target = root.liege
+			opinion = -10
+		}
+		add_character_modifier = {
+			modifier = rp_mercenary_modifier
+			years = 35
+		}
+		create_artifact = {
+			name = rp_mace
+			description = rp_mace_desc
+			type = mace
+			visuals = mace
+			quality = 80
+			modifier = artifact_prowess_2_modifier
+			modifier = artifact_martial_1_modifier
+			modifier = artifact_diplomacy_1_modifier
+			save_scope_as = rp_mace
+		}
+		spawn_army = {
+			men_at_arms = {
+				type = bowmen
+				stacks = 2
+			}
+			levies = 500
+			inheritable = no
+			location = capital_province
+			name = event_troop_default_name
+		}
+		add_character_flag = agot_rp_mercenary
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #hedgewizard
+		name = agot_rp_event.0004.e
+		custom_tooltip = agot_rp_event.0004.e.tt
+		trigger = {
+			OR = {
+				intrigue > 10
+				learning > 10
+			}
+		}
+		add_prestige = minor_prestige_loss
+		add_piety = minor_piety_loss
+		reverse_add_opinion = {
+			modifier = grateful_opinion
+			target = root.liege
+			opinion = 25
+		}
+		add_character_modifier = {
+			modifier = rp_hedgewizard_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_hedgewizard
+		trigger_event = agot_rp_event.0005
+	}
+
+	option = { #more options
+		name = agot_rp_event.0004.f
+		custom_tooltip = agot_rp_event.0004.f.tt
+		trigger_event = agot_rp_event.0002
+	}
+}
+
+agot_rp_event.0005 = {
+	type = character_event
+	title = agot_rp_event.0005.t
+	desc = agot_rp_event.0005.desc
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = throne_room_writer
+	}
+
+
+	option = { #friend - boy
+		name = agot_rp_event.0005.a
+		custom_tooltip = agot_rp_event.0005.a.tt
+		add_character_flag = {
+			flag = agot_rp_friend
+			months = 3
+		}
+		trigger_event = agot_rp_event.0006
+	}
+
+	option = { #friend - girl
+		name = agot_rp_event.0005.b
+		custom_tooltip = agot_rp_event.0005.b.tt
+		add_character_flag = {
+			flag = agot_rp_friend
+			months = 3
+		}
+		trigger_event = agot_rp_event.0007
+	}
+
+	option = { #lover - boy
+		name = agot_rp_event.0005.c
+		custom_tooltip = agot_rp_event.0005.c.tt
+		trigger = {
+			is_attracted_to_men = yes
+			is_adult = yes
+		}
+		add_character_flag = {
+			flag = agot_rp_lover
+			months = 3
+		}
+		trigger_event = agot_rp_event.0006
+	}
+
+	option = { #lover - girl
+		name = agot_rp_event.0005.d
+		custom_tooltip = agot_rp_event.0005.d.tt
+		trigger = {
+			is_attracted_to_women = yes
+			is_adult = yes
+		}
+		add_character_flag = {
+			flag = agot_rp_lover
+			months = 3
+		}
+		trigger_event = agot_rp_event.0007
+	}
+
+	option = { #friendless
+		name = agot_rp_event.0005.e
+		custom_tooltip = agot_rp_event.0005.e.tt
+		trigger_event = agot_rp_event.0008
+	}
+}
+
+agot_rp_event.0006 = { #male friend
+	type = character_event
+	title = agot_rp_event.0006.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					westeros_descriptions = yes
+				}
+				desc = agot_rp_event.0006.desc_westeros
+			}
+			desc = agot_rp_event.0006.desc
+		}
+	}
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = throne_room_writer
+	}
+
+	left_portrait = {
+		character = scope:rp_friend
+		animation = eavesdrop
+	}
+
+	immediate = {
+		hidden_effect = {
+			if = {
+				limit = {
+					has_character_flag = agot_rp_hunter
+				}
+				create_character = {
+					location = root.capital_province
+					dynasty = none
+					age = root.age
+					gender_female_chance = 0
+					martial = {10 15}
+					faith = this.faith
+					trait = lifestyle_hunter
+					trait = forest_fighter
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_soldier
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 0
+					martial = {10 15}
+					faith = this.faith
+					trait = lifestyle_blademaster
+					trait = beauty_good_1
+					trait = brave
+					culture = this.culture
+
+					after_creation = {
+						add_random_tiered_trait_xp_effect = {
+							TRAIT = lifestyle_blademaster
+							LEVEL_1 = no
+							LEVEL_3 = no
+						}
+					}
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_merchant
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					stewardship = {10 15}
+					gender_female_chance = 0
+					faith = this.faith
+					trait = shrewd
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_blackmailer
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 0
+					intrigue = {10 15}
+					faith = this.faith
+					trait = vengeful
+					trait = deceitful
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_knight
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					gender_female_chance = 0
+					prowess = {10 15}
+					faith = this.faith
+					trait = knight
+					trait = brave
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_sailor
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 0
+					martial = {10 15}
+					faith = this.faith
+					trait = diligent
+					trait = forder
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_healer
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 0
+					learning = {10 15}
+					faith = this.faith
+					trait = lifestyle_herbalist
+					trait = zealous
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_orphan
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					diplomacy = {10 15}
+					gender_female_chance = 0
+					faith = this.faith
+					trait = lifestyle_reveler
+					trait = gregarious
+					trait = beauty_good_1
+					culture = this.culture
+
+					after_creation = {
+						add_random_tiered_trait_xp_effect = {
+							TRAIT = lifestyle_reveler
+							LEVEL_1 = no
+							LEVEL_3 = no
+						}
+					}
+
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_sellsword
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					prowess = {10 15}
+					gender_female_chance = 0
+					faith = this.faith
+					trait = callous
+					trait = wrathful
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_steward
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					stewardship = {10 15}
+					gender_female_chance = 0
+					faith = this.faith
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_fool
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					diplomacy = {10 15}
+					gender_female_chance = 0
+					faith = this.faith
+					trait = intellect_good_1
+					trait = lifestyle_poet
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_hedgewizard
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					learning = {10 15}
+					intrigue = {10 15}
+					trait = lifestyle_herbalist
+					gender_female_chance = 0
+					faith = this.faith
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_mercenary
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					martial = {10 15}
+					prowess = {10 15}
+					gender_female_chance = 0
+					faith = this.faith
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_reaver
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 0
+					martial = {10 15}
+					faith = this.faith
+					trait = lifestyle_blademaster
+					trait = beauty_good_1
+					trait = brave
+					culture = this.culture
+
+					after_creation = {
+						add_random_tiered_trait_xp_effect = {
+							TRAIT = lifestyle_blademaster
+							LEVEL_1 = no
+							LEVEL_3 = no
+						}
+					}
+
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_friend
+				}
+				set_relation_best_friend = { reason = best_friend_childhood_oath copy_reason = friend target = scope:rp_friend }
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_lover
+				}
+				scope:rp_friend = {
+					set_sexuality = bisexual
+				}
+				set_relation_lover = {reason = lover_friend_to_lover target = scope:rp_friend }
+				set_relation_best_friend = { reason = best_friend_childhood_oath copy_reason = friend target = scope:rp_friend }
+			}
+			add_courtier = scope:rp_friend
+		}
+	}
+
+	option = { #friend - boy
+		name = agot_rp_event.0006.a
+		custom_tooltip = agot_rp_event.0006.a.tt
+		hidden_effect = {
+			scope:rp_maester ?= {
+				save_scope_as = maester
+				send_traveling_maester_to_citadel = yes
+			}
+		}
+	}
+
+	option = { #Recruit Maester
+		name = agot_rp_event.0006.b
+		custom_tooltip = agot_rp_event.0006.b.tt
+		trigger = {
+			can_employ_court_position_type = maester_court_position
+		}
+		set_court_physician_effect = {
+			EMPLOYER = root
+			PHYSICIAN = scope:rp_maester
+		}
+	}
+}
+
+agot_rp_event.0007 = { #female friend
+	type = character_event
+	title = agot_rp_event.0007.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					westeros_descriptions = yes
+				}
+				desc = agot_rp_event.0006.desc_westeros
+			}
+			desc = agot_rp_event.0006.desc
+		}
+	}
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = throne_room_writer
+	}
+
+	left_portrait = {
+		character = scope:rp_friend
+		animation = eavesdrop
+	}
+
+	immediate = {
+		hidden_effect = {
+			if = {
+				limit = {
+					has_character_flag = agot_rp_hunter
+				}
+				create_character = {
+					location = root.capital_province
+					dynasty = none
+					age = root.age
+					martial = {10 15}
+					gender_female_chance = 100
+					faith = this.faith
+					trait = lifestyle_hunter
+					trait = forest_fighter
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_soldier
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					martial = {10 15}
+					dynasty = none
+					gender_female_chance = 100
+					faith = this.faith
+					trait = lifestyle_blademaster
+					trait = beauty_good_1
+					trait = brave
+					culture = this.culture
+
+					after_creation = {
+						add_random_tiered_trait_xp_effect = {
+							TRAIT = lifestyle_blademaster
+							LEVEL_1 = no
+							LEVEL_3 = no
+						}
+					}
+
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_merchant
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					stewardship = {10 15}
+					dynasty = none
+					gender_female_chance = 100
+					faith = this.faith
+					trait = beauty_good_1
+					trait = shrewd
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_blackmailer
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					intrigue = {10 15}
+					dynasty = none
+					gender_female_chance = 100
+					faith = this.faith
+					trait = beauty_good_1
+					trait = vengeful
+					trait = deceitful
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_knight
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					prowess = {10 15}
+					gender_female_chance = 100
+					faith = this.faith
+					trait = beauty_good_1
+					trait = strong
+					trait = brave
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_sailor
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					martial = {10 15}
+					dynasty = none
+					gender_female_chance = 100
+					faith = this.faith
+					trait = beauty_good_1
+					trait = diligent
+					trait = forder
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_healer
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					learning = {10 15}
+					gender_female_chance = 100
+					faith = this.faith
+					trait = beauty_good_1
+					trait = lifestyle_herbalist
+					trait = zealous
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+
+			if = {
+				limit = {
+					has_character_flag = agot_rp_orphan
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					diplomacy = {10 15}
+					gender_female_chance = 100
+					faith = this.faith
+					trait = beauty_good_1
+					trait = lifestyle_herbalist
+					trait = zealous
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_sellsword
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					prowess = {10 15}
+					gender_female_chance = 100
+					faith = this.faith
+					trait = callous
+					trait = wrathful
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_steward
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					stewardship = {10 15}
+					gender_female_chance = 100
+					faith = this.faith
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_fool
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					diplomacy = {10 15}
+					gender_female_chance = 100
+					faith = this.faith
+					trait = intellect_good_1
+					trait = lifestyle_poet
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_hedgewizard
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					learning = {10 15}
+					intrigue = {10 15}
+					trait = lifestyle_herbalist
+					gender_female_chance = 100
+					faith = this.faith
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_mercenary
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					martial = {10 15}
+					prowess = {10 15}
+					gender_female_chance = 100
+					faith = this.faith
+					trait = beauty_good_1
+					culture = this.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_reaver
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 100
+					martial = {10 15}
+					faith = this.faith
+					trait = lifestyle_blademaster
+					trait = beauty_good_1
+					trait = brave
+					culture = this.culture
+
+					after_creation = {
+						add_random_tiered_trait_xp_effect = {
+							TRAIT = lifestyle_blademaster
+							LEVEL_1 = no
+							LEVEL_3 = no
+						}
+					}
+
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_friend
+				}
+				set_relation_best_friend = { reason = best_friend_childhood_oath copy_reason = friend target = scope:rp_friend }
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_lover
+				}
+				scope:rp_friend = {
+					set_sexuality = bisexual
+				}
+				set_relation_lover = { reason = lover_friend_to_lover target = scope:rp_friend }
+				set_relation_best_friend = { reason = best_friend_childhood_oath copy_reason = friend target = scope:rp_friend }
+			}
+			add_courtier = scope:rp_friend
+		}
+	}
+
+	option = { #friend - boy
+		name = agot_rp_event.0007.a
+		custom_tooltip = agot_rp_event.0007.a.tt
+		hidden_effect = {
+			scope:rp_maester ?= {
+				save_scope_as = maester
+				send_traveling_maester_to_citadel = yes
+			}
+		}
+	}
+
+	option = { #Recruit Maester
+		name = agot_rp_event.0007.b
+		custom_tooltip = agot_rp_event.0007.b.tt
+		trigger = {
+			can_employ_court_position_type = maester_court_position
+		}
+		set_court_physician_effect = {
+			EMPLOYER = root
+			PHYSICIAN = scope:rp_maester
+		}
+	}
+}
+
+agot_rp_event.0008 = { #friendless -
+	type = character_event
+	title = agot_rp_event.0008.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					westeros_descriptions = yes
+				}
+				desc = agot_rp_event.0008.desc_westeros
+			}
+			desc = agot_rp_event.0008.desc
+		}
+	}
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = throne_room_writer
+	}
+
+	option = {
+		name = agot_rp_event.0008.a
+		custom_tooltip = agot_rp_event.0008.a.tt
+		hidden_effect = {
+			scope:rp_maester ?= {
+				save_scope_as = maester
+				send_traveling_maester_to_citadel = yes
+			}
+		}
+	}
+
+	option = { #Recruit Maester
+		name = agot_rp_event.0008.b
+		custom_tooltip = agot_rp_event.0008.b.tt
+		trigger = {
+			can_employ_court_position_type = maester_court_position
+		}
+		set_court_physician_effect = {
+			EMPLOYER = root
+			PHYSICIAN = scope:rp_maester
+		}
+	}
+}
+
+agot_rp_event.0009 = { #thrall house
+	type = character_event
+	title = agot_rp_event.0009.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					westeros_descriptions = yes
+				}
+				desc = agot_rp_event.0009.desc_westeros
+			}
+			desc = agot_rp_event.0009.desc
+		}
+	}
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = worry
+	}
+
+	option = {
+		name = agot_rp_event.0009.a
+		custom_tooltip = agot_rp_event.0009.a.tt
+		root.dynasty = {
+			add_dynasty_modifier = thrall_house_dynasty_modifier
+		}
+		add_prestige = minor_prestige_loss
+	}
+
+	option = {
+		name = agot_rp_event.0009.b
+		custom_tooltip = agot_rp_event.0009.b.tt
+	}
+
+	after = {
+		trigger_event = agot_rp_event.0005
+	}
+}
+
+agot_rp_event.0010 = { #Dragon Seed - end
+	type = character_event
+	title = agot_rp_event.0010.t
+	desc = agot_rp_event.0010.desc
+
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+
+	right_portrait = {
+		character = scope:rp_maester
+		animation = personality_bold
+	}
+
+	option = {
+		name = agot_rp_event.0010.a
+		custom_tooltip = agot_rp_event.0010.a.tt
+		root.dynasty = {
+			add_dynasty_modifier = valyrian_heritage_dynasty_modifier
+		}
+		add_prestige = minor_prestige_gain
+	}
+
+	option = {
+		name = agot_rp_event.0010.b
+		custom_tooltip = agot_rp_event.0010.b.tt
+	}
+
+	after = {
+		trigger_event = agot_rp_event.0002
+	}
+}
+
+####################################
+# 		  	RP event - wildling	   #
+#        ZombieSchrodCat		   #
+#            019 - 0027            #
+####################################
+
+agot_rp_event.0019 = { #start
+	type = character_event
+	title = agot_rp_event.0019.t
+	desc = agot_rp_event.0019.desc
+
+	theme = battle
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	lower_right_portrait = {
+		character = scope:rp_bard
+		animation = personality_honorable
+	}
+
+	left_portrait = {
+		character = root
+		animation = aggressive_axe
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_succession_instrumental"
+		hidden_effect = {
+			create_character = {
+				location = root.capital_province
+				age = { 20 45 }
+				gender_female_chance = 0
+				trait = lifestyle_poet
+				faith = root.capital_province.faith
+				culture = root.capital_province.culture
+				save_scope_as = rp_bard
+			}
+		}
+	}
+
+	option = { #I'll tell my tale
+		name = agot_rp_event.0019.a
+		custom_tooltip = agot_rp_event.0019.a.tt
+		trigger_event = agot_rp_event.0020
+	}
+	option = { #begone
+		name = agot_rp_event.0019.b
+		custom_tooltip = agot_rp_event.0019.b.tt
+		remove_character_flag = from_wilding_category
+		scope:rp_maester ?= {
+			save_scope_as = maester
+			send_traveling_maester_to_citadel = yes
+		}
+	}
+	# Maester, please record my dynastic appearance
+	option = {
+		name = agot_rp_event.0001.d
+		custom_tooltip = agot_rp_event.0001.d.tt
+		custom_tooltip = agot_rp_event.0001.d.tt_warning
+		trigger_event = agot_rp_event.0100
+	}
+}
+
+agot_rp_event.0020 = {
+	type = character_event
+	title = agot_rp_event.0020.t
+	desc = agot_rp_event.0020.desc
+
+	theme = battle
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	right_portrait = {
+		character = scope:rp_bard
+		animation = personality_honorable
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+
+	option = { #A hunter
+		name = agot_rp_event.0020.a
+		custom_tooltip = agot_rp_event.0020.a.tt
+		trigger = {
+			has_trait = lifestyle_hunter
+		}
+		add_prestige = medium_prestige_gain
+		add_character_modifier = {
+			modifier = rp_wildling_hunter_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_wildling_hunter
+		scope:rp_maester ?= {
+			save_scope_as = maester
+			send_traveling_maester_to_citadel = yes
+		}
+	}
+
+	option = { #Raider
+		name = agot_rp_event.0020.b
+		custom_tooltip = agot_rp_event.0020.b.tt
+		trigger = {
+			OR = {
+				prowess > 9
+				martial > 9
+				has_trait = lifestyle_blademaster
+			}
+		}
+		add_prestige = major_prestige_gain
+		add_gold = 50
+		add_character_modifier = {
+			modifier = rp_wildling_raider_modifier
+			years = 35
+		}
+		trigger_event = agot_rp_event.0023
+		add_character_flag = agot_rp_wildling_raider
+	}
+
+	option = { #assiassin
+		name = agot_rp_event.0020.c
+		custom_tooltip = agot_rp_event.0020.c.tt
+		trigger = {
+			OR = {
+				intrigue > 9
+				has_trait = vengeful
+				has_trait = wrathful
+				has_trait = callous
+			}
+		}
+		add_dread = major_dread_gain
+		add_piety = minor_piety_loss
+		add_prestige = minor_prestige_loss
+		add_character_modifier = {
+			modifier = rp_wildling_assassin_modifier
+			years = 35
+		}
+		trigger_event = agot_rp_event.0023
+		add_character_flag = agot_rp_wildling_assassin
+	}
+
+	option = { #a blackbrother
+		name = agot_rp_event.0020.d
+		custom_tooltip = agot_rp_event.0020.d.tt
+		trigger = {
+			has_trait = nightswatch
+		}
+		add_prestige = minor_prestige_loss
+		add_piety = minor_piety_loss
+		add_character_modifier = {
+			modifier = rp_wildling_nightwatch_modifier
+			years = 35
+		}
+		trigger_event = agot_rp_event.0022
+		add_character_flag = agot_rp_wildling_nightswatch
+		hidden_effect = {
+			remove_trait = nightswatch
+		}
+	}
+
+	option = { #a shipwreck survivor
+		name = agot_rp_event.0020.e
+		custom_tooltip = agot_rp_event.0020.e.tt
+		add_gold = 150
+		add_character_modifier = {
+			modifier = rp_wildling_shipwreck_modifier
+			years = 35
+		}
+		trigger_event = agot_rp_event.0023
+		add_character_flag = agot_rp_wildling_shipwreck
+	}
+
+	option = { #more option
+		name = agot_rp_event.0020.f
+		custom_tooltip = agot_rp_event.0020.f.tt
+		trigger_event = agot_rp_event.0021
+	}
+
+	after = {
+		if = {
+			limit = {
+				has_character_flag = agot_rp_wildling_nightswatch
+			}
+			add_trait = deserter
+		}
+	}
+}
+
+agot_rp_event.0021 = {
+	type = character_event
+	title = agot_rp_event.0021.t
+	desc = agot_rp_event.0021.desc
+
+	theme = battle
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	right_portrait = {
+		character = scope:rp_bard
+		animation = personality_honorable
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+
+	option = { #healer
+		name = agot_rp_event.0021.a
+		custom_tooltip = agot_rp_event.0021.a.tt
+		trigger = {
+			OR = {
+				learning > 9
+				has_trait = lifestyle_mystic
+				has_trait = lifestyle_physician
+				has_trait = greensight
+			}
+		}
+		add_piety = medium_piety_gain
+		add_prestige = minor_prestige_gain
+		add_character_modifier = {
+			modifier = rp_wildling_woodswitch_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_wildling_woodswitch
+		trigger_event = agot_rp_event.0023
+	}
+
+	option = { #diplomacy
+		name = agot_rp_event.0021.b
+		custom_tooltip = agot_rp_event.0021.b.tt
+		trigger = {
+			OR = {
+				diplomacy > 9
+				has_trait = lifestyle_poet
+			}
+		}
+		add_prestige = medium_prestige_gain
+		add_character_modifier = {
+			modifier = rp_wildling_elected_modifier
+			years = 35
+		}
+		add_character_flag = agot_rp_wildling_elected
+		trigger_event = agot_rp_event.0023
+	}
+
+	option = { #warg
+		name = agot_rp_event.0021.c
+		custom_tooltip = agot_rp_event.0021.c.tt
+		add_piety = medium_piety_gain
+		add_prestige = minor_prestige_loss
+		add_character_flag = agot_rp_wildling_warg
+		trigger_event = agot_rp_event.0027
+	}
+
+	option = { #more option
+		name = agot_rp_event.0021.d
+		custom_tooltip = agot_rp_event.0021.d.tt
+		trigger_event = agot_rp_event.0020
+	}
+}
+
+agot_rp_event.0022 = { #blackbrother
+	type = character_event
+	title = agot_rp_event.0022.t
+	desc = agot_rp_event.0022.desc
+
+	theme = battle
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	right_portrait = {
+		character = scope:rp_bard
+		animation = personality_honorable
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+
+	option = { #dynasty
+		name = agot_rp_event.0022.a
+		custom_tooltip = agot_rp_event.0022.a.tt
+		add_character_flag = {
+			flag = agot_rp_blackbrother_dynasty
+			days = 20
+		}
+		trigger_event = agot_rp_event.0023
+	}
+
+	option = { #no dynasty
+		name = agot_rp_event.0022.b
+		custom_tooltip = agot_rp_event.0022.b.tt
+		trigger_event = agot_rp_event.0023
+	}
+}
+
+agot_rp_event.0023 = {
+	type = character_event
+	title = agot_rp_event.0023.t
+	desc = agot_rp_event.0023.desc
+
+	theme = battle
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	right_portrait = {
+		character = scope:rp_bard
+		animation = personality_honorable
+	}
+
+
+	option = { #friend - boy
+		name = agot_rp_event.0023.a
+		custom_tooltip = agot_rp_event.0023.a.tt
+		add_character_flag = {
+			flag = agot_rp_friend
+			months = 3
+		}
+		trigger_event = agot_rp_event.0024
+	}
+
+	option = { #friend - girl
+		name = agot_rp_event.0023.b
+		custom_tooltip = agot_rp_event.0023.b.tt
+		add_character_flag = {
+			flag = agot_rp_friend
+			months = 3
+		}
+		trigger_event = agot_rp_event.0025
+	}
+
+	option = { #lover - boy
+		name = agot_rp_event.0023.c
+		custom_tooltip = agot_rp_event.0023.c.tt
+		trigger = {
+			is_attracted_to_men = yes
+			is_adult = yes
+		}
+		add_character_flag = {
+			flag = agot_rp_lover
+			months = 3
+		}
+		trigger_event = agot_rp_event.0024
+	}
+
+	option = { #lover - girl
+		name = agot_rp_event.0023.d
+		custom_tooltip = agot_rp_event.0023.d.tt
+		trigger = {
+			is_attracted_to_women = yes
+			is_adult = yes
+		}
+		add_character_flag = {
+			flag = agot_rp_lover
+			months = 3
+		}
+		trigger_event = agot_rp_event.0025
+	}
+
+	option = { #friendless
+		name = agot_rp_event.0023.e
+		custom_tooltip = agot_rp_event.0023.e.tt
+		trigger_event = agot_rp_event.0026
+	}
+}
+
+agot_rp_event.0024 = { #male friend
+	type = character_event
+	title = agot_rp_event.0024.t
+	desc = agot_rp_event.0024.desc
+
+	theme = battle
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	left_portrait = {
+		character = scope:rp_bard
+		animation = fear
+	}
+
+	right_portrait = {
+		character = scope:rp_friend
+		animation = aggressive_spear
+	}
+
+	immediate = {
+		hidden_effect = {
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_hunter
+				}
+				create_character = {
+					location = root.capital_province
+					dynasty = none
+					age = root.age
+					gender_female_chance = 0
+					martial = {10 15}
+					faith = root.capital_province.faith
+					trait = lifestyle_hunter
+					trait = forest_fighter
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_raider
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 0
+					martial = {10 15}
+					faith = root.capital_province.faith
+					trait = lifestyle_blademaster
+					trait = beauty_good_1
+					trait = brave
+					culture = root.capital_province.culture
+
+					after_creation = {
+						add_random_tiered_trait_xp_effect = {
+							TRAIT = lifestyle_blademaster
+							LEVEL_1 = no
+							LEVEL_3 = no
+						}
+					}
+
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_assassin
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					stewardship = {10 15}
+					gender_female_chance = 0
+					faith = root.capital_province.faith
+					trait = shrewd
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_nightswatch
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 0
+					intrigue = {10 15}
+					faith = root.capital_province.faith
+					trait = deserter
+					trait = deceitful
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_shipwreck
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					gender_female_chance = 0
+					prowess = {10 15}
+					faith = root.capital_province.faith
+					trait = brave
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_woodswitch
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 0
+					martial = {10 15}
+					faith = root.capital_province.faith
+					trait = diligent
+					trait = forder
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_elected
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 0
+					learning = {10 15}
+					faith = root.capital_province.faith
+					trait = lifestyle_herbalist
+					trait = zealous
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_warg
+				}
+				create_character = {
+					location = root.capital_province
+					dynasty = none
+					age = root.age
+					gender_female_chance = 0
+					martial = {10 15}
+					faith = root.capital_province.faith
+					trait = lifestyle_hunter
+					trait = forest_fighter
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_friend
+				}
+				set_relation_best_friend = { reason = best_friend_childhood_oath copy_reason = friend target = scope:rp_friend }
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_lover
+				}
+				scope:rp_friend = {
+					set_sexuality = bisexual
+				}
+				set_relation_lover = {reason = lover_friend_to_lover target = scope:rp_friend }
+				set_relation_best_friend = { reason = best_friend_childhood_oath copy_reason = friend target = scope:rp_friend }
+			}
+			add_courtier = scope:rp_friend
+		}
+	}
+
+	option = { #friend - boy
+		name = agot_rp_event.0024.a
+	}
+
+	option = { #friend - boy - cannibal bard
+		name = agot_rp_event.0024.b
+		trigger = {
+			has_trait = cannibal
+		}
+		unknown_cannibal_murder_effect = {
+			VICTIM = scope:rp_bard
+			MURDERER = root
+		}
+		add_dread = major_dread_gain
+		scope:rp_friend = {
+			add_trait = cannibal
+		}
+	}
+
+	after = {
+		if = {
+			limit ={
+				has_character_flag = agot_rp_blackbrother_dynasty
+			}
+			hidden_effect ={
+				add_trait = house_customizer
+			}
+			trigger_event = agot_house_customizer.0001
+		}
+		if = {
+			limit = {
+				has_character_flag = from_wilding_category
+			}
+			remove_character_flag = from_wilding_category
+		}
+		scope:rp_maester ?= {
+			save_scope_as = maester
+			send_traveling_maester_to_citadel = yes
+		}
+	}
+}
+
+agot_rp_event.0025 = { #female friend
+	type = character_event
+	title = agot_rp_event.0025.t
+	desc = agot_rp_event.0025.desc
+
+	theme = battle
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	left_portrait = {
+		character = scope:rp_bard
+		animation = fear
+	}
+
+	right_portrait = {
+		character = scope:rp_friend
+		animation = aggressive_spear
+	}
+
+	immediate = {
+		hidden_effect = {
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_hunter
+				}
+				create_character = {
+					location = root.capital_province
+					dynasty = none
+					age = root.age
+					gender_female_chance = 100
+					martial = {10 15}
+					faith = root.capital_province.faith
+					trait = lifestyle_hunter
+					trait = forest_fighter
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_raider
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 100
+					martial = {10 15}
+					faith = root.capital_province.faith
+					trait = lifestyle_blademaster
+					trait = beauty_good_1
+					trait = brave
+					culture = root.capital_province.culture
+
+					after_creation = {
+						add_random_tiered_trait_xp_effect = {
+							TRAIT = lifestyle_blademaster
+							LEVEL_1 = no
+							LEVEL_3 = no
+						}
+					}
+
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_assassin
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					stewardship = {10 15}
+					gender_female_chance = 100
+					faith = root.capital_province.faith
+					trait = shrewd
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_nightswatch
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 100
+					intrigue = {10 15}
+					faith = root.capital_province.faith
+					trait = vengeful
+					trait = deceitful
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_shipwreck
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					gender_female_chance = 100
+					prowess = {10 15}
+					faith = root.capital_province.faith
+					trait = brave
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_woodswitch
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 100
+					martial = {10 15}
+					faith = root.capital_province.faith
+					trait = diligent
+					trait = forder
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_elected
+				}
+				create_character = {
+					location = root.capital_province
+					age = root.age
+					dynasty = none
+					gender_female_chance = 100
+					learning = {10 15}
+					faith = root.capital_province.faith
+					trait = lifestyle_herbalist
+					trait = zealous
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_wildling_warg
+				}
+				create_character = {
+					location = root.capital_province
+					dynasty = none
+					age = root.age
+					gender_female_chance = 100
+					martial = {10 15}
+					faith = root.capital_province.faith
+					trait = lifestyle_hunter
+					trait = forest_fighter
+					trait = beauty_good_1
+					culture = root.capital_province.culture
+					save_scope_as = rp_friend
+				}
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_friend
+				}
+				set_relation_best_friend = { reason = best_friend_childhood_oath copy_reason = friend target = scope:rp_friend }
+			}
+			if = {
+				limit = {
+					has_character_flag = agot_rp_lover
+				}
+				scope:rp_friend = {
+					set_sexuality = bisexual
+				}
+				set_relation_lover = { reason = lover_friend_to_lover target = scope:rp_friend }
+				set_relation_best_friend = { reason = best_friend_childhood_oath copy_reason = friend target = scope:rp_friend }
+			}
+			add_courtier = scope:rp_friend
+		}
+	}
+
+	option = { #friend - boy
+		name = agot_rp_event.0025.a
+	}
+
+	option = { #friend - boy - cannibal bard
+		name = agot_rp_event.0025.b
+		trigger = {
+			has_trait = cannibal
+		}
+		unknown_cannibal_murder_effect = {
+			VICTIM = scope:rp_bard
+			MURDERER = root
+		}
+		add_dread = major_dread_gain
+		scope:rp_friend = {
+			add_trait = cannibal
+		}
+	}
+
+	after = {
+		if = {
+			limit ={
+				has_character_flag = agot_rp_blackbrother_dynasty
+			}
+			hidden_effect = {
+				add_trait = house_customizer
+			}
+			trigger_event = agot_house_customizer.0001
+		}
+		if = {
+			limit = {
+				has_character_flag = from_wilding_category
+			}
+			remove_character_flag = from_wilding_category
+		}
+		scope:rp_maester ?= {
+			save_scope_as = maester
+			send_traveling_maester_to_citadel = yes
+		}
+	}
+}
+
+agot_rp_event.0026 = { #friendless
+	type = character_event
+	title = agot_rp_event.0026.t
+	desc = agot_rp_event.0026.desc
+
+	theme = battle
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	right_portrait = {
+		character = scope:rp_bard
+		animation = personality_honorable
+	}
+
+	option = {
+		name = agot_rp_event.0026.a
+	}
+
+	option = { #friend - boy - cannibal bard
+		name = agot_rp_event.0026.b
+		trigger = {
+			has_trait = cannibal
+		}
+		unknown_cannibal_murder_effect = {
+			VICTIM = scope:rp_bard
+			MURDERER = root
+		}
+		add_dread = major_dread_gain
+	}
+
+	after = {
+		if = {
+			limit ={
+				has_character_flag = agot_rp_blackbrother_dynasty
+			}
+			hidden_effect = {
+				add_trait = house_customizer
+				trigger_event = agot_house_customizer.0001
+			}
+		}
+		if = {
+			limit = {
+				has_character_flag = from_wilding_category
+			}
+			remove_character_flag = from_wilding_category
+		}
+		scope:rp_maester ?= {
+			save_scope_as = maester
+			send_traveling_maester_to_citadel = yes
+		}
+	}
+}
+
+agot_rp_event.0027 = { #warg - end
+	type = character_event
+	title = agot_rp_event.0027.t
+	desc = agot_rp_event.0027.desc
+
+	theme = battle
+	override_background = {
+		reference = wilderness_forest_pine
+	}
+
+	right_portrait = {
+		character = scope:rp_bard
+		animation = paranoia
+	}
+
+	option = { #Bear
+		name = agot_rp_event.0027.a
+		custom_tooltip = agot_rp_event.0027.a.tt
+		add_character_flag = agot_rp_blackbrother_dynasty
+		add_character_modifier = {
+			modifier = rp_wildling_warg_bear_modifier
+			years = 35
+		}
+		trigger_event = agot_rp_event.0023
+	}
+
+	option = { #Direwolf
+		name = agot_rp_event.0027.b
+		custom_tooltip = agot_rp_event.0027.b.tt
+		add_character_modifier = {
+			modifier = rp_wildling_warg_direwolf_modifier
+			years = 35
+		}
+		trigger_event = agot_rp_event.0023
+	}
+
+	option = { #Shadowcat
+		name = agot_rp_event.0027.c
+		custom_tooltip = agot_rp_event.0027.b.tt
+		add_character_modifier = {
+			modifier = rp_wildling_warg_shadowcat_modifier
+			years = 35
+		}
+		trigger_event = agot_rp_event.0023
+	}
+}
+
+# Custom Strong Seed Menu
+agot_rp_event.0100 = {
+	type = character_event
+
+	title = agot_rp_event.0100.t
+	desc = agot_rp_event.0100.desc
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+	left_portrait = {
+		character = scope:cc_dummy
+		hide_info = yes
+		camera = camera_head
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				exists = scope:cc_dummy
+			}
+			hidden_effect = {
+				scope:cc_dummy = {
+					copy_inheritable_appearance_from = root
+				}
+			}
+		}
+		else = {
+			create_character = {
+				random_traits = no
+				gender_female_chance = {
+					if = {
+						limit = {
+							root = {
+								is_female = yes
+							}
+						}
+						add = 100
+					}
+				}
+				dynasty = none
+				employer = root
+				save_scope_as = cc_dummy
+			}
+			hidden_effect = {
+				scope:cc_dummy = {
+					copy_inheritable_appearance_from = root
+					copy_traits = root
+					add_character_flag = cc_dummy
+				}
+			}
+		}
+	}
+
+	# HAIR
+	option = {
+		name = agot_rp_event.0100.a
+		set_variable = custom_strong_seed_hair_selection
+		trigger_event = agot_rp_event.0101
+		if = {
+			limit = {
+				dynasty = {
+					has_variable = custom_strong_seed_hair
+				}
+			}
+			dynasty = {
+				remove_variable = custom_strong_seed_hair
+			}
+			remove_hair_selection = yes
+		}
+		if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:cool_silver_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = cool_silver_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:cool_neutral_silver_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = cool_neutral_silver_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:neutral_silver_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = neutral_silver_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:silver_blonde_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = silver_blonde_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:silver_gold_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = silver_gold_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:black_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = black_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:light_blonde_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = light_blonde_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:gold_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = gold_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:bronze_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = bronze_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:light_red_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = light_red_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:red_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = red_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:red_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = red_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:kissed_by_fire_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = kissed_by_fire_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:auburn_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = auburn_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:brown_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = brown_hair_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:dark_brown_hair_custom_strong_seed
+				}
+			}
+			custom_tooltip = dark_brown_hair_tt
+		}
+	}
+	# HEIGHT
+	option = {
+		name = agot_rp_event.0100.b
+		set_variable = custom_strong_seed_height_selection
+		trigger_event = agot_rp_event.0102
+		if = {
+			limit = {
+				dynasty = {
+					has_variable = custom_strong_seed_height
+				}
+			}
+			dynasty = {
+				remove_variable = custom_strong_seed_height
+			}
+			remove_all_height = yes
+		}
+		if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_height ?= flag:smol_tol_custom_strong_seed
+				}
+			}
+			custom_tooltip = smol_tol_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_height ?= flag:tol_custom_strong_seed
+				}
+			}
+			custom_tooltip = tol_tt
+		}
+	}
+	# EARS
+	option = {
+		name = agot_rp_event.0100.c
+		set_variable = custom_strong_seed_ears_selection
+		trigger_event = agot_rp_event.0103
+		if = {
+			limit = {
+				dynasty = {
+					has_variable = custom_strong_seed_ears
+				}
+			}
+			dynasty = {
+				remove_variable = custom_strong_seed_ears
+			}
+			remove_all_ears = yes
+		}
+		if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_ears ?= flag:dumbo_ears_custom_strong_seed
+				}
+			}
+			custom_tooltip = dumbo_ears_tt
+		}
+	}
+	# EYES
+	option = {
+		name = agot_rp_event.0100.d
+		set_variable = custom_strong_seed_eyes_selection
+		trigger_event = agot_rp_event.0104
+		if = {
+			limit = {
+				dynasty = {
+					has_variable = custom_strong_seed_eyes
+				}
+			}
+			dynasty = {
+				remove_variable = custom_strong_seed_eyes
+			}
+			remove_all_eyes = yes
+		}
+		if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_eyes ?= flag:light_blue_eyes_custom_strong_seed
+				}
+			}
+			custom_tooltip = light_blue_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:blue_eyes_custom_strong_seed }
+			}
+			custom_tooltip = blue_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:midnight_eyes_custom_strong_seed }
+			}
+			custom_tooltip = midnight_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:seaglass_eyes_custom_strong_seed }
+			}
+			custom_tooltip = seaglass_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:seafoam_eyes_custom_strong_seed }
+			}
+			custom_tooltip = seafoam_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:emerald_eyes_custom_strong_seed }
+			}
+			custom_tooltip = emerald_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:grey_eyes_custom_strong_seed }
+			}
+			custom_tooltip = grey_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:gold_eyes_custom_strong_seed }
+			}
+			custom_tooltip = gold_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:light_brown_eyes_custom_strong_seed }
+			}
+			custom_tooltip = light_brown_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:brown_eyes_custom_strong_seed }
+			}
+			custom_tooltip = brown_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:black_eyes_custom_strong_seed }
+			}
+			custom_tooltip = black_eyes_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_1_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_1_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_2_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_2_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_3_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_3_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_4_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_4_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_5_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_5_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_6_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_6_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_7_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_7_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_8_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_8_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_9_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_9_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_10_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_10_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_11_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_11_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_12_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_12_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_13_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_13_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_14_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_14_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_15_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_15_tt
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_16_custom_strong_seed }
+			}
+			custom_tooltip = purple_eyes_16_tt
+		}
+	}
+	# Finished
+	option = {
+		name = agot_rp_event.0100.e
+		if = {
+			limit = {
+				has_character_flag = from_non_rp_event_category
+			}
+			hidden_effect = {
+				scope:rp_maester ?= {
+					save_scope_as = maester
+					send_traveling_maester_to_citadel = yes
+				}
+			}
+			# Do notthing
+		}
+		else_if = {
+			limit = {
+				has_character_flag = from_wilding_category
+			}
+			trigger_event = agot_rp_event.0019
+		}
+		else = {
+			trigger_event = agot_rp_event.0001
+		}
+		hidden_effect = {
+			scope:cc_dummy = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+}
+# Hair
+agot_rp_event.0101 = {
+	type = character_event
+
+	title = agot_rp_event.0100.t
+	desc = agot_rp_event.0100.desc
+	theme = dynasty
+	override_background = { reference = study }
+	left_portrait = {
+		character = scope:cc_dummy
+		hide_info = yes
+		camera = camera_head
+	}
+
+	widget = {
+		gui = "agot_customizer_strong_seed_selection"
+		container = "custom_widgets_container"
+	}
+	option = {
+		name = agot_rp_event.0101.a
+		remove_variable = custom_strong_seed_hair_selection
+		if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:cool_silver_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = cool_silver_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:cool_neutral_silver_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = cool_neutral_silver_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:neutral_silver_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = neutral_silver_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:black_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = black_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:light_blonde_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = light_blonde_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:silver_blonde_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = silver_blonde_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:silver_gold_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = silver_gold_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:gold_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = gold_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:bronze_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = bronze_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:light_red_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = light_red_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:red_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = red_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:kissed_by_fire_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = kissed_by_fire_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:auburn_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = auburn_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:brown_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = brown_hair
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_hair ?= flag:dark_brown_hair_custom_strong_seed
+				}
+			}
+			make_trait_inactive = dark_brown_hair
+		}
+		trigger_event = agot_rp_event.0100
+	}
+}
+# Height
+agot_rp_event.0102 = {
+	type = character_event
+
+	title = agot_rp_event.0100.t
+	desc = agot_rp_event.0100.desc
+	theme = dynasty
+	override_background = { reference = study }
+	left_portrait = {
+		character = scope:cc_dummy
+		hide_info = yes
+		camera = camera_body
+	}
+
+	widget = {
+		gui = "agot_customizer_strong_seed_selection"
+		container = "custom_widgets_container"
+	}
+	option = {
+		name = agot_rp_event.0102.a
+		remove_variable = custom_strong_seed_height_selection
+		if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_height ?= flag:smol_tol_custom_strong_seed
+				}
+			}
+			make_trait_inactive = smol_tol
+		}
+		else_if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_height ?= flag:tol_custom_strong_seed
+				}
+			}
+			make_trait_inactive = tol
+		}
+		trigger_event = agot_rp_event.0100
+	}
+}
+# Ears
+agot_rp_event.0103 = {
+	type = character_event
+
+	title = agot_rp_event.0100.t
+	desc = agot_rp_event.0100.desc
+	theme = dynasty
+	override_background = { reference = study }
+	left_portrait = {
+		character = scope:cc_dummy
+		hide_info = yes
+		camera = camera_head
+	}
+
+	widget = {
+		gui = "agot_customizer_strong_seed_selection"
+		container = "custom_widgets_container"
+	}
+	option = {
+		name = agot_rp_event.0103.a
+		remove_variable = custom_strong_seed_ears_selection
+		if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_ears ?= flag:dumbo_ears_custom_strong_seed
+				}
+			}
+			make_trait_inactive = dumbo_ears
+		}
+		trigger_event = agot_rp_event.0100
+	}
+}
+# Eyes
+agot_rp_event.0104 = {
+	type = character_event
+
+	title = agot_rp_event.0100.t
+	desc = agot_rp_event.0100.desc
+	theme = dynasty
+	override_background = { reference = study }
+	left_portrait = {
+		character = scope:cc_dummy
+		hide_info = yes
+		camera = camera_head
+	}
+
+	widget = {
+		gui = "agot_customizer_strong_seed_selection"
+		container = "custom_widgets_container"
+	}
+	option = {
+		name = agot_rp_event.0104.a
+		remove_variable = custom_strong_seed_eyes_selection
+		if = {
+			limit = {
+				dynasty = {
+					var:custom_strong_seed_eyes ?= flag:light_blue_eyes_custom_strong_seed
+				}
+			}
+			make_trait_inactive = light_blue_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:blue_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = blue_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:midnight_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = midnight_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:seaglass_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = seaglass_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:seafoam_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = seafoam_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:emerald_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = emerald_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:grey_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = grey_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:gold_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = gold_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:light_brown_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = light_brown_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:brown_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = brown_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:black_eyes_custom_strong_seed }
+			}
+			make_trait_inactive = black_eyes
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_1_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_1
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_2_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_2
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_3_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_3
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_4_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_4
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_5_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_5
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_6_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_6
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_7_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_7
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_8_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_8
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_9_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_9
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_10_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_10
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_11_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_11
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_12_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_12
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_13_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_13
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_14_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_14
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_15_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_15
+		}
+		else_if = {
+			limit = {
+				dynasty = { var:custom_strong_seed_eyes ?= flag:purple_eyes_16_custom_strong_seed }
+			}
+			make_trait_inactive = purple_eyes_16
+		}
+		trigger_event = agot_rp_event.0100
+	}
+}
+
+# Event that Fires on ruler designer finished
+# Custom Strong Seed Menu
+agot_rp_event.0105 = {
+	type = character_event
+	title = agot_rp_event.0105.t
+	desc = agot_rp_event.0105.desc
+	theme = dynasty
+	override_background = {
+		reference = throne_room
+	}
+	left_portrait = {
+		character = root
+	}
+	immediate = {
+		add_character_flag = from_non_rp_event_category
+	}
+
+	# YES
+	option = {
+		name = agot_rp_event.0105.a
+		trigger_event = agot_rp_event.0100
+	}
+	# NO
+	option = {
+		name = agot_rp_event.0105.b
+	}
+}
+
+agot_rp_event.0200 = {
+	type = character_event
+	title = agot_rp_event.0200.t
+	desc = agot_rp_event.0200.desc
+
+	theme = family
+
+	override_background = {
+		reference = study
+	}
+
+	right_portrait = {
+		character = root
+		animation = throne_room_writer
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_succession"
+		scope:recipient = {
+			every_held_title = {
+				limit = { tier = tier_county }
+				add_to_list = selectable_countier
+			}
+		}
+		random_in_list = {
+			list = selectable_countier
+			save_scope_as = county_a
+		}
+		random_in_list = {
+			list = selectable_countier
+			limit = {
+				NOT = { this = scope:county_a }
+			}
+			save_scope_as = county_b
+		}
+		random_in_list = {
+			list = selectable_countier
+			limit = {
+				NOT = { this = scope:county_a }
+				NOT = { this = scope:county_b }
+			}
+			save_scope_as = county_c
+		}
+		random_in_list = {
+			list = selectable_countier
+			limit = {
+				NOT = { this = scope:county_a }
+				NOT = { this = scope:county_b }
+				NOT = { this = scope:county_c }
+			}
+			save_scope_as = county_d
+		}
+		random_in_list = {
+			list = selectable_countier
+			limit = {
+				NOT = { this = scope:county_a }
+				NOT = { this = scope:county_b }
+				NOT = { this = scope:county_c }
+				NOT = { this = scope:county_d }
+			}
+			save_scope_as = county_e
+		}
+		random_in_list = {
+			list = selectable_countier
+			limit = {
+				NOT = { this = scope:county_a }
+				NOT = { this = scope:county_b }
+				NOT = { this = scope:county_c }
+				NOT = { this = scope:county_d }
+				NOT = { this = scope:county_e }
+			}
+			save_scope_as = county_f
+		}
+		random_in_list = {
+			list = selectable_countier
+			limit = {
+				NOT = { this = scope:county_a }
+				NOT = { this = scope:county_b }
+				NOT = { this = scope:county_c }
+				NOT = { this = scope:county_d }
+				NOT = { this = scope:county_e }
+				NOT = { this = scope:county_f }
+			}
+			save_scope_as = county_g
+		}
+		random_in_list = {
+			list = selectable_countier
+			limit = {
+				NOT = { this = scope:county_a }
+				NOT = { this = scope:county_b }
+				NOT = { this = scope:county_c }
+				NOT = { this = scope:county_d }
+				NOT = { this = scope:county_e }
+				NOT = { this = scope:county_f }
+				NOT = { this = scope:county_g }
+			}
+			save_scope_as = county_h
+		}
+		random_in_list = {
+			list = selectable_countier
+			limit = {
+				NOT = { this = scope:county_a }
+				NOT = { this = scope:county_b }
+				NOT = { this = scope:county_c }
+				NOT = { this = scope:county_d }
+				NOT = { this = scope:county_e }
+				NOT = { this = scope:county_f }
+				NOT = { this = scope:county_g }
+				NOT = { this = scope:county_h }
+			}
+			save_scope_as = county_i
+		}
+		random_in_list = {
+			list = selectable_countier
+			limit = {
+				NOT = { this = scope:county_a }
+				NOT = { this = scope:county_b }
+				NOT = { this = scope:county_c }
+				NOT = { this = scope:county_d }
+				NOT = { this = scope:county_e }
+				NOT = { this = scope:county_f }
+				NOT = { this = scope:county_g }
+				NOT = { this = scope:county_h }
+				NOT = { this = scope:county_i }
+			}
+			save_scope_as = county_j
+		}
+	}
+
+	option = {
+		name = agot_rp_event.0200.a
+		trigger = { exists = scope:county_a }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_a.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_a.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+	option = {
+		name = agot_rp_event.0200.b
+		trigger = { exists = scope:county_b }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_b.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_b.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+	option = {
+		name = agot_rp_event.0200.c
+		trigger = { exists = scope:county_c }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_c.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_c.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+	option = {
+		name = agot_rp_event.0200.d
+		trigger = { exists = scope:county_d }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_d.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_d.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+	option = {
+		name = agot_rp_event.0200.e
+		trigger = { exists = scope:county_e }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_e.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_e.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+	option = {
+		name = agot_rp_event.0200.f
+		trigger = { exists = scope:county_f }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_f.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_f.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+	option = {
+		name = agot_rp_event.0200.g
+		trigger = { exists = scope:county_g }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_g.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_g.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+	option = {
+		name = agot_rp_event.0200.h
+		trigger = { exists = scope:county_h }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_h.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_h.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+	option = {
+		name = agot_rp_event.0200.i
+		trigger = { exists = scope:county_i }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_i.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_i.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+	option = {
+		name = agot_rp_event.0200.j
+		trigger = { exists = scope:county_j }
+
+		set_variable = {
+			name = agot_birthplace
+			value = scope:county_j.title_province
+		}
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = scope:county_j.title_province
+		}
+		remove_character_flag = can_set_birthplace
+	}
+
+	option = {
+		name = agot_rp_event.0200.k
+	}
+}
+
+agot_rp_event.0201 = {
+	type = character_event
+	title = agot_rp_event.0201.t
+	desc = agot_rp_event.0201.desc
+
+	theme = family
+
+	override_background = {
+		reference = study
+	}
+
+	right_portrait = {
+		character = root
+		animation = throne_room_writer
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_succession"
+		add_character_flag = can_set_birthplace
+		agot_add_birthplace_bastard_nickname_effect = {
+			BIRTHPLACE = var:agot_birthplace
+		}
+	}
+
+	option = {
+		name = agot_rp_event.0201.a
+	}
+
+	option = {
+		name = agot_rp_event.0201.b
+
+		remove_character_flag = can_set_birthplace
+	}
+}

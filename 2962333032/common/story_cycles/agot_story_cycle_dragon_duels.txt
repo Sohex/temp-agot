@@ -1,0 +1,124 @@
+﻿agot_dragonrider_forced_duel_story = {
+	on_setup = {
+		story_owner = {
+			save_scope_as = agot_dragonrider
+			trigger_event = {
+				id = agot_dragon_combat.1011
+				days = 1
+			}
+		}
+	}
+
+	on_end = {}
+
+	on_owner_death = {
+		scope:story = { end_story = yes }
+	}
+
+	### DAILY
+	effect_group = {
+		days = 1
+
+		#Add new riders to the list
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					has_variable_list = temp_rider_list
+					any_in_list = {
+						variable = temp_rider_list
+
+						scope:story = {
+							NOT = { is_target_in_variable_list = { name = agot_dragonrider_forced_duel_list target = prev } }
+						}
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					save_scope_as = story_owner
+					every_in_list = {
+						variable = temp_rider_list
+
+						limit = {
+							scope:story = {
+								NOT = { is_target_in_variable_list = { name = agot_dragonrider_forced_duel_list target = prev } }
+							}
+						}
+						scope:story = { add_to_variable_list = { name = agot_dragonrider_forced_duel_list target = prev } }
+					}
+
+					clear_variable_list = temp_rider_list
+				}
+			}
+		}
+
+		#Select enemy dragonrider
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					NOT = { has_character_flag = agot_more_dragon_duel }
+					save_temporary_scope_as = agot_dragonrider
+					is_current_dragonrider = yes
+					exists = location
+					NOT = { has_character_flag = agot_in_dragon_duel_opening }
+					NOT = { has_variable = engaged_in_single_combat }
+					NOT = { has_variable = engaged_in_dragon_combat }
+					OR = {
+						is_at_war = yes
+						any_liege_or_above = { is_at_war = yes }
+					}
+				}
+				exists = scope:agot_dragonrider.var:current_dragon
+				scope:story = {
+					has_variable_list = agot_dragonrider_forced_duel_list
+					any_in_list = {
+						variable = agot_dragonrider_forced_duel_list
+
+						agot_dragonrider_opponent_selection_trigger = { DRAGONRIDER = scope:agot_dragonrider }
+					}
+				}
+			}
+			effect = {
+				story_owner = { save_scope_as = agot_dragonrider }
+				scope:story = {
+					random_in_list = {
+						variable = agot_dragonrider_forced_duel_list
+
+						limit = {
+							agot_dragonrider_opponent_selection_trigger = { DRAGONRIDER = scope:agot_dragonrider }
+						}
+						save_scope_as = agot_target_rider
+					}
+					if = {
+						limit = {
+							exists = scope:agot_dragonrider
+							exists = scope:agot_target_rider
+						}
+						scope:agot_dragonrider = { agot_dragon_duel_effect = yes }
+					}
+				}
+			}
+		}
+
+		#Checking if the story is still valid
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					NOT = { has_character_flag = agot_war_just_started }
+					NOT = { is_at_war = yes }
+					NOT = { exists = scope:story.var:dragonrider_war }
+					trigger_if = {
+						limit = { NOT = { is_independent_ruler = yes } }
+						OR = {
+							any_liege_or_above = { NOT = { is_at_war = yes } }
+							NOT = { exists = liege }
+						}
+					}
+				}
+			}
+			effect = {
+				scope:story = { end_story = yes }
+			}
+		}
+	}
+}

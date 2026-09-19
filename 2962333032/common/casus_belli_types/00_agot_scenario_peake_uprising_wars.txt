@@ -1,0 +1,196 @@
+﻿peake_uprising = {
+	icon = dissolution_war
+	group = civil_war
+	ai_only_against_liege = yes
+	allow_hostages = yes
+	target_titles = all
+	target_title_tier = all
+	allowed_for_character = {
+		always = no
+	}
+
+	allowed_against_character = {
+		scope:attacker = {
+			liege = scope:defender
+		}
+	}
+
+	target_de_jure_regions_above = yes
+
+	white_peace_possible = no
+
+	valid_to_start = {
+	}
+
+	should_invalidate = {
+	}
+
+	on_declaration = {
+		#on_declared_war = yes
+		# save the initial target and their tier for conditioning the depose effect
+		if = {
+			limit = { NOT = { exists = scope:attacker.var:initial_target } }
+			scope:attacker = {
+				set_variable = {
+					name = initial_target
+					value = scope:defender
+				}
+
+				set_variable = {
+					name = target_tier
+					value = scope:defender.primary_title.tier
+				}
+			}
+		}
+	}
+
+	on_victory_desc = {
+
+	}
+
+	on_victory = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		#EP2 Accolade glory gain from winning against higher ranked enemy
+		scope:attacker = { accolade_attacker_war_end_glory_gain_med_effect = yes }
+
+		scope:attacker = {
+			add_prestige = 1500
+			get_title = title:c_whitegrove
+			get_title = title:c_dunstonbury
+		}
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+
+		title:d_cockleswhent = {
+			change_title_holder_include_vassals = {
+				holder = scope:attacker
+				change = scope:change
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+
+		scope:defender = {
+			if = {
+				limit = { has_realm_law = crown_authority_1 }
+				add_realm_law = crown_authority_0
+			}
+			if = {
+				limit = { has_realm_law = crown_authority_2 }
+				add_realm_law = crown_authority_1
+			}
+			if = {
+				limit = { has_realm_law = crown_authority_3 }
+				add_realm_law = crown_authority_2
+			}
+
+			add_prestige = -1000
+
+			every_character_war = {
+				limit = {
+					is_attacker = scope:attacker
+					is_defender = scope:defender
+				}
+				every_war_attacker = {
+					if = {
+						limit = {
+							can_add_hook = {
+								type = favor_hook
+								target = scope:defender
+							}
+						}
+						add_hook = {
+							type = favor_hook
+							target = scope:defender
+						}
+					}
+				}
+			}
+
+			add_character_flag = {
+				flag = recent_liberty_faction_war
+				years = liberty_war_victory_cooldown
+			}
+		}
+
+		hidden_effect = {
+			scope:attacker = {
+				add_truce_both_ways = {
+					character = scope:defender
+					days = 1825
+					war = root.war
+					result = victory
+				}
+			}
+		}
+
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+	}
+
+	on_white_peace = {
+	}
+
+	on_defeat_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:defender = { is_local_player = yes } }
+				desc = refused_liege_demand_war_defeat_desc_defender
+			}
+			desc = refused_liege_demand_war_defeat_desc
+		}
+
+	}
+
+	on_defeat = {
+		scope:attacker = {
+			show_pow_release_message_effect = yes
+			destroy_title = title:d_palemarch
+		}
+		title:d_orchard_way.holder = {
+			get_title = title:c_burkley
+		}
+		scope:defender = {
+			add_character_flag = {
+				flag = recent_liberty_faction_war
+				years = 10
+			}
+			add_dread = medium_dread_gain
+		}
+		on_lost_request_revolt_war = yes
+	}
+
+	on_invalidated_desc = msg_invalidate_war_title
+
+	check_attacker_inheritance_validity = no
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	transfer_behavior = transfer
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = "PEAKE_UPRISING_WAR"
+
+	interface_priority = 80
+
+	use_de_jure_wargoal_only = yes
+
+	attacker_wargoal_percentage = 0.8
+
+	max_attacker_score_from_battles = 100
+	max_defender_score_from_battles = 50
+
+	max_defender_score_from_occupation = 150
+	max_attacker_score_from_occupation = 150
+
+	max_ai_diplo_distance_to_title = 500
+}

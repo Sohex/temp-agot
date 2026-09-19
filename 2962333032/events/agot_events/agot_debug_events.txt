@@ -1,0 +1,536 @@
+﻿namespace = agot_debug
+
+### DEBUG SCENARIO ###
+
+agot_debug.0001 = {
+	type = character_event
+	title = agot_debug.0001.t
+	desc = agot_debug.0001.desc
+	theme = default
+	orphan = yes
+
+	immediate = {
+	}
+
+	option = {
+		name = agot_debug.0001.a
+	}
+
+	option = {
+		name = agot_debug.0001.b
+	}
+}
+
+agot_debug.0002 = {
+	hidden = yes
+
+	immediate = {
+	}
+}
+
+### DEBUG TRIGGER FALL OF THE WALL ###
+
+# Debug to trigger wall collapse?
+agot_debug.1000 = {
+	type = character_event
+	title = agot_debug.1000.t
+	desc = agot_debug.1000.desc
+	theme = default
+
+	immediate = {
+		remove_character_flag = is_in_diplomacy_foreign_special_event
+		remove_character_flag = is_in_diplomacy_family_special_event
+		remove_character_flag = is_in_diplomacy_majesty_special_event
+		remove_character_flag = is_in_martial_special_event
+		remove_character_flag = is_in_stewardship_domain_special_event
+		remove_character_flag = is_in_stewardship_duty_special_event
+		remove_character_flag = is_in_stewardship_wealth_special_event
+		remove_character_flag = is_in_intrigue_special_event
+		remove_character_flag = is_in_learning_special_event
+	}
+
+	widgets = {
+		widget = {
+			gui = "agot_particle_wall_collapse"
+			container = "custom_widgets_container"
+			controller = default
+			setup_scope = { }
+		}
+	}
+	# This won't actually ever be shown.
+	option = {
+		name = agot_debug.1000.a
+	}
+}
+
+# Debug to trigger kings landing going boom?
+agot_debug.1001 = {
+	type = character_event
+	title = agot_debug.1001.t
+	desc = agot_debug.1001.desc
+	orphan = yes
+	theme = default
+	widgets = {
+		widget = {
+			gui = "agot_particle_kingslanding_wildfire"
+			container = "custom_widgets_container"
+			controller = default
+			setup_scope = { }
+		}
+	}
+	immediate = {
+		play_music_cue = CK3AGOT_wildfire
+		pan_camera_to_title = title:b_hookmarket
+	}
+	# This won't actually ever be shown.
+	option = {
+		name = agot_debug.1001.a
+	}
+}
+
+
+# Debug to make wall fall LEFT
+
+agot_debug.1002 = {
+	type = character_event
+	title = agot_debug.1002.t
+	desc = agot_debug.1002.desc
+	theme = default
+	orphan = yes
+
+	immediate = {
+		title:b_castle_black.title_province = {
+			if = {
+				limit = {
+					has_variable = agot_wall_is_normal
+				}
+				set_variable = agot_wall_has_fallen_left
+			}
+		}
+		trigger_event = agot_debug.1000
+		play_music_cue = mood_the_others
+	}
+
+	# This won't actually ever be shown.
+	option = {
+		name = agot_debug.1002.a
+	}
+}
+
+# Debug to make wall fall Middle
+
+agot_debug.1003 = {
+	hidden = yes
+	theme = default
+	orphan = yes
+
+	immediate = {
+		title:b_castle_black.title_province = {
+			if = {
+				limit = {
+					has_variable = agot_wall_is_normal
+				}
+				set_variable = agot_wall_has_fallen_middle
+			}
+			remove_building = special_the_wall
+		}
+		title:b_castle_black.title_province = {
+			add_building = special_the_wall_damaged
+		}
+	}
+
+	# This won't actually ever be shown.
+	option = {
+		name = agot_debug.1001.a
+	}
+	after = {
+		title:b_castle_black.title_province = {
+			add_building = special_the_wall_damaged
+		}
+	}
+}
+
+# Debug to make wall fall RIGHT
+
+agot_debug.1004 = {
+	type = character_event
+	title = agot_debug.1004.t
+	desc = agot_debug.1004.desc
+	theme = default
+	orphan = yes
+
+	immediate = {
+		title:b_castle_black.title_province = {
+			if = {
+				limit = {
+					has_variable = agot_wall_is_normal
+				}
+				set_variable = agot_wall_has_fallen_right
+			}
+			remove_building = special_the_wall
+			add_special_building = special_the_wall_damaged
+		}
+		trigger_event = agot_debug.1000
+		play_music_cue = mood_the_others
+
+	}
+
+	# This won't actually ever be shown.
+	option = {
+		name = agot_debug.1004.a
+	}
+}
+
+# Debug to reset wall
+
+agot_debug.1005 = {
+	type = character_event
+	title = agot_debug.1005.t
+	desc = agot_debug.1005.desc
+	theme = default
+	orphan = yes
+
+	immediate = {
+		title:b_castle_black.title_province = {
+			if = {
+				limit = {
+					OR = {
+						has_variable = agot_wall_has_fallen_left
+					}
+				}
+				set_variable = agot_wall_is_normal
+				remove_variable = agot_wall_has_fallen_left
+
+				remove_building = special_the_wall_damaged
+				add_building = special_the_wall
+			}
+			if = {
+				limit = {
+					OR = {
+						has_variable = agot_wall_has_fallen_middle
+					}
+				}
+				set_variable = agot_wall_is_normal
+				remove_variable = agot_wall_has_fallen_middle
+
+				remove_building = special_the_wall_damaged
+				add_building = special_the_wall
+			}
+			if = {
+				limit = {
+					OR = {
+						has_variable = agot_wall_has_fallen_right
+					}
+				}
+				set_variable = agot_wall_is_normal
+				remove_variable = agot_wall_has_fallen_right
+
+				remove_building = special_the_wall_damaged
+				add_building = special_the_wall
+			}
+			if = {
+				limit = {
+					NOT = {
+						has_variable = agot_wall_has_fallen_left
+						has_variable = agot_wall_has_fallen_right
+						has_variable = agot_wall_has_fallen_middle
+						has_building = special_the_wall
+					}
+				}
+				add_building = special_the_wall
+			}
+		}
+	}
+
+	# This won't actually ever be shown.
+	option = {
+		name = agot_debug.1005.a
+	}
+}
+
+# Debug to update the fall
+
+agot_debug.1006 = {
+	type = character_event
+	title = agot_debug.1006.t
+	desc = agot_debug.1006.desc
+	theme = default
+	hidden = yes
+	orphan = yes
+
+	immediate = {
+		title:b_castle_black.title_province = {
+			add_building = special_the_wall_damaged
+		}
+	}
+
+	# This won't actually ever be shown.
+	option = { name = agot_debug.1006.a }
+}
+
+
+#TRIGGER THE FALL
+
+agot_debug.1007 = {
+	hidden = yes
+	orphan = yes
+
+
+	immediate = {
+		trigger_event = {
+			id = agot_debug.1000
+			days = 15
+		}
+		add_character_flag = is_in_diplomacy_foreign_special_event
+		add_character_flag = is_in_diplomacy_family_special_event
+		add_character_flag = is_in_diplomacy_majesty_special_event
+		add_character_flag = is_in_martial_special_event
+		add_character_flag = is_in_stewardship_domain_special_event
+		add_character_flag = is_in_stewardship_duty_special_event
+		add_character_flag = is_in_stewardship_wealth_special_event
+		add_character_flag = is_in_intrigue_special_event
+		add_character_flag = is_in_learning_special_event
+		if = {
+			limit = {
+				AND = {
+					location = { geographical_region = world_westeros }
+					is_ai = no
+				}
+			}
+			pan_camera_to_title = title:b_castle_black
+		}
+		play_music_cue = CK3AGOT_wall_collapse_the_others
+	}
+}
+
+agot_debug.1008 = {
+	hidden = yes
+	#orphan = yes Amanes : Don't tag them Orphans when you call them :despair:
+
+	immediate = {
+		if = {
+			limit = {
+				exists = scope:old_location
+				scope:old_location = {
+					has_variable = bog_crannogman_locations
+				}
+			}
+			scope:old_location = {
+				#remove_province_modifier = agot_bog_friendly #AGOT TODO this is creates error due to wrong scope in modifier
+			}
+		}
+	}
+	option = {
+		name = agot_debug.1008.a
+	}
+}
+
+agot_debug.1010 = {
+	type = character_event
+	theme = realm
+	orphan = yes
+	desc = agot_debug.1010.desc
+
+	immediate = {
+		add_prestige = 10000
+	}
+	option = {
+
+	}
+}
+
+agot_debug.1051 = {
+	type = character_event
+	title = agot_debug.1051.t
+	desc = agot_debug.1001.desc
+	theme = default
+	orphan = yes
+
+	immediate = {
+		title:b_castle_black.title_province = {
+			# if = {
+			# 	limit = {
+			# 		OR = {
+			# 			has_variable = agot_wall_is_normal
+			# 		}
+			# 	}
+			# 	set_variable = agot_wall_has_fallen_left
+			# 	remove_variable = agot_wall_is_normal
+
+			# 	remove_building = special_the_wall
+			# 	add_building = special_the_wall_damaged
+			# }
+			if = {
+				limit = {
+					OR = {
+						has_variable = agot_wall_is_normal
+					}
+				}
+				set_variable = agot_wall_has_fallen_middle
+				remove_variable = agot_wall_is_normal
+
+				remove_building = special_the_wall
+				add_building = special_the_wall_damaged
+			}
+			# if = {
+			# 	limit = {
+			# 		OR = {
+			# 			has_variable = agot_wall_is_normal
+			# 		}
+			# 	}
+			# 	set_variable = agot_wall_has_fallen_right
+			# 	remove_variable = agot_wall_is_normal
+
+			# 	remove_building = special_the_wall
+			# 	add_building = special_the_wall_damaged
+			# }
+		}
+	}
+
+	# This won't actually ever be shown.
+	option = {
+		name = agot_debug.1051.a
+	}
+}
+
+# Removed until way to improve GFX is found
+# agot_debug.2000 = { # Trigger building GFX tick on province
+# 	hidden = yes
+# 	scope = none
+# 	immediate = {
+# 		hidden_effect = {
+# 			if = {
+# 				limit = {
+# 					free_building_slots > 0
+# 				}
+# 				add_building = gfx_reset_building
+# 				remove_building = gfx_reset_building
+# 			}
+# 			else = {
+# 				add_province_modifier = extra_building_slot
+# 				add_building = gfx_reset_building
+# 				remove_province_modifier = extra_building_slot
+# 				remove_building = gfx_reset_building
+# 			}
+# 		}
+# 	}
+# }
+
+agot_debug.3000 = {
+	hidden = yes
+	orphan = yes
+	immediate = {
+		agot_create_artifact_dragon_horn_effect = {
+			OWNER = root
+			DRAGON = root
+		}
+	}
+}
+
+agot_debug.4000 = {
+	type = character_event
+	title = agot_debug.4000.t
+	desc = {
+		desc = agot_debug.4000.desc
+		triggered_desc = {
+			trigger = {
+				exists = scope:dragonblood_char
+			}
+			desc = agot_debug.4000.dragonblood
+		}
+	}
+	theme = dragon
+	right_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	override_background = {
+		reference = study
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				NOT = { exists = scope:dragonblood_char }
+			}
+			every_living_character = {
+				limit = {
+					agot_has_dragonblood_heritage = yes
+					is_human = yes
+				}
+				add_to_list = dragonblooded_characters
+			}
+			ordered_in_list = {
+				list = dragonblooded_characters
+				order_by = {
+					value = 0
+					add = dragonblood_percent
+					if = {
+						limit = { dynasty = dynasty:dynn_Targaryen }
+						add = 20
+					}
+				}
+				max = list_size:dragonblooded_characters
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_debug.4000.a
+		var:si_selected_character ?= {
+			save_scope_as = dragonblood_char
+		}
+		trigger_event = agot_debug.4000
+	}
+
+	option = {
+		name = agot_debug.4000.b
+		if = {
+			limit = { has_variable = si_selected_character }
+			remove_variable = si_selected_character
+		}
+		if = {
+			limit = { has_variable_list = possible_characters }
+			clear_variable_list = possible_characters
+		}
+	}
+}
+
+#"And you're Bloodraven! And you're Bloodraven! Everyone is Bloodraven!" - Oprah Winfrey said calmly.
+agot_debug.5000 = {
+	hidden = yes
+	orphan = yes
+	immediate = {
+		every_living_character = {
+			add_trait = albino
+			add_trait = one_eyed
+			add_character_flag = no_eyepatch
+		}
+	}
+}
+
+agot_debug.9999 = {
+	hidden = yes
+	immediate = {
+		every_living_character = {
+			limit = { agot_boring_character_trigger = yes }
+			death = {
+				death_reason = death_battle_dragon_fire
+			}
+		}
+	}
+}

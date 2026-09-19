@@ -1,0 +1,2121 @@
+﻿namespace = agot_trial_by_combat
+
+scripted_effect agot_trial_by_combat_defender_win_effect = {
+	if = {
+		limit = {
+			scope:actor = { is_alive = yes }
+			scope:recipient = { is_alive = yes }
+		}
+		scope:actor = { consume_imprisonment_reasons = scope:recipient }
+	}
+	scope:actor = {
+		if = {
+			limit = { is_imprisoned = yes }
+			add_character_flag = { #To make sure you don't get spammed about the release
+				flag = block_for_prison_release_notification
+				days = 1
+			}
+			release_from_prison = yes
+		}
+	}
+}
+
+scripted_effect agot_trial_by_combat_accuser_win_effect = {
+	if = {
+		limit = {
+			scope:actor = { is_alive = yes }
+		}
+		scope:actor = { add_character_flag = lost_trial_by_combat }
+		scope:recipient = {
+			add_opinion = {
+				modifier = lost_trial_by_combat_opinion
+				target = scope:actor
+			}
+		}
+	}
+}
+
+scripted_trigger agot_eligible_knight_to_champion_trial_by_combat_trigger = {
+	is_ruler = no
+	can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:needs_champion }
+	NOT = { has_trait = maester }
+	NOT = { has_trait = septon }
+	eligible_knight_to_champion_trial_by_combat_trigger = yes
+
+	trigger_if = {
+		limit = { title:h_the_iron_throne.holder ?= { is_ai = no } }
+		NOT = { has_trait = kingsguard }
+	}
+
+	trigger_if = {
+		limit = {
+			NOT = { has_trait = nightswatch }
+		}
+		NOT = { has_trait = nightswatch }
+	}
+
+	#Would agree to it
+	NOT = { has_trait = craven }
+	NOT = { has_relation_rival = scope:needs_champion }
+	trigger_if = {
+		limit = { any_heir_title = {} }
+		OR = {
+			has_relation_friend = scope:needs_champion
+			has_relation_lover = scope:needs_champion
+		}
+	}
+	trigger_if = {
+		limit = {
+			NOT = { liege_or_court_owner ?= scope:needs_champion }
+		}
+		save_temporary_opinion_value_as = { name = target_opinion target = scope:needs_champion }
+		scope:target_opinion >= medium_positive_opinion
+	}
+	trigger_else = {
+		save_temporary_opinion_value_as = { name = target_opinion target = scope:needs_champion }
+		scope:target_opinion >= 0
+	}
+}
+
+#accuser declines
+agot_trial_by_combat.0001 = {
+	type = letter_event
+	opening = agot_trial_by_combat.0001.opening
+	desc = agot_trial_by_combat.0001.desc
+	sender = scope:recipient
+
+	option = { name = agot_trial_by_combat.0001.a }
+}
+
+#trial invalidated
+agot_trial_by_combat.0002 = {
+	hidden = yes
+
+	immediate = {
+		# Put your shirts back on.
+		single_combat_clean_shirtlessness_effect = {
+			ATTACKER = scope:actor
+			DEFENDER = scope:recipient
+		}
+		# Inform both parties that the duel has invalidated.
+		scope:actor = {
+			send_interface_toast = {
+				title = agot_trial_by_combat.0002.trigger_failure.actor
+				left_icon = scope:recipient
+			}
+		}
+		scope:recipient = {
+			send_interface_toast = {
+				title = agot_trial_by_combat.0002.trigger_failure.recipient
+				left_icon = scope:actor
+			}
+		}
+	}
+}
+
+#accuser chooses champion
+agot_trial_by_combat.1000 = {
+	type = character_event
+	title = agot_trial_by_combat.1000.t
+	desc = agot_trial_by_combat.1000.desc
+	theme = prison
+	left_portrait = {
+		character = scope:actor
+		animation = disbelief
+	}
+	right_portrait = {
+		character = scope:recipient
+		animation = personality_honorable
+	}
+	override_background = { reference = throne_room }
+
+	widgets = {
+		widget = { # two options
+			is_shown = {
+				is_ai = no
+				NOR = {
+					exists = scope:self_option
+					exists = scope:fire_obsessed_option
+					exists = scope:tbc_trial_of_seven_option
+					exists = scope:dragon_option
+				}
+			}
+			gui = "agot_character_selection_two_options"
+			container = "custom_widgets_container"
+		}
+
+		widget = { # three options
+			is_shown = {
+				is_ai = no
+				OR = {
+					AND = {
+						exists = scope:self_option
+						NOR = {
+							exists = scope:fire_obsessed_option
+							exists = scope:tbc_trial_of_seven_option
+							exists = scope:dragon_option
+						}
+					}
+					AND = {
+						OR = {
+							exists = scope:fire_obsessed_option
+							exists = scope:tbc_trial_of_seven_option
+						}
+						NOR = {
+							exists = scope:self_option
+							exists = scope:dragon_option
+						}
+					}
+					AND = {
+						exists = scope:dragon_option
+						NOR = {
+							exists = scope:self_option
+							exists = scope:fire_obsessed_option
+							exists = scope:tbc_trial_of_seven_option
+						}
+					}
+				}
+			}
+			gui = "agot_character_selection_three_options"
+			container = "custom_widgets_container"
+		}
+
+		widget = { # four options
+			is_shown = {
+				is_ai = no
+				OR = {
+					AND = {
+						exists = scope:self_option
+						OR = {
+							exists = scope:fire_obsessed_option
+							exists = scope:tbc_trial_of_seven_option
+						}
+						NOT = { exists = scope:dragon_option }
+					}
+					AND = {
+						OR = {
+							exists = scope:fire_obsessed_option
+							exists = scope:tbc_trial_of_seven_option
+						}
+						exists = scope:dragon_option
+						NOT = { exists = scope:self_option }
+					}
+					AND = {
+						exists = scope:self_option
+						exists = scope:dragon_option
+						NOT = { exists = scope:fire_obsessed_option }
+						NOT = { exists = scope:tbc_trial_of_seven_option }
+					}
+				}
+			}
+			gui = "agot_character_selection_four_options"
+			container = "custom_widgets_container"
+		}
+
+		widget = { # five options
+			is_shown = {
+				is_ai = no
+				exists = scope:self_option
+				exists = scope:dragon_option
+				OR = {
+					exists = scope:fire_obsessed_option
+					exists = scope:tbc_trial_of_seven_option
+				}
+			}
+			gui = "agot_character_selection_five_options"
+			container = "custom_widgets_container"
+		}
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_prison"
+
+		save_scope_as = needs_champion
+
+		if = { # Self option
+			limit = {
+				age < 15
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+			}
+			save_scope_as = self_option
+		}
+		if = { # Fire obsessed option
+			limit = { has_trait = fire_obsessed }
+			save_scope_as = fire_obsessed_option
+		}
+		if = { # Dragon option
+			limit = {
+				is_current_dragonrider = yes
+			}
+			var:current_dragon = {
+				save_scope_as = dragon
+			}
+			if = {
+				limit = {
+					NOT = { has_trait = just }
+					OR = {
+						has_trait = sadistic
+						has_trait = eccentric
+						has_trait = lunatic_1
+						has_trait = lunatic_genetic
+					}
+				}
+				save_scope_as = dragon_option
+			}
+		}
+		if = {
+			limit = {
+				NOT = { has_trait = fire_obsessed } # so we can always have an available option slot
+				agot_valid_tos_dishonorable_imprisonment_scenario_trigger = { ACTOR = scope:actor RECIPIENT = scope:recipient }
+			}
+			save_scope_as = tbc_trial_of_seven_option
+		}
+
+		if = {
+			limit = {
+				employs_court_position = champion_court_position
+				any_court_position_holder = {
+					type = champion_court_position
+					is_physically_able_adult = yes # eligible_knight_to_champion_trial_by_combat_trigger checks for prowess, and its not mandatory that the champ has high value
+				}
+			}
+			random_court_position_holder = {
+				type = champion_court_position
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				ruler_primary_title_has_kingsguard_trigger = yes
+			}
+			every_courtier = {
+				limit = { has_trait = kingsguard }
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+
+		every_knight = {
+			limit = {
+				agot_eligible_knight_to_champion_trial_by_combat_trigger = yes
+				NOT = {
+					has_court_position = champion_court_position #EP1: Pluck out the champion title holder
+				}
+			}
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+
+		every_close_or_extended_family_member = {
+			limit = {
+				agot_eligible_knight_to_champion_trial_by_combat_trigger = yes
+			}
+
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+
+		every_courtier = {
+			limit = {
+				agot_eligible_knight_to_champion_trial_by_combat_trigger = yes
+				prowess > 10
+			}
+
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+
+		ordered_in_list = {
+			variable = possible_characters
+			order_by = prowess
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = recipient_champion
+		}
+	}
+
+	option = {
+		name = agot_trial_by_combat.1000.a
+
+		trigger = { exists = scope:recipient_champion }
+
+		var:si_selected_character = {
+			save_scope_as = recipient_champion
+			remove_variable = si_selecting_character
+		}
+		custom_tooltip = agot_trial_by_combat.1000.a.tt
+		custom_tooltip = agot_trial_by_combat.1000.bout_moves_forward
+		clear_variable_list = possible_characters
+
+		# RP/functional choice: no stress charge.
+		ai_chance = {
+			base = 0
+
+			#Prowess-Rationality-Boldness Calculation.
+			modifier = {
+				add = {
+					value = 0
+					add = {
+						value = prowess
+						divide = 2
+						min = 1
+					}
+					multiply = {
+						value = ai_rationality
+						#no 0s.
+						if = {
+							limit = { ai_rationality = 0 }
+							add = -1
+						}
+					}
+					divide = {
+						value = 20
+						#If ai_rationality is around 0, not dividing at all is fine, so it won't invalidate ai_boldness calculations.
+						if = {
+							limit = {
+								AND = {
+									ai_rationality >= -10
+									ai_rationality <= 10
+								}
+							}
+							divide = 20
+						}
+					}
+					#Powerful and Irrational characters will decide based on their Boldness (in negative to balance out their negative ai_rationality).
+					if = {
+						limit = {
+							AND = {
+								prowess >= 25
+								ai_rationality <= 0
+							}
+						}
+						multiply = {
+							value = ai_boldness
+							multiply = -0.01
+						}
+					}
+					#Powerless and Irrational characters will decide based on half of their Boldness (in negative to balance out their negative ai_rationality).
+					else_if = {
+						limit = {
+							AND = {
+								prowess < 25
+								ai_rationality <= 0
+							}
+						}
+						multiply = {
+							value = ai_boldness
+							multiply = -0.02
+						}
+					}
+					#Rational characters will decide based on their Boldness (eg. if they are Powerless they can still go for it if they are brave enough).
+					else = {
+						multiply = {
+							value = ai_boldness
+							multiply = 0.01
+						}
+					}
+				}
+			}
+
+			#Relation to Prowess.
+			modifier = {
+				factor = {
+					value = 1
+					subtract = {
+						value = prowess
+						subtract = 25
+						multiply = 0.2
+					}
+				}
+			}
+
+			#King has stronger knights.
+			modifier = {
+				add = 100
+
+				highest_held_title_tier >= tier_empire
+				any_knight = {
+					age > 15
+					can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+					is_physically_able_ai = yes
+					prowess >= scope:recipient.prowess
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_trial_by_combat.1000.b
+
+		hidden_effect = {
+			create_character = {
+				gender_female_chance = root_soldier_female_chance
+				location = scope:needs_champion.location
+				template = new_warrior_character
+				faith = scope:needs_champion.faith
+				culture = scope:needs_champion.culture
+				save_scope_as = recipient_champion
+			}
+		}
+
+		remove_short_term_gold = 50
+
+		custom_tooltip = agot_trial_by_combat.1000.b.tt
+		custom_tooltip = agot_trial_by_combat.1000.bout_moves_forward
+		clear_variable_list = possible_characters
+
+		ai_chance = {
+			base = 0
+
+			#Prowess-Rationality-Boldness Calculation.
+			modifier = {
+				add = {
+					value = 0
+					add = {
+						value = prowess
+						divide = 2
+						min = 1
+					}
+					multiply = {
+						value = ai_rationality
+						#no 0s.
+						if = {
+							limit = { ai_rationality = 0 }
+							add = -1
+						}
+					}
+					divide = {
+						value = 20
+						#If ai_rationality is around 0, not dividing at all is fine, so it won't invalidate ai_boldness calculations.
+						if = {
+							limit = {
+								AND = {
+									ai_rationality >= -10
+									ai_rationality <= 10
+								}
+							}
+							divide = 20
+						}
+					}
+					#Powerful and Irrational characters will decide based on their Boldness (in negative to balance out their negative ai_rationality).
+					if = {
+						limit = {
+							AND = {
+								prowess >= 25
+								ai_rationality <= 0
+							}
+						}
+						multiply = {
+							value = ai_boldness
+							multiply = -0.01
+						}
+					}
+					#Powerless and Irrational characters will decide based on half of their Boldness (in negative to balance out their negative ai_rationality).
+					else_if = {
+						limit = {
+							AND = {
+								prowess < 25
+								ai_rationality <= 0
+							}
+						}
+						multiply = {
+							value = ai_boldness
+							multiply = -0.02
+						}
+					}
+					#Rational characters will decide based on their Boldness (eg. if they are Powerless they can still go for it if they are brave enough).
+					else = {
+						multiply = {
+							value = ai_boldness
+							multiply = 0.01
+						}
+					}
+				}
+			}
+
+			#Relation to Prowess.
+			modifier = {
+				factor = {
+					value = 1
+					subtract = {
+						value = prowess
+						subtract = 25
+						multiply = 0.02
+					}
+				}
+			}
+
+			#Use this only if no character for option A
+			modifier = {
+				factor = 0
+				exists = scope:recipient_champion
+			}
+		}
+	}
+
+	# Me
+	option = {
+		name = {
+			trigger = {
+				OR = {
+					NOT = { has_game_rule = agot_silly_mode }
+					NOT = { exists = character:Targaryen_35 }
+					NOT = { root = character:Targaryen_35 }
+					NOT = { age >= 40 }
+				}
+			}
+			text = agot_trial_by_combat.1000.c
+		}
+		name = {
+			trigger = {
+				has_game_rule = agot_silly_mode
+				exists = character:Targaryen_35
+				root = character:Targaryen_35
+				age >= 40
+			}
+			text = agot_trial_by_combat.1000.c_silly_jae
+		}
+
+		trigger = {
+			age > 15
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+		}
+
+		save_scope_as = recipient_champion
+		custom_tooltip = agot_trial_by_combat.1000.c.tt
+		custom_tooltip = agot_trial_by_combat.1000.bout_moves_forward
+		clear_variable_list = possible_characters
+
+		ai_chance = {
+			base = 20
+
+			#Prowess-Rationality-Boldness Calculation.
+			modifier = {
+				add = {
+					value = 0
+					add = {
+						value = prowess
+						divide = 2
+						min = 1
+					}
+					multiply = {
+						value = ai_rationality
+						#no 0s.
+						if = {
+							limit = { ai_rationality = 0 }
+							add = -1
+						}
+					}
+					divide = {
+						value = 20
+						#If ai_rationality is around 0, not dividing at all is fine, so it won't invalidate ai_boldness calculations.
+						if = {
+							limit = {
+								AND = {
+									ai_rationality >= -10
+									ai_rationality <= 10
+								}
+							}
+							divide = 20
+						}
+					}
+					#Powerful and Irrational characters will decide based on their Boldness (in negative to balance out their negative ai_rationality).
+					if = {
+						limit = {
+							AND = {
+								prowess >= 25
+								ai_rationality <= 0
+							}
+						}
+						multiply = {
+							value = ai_boldness
+							multiply = -0.01
+						}
+					}
+					#Powerless and Irrational characters will decide based on half of their Boldness (in negative to balance out their negative ai_rationality).
+					else_if = {
+						limit = {
+							AND = {
+								prowess < 25
+								ai_rationality <= 0
+							}
+						}
+						multiply = {
+							value = ai_boldness
+							multiply = -0.02
+						}
+					}
+					#Rational characters will decide based on their Boldness (eg. if they are Powerless they can still go for it if they are brave enough).
+					else = {
+						multiply = {
+							value = ai_boldness
+							multiply = 0.01
+						}
+					}
+				}
+			}
+
+			#No small rulers.
+			modifier = {
+				factor = {
+					value = 1
+					add = {
+						if = {
+							limit = {
+								OR = {
+									AND = {
+										primary_title.tier = tier_hegemony
+										scope:actor.primary_title.tier = tier_kingdom
+									}
+									AND = {
+										primary_title.tier = tier_empire
+										scope:actor.primary_title.tier = tier_duchy
+									}
+									AND = {
+										primary_title.tier = tier_kingdom
+										scope:actor.primary_title.tier = tier_county
+									}
+								}
+							}
+							add = -0.5
+						}
+						else_if = {
+							limit = {
+								OR = {
+									AND = {
+										primary_title.tier = tier_hegemony
+										scope:actor.primary_title.tier < tier_kingdom
+									}
+									AND = {
+										primary_title.tier = tier_empire
+										scope:actor.primary_title.tier < tier_duchy
+									}
+									AND = {
+										primary_title.tier = tier_kingdom
+										scope:actor.primary_title.tier < tier_county
+									}
+									AND = {
+										primary_title.tier >= tier_duchy
+										scope:actor = { is_ruler = no }
+									}
+								}
+							}
+							add = -0.95
+						}
+					}
+				}
+			}
+
+			#Other factors.
+			modifier = {
+				factor = {
+					value = 1
+					add = {
+						#Ruler will more likely fight
+						if = {
+							limit = {
+								#Personality.
+								OR = {
+									ai_boldness > 80
+									ai_rationality < -80
+								}
+								#Bad Relation.
+								OR = {
+									AND = {
+										exists = scope:actor.house
+										house ?= {
+											any_house_relation = {
+												has_house_relation_level = feud
+												any_relation_house = { this = scope:actor.house }
+											}
+										}
+									}
+									has_relation_rival = scope:actor
+								}
+							}
+							add = 0.1
+						}
+						#Ruler will not fight
+						else_if = {
+							limit = {
+								#King has stronger knights.
+								AND = {
+									highest_held_title_tier >= tier_empire
+									any_knight = {
+										age > 15
+										can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+										is_physically_able_ai = yes
+										prowess >= scope:recipient.prowess
+									}
+								}
+							}
+							add = -1
+						}
+					}
+				}
+			}
+
+			#No Cravens.
+			modifier = {
+				factor = 0
+				has_trait = craven
+			}
+		}
+	}
+
+	option = {
+		name = {
+			trigger = { NOT = { house = dynasty:dynn_Targaryen.dynasty_founder.house } }
+			text = agot_trial_by_combat.1000.d
+		}
+		name = {
+			trigger = { house = dynasty:dynn_Targaryen.dynasty_founder.house }
+			text = agot_trial_by_combat.1000.d.targ
+		}
+		trigger = { has_trait = fire_obsessed }
+
+		save_scope_as = champion_fire
+		custom_tooltip = agot_trial_by_combat.1000.d.tt
+		clear_variable_list = possible_characters
+
+		add_character_modifier = {
+			modifier = agot_unjust_trial_by_combat
+			years = 1
+		}
+
+		ai_chance = {
+			base = 200
+			ai_value_modifier = {
+				ai_compassion = -1
+				ai_vengefulness = 1
+				ai_honor = -1
+			}
+		}
+	}
+
+	option = {
+		name = {
+			trigger = { NOT = { house = dynasty:dynn_Targaryen.dynasty_founder.house } }
+			text = agot_trial_by_combat.1000.e
+		}
+		name = {
+			trigger = { house = dynasty:dynn_Targaryen.dynasty_founder.house }
+			text = agot_trial_by_combat.1000.e.targ
+		}
+		trigger = {
+			is_current_dragonrider = yes
+			NOT = { has_trait = just }
+			OR = {
+				has_trait = sadistic
+				has_trait = eccentric
+				has_trait = lunatic_1
+				has_trait = lunatic_genetic
+			}
+		}
+
+		save_scope_as = champion_dragon
+		custom_tooltip = agot_trial_by_combat.1000.e.tt
+		clear_variable_list = possible_characters
+
+		add_character_modifier = {
+			modifier = agot_unjust_trial_by_combat
+			years = 1
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = -1
+				ai_vengefulness = 1
+				ai_honor = -1
+			}
+		}
+	}
+
+	option = {
+		name = agot_trial_by_combat.1000.f
+		trigger = { exists = scope:tbc_trial_of_seven_option }
+
+		custom_tooltip = agot_trial_of_seven.0200.a.tt
+		clear_variable_list = possible_characters
+
+		scope:recipient = { save_scope_as = accuser_ruler }
+		scope:actor = { save_scope_as = defender_leader }
+		scope:accuser_ruler = { trigger_event = agot_trial_of_seven.0200 }
+		scope:accuser_ruler = { agot_trial_of_seven_cooldown_effect = yes }
+		scope:accuser_ruler = { add_character_flag = trial_of_seven_blocker }
+		scope:accuser_ruler = {
+			add_character_flag = {
+				flag = agot_tbc_blocked
+				days = 40
+			}
+		}
+
+		ai_chance = {
+			base = 0
+
+			modifier = {
+				AND = {
+					agot_ready_for_tos_trigger = yes
+					NOT = { has_relation_friend = scope:actor }
+					NOT = { has_relation_lover = scope:actor }
+					agot_tos_imprisonment_royal_char_trigger = { T_DEFENDER = scope:actor }
+				}
+				add = 15
+			}
+
+			modifier = {
+				house = {
+					any_house_member = {
+						AND = {
+							is_ai = yes
+							agot_ready_for_tos_trigger = yes
+							NOT = { has_relation_friend = scope:actor }
+							NOT = { has_relation_lover = scope:actor }
+							OR = {
+								is_courtier_of = scope:recipient
+								is_vassal_of = scope:recipient
+								trigger_if = {
+									limit = {
+										exists = top_liege
+										is_playable_character = no
+									}
+									top_liege = scope:recipient
+								}
+							}
+							agot_tos_imprisonment_royal_char_trigger = { T_DEFENDER = scope:actor }
+							agot_tos_imprisonment_royal_house_member_char_trigger = { T_DEFENDER = scope:actor }
+						}
+					}
+				}
+				add = 15
+			}
+
+			modifier = {
+				add = 15
+				has_relation_rival = scope:actor
+			}
+
+			modifier = {
+				factor = {
+					add = 100
+					add = {
+						if = {
+							limit = { ai_honor < 0 }
+							value = ai_honor
+							divide = -1
+						}
+					}
+					add = {
+						if = {
+							limit = { ai_rationality < 0 }
+							value = ai_rationality
+							divide = -1
+						}
+					}
+					add = {
+						if = {
+							limit = { ai_zeal > 0 }
+							value = ai_zeal
+						}
+					}
+					add = {
+						if = {
+							limit = { ai_honor > 0 }
+							value = ai_honor
+							divide = -1
+						}
+					}
+					add = {
+						if = {
+							limit = { ai_rationality < 0 }
+							value = ai_rationality
+							divide = -1
+						}
+					}
+					add = {
+						if = {
+							limit = { ai_zeal < 0 }
+							value = ai_zeal
+						}
+					}
+					divide = 100
+					min = 0
+				}
+			}
+
+			modifier = {
+				factor = 0
+				OR = {
+					has_relation_friend = scope:actor
+					has_relation_lover = scope:actor
+				}
+			}
+		}
+	}
+
+	# Then, we skip over to scope:actor to inform them what's up.
+	after = {
+		if = {
+			limit = { NOT = { has_character_flag = agot_tbc_blocked } }
+			scope:actor = { trigger_event = agot_trial_by_combat.1001 }
+		}
+		else = {
+			remove_character_flag = agot_tbc_blocked
+		}
+	}
+}
+
+#defender chooses champion
+agot_trial_by_combat.1001 = {
+	type = character_event
+	title = agot_trial_by_combat.1000.t
+	desc = agot_trial_by_combat.1001.desc
+	theme = prison
+	left_portrait = {
+		character = scope:actor
+		animation = disbelief
+	}
+	right_portrait = {
+		character = scope:recipient
+		animation = personality_honorable
+	}
+	override_background = { reference = throne_room }
+
+	widgets = {
+		widget = { # two options
+			is_shown = {
+				is_ai = no
+				OR = {
+					age < 15
+					NOT = { can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root } }
+				}
+			}
+			gui = "agot_character_selection_two_options"
+			container = "custom_widgets_container"
+		}
+
+		widget = { # three options
+			is_shown = {
+				is_ai = no
+				age > 15
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+			}
+			gui = "agot_character_selection_three_options"
+			container = "custom_widgets_container"
+		}
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_prison"
+
+		save_scope_as = needs_champion
+
+		#Rulers and relatives must be defended by KG
+		if = {
+			limit = {
+				ruler_primary_title_has_kingsguard_trigger = yes
+			}
+			every_courtier = {
+				limit = {
+					has_trait = kingsguard
+					NOT = { this = scope:recipient_champion }
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				any_close_or_extended_family_member = {
+					ruler_primary_title_has_kingsguard_trigger = yes
+				}
+			}
+			every_close_or_extended_family_member = {
+				limit = {
+					ruler_primary_title_has_kingsguard_trigger = yes
+				}
+				every_courtier = {
+					limit = {
+						has_trait = kingsguard
+						NOT = { this = scope:recipient_champion }
+					}
+					root = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				any_spouse = {
+					ruler_primary_title_has_kingsguard_trigger = yes
+				}
+			}
+			every_spouse = {
+				limit = {
+					ruler_primary_title_has_kingsguard_trigger = yes
+				}
+				every_courtier = {
+					limit = {
+						has_trait = kingsguard
+						NOT = { this = scope:recipient_champion }
+					}
+					root = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					employs_court_position = champion_court_position
+					any_court_position_holder = {
+						type = champion_court_position
+						is_physically_able_adult = yes # eligible_knight_to_champion_trial_by_combat_trigger checks for prowess, and its not mandatory that the champ has high value
+						NOT = { this = scope:recipient_champion }
+					}
+				}
+				random_court_position_holder = {
+					type = champion_court_position
+					root = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+			}
+
+			every_knight = {
+				limit = {
+					agot_eligible_knight_to_champion_trial_by_combat_trigger = yes
+					NOT = {
+						has_court_position = champion_court_position #EP1: Pluck out the champion title holder
+					}
+					NOT = { this = scope:recipient_champion }
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+
+			every_close_or_extended_family_member = {
+				limit = {
+					agot_eligible_knight_to_champion_trial_by_combat_trigger = yes
+					NOT = { this = scope:recipient_champion }
+				}
+
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+
+			every_courtier = {
+				limit = {
+					agot_eligible_knight_to_champion_trial_by_combat_trigger = yes
+					NOT = { this = scope:recipient_champion }
+					prowess > 10
+				}
+
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+
+		ordered_in_list = {
+			variable = possible_characters
+			order_by = prowess
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = actor_champion
+		}
+	}
+
+	option = {
+		name = agot_trial_by_combat.1000.a
+
+		trigger = { exists = scope:actor_champion }
+
+		# Select scope:knight_best to represent you in the bout.
+		var:si_selected_character = {
+			save_scope_as = actor_champion
+			remove_variable = si_selecting_character
+		}
+		custom_tooltip = agot_trial_by_combat.1000.a.tt
+		custom_tooltip = agot_trial_by_combat.1000.bout_moves_forward
+		clear_variable_list = possible_characters
+
+		# RP/functional choice: no stress charge.
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = {
+		name = agot_trial_by_combat.1000.b
+
+		hidden_effect = {
+			create_character = {
+				gender_female_chance = root_soldier_female_chance
+				location = scope:needs_champion.location
+				template = new_warrior_character
+				faith = scope:needs_champion.faith
+				culture = scope:needs_champion.culture
+				save_scope_as = actor_champion
+			}
+		}
+
+		remove_short_term_gold = 50
+
+		custom_tooltip = agot_trial_by_combat.1000.b.tt
+		custom_tooltip = agot_trial_by_combat.1000.bout_moves_forward
+		clear_variable_list = possible_characters
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				NOT = { exists = scope:recipient_champion }
+			}
+		}
+	}
+
+	# Me
+	option = {
+		name = agot_trial_by_combat.1000.c
+
+		trigger = {
+			age > 15
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+		}
+
+		save_scope_as = actor_champion
+		custom_tooltip = agot_trial_by_combat.1000.c.tt
+		custom_tooltip = agot_trial_by_combat.1000.bout_moves_forward
+		clear_variable_list = possible_characters
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 50
+				has_trait = arrogant
+			}
+			modifier = {
+				add = 50
+				has_trait = brave
+			}
+			modifier = {
+				add = -50
+				prowess < 10
+			}
+			modifier = {
+				add = 25
+				prowess > 10
+			}
+			modifier = {
+				add = 25
+				prowess > 20
+			}
+			modifier = {
+				add = 50
+				prowess > 30
+			}
+			modifier = {
+				add = -1000
+				has_trait = craven
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = { exists = scope:champion_fire }
+			scope:actor = { trigger_event = agot_trial_by_combat.9000 }
+		}
+		else_if = {
+			limit = { exists = scope:champion_dragon }
+			scope:actor = { trigger_event = agot_trial_by_combat.9100 }
+		}
+		else = {
+			scope:actor = { trigger_event = agot_trial_by_combat.2000 }
+		}
+	}
+}
+
+#accuser start combat
+agot_trial_by_combat.2000 = {
+	type = character_event
+	window = duel_event
+	title = agot_trial_by_combat.2000.t
+	desc = {
+		desc = agot_trial_by_combat.2000.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:recipient_champion = scope:recipient }
+				desc = agot_trial_by_combat.2000.desc.recipient_fighting
+			}
+			desc = agot_trial_by_combat.2000.desc.recipient_has_champion
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:actor_champion = scope:actor }
+				desc = agot_trial_by_combat.2000.desc.actor_fighting
+			}
+			desc = agot_trial_by_combat.2000.desc.actor_has_champion
+		}
+		desc = agot_trial_by_combat.2000.desc.outro
+	}
+	theme = prison
+	left_portrait = {
+		character = scope:actor_champion
+		scripted_animation = duel_wield_weapon
+	}
+	right_portrait = {
+		character = scope:recipient_champion
+		scripted_animation = duel_wield_weapon
+	}
+	override_background = { reference = terrain_scope }
+
+	trigger = {
+		# If, for any reason, scope:recipient has died or been imprisoned, then the bout is cancelled.
+		scope:recipient = {
+			is_alive = yes
+			is_imprisoned = no
+		}
+		# Check that scope:actor is still in a valid state to fight.
+		scope:actor_champion = {
+			is_alive = yes
+			OR = {
+				this = scope:actor
+				is_imprisoned = no
+			}
+		}
+		# And scope:champion likewise.
+		scope:recipient_champion = {
+			is_alive = yes
+			OR = {
+				this = scope:actor
+				is_imprisoned = no
+			}
+		}
+	}
+
+	on_trigger_fail = {
+		# Inform both parties that the duel has invalidated.
+		scope:actor = {
+			send_interface_toast = {
+				title = agot_trial_by_combat.0002.trigger_failure.actor
+				left_icon = scope:recipient
+			}
+		}
+		scope:recipient = {
+			send_interface_toast = {
+				title = agot_trial_by_combat.0002.trigger_failure.recipient
+				left_icon = scope:actor
+			}
+		}
+		# Reset scope:actor's cooldowns against scope:recipient.
+		scope:actor = {
+			remove_interaction_cooldown = challenge_to_trial_by_combat_interaction
+			remove_interaction_cooldown_against = {
+				interaction = challenge_to_trial_by_combat_interaction
+				target = scope:recipient
+			}
+		}
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_combat_stinger"
+		# Nab scope:champion's location for terrain.
+		scope:actor.location = {
+			save_scope_as = background_terrain_scope
+			# And scope:champion's location name for loc.
+			barony = { save_scope_as = duel_location }
+		}
+	}
+
+	# Almost there.
+	option = {
+		name = agot_trial_by_combat.2000.a
+
+		# Inform scope:actor that the bout will begin immediately.
+		custom_tooltip = agot_trial_by_combat.2000.a.tt
+
+		scope:recipient = { trigger_event = agot_trial_by_combat.2001 }
+		# No stress for single-option events.
+		ai_chance = {
+			# AI will always choose single option.
+			base = 100
+		}
+	}
+}
+
+#defender start combat
+agot_trial_by_combat.2001 = {
+	type = character_event
+	window = duel_event
+	title = agot_trial_by_combat.2001.t
+	desc = {
+		desc = agot_trial_by_combat.2001.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:actor_champion = scope:actor }
+				desc = agot_trial_by_combat.2001.desc.actor_fighting
+			}
+			desc = agot_trial_by_combat.2001.desc.actor_has_champion
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:recipient_champion = scope:recipient }
+				desc = agot_trial_by_combat.2001.desc.recipient_fighting
+			}
+			desc = agot_trial_by_combat.2001.desc.recipient_has_champion
+		}
+		desc = agot_trial_by_combat.2001.desc.outro
+	}
+	theme = prison
+	left_portrait = {
+		character = scope:actor_champion
+		scripted_animation = duel_wield_weapon
+	}
+	right_portrait = {
+		character = scope:recipient_champion
+		scripted_animation = duel_wield_weapon
+	}
+	override_background = { reference = terrain_scope }
+
+	trigger = {
+		# If, for any reason, scope:recipient has died or been imprisoned, then the bout is cancelled.
+		scope:recipient = {
+			is_alive = yes
+			is_imprisoned = no
+		}
+		# Check that scope:actor is still in a valid state to fight.
+		scope:actor_champion = {
+			is_alive = yes
+			OR = {
+				this = scope:actor
+				is_imprisoned = no
+			}
+		}
+		# And scope:champion likewise.
+		scope:recipient_champion = {
+			is_alive = yes
+			OR = {
+				this = scope:recipient
+				is_imprisoned = no
+			}
+		}
+	}
+
+	on_trigger_fail = {
+		# Inform both parties that the duel has invalidated.
+		scope:actor = {
+			send_interface_toast = {
+				title = agot_trial_by_combat.0002.trigger_failure.actor
+				left_icon = scope:recipient
+			}
+		}
+		scope:recipient = {
+			send_interface_toast = {
+				title = agot_trial_by_combat.0002.trigger_failure.recipient
+				left_icon = scope:actor
+			}
+		}
+		# Reset scope:actor's cooldowns against scope:recipient.
+		scope:actor = {
+			remove_interaction_cooldown = challenge_to_trial_by_combat_interaction
+			remove_interaction_cooldown_against = {
+				interaction = challenge_to_trial_by_combat_interaction
+				target = scope:recipient
+			}
+		}
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_combat_stinger"
+		# Nab scope:champion's location for terrain.
+		scope:actor.location = {
+			save_scope_as = background_terrain_scope
+			# And scope:champion's location name for loc.
+			barony = { save_scope_as = duel_location }
+		}
+	}
+
+	# Almost there.
+	option = {
+		trigger = {
+			OR = {
+				scope:actor_champion = { is_ai = no }
+				scope:recipient_champion = { is_ai = no }
+			}
+		}
+		name = agot_trial_by_combat.2001.a
+
+		# Inform scope:actor that the bout will begin immediately.
+		custom_tooltip = agot_trial_by_combat.2001.a.tt
+		# Configure the bout.
+		## Tribals strip to the waist.
+		single_combat_apply_default_shirtlessness_effect = {
+			ATTACKER = scope:actor_champion
+			DEFENDER = scope:recipient_champion
+		}
+		scope:actor_champion = {
+			add_character_flag = trial_by_combat
+		}
+		scope:recipient_champion = {
+			add_character_flag = trial_by_combat
+		}
+		configure_start_single_combat_effect = {
+			SC_INITIATOR = scope:actor_champion
+			SC_ATTACKER = scope:actor_champion
+			SC_DEFENDER = scope:recipient_champion
+			FATALITY = always
+			FIXED = no
+			LOCALE = terrain_scope
+			OUTPUT_EVENT = agot_trial_by_combat.3000
+			INVALIDATION_EVENT = agot_trial_by_combat.0002
+		}
+	}
+
+	option = {
+		trigger = {
+			AND = {
+				scope:actor_champion = { is_ai = yes }
+				scope:recipient_champion = { is_ai = yes }
+			}
+		}
+		name = agot_trial_by_combat.2001.a
+
+		# Inform scope:actor that the bout will begin immediately.
+		custom_tooltip = agot_trial_by_combat.2001.a.tt
+
+		hidden_effect = {
+			agot_duel_effect = { DUELIST_1 = scope:actor_champion DUELIST_2 = scope:recipient_champion }
+
+			scope:winner = { save_scope_as = sc_victor }
+			scope:loser = {
+				save_scope_as = sc_loser
+				if = {
+					limit = {
+						agot_dying_king_trigger = yes
+					}
+					save_scope_as = crown_theft_king
+
+					scope:crown_theft_king = {
+						crown_theft_tbc_effect = yes
+					}
+				}
+				else_if = {
+					death = {
+						killer = scope:winner
+						death_reason = death_duel_trial_by_combat
+					}
+				}
+			}
+		}
+		trigger_event = agot_trial_by_combat.3000
+	}
+}
+
+#combat results hidden
+agot_trial_by_combat.3000 = {
+	hidden = yes
+
+	immediate = {
+		# If any clothes were stripped, put 'em back on.
+		single_combat_clean_shirtlessness_effect = {
+			ATTACKER = scope:actor_champion
+			DEFENDER = scope:recipient_champion
+		}
+		if = {
+			limit = { scope:sc_victor = scope:actor_champion }
+			# Apply effects; we do this separately so that there's not a weird day's delay.
+			# And send out the ending events.
+			scope:actor = {
+				trigger_event = {
+					id = agot_trial_by_combat.3001
+					days = 1
+				}
+			}
+			scope:actor_champion = {
+				remove_character_flag = trial_by_combat
+			}
+			if = {
+				limit = {
+					scope:recipient = { is_alive = yes }
+				}
+				scope:recipient = {
+					trigger_event = {
+						id = agot_trial_by_combat.3002
+						days = 1
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = { scope:sc_victor = scope:recipient_champion }
+			scope:recipient = {
+				trigger_event = {
+					id = agot_trial_by_combat.3003
+					days = 1
+				}
+			}
+			scope:recipient_champion = {
+				remove_character_flag = trial_by_combat
+			}
+			if = {
+				limit = {
+					scope:actor = { is_alive= yes }
+				}
+				scope:actor = {
+					trigger_event = {
+						id = agot_trial_by_combat.3004
+						days = 1
+					}
+				}
+			}
+		}
+		# If both parties are alive, and aren't good losers/don't have good reasons to forgive each other, then we mark them as potential rivals.
+		if = {
+			limit = {
+				scope:actor = {
+					is_alive = yes
+					NOR = {
+						has_trait = humble
+						has_trait = content
+						has_trait = just
+						has_trait = forgiving
+					}
+				}
+				scope:recipient = {
+					is_alive = yes
+					NOR = {
+						has_trait = humble
+						has_trait = content
+						has_trait = just
+						has_trait = forgiving
+					}
+					can_set_relation_potential_rival_trigger = { CHARACTER = scope:actor }
+				}
+			}
+			scope:actor = { set_relation_potential_rival = scope:recipient }
+		}
+	}
+}
+
+#Defender wins, defender POV
+agot_trial_by_combat.3001 = {
+	type = character_event
+	title = agot_trial_by_combat.3001.t
+	desc = {
+		desc = agot_trial_by_combat.3001.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor_champion = scope:actor
+					scope:recipient_champion = scope:recipient
+				}
+				desc = agot_trial_by_combat.3001.desc.both_fighting
+			}
+			triggered_desc = {
+				trigger = {
+					scope:actor_champion = scope:actor
+				}
+				desc = agot_trial_by_combat.3001.desc.actor_own_champion
+			}
+			triggered_desc = {
+				trigger = {
+					scope:recipient_champion = scope:recipient
+				}
+				desc = agot_trial_by_combat.3001.desc.recipient_own_champion
+			}
+			desc = agot_trial_by_combat.3001.desc.both_champion
+		}
+		desc = agot_trial_by_combat.3001.desc.outro
+	}
+	theme = prison
+	left_portrait = {
+		character = scope:recipient
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:actor
+		animation = personality_bold
+	}
+	override_background = { reference = throne_room }
+
+	trigger = {
+		is_alive = yes
+	}
+
+	immediate = {
+		agot_trial_by_combat_defender_win_effect = yes
+		single_combat_have_slain_kin_effect = {
+			ATTACKER = scope:actor_champion
+			DEFENDER = scope:recipient_champion
+		}
+	}
+
+	# The bout closes.
+	option = {
+		name = agot_trial_by_combat.3001.a
+
+		# No stress for single-option events.
+		ai_chance = {
+			# AI will always choose single option.
+			base = 100
+		}
+	}
+}
+
+#Defender wins, accuser POV
+agot_trial_by_combat.3002 = {
+	type = character_event
+	title = agot_trial_by_combat.3002.t
+	desc = {
+		desc = agot_trial_by_combat.3002.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor_champion = scope:actor
+				}
+				desc = agot_trial_by_combat.3002.desc.actor_own_champion
+			}
+			desc = agot_trial_by_combat.3002.desc.both_champion
+		}
+		desc = agot_trial_by_combat.3002.desc.outro
+	}
+	theme = prison
+	left_portrait = {
+		character = scope:actor
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:recipient
+		animation = shock
+	}
+	override_background = { reference = throne_room }
+
+	trigger = {
+		is_alive = yes
+	}
+
+	immediate = {
+		show_as_tooltip = {
+			agot_trial_by_combat_defender_win_effect = yes
+			single_combat_have_slain_kin_effect = {
+				ATTACKER = scope:recipient_champion
+				DEFENDER = scope:actor_champion
+			}
+		}
+	}
+
+	# The bout closes.
+	option = {
+		name = agot_trial_by_combat.3002.a
+
+		# No stress for single-option events.
+		ai_chance = {
+			# AI will always choose single option.
+			base = 100
+		}
+	}
+}
+
+#Accuser wins, accuser POV
+agot_trial_by_combat.3003 = {
+	type = character_event
+	title = agot_trial_by_combat.3003.t
+	desc = {
+		desc = agot_trial_by_combat.3003.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor_champion = scope:actor
+					scope:recipient_champion = scope:recipient
+				}
+				desc = agot_trial_by_combat.3003.desc.both_fighting
+			}
+			triggered_desc = {
+				trigger = {
+					scope:actor_champion = scope:actor
+				}
+				desc = agot_trial_by_combat.3003.desc.actor_own_champion
+			}
+			triggered_desc = {
+				trigger = {
+					scope:recipient_champion = scope:recipient
+				}
+				desc = agot_trial_by_combat.3003.desc.recipient_own_champion
+			}
+			desc = agot_trial_by_combat.3003.desc.both_champion
+		}
+		desc = agot_trial_by_combat.3003.desc.outro
+	}
+	theme = prison
+	left_portrait = {
+		character = scope:recipient
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:actor
+		animation = shock
+	}
+	override_background = { reference = throne_room }
+
+	trigger = {
+		is_alive = yes
+	}
+
+	immediate = {
+		single_combat_have_slain_kin_effect = {
+			ATTACKER = scope:recipient_champion
+			DEFENDER = scope:actor_champion
+		}
+		agot_trial_by_combat_accuser_win_effect = yes
+	}
+
+	# The bout closes.
+	option = {
+		name = agot_trial_by_combat.3003.a
+
+		# No stress for single-option events.
+		ai_chance = {
+			# AI will always choose single option.
+			base = 100
+		}
+	}
+}
+
+#Accuser wins, defender POV
+agot_trial_by_combat.3004 = {
+	type = character_event
+	title = agot_trial_by_combat.3004.t
+	desc = {
+		desc = agot_trial_by_combat.3004.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:recipient_champion = scope:recipient
+				}
+				desc = agot_trial_by_combat.3004.desc.recipient_own_champion
+			}
+			desc = agot_trial_by_combat.3004.desc.both_champion
+		}
+		desc = agot_trial_by_combat.3004.desc.outro
+	}
+	theme = prison
+	left_portrait = {
+		character = scope:actor
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:recipient
+		animation = personality_bold
+	}
+	override_background = { reference = throne_room }
+
+	trigger = {
+		is_alive = yes
+	}
+
+	immediate = {
+		show_as_tooltip = {
+			single_combat_have_slain_kin_effect = {
+				ATTACKER = scope:recipient_champion
+				DEFENDER = scope:actor_champion
+			}
+			agot_trial_by_combat_accuser_win_effect = yes
+		}
+	}
+
+	# The bout closes.
+	option = {
+		name = agot_trial_by_combat.3004.a
+
+		# No stress for single-option events.
+		ai_chance = {
+			# AI will always choose single option.
+			base = 100
+		}
+	}
+}
+
+#Trial by fire
+#actor
+agot_trial_by_combat.9000 = {
+	type = character_event
+	title = agot_trial_by_combat.9000.t
+	left_portrait = {
+		character = scope:recipient
+		animation = throne_room_cheer_1
+	}
+	lower_center_portrait = {
+		character = scope:actor_champion
+		trigger = {
+			NOT = { scope:actor_champion = scope:actor }
+		}
+	}
+	right_portrait = {
+		character = scope:actor
+		animation = fear
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor_champion = scope:actor
+				}
+				desc = agot_trial_by_combat.9000.desc.self_champion
+			}
+			desc = agot_trial_by_combat.9000.desc
+		}
+	}
+	theme = prison
+
+	option = {
+		name = agot_trial_by_combat.9000.a
+		scope:actor = {
+			death = {
+				death_reason = death_wildfire_killer
+				killer = scope:recipient
+			}
+		}
+		if = {
+			limit = {
+				NOT = { scope:actor_champion = scope:actor }
+			}
+			scope:actor_champion = {
+				death = {
+					death_reason = death_wildfire_killer
+					killer = scope:recipient
+				}
+			}
+		}
+		hidden_effect = {
+			scope:recipient = { trigger_event = agot_trial_by_combat.9001 }
+		}
+	}
+}
+
+#recip
+agot_trial_by_combat.9001 = {
+	type = character_event
+	title = agot_trial_by_combat.9001.t
+	left_portrait = {
+		character = scope:recipient
+		animation = throne_room_cheer_1
+	}
+	lower_center_portrait = {
+		character = scope:actor_champion
+		trigger = {
+			NOT = { scope:actor_champion = scope:actor }
+		}
+	}
+	lower_right_portrait = {
+		character = scope:actor
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor_champion = scope:actor
+				}
+				desc = agot_trial_by_combat.9001.desc.self_champion
+			}
+			desc = agot_trial_by_combat.9001.desc
+		}
+	}
+	theme = prison
+
+	option = {
+		name = agot_trial_by_combat.9001.a
+		if = {
+			limit = { scope:actor_champion = scope:actor }
+			custom_tooltip = agot_trial_by_combat.9001.tt.self_champion
+		}
+		else = {
+			custom_tooltip = agot_trial_by_combat.9001.tt
+		}
+	}
+}
+
+
+#Trial by Dragon
+#actor
+agot_trial_by_combat.9100 = {
+	type = character_event
+	title = agot_trial_by_combat.9100.t
+	left_portrait = {
+		character = scope:recipient
+		animation = throne_room_cheer_1
+	}
+	lower_left_portrait = {
+		character = scope:dragon
+	}
+	lower_center_portrait = {
+		character = scope:actor_champion
+		trigger = {
+			NOT = { scope:actor_champion = scope:actor }
+		}
+	}
+	right_portrait = {
+		character = scope:actor
+		animation = fear
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor_champion = scope:actor
+				}
+				desc = agot_trial_by_combat.9100.desc.self_champion
+			}
+			desc = agot_trial_by_combat.9100.desc
+		}
+	}
+	theme = dragon
+	override_background = {
+		reference = bp1_bonfire
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_prison.dds"
+	}
+
+	immediate = {
+		scope:actor = { play_music_cue = CK3AGOT_dragon_exhale }
+	}
+
+
+	option = {
+		name = agot_trial_by_combat.9100.a
+		scope:actor = {
+			death = {
+				death_reason = death_dragon_fire
+				killer = scope:dragon
+			}
+		}
+		if = {
+			limit = {
+				NOT = { scope:actor_champion = scope:actor }
+			}
+			scope:actor_champion = {
+				death = {
+					death_reason = death_dragon_fire
+					killer = scope:dragon
+				}
+			}
+		}
+		hidden_effect = {
+			scope:recipient = {
+				trigger_event = agot_trial_by_combat.9101
+			}
+		}
+		scope:actor = { play_music_cue = CK3AGOT_dragon_execution_fire }
+	}
+}
+
+#recip
+agot_trial_by_combat.9101 = {
+	type = character_event
+	title = agot_trial_by_combat.9101.t
+	left_portrait = {
+		character = scope:recipient
+		animation = throne_room_cheer_1
+	}
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	lower_center_portrait = {
+		character = scope:actor_champion
+		trigger = {
+			NOT = { scope:actor_champion = scope:actor }
+		}
+	}
+	lower_right_portrait = {
+		character = scope:actor
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor_champion = scope:actor
+				}
+				desc = agot_trial_by_combat.9101.desc.self_champion
+			}
+			desc = agot_trial_by_combat.9101.desc
+		}
+	}
+	theme = dragon
+	override_background = {
+		reference = bp1_bonfire
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_prison.dds"
+	}
+
+	immediate = {
+		scope:recipient = { play_music_cue = CK3AGOT_dragon_exhale }
+	}
+
+	option = {
+		name = agot_trial_by_combat.9101.a
+		if = {
+			limit = { scope:actor_champion = scope:actor }
+			custom_tooltip = agot_trial_by_combat.9101.tt.self_champion
+		}
+		else = {
+			custom_tooltip = agot_trial_by_combat.9101.tt
+		}
+		scope:recipient = { play_music_cue = CK3AGOT_dragon_execution_fire }
+	}
+}
+

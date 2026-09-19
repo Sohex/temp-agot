@@ -1,0 +1,743 @@
+﻿# Default dragon values for schemes / taming events
+# Taming
+dragon_scheme_base_taming_bonded_value = 300
+dragon_scheme_base_taming_unbonded_value = -50
+dragon_scheme_base_wild_value = -25
+# Bonding
+dragon_scheme_base_bonding_value = -50
+dragon_deepen_scheme_base_bonding_value = 15
+# Both
+dragon_scheme_base_common_language_value = 15
+dragon_scheme_base_common_traits_value = 20
+dragon_scheme_diligent_value = 5
+dragon_scheme_lazy_value = -5
+dragon_scheme_base_prestige_level_value = 3
+dragon_scheme_base_dread_mult = 0.1
+dragon_scheme_base_draconic_dread_mult = -0.2
+
+# Default dragon maturity age
+dragon_maturity_age = 14
+# Age in which dragons start to damage property, animals, etc
+dragon_poses_a_danger_age = 3
+# Dragon size where they can be ridden
+dragon_taming_minimum_size = 30
+# Maximum number of cannibal dragons
+global_dragon_cannibal_limit = 2
+lower_cannibal_dragon_value = 14
+upper_cannibal_dragon_value = 28
+
+## Dragon scale color values:
+dragon_hue_red_low_min = 0.00
+dragon_hue_red_low_max = 0.03
+dragon_hue_red_high_min = 0.97 # There are two ranges I consider red
+dragon_hue_red_high_max = 1.0
+dragon_hue_orange_min = 0.04
+dragon_hue_orange_max = 0.09
+dragon_hue_yellow_min = 0.10
+dragon_hue_yellow_max = 0.21
+dragon_hue_green_min = 0.22
+dragon_hue_green_max = 0.38
+dragon_hue_light_blue_min = 0.39
+dragon_hue_light_blue_max = 0.58
+dragon_hue_blue_min = 0.59
+dragon_hue_blue_max = 0.65
+dragon_hue_purple_min = 0.66
+dragon_hue_purple_max = 0.76
+dragon_hue_pink_min = 0.77
+dragon_hue_pink_max = 0.92
+dragon_hue_fuschia_min = 0.93
+dragon_hue_fuschia_max = 0.96
+
+## Dragon scale tone values:
+# White, grey, black belong in values
+dragon_value_white_min = 0.00
+dragon_value_white_max = 0.13
+dragon_value_grey_min = 0.87
+dragon_value_grey_max = 0.90
+dragon_value_black_min = 0.91
+dragon_value_black_max = 1.00
+
+# There's some weird cases with white and light, black and dark
+dragon_value_lightest_min = 0.14
+dragon_value_lightest_max = 0.30
+dragon_value_lighter_min = 0.31
+dragon_value_lighter_max = 0.43
+dragon_value_middle_min = 0.44
+dragon_value_middle_max = 0.60
+dragon_value_darker_min = 0.61
+dragon_value_darker_max = 0.76
+dragon_value_darkest_min = 0.77
+dragon_value_darkest_max = 0.86
+
+dragon_female_chance = {
+	if = {
+		limit = {
+			exists = scope:dragon_gender
+			scope:dragon_gender = flag:female
+		}
+		add = 100
+	}
+	else_if = {
+		limit = {
+			exists = scope:dragon_gender
+			scope:dragon_gender = flag:male
+		}
+		add = 0
+	}
+	else_if = {
+		limit = {
+			#Only override canon gender when no other dragons exist
+			exists = scope:canon_gender
+			any_in_global_list = {
+				variable = living_dragons
+				count < 1
+			}
+		}
+		add = 100
+	}
+	else_if = {
+		limit = {
+			exists = scope:canon_gender
+			scope:canon_gender = flag:female
+		}
+		add = 100
+	}
+	else_if = {
+		limit = {
+			exists = scope:canon_gender
+			scope:canon_gender = flag:male
+		}
+		add = 0
+	}
+	else_if = {
+		limit = {
+			any_in_global_list = {
+				variable = living_dragons
+				count < 2
+			}
+		}
+		add = 100
+	}
+	else = {
+		add = 50
+	}
+}
+
+# Calculates the number of traits a dragon has in common with a human
+# Requires either scopes dragon_traits_in_common_human and dragon_traits_in_common_dragon or the variables dragon_traits_in_common_1 and dragon_traits_in_common_2 to be set
+# Can also be called in schemes where scope:target is a dragon and scope:owner is a human by default
+dragon_traits_in_common = {
+	value = 0
+	# Determine dragon and human scopes
+	if = {
+		limit = { NOT = { exists = scope:dragon_traits_in_common_human } } # If it's defined by species already we can progress
+		if = { # Defined in a scheme
+			limit = { exists = scope:owner }
+			scope:owner = { # If it's defined in a scheme then owner is human
+				save_temporary_scope_as = dragon_traits_in_common_human
+			}
+			scope:target = { # And target is dragon
+				save_temporary_scope_as = dragon_traits_in_common_dragon
+			}
+		}
+		else_if = { # Defined in effect
+			limit = { exists = scope:tamer }
+			scope:tamer = { # If it's defined in an effect then tamer is human
+				save_temporary_scope_as = dragon_traits_in_common_human
+			}
+			scope:dragon = { # And dragon is dragon
+				save_temporary_scope_as = dragon_traits_in_common_dragon
+			}
+		}
+		else_if = { # Defined in value
+			limit = { exists = scope:dragon_taming_modifier_tamer }
+			scope:dragon_taming_modifier_tamer = { # If it's defined in an effect then tamer is human
+				save_temporary_scope_as = dragon_traits_in_common_human
+			}
+			scope:dragon_taming_modifier_dragon = { # And dragon is dragon
+				save_temporary_scope_as = dragon_traits_in_common_dragon
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_aggressive }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = wrathful
+					has_trait = vengeful
+					has_trait = stubborn
+					has_trait = irritable
+					has_trait = rude
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_friendly }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = calm
+					has_trait = compassionate
+					has_trait = gregarious
+					has_trait = charming
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_solitary }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = shy
+					has_trait = callous
+					has_trait = cynical
+					has_trait = reclusive
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_cooperative }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = gregarious
+					has_trait = forgiving
+					has_trait = honest
+					has_trait = trusting
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_imperious }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = arrogant
+					has_trait = ambitious
+					has_trait = zealous
+					has_trait = bossy
+					has_trait = authoritative
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_supporting }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = humble
+					has_trait = content
+					has_trait = generous
+					has_trait = improvident
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_impulsive }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = impatient
+					has_trait = arbitrary
+					has_trait = eccentric
+					has_trait = profligate
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_calculating }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = patient
+					has_trait = deceitful
+					has_trait = fickle
+					has_trait = curious
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_voracious }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = gluttonous
+					has_trait = greedy
+					has_trait = lustful
+					has_trait = rakish
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_restrained }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = temperate
+					has_trait = chaste
+					has_trait = content
+					has_trait = pensive
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_defiant }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = stubborn
+					has_trait = arbitrary
+					has_trait = arrogant
+					has_trait = rowdy
+					has_trait = brave
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_accepting }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = trusting
+					has_trait = forgiving
+					has_trait = compassionate
+					has_trait = contrite
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_bloodthirsty }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = sadistic
+					has_trait = callous
+					has_trait = vengeful
+					has_trait = brave
+					has_trait = kinslayer_1
+					has_trait = kinslayer_2
+					has_trait = kinslayer_3
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_skittish }
+			scope:dragon_traits_in_common_human = {
+				OR = {
+					has_trait = paranoid
+					has_trait = craven
+					has_trait = shy
+					has_trait = fickle
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_traits_in_common_dragon = { has_trait = dragon_cannibal }
+			scope:dragon_traits_in_common_human = { has_trait = cannibal }
+		}
+		add = 1
+	}
+}
+
+dragon_scheme_base_depressed_value = {
+	value = 0
+	if = {
+		limit = { scope:dragon_traits_in_common_dragon = { has_trait = dragon_depressed } }
+		add = -30
+		if = {
+			limit = { scope:dragon_traits_in_common_human = { has_trait = depressed } }
+			add = 15
+		}
+	}
+}
+
+dragon_taming_attempt_chance = { # Uses scope:dragon_taming_modifier_tamer and scope:dragon_taming_modifier_dragon variables
+	value = 0
+	# Base
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				has_relation_agot_dragon = scope:dragon_taming_modifier_dragon
+			}
+		}
+		add = dragon_scheme_base_taming_bonded_value
+	}
+	else = {
+		add = dragon_scheme_base_taming_unbonded_value
+	}
+	# Dragon is wild
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_dragon = {
+				NOT = { has_character_flag = owned_dragon }
+			}
+		}
+		add = dragon_scheme_base_wild_value
+	}
+	# Dragonless dragonrider debuff
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				has_trait = dragonless_dragonrider
+			}
+		}
+		add = -30
+	}
+	#Language
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				knows_language_of_culture = scope:dragon_taming_modifier_dragon.culture
+			}
+		}
+		add = dragon_scheme_base_common_language_value
+	}
+	# Traits in common
+	add = {
+		value = dragon_traits_in_common
+		multiply = dragon_scheme_base_common_traits_value
+	}
+	# Diligent / Lazy
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				has_trait = diligent
+			}
+		}
+		add = dragon_scheme_diligent_value
+	}
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				has_trait = lazy
+			}
+		}
+		add = dragon_scheme_lazy_value
+	}
+	# Base values
+	add = scope:dragon_taming_modifier_dragon.temperament
+	add = scope:dragon_taming_modifier_dragon.taming_chance
+	# Dragon is pitted
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_dragon = {
+				has_character_flag = in_dragonpit
+			}
+		}
+		add = 10
+	}
+	# Taught Dragonlore
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = { has_character_modifier = agot_taught_dragonlore }
+		}
+		add = 10
+	}
+	# Head Dragonkeeper Buffs - AGOT TODO BALANCE - Alternatively, maybe a special interaction 'Aid with Dragon Taming' that adds a scheme modifier instead? Or both?
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				exists = court_position:head_dragonkeeper_court_position
+				court_position:head_dragonkeeper_court_position = {
+					aptitude:head_dragonkeeper_court_position = 0
+				}
+			}
+		}
+		add = 1
+	}
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				exists = court_position:head_dragonkeeper_court_position
+				court_position:head_dragonkeeper_court_position = {
+					aptitude:head_dragonkeeper_court_position = 1
+				}
+			}
+		}
+		add = 2
+	}
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				exists = court_position:head_dragonkeeper_court_position
+				court_position:head_dragonkeeper_court_position = {
+					aptitude:head_dragonkeeper_court_position = 2
+				}
+			}
+		}
+		add = 5
+	}
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				exists = court_position:head_dragonkeeper_court_position
+				court_position:head_dragonkeeper_court_position = {
+					aptitude:head_dragonkeeper_court_position = 3
+				}
+			}
+		}
+		add = 10
+	}
+	if = {
+		limit = {
+			scope:dragon_taming_modifier_tamer = {
+				exists = court_position:head_dragonkeeper_court_position
+				court_position:head_dragonkeeper_court_position = {
+					aptitude:head_dragonkeeper_court_position = 4
+				}
+			}
+		}
+		add = 15
+	}
+	# Blood of the dragon
+	add = {
+		value = scope:dragon_taming_modifier_tamer.dragonblood_percent
+		divide = 2
+		desc = "SCHEME_BOND_VALYRIAN_BLOOD"
+	}
+	# Canonical dragonrider
+	if = {
+		limit = {
+			agot_is_canon_rider_dragon_pair = { RIDER = scope:dragon_taming_modifier_tamer DRAGON = scope:dragon_taming_modifier_dragon }
+		}
+		add = 100
+	}
+	max = {
+		value = scope:dragon_taming_modifier_tamer.dragonblood_percent
+		max = 85
+		if = {
+			limit = {
+				scope:dragon_taming_modifier_tamer = {
+					has_relation_agot_dragon = scope:dragon_taming_modifier_dragon
+				}
+			}
+			add = 100
+		}
+		if = {
+			limit = {
+				agot_canon_dragons_enabled = yes
+				agot_is_canon_rider_dragon_pair = { RIDER = scope:dragon_taming_modifier_tamer DRAGON = scope:dragon_taming_modifier_dragon }
+			}
+			add = 100
+		}
+		max = 100
+	}
+	#AGOT TODO - modifiers based on laws for who can try to tame dragons - authorized tamers get the bonuses of an HDK if their liege/family head lets them try to tame
+}
+
+dragon_egg_years_hatching = {
+	value = 0
+	value = current_year
+	subtract = var:cradled_egg_year
+	max = 100
+}
+
+dragonblood_percent = {
+	value = 0
+	if = {
+		limit = { agot_is_dragonblood_character = yes }
+		add = 100
+	}
+	else = {
+		if = {
+			limit = {
+				real_father ?= { agot_is_dragonblood_character = yes }
+			}
+			add = 50
+		}
+		else = {
+			if = {
+				limit = {
+					real_father.real_father ?= { agot_is_dragonblood_character = yes }
+				}
+				add = 25
+			}
+			else = {
+				if = {
+					limit = {
+						OR = {
+							has_game_rule = dragon_dragonblood_3_gen
+							has_game_rule = dragon_valyrian_3_gen
+						}
+						real_father.real_father.real_father ?= { agot_is_dragonblood_character = yes }
+					}
+					add = 12.5
+				}
+				if = {
+					limit = {
+						OR = {
+							has_game_rule = dragon_dragonblood_3_gen
+							has_game_rule = dragon_valyrian_3_gen
+						}
+						real_father.real_father.real_mother ?= { agot_is_dragonblood_character = yes }
+					}
+					add = 12.5
+				}
+			}
+			if = {
+				limit = {
+					real_father.real_mother ?= { agot_is_dragonblood_character = yes }
+				}
+				add = 25
+			}
+			else = {
+				if = {
+					limit = {
+						OR = {
+							has_game_rule = dragon_dragonblood_3_gen
+							has_game_rule = dragon_valyrian_3_gen
+						}
+						real_father.real_mother.real_father ?= { agot_is_dragonblood_character = yes }
+					}
+					add = 12.5
+				}
+				if = {
+					limit = {
+						OR = {
+							has_game_rule = dragon_dragonblood_3_gen
+							has_game_rule = dragon_valyrian_3_gen
+						}
+						real_father.real_mother.real_mother ?= { agot_is_dragonblood_character = yes }
+					}
+					add = 12.5
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				real_mother ?= { agot_is_dragonblood_character = yes }
+			}
+			add = 50
+		}
+		else = {
+			if = {
+				limit = {
+					real_mother.real_father ?= { agot_is_dragonblood_character = yes }
+				}
+				add = 25
+			}
+			else = {
+				if = {
+					limit = {
+						OR = {
+							has_game_rule = dragon_dragonblood_3_gen
+							has_game_rule = dragon_valyrian_3_gen
+						}
+						real_mother.real_father.real_father ?= { agot_is_dragonblood_character = yes }
+					}
+					add = 12.5
+				}
+				if = {
+					limit = {
+						OR = {
+							has_game_rule = dragon_dragonblood_3_gen
+							has_game_rule = dragon_valyrian_3_gen
+						}
+						real_mother.real_father.real_mother ?= { agot_is_dragonblood_character = yes }
+					}
+					add = 12.5
+				}
+			}
+			if = {
+				limit = {
+					real_mother.real_mother ?= { agot_is_dragonblood_character = yes }
+				}
+				add = 25
+			}
+			else = {
+				if = {
+					limit = {
+						OR = {
+							has_game_rule = dragon_dragonblood_3_gen
+							has_game_rule = dragon_valyrian_3_gen
+						}
+						real_mother.real_mother.real_father ?= { agot_is_dragonblood_character = yes }
+					}
+					add = 12.5
+				}
+				if = {
+					limit = {
+						OR = {
+							has_game_rule = dragon_dragonblood_3_gen
+							has_game_rule = dragon_valyrian_3_gen
+						}
+						real_mother.real_mother.real_mother ?= { agot_is_dragonblood_character = yes }
+					}
+					add = 12.5
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				any_sibling = {
+					is_target_in_global_variable_list = {
+						name = historical_dragonseed
+						target = this
+					}
+				}
+			}
+			add = 50
+		}
+		if = {
+			limit = {
+				has_character_flag = dragonseed_potential_medium
+			}
+			add = 50
+		}
+		if = {
+			limit = {
+				has_character_flag = dragonseed_potential_low
+			}
+			add = 25
+		}
+	}
+	max = 100
+}
+
+dragon_blood_factor = {
+	value = dragonblood_percent
+	divide = 100
+	if = {
+		limit = { has_game_rule = dragons_anyone }
+		value = 1
+	}
+}
+
+inverse_dragon_blood_factor = {
+	value = 1
+	subtract = dragon_blood_factor
+}

@@ -1,0 +1,227 @@
+﻿# new lmf childhood events
+on_lmf_childhood_events = {
+	trigger = {
+		is_adult = no
+		age >= 8
+	}
+	random_events = {
+		chance_to_happen = 25
+		100 = 0
+		200 = lmf_heir.1500 # Child of 8+ really wants to learn martial instead
+		200 = lmf_heir.1502 # Child of 8+ wants to abandon martial training
+		25 = lmf_heir.1504 # Non-combatant daughter of 8+ wants to take up the blade
+		#AGOT LMF Modifier - already covered by AGOT betrothal objection system
+		#100 = lmf_heir.1508 # Child objects to betrothal
+		25 = lmf_heir.1510 # Child wants to marry for love
+	}
+}
+
+# for heir-in-training events
+on_lmf_heir_training = {
+	trigger = {
+		age >= define:NCharacter|ADOLESCENCE_AGE
+		is_playable_character = no
+		exists = host
+		is_player_heir_of = host
+	}
+	events = {
+		lmf_heir.1530 # Gaining Trained Heir trait
+	}
+	random_events = {
+		chance_of_no_event = {
+			value = 50
+			if = {
+				limit = {
+					host = {
+						OR = {
+							has_government = mercenary_government
+							has_government = republic_government
+							has_government = theocracy_government
+							has_government = holy_order_government
+							highest_held_title_tier < tier_county
+						}
+					}
+				}
+				add = 100
+			}
+			if = {
+				limit = { is_adult = no }
+				add = -25
+			}
+			if = {
+				limit = { age >= 25 }
+				add = 25
+			}
+			if = {
+				limit = { age >= 40 }
+				add = 25
+			}
+			if = {
+				limit = {
+					host = { is_ai = no }
+				}
+				add = -25
+			}
+			if = {
+				limit = { has_character_flag = had_recent_heir_event }
+				add = 75
+			}
+			max = 100
+			min = 1
+		}
+		1 = lmf_heir.1600 # Main bounce event for heir events
+	}
+}
+
+# for automatic assignation of guardians
+on_lmf_guardian_check = {
+	trigger = {
+		is_adult = no
+		age >= childhood_education_start_age
+		num_of_relation_guardian = 0
+	}
+	events = {
+		lmf_heir.1550 # Auto-assigning guardians to children
+	}
+}
+
+# checking whether traveling heirs are still valid
+on_lmf_traveling_heir_title_check = {
+	trigger = {
+		any_owned_story = { story_type = lmf_heir_visit_story_cycle }
+	}
+	effect = {
+		random_owned_story = {
+			limit = { story_type = lmf_heir_visit_story_cycle }
+			save_scope_as = story
+			set_variable = { name = notify_target_title value = flag:yes }
+		}
+		trigger_event = lmf_heir.1630
+	}
+}
+
+on_lmf_heir_in_training_check = {
+	trigger = {
+		has_trait = heir_in_training
+	}
+	effect = {
+		if = {
+			limit = {
+				NAND = {
+					is_courtier = yes
+					exists = host
+					is_player_heir_of = host
+				}
+			}
+			remove_trait = heir_in_training
+		}
+	}
+}
+
+# for removing will not wed when title gained
+on_lmf_will_not_wed_check = {
+	trigger = {
+		has_trait = refusing_marriage
+		any_owned_story = { story_type = lmf_will_not_wed_story_cycle }
+	}
+	effect = {
+		remove_trait = refusing_marriage
+		random_owned_story = {
+			limit = { story_type = lmf_will_not_wed_story_cycle }
+			end_story = yes
+		}
+	}
+}
+
+# in case heir is traveling and war starts
+on_join_war_as_secondary = {
+	on_actions = {
+		on_lmf_traveling_heir_war_join_check
+		on_lmf_traveling_intro_check
+		on_lmf_traveling_visit_check
+	}
+}
+
+on_lmf_traveling_heir_war_join_check = {
+	trigger = {
+		exists = player_heir
+		player_heir = {
+			any_owned_story = { story_type = lmf_heir_visit_story_cycle }
+		}
+	}
+	effect = {
+		trigger_event = lmf_heir.1632 # Recall heir once war begins?
+	}
+}
+
+on_lmf_traveling_heir_war_start_check = {
+	effect = {
+		scope:attacker = {
+			if = {
+				limit = {
+					exists = player_heir
+					player_heir = {
+						any_owned_story = { story_type = lmf_heir_visit_story_cycle }
+					}
+				}
+				trigger_event = lmf_heir.1632 # Recall heir once war begins?
+			}
+			if = {
+				limit = { has_variable = is_in_marriage_introduction }
+				trigger_event = lmf_interaction.1304 # Does recipient recall secondary recipient if a war starts?
+			}
+		}
+		scope:defender = {
+			if = {
+				limit = {
+					exists = player_heir
+					player_heir = {
+						any_owned_story = { story_type = lmf_heir_visit_story_cycle }
+					}
+				}
+				trigger_event = lmf_heir.1632 # Recall heir once war begins?
+			}
+			if = {
+				limit = { has_variable = is_in_marriage_introduction }
+				trigger_event = lmf_interaction.1304 # Does recipient recall secondary recipient if a war starts?
+			}
+		}
+	}
+}
+
+# in case death invalidates an heir visit
+on_lmf_traveling_heir_death_check = {
+	trigger = {
+		has_variable = visited_by_heir
+	}
+	effect = {
+		var:visited_by_heir = {
+			if = {
+				limit = {
+					any_owned_story = { story_type = lmf_heir_visit_story_cycle }
+				}
+				random_owned_story = {
+					limit = { story_type = lmf_heir_visit_story_cycle }
+					save_scope_as = story
+					set_variable = { name = notify_liege_death value = flag:yes }
+				}
+				trigger_event = lmf_heir.1630
+			}
+		}
+	}
+}
+
+# in case imprisonment invalidates an heir visit
+on_lmf_traveling_heir_imprison_check = {
+	trigger = {
+		any_owned_story = { story_type = lmf_heir_visit_story_cycle }
+	}
+	effect = {
+		random_owned_story = {
+			limit = { story_type = lmf_heir_visit_story_cycle }
+			save_scope_as = story
+			set_variable = { name = notify_target_imprison value = flag:yes }
+		}
+		trigger_event = lmf_heir.1630
+	}
+}

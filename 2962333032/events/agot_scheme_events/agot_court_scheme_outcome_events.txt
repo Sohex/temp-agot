@@ -1,0 +1,2498 @@
+﻿#######
+# LMF #
+#######
+namespace = agot_court_outcome
+
+# NOTE: To set up a new scheme outcome, make sure that you make an event for the owner and one for the target, and add them to their relevant on_actions.
+
+# agot_court_outcome.1200 - Grand Gesture
+# agot_court_outcome.1300 - Meeting in the Garden
+# agot_court_outcome.1400 - Late into the Night
+
+##################
+# Grand Gesture outcome
+##################
+
+agot_court_outcome.1200 = {
+	type = character_event
+	window = scheme_conclusion_event_no_header
+	title = agot_court_outcome.1200.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:target = { is_courtier_of = root } }
+				desc = agot_court_outcome.1200.courtier.desc
+			}
+			triggered_desc = {
+				trigger = { scope:target = { is_ruler = yes } }
+				desc = agot_court_outcome.1200.ruler.desc
+			}
+			desc = agot_court_outcome.1200.desc
+		}
+		desc = agot_court_outcome.1200.end.desc
+	}
+
+	theme = romance_scheme
+	left_portrait = scope:target
+	override_background = { reference = throne_room }
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	trigger = {
+		scope:owner = {
+			NOR = {
+				is_consort_of = scope:target
+				relation_with_character_is_sodomy_in_my_or_lieges_faith_trigger = { CHARACTER = scope:target }
+				relation_with_character_is_incestuous_in_my_or_lieges_faith_trigger = { CHARACTER = scope:target }
+				AND = {
+					trait_is_shunned_or_criminal_in_my_or_lieges_faith_trigger = { TRAIT = trait:adulterer GENDER_CHARACTER = scope:target }
+					scope:target = {
+						is_married = yes
+						NOT = { is_consort_of = scope:owner }
+					}
+				}
+				AND = {
+					trait_is_shunned_or_criminal_in_my_or_lieges_faith_trigger = { TRAIT = trait:adulterer GENDER_CHARACTER = scope:owner }
+					is_married = yes
+					NOT = { is_consort_of = scope:target }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { exists = scope:target.host }
+			scope:target.host = { save_scope_as = target_host }
+		}
+		if = {
+			limit = {
+				NOT = { exists = scope:target_host }
+				exists = location
+			}
+			scope:target.location.province_owner = { save_scope_as = target_host }
+		}
+	}
+
+	option = {
+		name = agot_court_outcome.1200.a
+		custom_tooltip = court_outcome.0001.a.tt
+
+		hidden_effect = {
+			if = {
+				limit = {
+					exists = scope:scheme_successful
+					scope:scheme_successful = yes
+				}
+				trigger_event = {
+					id = agot_court_outcome.1201
+					days = 3
+				}
+			}
+			else = {
+				trigger_event = {
+					id = agot_court_outcome.1202
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 1
+				ai_sociability = 0.5
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			court_allow_owner_opt_out_trigger = yes
+			scope:target = { is_ai = yes }
+		}
+		name = agot_court_outcome.1200.b
+
+		scope:scheme = {
+			end_scheme = yes
+		}
+
+		ai_chance = {
+			base = 25
+		}
+	}
+}
+
+# OWNER SUCCESS: The target is impressed by your public declaration
+agot_court_outcome.1201 = {
+	type = character_event
+	window = scheme_successful_event
+	title = agot_court_outcome.1200.t
+	desc = {
+		desc = agot_court_outcome.1201.start.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:owner = { diplomacy >= 12 }
+				}
+				desc = agot_court_outcome.1201.diplomacy.desc
+			}
+			desc = agot_court_outcome.1201.desc
+		}
+		desc = agot_court_outcome.1201.end.desc
+	}
+	theme = romance_scheme
+
+	left_portrait = {
+		character = scope:target
+		animation = love
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = flirtation_left
+	}
+	override_background = { reference = throne_room }
+	immediate = {
+		play_music_cue = mx_cue_seduction
+	}
+
+	#Consummate love
+	option = {
+		trigger = {
+			OR = {
+				is_consort_of = scope:target
+				has_relation_lover = scope:target
+			}
+			can_set_relation_soulmate_trigger = { CHARACTER = scope:target }
+
+			# Player target has opted out of being soulmates.
+			custom_description = {
+				text = does_not_want_to_be_soulmates
+				object = scope:target
+				NOT = { exists = scope:no_soulmate }
+			}
+		}
+		show_as_unavailable = {
+			exists = scope:no_soulmate
+		}
+		name = court_outcome.1001.a
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = become_soulmate
+			value = yes
+		}
+
+		show_as_tooltip = { end_court_scheme_effect = { OUTCOME = success_soulmate REASON = public_grand_gesture } } #Tooltip as this will be executed in target's scope
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = low_chance_impact_positive_ai_value #Up to 100 for high compassion
+			}
+			ai_value_modifier = {
+				ai_boldness = low_chance_impact_positive_ai_value #Up to 100 for high boldness
+			}
+			modifier = {
+				num_of_relation_soulmate > 0
+				culture = {
+					has_cultural_parameter = ai_romance_scheme_increase
+				}
+				factor = 0.01
+			}
+		}
+	}
+
+	#Propose marriage
+	option = {
+		trigger = {
+			can_marry_character_trigger = { CHARACTER = scope:target }
+			NOT = { would_need_elopement_to_marry_target = { TARGET = scope:target } }
+
+			# Player target has opted out of marriage
+			custom_description = {
+				text = does_not_want_marriage
+				object = scope:target
+				NOT = { exists = scope:no_marriage }
+			}
+		}
+		show_as_unavailable = {
+			exists = scope:no_marriage
+		}
+		name = agot_court_outcome.1201.c
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = marriage_proposed
+			value = yes
+		}
+
+		find_proposer_and_lieges_effect = yes
+		show_as_tooltip = { end_court_scheme_effect = { OUTCOME = success_marriage REASON = public_grand_gesture } } #Tooltip as this will be executed in target's scope
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_honor = low_chance_impact_positive_ai_value #Up to 100 for high honor
+			}
+			ai_value_modifier = {
+				ai_boldness = low_chance_impact_positive_ai_value #Up to 100 for high boldness
+			}
+			modifier = {
+				has_relation_lover = scope:target
+				factor = 0.5
+			}
+			modifier = {
+				num_of_relation_soulmate > 0
+				culture = {
+					has_cultural_parameter = ai_romance_scheme_increase
+				}
+				factor = 0.01
+			}
+			#Primary heirs don't tend to propose marriage this way
+			modifier = {
+				scope:target = { is_ai = yes }
+				any_parent = {
+					exists = player_heir
+					player_heir_position = {
+						value = 0 #player heir
+						target = scope:owner
+					}
+				}
+				factor = 0.05
+			}
+			modifier = {
+				scope:target = { is_ai = yes }
+				OR = {
+					has_trait = seducer
+					has_trait = rakish
+					has_trait = reclusive
+					has_trait = depressed
+					has_trait = infirm
+					has_trait = disloyal
+					has_trait = sodomite
+				}
+				factor = 0
+			}
+		}
+	}
+	#AGOT Modified; LMF
+	#Propose elopement
+	option = {
+		trigger = {
+			custom_description = {
+				text = cannot_marry_by_elopement
+				object = scope:target
+				subject = root
+				can_elope_character_trigger = { CHARACTER = scope:target }
+			}
+			custom_description = {
+				text = does_not_need_elopement
+				object = scope:target
+				subject = root
+				would_need_elopement_to_marry_target = { TARGET = scope:target }
+			}
+
+			# Player target has opted out of marriage
+			custom_description = {
+				text = does_not_want_elopement
+				object = scope:target
+				NOT = { exists = scope:no_elope }
+			}
+
+			# they must be willing to betray their current spouse
+			custom_description = {
+				text = will_not_betray_spouse
+				object = scope:target
+				scope:target = {
+					OR = {
+						is_ai = no
+						is_married = no
+						AND = {
+							is_married = yes
+							exists = primary_spouse
+							NOT = { primary_spouse = root }
+							might_cheat_on_partner_trigger = { PARTNER = scope:target.primary_spouse }
+						}
+					}
+				}
+			}
+
+			# they must be willing to betray their current betrothed
+			custom_description = {
+				text = will_not_betray_betrothed
+				object = scope:target
+				scope:target = {
+					OR = {
+						is_ai = no
+						is_betrothed = no
+						AND = {
+							exists = betrothed
+							NOT = { betrothed = root }
+							might_cheat_on_partner_trigger = { PARTNER = scope:target.betrothed }
+						}
+					}
+				}
+			}
+		}
+		show_as_unavailable = {
+			OR = {
+				exists = scope:no_elope
+				scope:target = {
+					is_ai = yes
+					is_married = yes
+					NOR = {
+						primary_spouse = root
+						might_cheat_on_partner_trigger = { PARTNER = scope:target.primary_spouse }
+					}
+				}
+				scope:target = {
+					is_ai = yes
+					is_betrothed = yes
+					NOR = {
+						betrothed = root
+						might_cheat_on_partner_trigger = { PARTNER = scope:target.betrothed }
+					}
+				}
+			}
+		}
+		name = agot_court_outcome.1001.d
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = elope_proposed
+			value = yes
+		}
+
+		show_as_tooltip = { end_court_scheme_effect = { OUTCOME = success_elope REASON = saved_from_wolf } } #Tooltip as this will be executed in target's scope
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_honor = low_chance_impact_positive_ai_value #Up to 100 for high honor
+			}
+			ai_value_modifier = {
+				ai_boldness = low_chance_impact_positive_ai_value #Up to 100 for high boldness
+			}
+			modifier = {
+				has_relation_lover = scope:target
+				NOT = { has_relation_soulmate = scope:target }
+				factor = 0.5
+			}
+			modifier = {
+				num_of_relation_soulmate > 0
+				culture = {
+					has_cultural_parameter = ai_romance_scheme_increase
+				}
+				factor = 0.01
+			}
+			#Primary heirs don't tend to propose marriage this way
+			modifier = {
+				scope:target = { is_ai = yes }
+				any_parent = {
+					exists = player_heir
+					player_heir_position = {
+						value = 0 #player heir
+						target = scope:owner
+					}
+				}
+				factor = 0.05
+			}
+			modifier = {
+				scope:target = { is_ai = yes }
+				OR = {
+					has_trait = seducer
+					has_trait = rakish
+					has_trait = reclusive
+					has_trait = depressed
+					has_trait = infirm
+					has_trait = disloyal
+					has_trait = sodomite
+				}
+				factor = 0
+			}
+		}
+	}
+
+	#Just kiss
+	option = {
+		name = agot_court_outcome.1201.b
+
+		end_court_scheme_effect = { OUTCOME = success_kiss REASON = public_grand_gesture }
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = become_soulmate
+			value = no
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				scope:target = { is_ai = yes }
+				OR = {
+					is_consort_of = scope:target
+					has_relation_lover = scope:target
+				}
+				add = -50
+			}
+			modifier = {
+				scope:target = { is_ai = no } #Players will always get their way
+				OR = {
+					NOT = { exists = scope:no_marriage }
+					NOT = { exists = scope:no_soulmate }
+				}
+				add = -100
+			}
+		}
+	}
+
+	after = {
+		scope:target = { trigger_event = agot_court_outcome.1203 }
+	}
+}
+
+# OWNER FAILURE: You are both publicly embarrassed
+agot_court_outcome.1202 = {
+	type = character_event
+	window = scheme_failed_event
+	title = agot_court_outcome.1200.t
+	desc = {
+		desc = agot_court_outcome.1201.start.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:owner = { diplomacy >= 12 }
+				}
+				desc = agot_court_outcome.1202.diplomacy.desc
+			}
+			desc = agot_court_outcome.1202.desc
+		}
+		desc = agot_court_outcome.1202.end
+	}
+	theme = romance_scheme
+
+	left_portrait = {
+		character = scope:target
+		animation = dismissal
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = flirtation_left
+	}
+	override_background = { reference = throne_room }
+	immediate = {
+		play_music_cue = mx_cue_death
+	}
+
+	option = {
+		name = agot_court_outcome.1202.a
+		add_prestige = minor_prestige_loss
+		end_court_scheme_effect = { OUTCOME = failure_soft REASON = public_grand_gesture }
+	}
+}
+
+# TARGET SUCCESS: is informed about outcome
+agot_court_outcome.1203 = {
+	type = character_event
+	window = scheme_conclusion_event_no_header
+	title = agot_court_outcome.1200.t
+	desc = {
+		desc = agot_court_outcome.1203.start.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:owner = { diplomacy >= 12 }
+				}
+				desc = agot_court_outcome.1203.diplomacy.desc
+			}
+			desc = agot_court_outcome.1203.desc
+		}
+		desc = agot_court_outcome.1203.end.desc
+	}
+
+	theme = romance_scheme
+	left_portrait = {
+		character = scope:target
+		animation = love
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = flirtation_left
+	}
+	override_background = { reference = throne_room }
+	immediate = {
+		play_music_cue = mx_cue_seduction
+	}
+
+	option = {
+		name = {
+			trigger = {
+				exists = scope:become_soulmate
+				scope:become_soulmate = yes
+			}
+			text = court_outcome.1001.a
+		}
+		name = {
+			trigger = {
+				exists = scope:become_soulmate
+				scope:become_soulmate = no
+			}
+			text = agot_court_outcome.1003.b
+		}
+		name = {
+			trigger = {
+				exists = scope:marriage_proposed
+				scope:marriage_proposed = yes
+			}
+			text = agot_court_outcome.1105.a
+		}
+		name = {
+			trigger = {
+				exists = scope:elope_proposed
+				scope:elope_proposed = yes
+			}
+			text = agot_court_outcome.1105.b
+		}
+
+		if = {
+			limit = {
+				exists = scope:become_soulmate
+				scope:become_soulmate = yes
+			}
+			end_court_scheme_effect = { OUTCOME = success_soulmate REASON = public_grand_gesture }
+		}
+		else_if = {
+			limit = {
+				exists = scope:marriage_proposed
+				scope:marriage_proposed = yes
+			}
+			if = {
+				limit = {
+					needs_permission_to_marry_trigger = { CHARACTER1 = scope:owner CHARACTER2 = scope:target }
+				}
+				find_proposer_and_lieges_effect = yes
+			}
+			end_court_scheme_effect = { OUTCOME = success_marriage REASON = public_grand_gesture }
+		}
+		else_if = {
+			limit = {
+				exists = scope:elope_proposed
+				scope:elope_proposed = yes
+			}
+			end_court_scheme_effect = { OUTCOME = success_elope REASON = saved_from_wolf }
+		}
+
+		#No need to show kiss outcome as it has no effect for target, it's executed in owner's scope before
+	}
+}
+
+
+##################
+# Meeting in the Garden outcome
+##################
+
+agot_court_outcome.1300 = {
+	type = character_event
+	window = scheme_conclusion_event_no_header
+	title = agot_court_outcome.1300.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:target = { is_at_same_location = root } }
+				desc = agot_court_outcome.1300.same.desc
+			}
+			desc = agot_court_outcome.1300.desc
+		}
+		desc = agot_court_outcome.1300.end.desc
+	}
+
+	theme = romance_scheme
+	left_portrait = scope:target
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	option = {
+		name = agot_court_outcome.1300.a
+		custom_tooltip = court_outcome.0001.a.tt
+
+		hidden_effect = {
+			if = {
+				limit = {
+					exists = scope:scheme_successful
+					scope:scheme_successful = yes
+				}
+				trigger_event = {
+					id = agot_court_outcome.1301
+					days = 3
+				}
+			}
+			else = {
+				trigger_event = {
+					id = agot_court_outcome.1302
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 0.5
+				ai_sociability = 1
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			court_allow_owner_opt_out_trigger = yes
+			scope:target = { is_ai = yes }
+		}
+		name = agot_court_outcome.1200.b
+
+		scope:scheme = {
+			end_scheme = yes
+		}
+
+		ai_chance = {
+			base = 25
+		}
+	}
+}
+
+# OWNER SUCCESS: You both talk long into the night
+agot_court_outcome.1301 = {
+	type = character_event
+	window = scheme_successful_event
+	title = agot_court_outcome.1300.t
+	desc = agot_court_outcome.1301.desc
+	theme = romance_scheme
+
+	left_portrait = {
+		character = scope:target
+		animation = love
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = flirtation_left
+	}
+
+	immediate = {
+		play_music_cue = mx_cue_seduction
+	}
+
+	#Consummate love
+	option = {
+		trigger = {
+			OR = {
+				is_consort_of = scope:target
+				has_relation_lover = scope:target
+			}
+			can_set_relation_soulmate_trigger = { CHARACTER = scope:target }
+
+			# Player target has opted out of being soulmates.
+			custom_description = {
+				text = does_not_want_to_be_soulmates
+				object = scope:target
+				NOT = { exists = scope:no_soulmate }
+			}
+
+			NOT = { exists = scope:no_soulmate }
+		}
+		show_as_unavailable = {
+			exists = scope:no_soulmate
+		}
+		name = court_outcome.1001.a
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = become_soulmate
+			value = yes
+		}
+
+		show_as_tooltip = { end_court_scheme_effect = { OUTCOME = success_soulmate REASON = garden_meeting } } #Tooltip as this will be executed in target's scope
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = low_chance_impact_positive_ai_value #Up to 100 for high compassion
+			}
+			ai_value_modifier = {
+				ai_boldness = low_chance_impact_positive_ai_value #Up to 100 for high boldness
+			}
+			modifier = {
+				num_of_relation_soulmate > 0
+				culture = {
+					has_cultural_parameter = ai_romance_scheme_increase
+				}
+				factor = 0.01
+			}
+		}
+	}
+
+	#Propose marriage
+	option = {
+		trigger = {
+			can_marry_character_trigger = { CHARACTER = scope:target }
+			NOT = { would_need_elopement_to_marry_target = { TARGET = scope:target } }
+
+			# Player target has opted out of marriage
+			custom_description = {
+				text = does_not_want_marriage
+				object = scope:target
+				NOT = { exists = scope:no_marriage }
+			}
+		}
+		show_as_unavailable = {
+			exists = scope:no_marriage
+		}
+		name = agot_court_outcome.1201.c
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = marriage_proposed
+			value = yes
+		}
+
+		find_proposer_and_lieges_effect = yes
+		show_as_tooltip = { end_court_scheme_effect = { OUTCOME = success_marriage REASON = garden_meeting } } #Tooltip as this will be executed in target's scope
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_honor = low_chance_impact_positive_ai_value #Up to 100 for high honor
+			}
+			ai_value_modifier = {
+				ai_boldness = low_chance_impact_positive_ai_value #Up to 100 for high boldness
+			}
+			modifier = {
+				has_relation_lover = scope:target
+				factor = 0.5
+			}
+			modifier = {
+				num_of_relation_soulmate > 0
+				culture = {
+					has_cultural_parameter = ai_romance_scheme_increase
+				}
+				factor = 0.01
+			}
+			#Primary heirs don't tend to propose marriage this way
+			modifier = {
+				scope:target = { is_ai = yes }
+				any_parent = {
+					exists = player_heir
+					player_heir_position = {
+						value = 0 #player heir
+						target = scope:owner
+					}
+				}
+				factor = 0.05
+			}
+			modifier = {
+				scope:target = { is_ai = yes }
+				OR = {
+					has_trait = seducer
+					has_trait = rakish
+					has_trait = reclusive
+					has_trait = depressed
+					has_trait = infirm
+					has_trait = disloyal
+					has_trait = sodomite
+				}
+				factor = 0
+			}
+		}
+	}
+	#AGOT Modified; LMF
+	#Propose elopement
+	option = {
+		trigger = {
+			custom_description = {
+				text = cannot_marry_by_elopement
+				object = scope:target
+				subject = root
+				can_elope_character_trigger = { CHARACTER = scope:target }
+			}
+			custom_description = {
+				text = does_not_need_elopement
+				object = scope:target
+				subject = root
+				would_need_elopement_to_marry_target = { TARGET = scope:target }
+			}
+
+			# Player target has opted out of marriage
+			custom_description = {
+				text = does_not_want_elopement
+				object = scope:target
+				NOT = { exists = scope:no_elope }
+			}
+
+			# they must be willing to betray their current spouse
+			custom_description = {
+				text = will_not_betray_spouse
+				object = scope:target
+				scope:target = {
+					OR = {
+						is_ai = no
+						is_married = no
+						AND = {
+							is_married = yes
+							exists = primary_spouse
+							NOT = { primary_spouse = root }
+							might_cheat_on_partner_trigger = { PARTNER = scope:target.primary_spouse }
+						}
+					}
+				}
+			}
+
+			# they must be willing to betray their current betrothed
+			custom_description = {
+				text = will_not_betray_betrothed
+				object = scope:target
+				scope:target = {
+					OR = {
+						is_ai = no
+						is_betrothed = no
+						AND = {
+							exists = betrothed
+							NOT = { betrothed = root }
+							might_cheat_on_partner_trigger = { PARTNER = scope:target.betrothed }
+						}
+					}
+				}
+			}
+		}
+		show_as_unavailable = {
+			OR = {
+				exists = scope:no_elope
+				scope:target = {
+					is_ai = yes
+					is_married = yes
+					NOR = {
+						primary_spouse = root
+						might_cheat_on_partner_trigger = { PARTNER = scope:target.primary_spouse }
+					}
+				}
+				scope:target = {
+					is_ai = yes
+					is_betrothed = yes
+					NOR = {
+						primary_spouse = root
+						might_cheat_on_partner_trigger = { PARTNER = scope:target.betrothed }
+					}
+				}
+			}
+		}
+		name = agot_court_outcome.1001.d
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = elope_proposed
+			value = yes
+		}
+
+		show_as_tooltip = { end_court_scheme_effect = { OUTCOME = success_elope REASON = saved_from_wolf } } #Tooltip as this will be executed in target's scope
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_honor = low_chance_impact_positive_ai_value #Up to 100 for high honor
+			}
+			ai_value_modifier = {
+				ai_boldness = low_chance_impact_positive_ai_value #Up to 100 for high boldness
+			}
+			modifier = {
+				has_relation_lover = scope:target
+				NOT = { has_relation_soulmate = scope:target }
+				factor = 0.5
+			}
+			modifier = {
+				num_of_relation_soulmate > 0
+				culture = {
+					has_cultural_parameter = ai_romance_scheme_increase
+				}
+				factor = 0.01
+			}
+			#Primary heirs don't tend to propose marriage this way
+			modifier = {
+				scope:target = { is_ai = yes }
+				any_parent = {
+					exists = player_heir
+					player_heir_position = {
+						value = 0 #player heir
+						target = scope:owner
+					}
+				}
+				factor = 0.05
+			}
+			modifier = {
+				scope:target = { is_ai = yes }
+				OR = {
+					has_trait = seducer
+					has_trait = rakish
+					has_trait = reclusive
+					has_trait = depressed
+					has_trait = infirm
+					has_trait = disloyal
+					has_trait = sodomite
+				}
+				factor = 0
+			}
+		}
+	}
+
+	#Just kiss
+	option = {
+		name = agot_court_outcome.1201.b
+
+		end_court_scheme_effect = { OUTCOME = success_kiss REASON = garden_meeting }
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = become_soulmate
+			value = no
+		}
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				scope:target = { is_ai = yes }
+				OR = {
+					is_consort_of = scope:target
+					has_relation_lover = scope:target
+				}
+				add = -50
+			}
+			modifier = {
+				scope:target = { is_ai = no } #Players will always get their way
+				OR = {
+					NOT = { exists = scope:no_marriage }
+					NOT = { exists = scope:no_soulmate }
+				}
+				add = -100
+			}
+		}
+	}
+
+	after = {
+		scope:target = { trigger_event = agot_court_outcome.1303 }
+	}
+}
+
+scripted_trigger available_meeting_trigger = {
+	is_available_ai = yes
+	NOR = {
+		is_consort_of = scope:target
+		is_consort_of = scope:owner
+		this = scope:owner
+	}
+	is_attracted_to_gender_of = scope:target
+	scope:target = { is_attracted_to_gender_of = prev }
+}
+
+# OWNER FAILURE: The target is waiting for someone else
+agot_court_outcome.1302 = {
+	type = character_event
+	window = scheme_failed_event
+	title = agot_court_outcome.1300.t
+	desc = {
+		desc = agot_court_outcome.1302.start.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:targets_meeting }
+				desc = agot_court_outcome.1302.target.desc
+			}
+			desc = agot_court_outcome.1302.desc
+		}
+		desc = agot_court_outcome.1302.end
+	}
+	theme = romance_scheme
+
+	left_portrait = {
+		character = scope:target
+		animation = dismissal
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = flirtation_left
+	}
+
+	immediate = {
+		play_music_cue = mx_cue_death
+		hidden_effect = {
+			scope:target = {
+				every_relation = {
+					type = lover
+					limit = { available_meeting_trigger = yes }
+					add_to_list = targets_meeting_list
+				}
+				every_relation = {
+					type = potential_lover
+					limit = { available_meeting_trigger = yes }
+					add_to_list = targets_meeting_list
+				}
+				every_relation = {
+					type = friend
+					limit = { available_meeting_trigger = yes }
+					add_to_list = targets_meeting_list
+				}
+				every_relation = {
+					type = potential_friend
+					limit = { available_meeting_trigger = yes }
+					add_to_list = targets_meeting_list
+				}
+
+				random_in_list = {
+					list = targets_meeting_list
+					limit = {
+						OR = {
+							has_relation_rival = scope:owner
+							has_relation_potential_rival = scope:owner
+							opinion = { target = scope:owner value <= -20 }
+						}
+						available_meeting_trigger = yes
+					}
+					alternative_limit = { available_meeting_trigger = yes }
+					save_scope_as = targets_meeting
+				}
+			}
+			if = {
+				limit = {
+					exists = scope:targets_meeting
+					can_set_relation_potential_rival_trigger = { CHARACTER = scope:targets_meeting }
+				}
+				set_relation_potential_rival = scope:targets_meeting
+			}
+		}
+	}
+
+	option = {
+		name = agot_court_outcome.1202.a
+		add_prestige = minor_prestige_loss
+		if = {
+			limit = { exists = scope:targets_meeting }
+			reverse_add_opinion = {
+				target = scope:targets_meeting
+				modifier = annoyed_opinion
+				opinion = -10
+			}
+		}
+		end_court_scheme_effect = { OUTCOME = failure_soft REASON = garden_meeting }
+	}
+}
+
+# TARGET SUCCESS: is informed about outcome
+agot_court_outcome.1303 = {
+	type = character_event
+	window = scheme_conclusion_event_no_header
+	title = agot_court_outcome.1300.t
+	desc = agot_court_outcome.1303.desc
+
+	theme = romance_scheme
+	left_portrait = {
+		character = scope:target
+		animation = love
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = flirtation_left
+	}
+
+	immediate = {
+		play_music_cue = mx_cue_seduction
+	}
+
+	option = {
+		name = {
+			trigger = {
+				exists = scope:become_soulmate
+				scope:become_soulmate = yes
+			}
+			text = court_outcome.1001.a
+		}
+		name = {
+			trigger = {
+				exists = scope:become_soulmate
+				scope:become_soulmate = no
+			}
+			text = agot_court_outcome.1003.b
+		}
+		name = {
+			trigger = {
+				exists = scope:marriage_proposed
+				scope:marriage_proposed = yes
+			}
+			text = agot_court_outcome.1105.a
+		}
+		name = {
+			trigger = {
+				exists = scope:elope_proposed
+				scope:elope_proposed = yes
+			}
+			text = agot_court_outcome.1105.b
+		}
+
+		if = {
+			limit = {
+				exists = scope:become_soulmate
+				scope:become_soulmate = yes
+			}
+			end_court_scheme_effect = { OUTCOME = success_soulmate REASON = garden_meeting }
+		}
+		else_if = {
+			limit = {
+				exists = scope:marriage_proposed
+				scope:marriage_proposed = yes
+			}
+			if = {
+				limit = {
+					needs_permission_to_marry_trigger = { CHARACTER1 = scope:owner CHARACTER2 = scope:target }
+				}
+				find_proposer_and_lieges_effect = yes
+			}
+			end_court_scheme_effect = { OUTCOME = success_marriage REASON = garden_meeting }
+		}
+		else_if = {
+			limit = {
+				exists = scope:elope_proposed
+				scope:elope_proposed = yes
+			}
+			end_court_scheme_effect = { OUTCOME = success_elope REASON = saved_from_wolf }
+		}
+
+		#No need to show kiss outcome as it has no effect for target, it's executed in owner's scope before
+	}
+}
+
+
+##################
+# Late into the Night outcome
+##################
+
+agot_court_outcome.1400 = {
+	type = character_event
+	window = scheme_conclusion_event_no_header
+	title = agot_court_outcome.1400.t
+	desc = agot_court_outcome.1400.desc
+
+	theme = romance_scheme
+	left_portrait = scope:target
+	override_background = { reference = bedchamber }
+
+	widget = {
+		gui = "event_window_widget_scheme"
+		container = "custom_widgets_container"
+	}
+
+	trigger = {
+		is_spouse_of = scope:target
+	}
+
+	option = {
+		name = agot_court_outcome.1400.a
+		custom_tooltip = court_outcome.0001.a.tt
+
+		hidden_effect = {
+			if = {
+				limit = {
+					exists = scope:scheme_successful
+					scope:scheme_successful = yes
+				}
+				trigger_event = {
+					id = agot_court_outcome.1401
+					days = 3
+				}
+			}
+			else = {
+				trigger_event = {
+					id = agot_court_outcome.1402
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 0.5
+				ai_compassion = 0.5
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			court_allow_owner_opt_out_trigger = yes
+			scope:target = { is_ai = yes }
+		}
+		name = agot_court_outcome.1400.b
+
+		scope:scheme = {
+			end_scheme = yes
+		}
+
+		ai_chance = {
+			base = 25
+		}
+	}
+}
+
+# OWNER SUCCESS: You both talk long into the night
+agot_court_outcome.1401 = {
+	type = character_event
+	window = scheme_successful_event
+	title = agot_court_outcome.1400.t
+	desc = agot_court_outcome.1401.desc
+	theme = romance_scheme
+
+	left_portrait = {
+		character = scope:target
+		animation = love
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = happiness
+	}
+	override_background = { reference = bedchamber }
+
+	immediate = {
+		play_music_cue = mx_cue_seduction
+	}
+
+	#Consummate love
+	option = {
+		trigger = {
+			can_set_relation_soulmate_trigger = { CHARACTER = scope:target }
+
+			# Player target has opted out of being soulmates.
+			custom_description = {
+				text = does_not_want_to_be_soulmates
+				object = scope:target
+				NOT = { exists = scope:no_soulmate }
+			}
+		}
+		show_as_unavailable = {
+			exists = scope:no_soulmate
+		}
+		name = court_outcome.1001.a
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = become_soulmate
+			value = yes
+		}
+
+		show_as_tooltip = { end_court_scheme_effect = { OUTCOME = success_soulmate REASON = late_into_the_night } } #Tooltip as this will be executed in target's scope
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_compassion = low_chance_impact_positive_ai_value #Up to 100 for high compassion
+			}
+			ai_value_modifier = {
+				ai_boldness = low_chance_impact_positive_ai_value #Up to 100 for high boldness
+			}
+			modifier = {
+				num_of_relation_soulmate > 0
+				culture = {
+					has_cultural_parameter = ai_romance_scheme_increase
+				}
+				factor = 0.01
+			}
+		}
+	}
+
+	#Just kiss
+	option = {
+		name = agot_court_outcome.1201.b
+
+		end_court_scheme_effect = { OUTCOME = success_kiss REASON = late_into_the_night }
+
+		court_success_prestige_effect = yes
+		save_scope_value_as = {
+			name = become_soulmate
+			value = no
+		}
+
+		ai_chance = {
+			base = 50
+			modifier = {
+				scope:target = { is_ai = no } #Players will always get their way
+				NOT = { exists = scope:no_soulmate }
+				add = -50
+			}
+		}
+	}
+
+	after = {
+		scope:target = { trigger_event = agot_court_outcome.1403 }
+	}
+}
+
+# OWNER FAILURE: You end up in a fight
+agot_court_outcome.1402 = {
+	type = character_event
+	window = scheme_failed_event
+	title = agot_court_outcome.1400.t
+	desc = agot_court_outcome.1402.desc
+	theme = romance_scheme
+
+	left_portrait = {
+		character = scope:target
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = flirtation_left
+	}
+	override_background = { reference = bedchamber }
+
+	option = {
+		name = agot_court_outcome.1402.a
+		end_court_scheme_effect = { OUTCOME = failure_soft REASON = late_into_the_night }
+	}
+}
+
+# TARGET SUCCESS: is informed about outcome
+agot_court_outcome.1403 = {
+	type = character_event
+	window = scheme_conclusion_event_no_header
+	title = agot_court_outcome.1400.t
+	desc = agot_court_outcome.1403.desc
+
+	theme = romance_scheme
+	left_portrait = {
+		character = scope:target
+		animation = love
+	}
+	right_portrait = {
+		character = scope:owner
+		animation = happiness
+	}
+	override_background = { reference = bedchamber }
+
+	immediate = {
+		play_music_cue = mx_cue_seduction
+	}
+
+	option = {
+		name = {
+			trigger = {
+				exists = scope:become_soulmate
+				scope:become_soulmate = yes
+			}
+			text = court_outcome.1001.a
+		}
+		name = {
+			trigger = {
+				exists = scope:become_soulmate
+				scope:become_soulmate = no
+			}
+			text = agot_court_outcome.1003.b
+		}
+
+		if = {
+			limit = {
+				exists = scope:become_soulmate
+				scope:become_soulmate = yes
+			}
+			end_court_scheme_effect = { OUTCOME = success_soulmate REASON = late_into_the_night }
+		}
+
+		#No need to show kiss outcome as it has no effect for target, it's executed in owner's scope before
+	}
+}
+
+
+######################################################
+# SEEKING PERMISSION FOR MARRIAGE EVENTS
+# 2000-2005
+######################################################
+
+# Letter from proposer to own liege asking for permission to marry target
+agot_court_outcome.2000 = {
+	type = letter_event
+	opening = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:proposer = { is_close_or_extended_family_of = root }
+				}
+				desc = agot_court_outcome.2000.family.opening
+			}
+			triggered_desc = {
+				trigger = {
+					scope:proposer = { is_courtier_of = root }
+				}
+				desc = agot_court_outcome.2000.courtier.opening
+			}
+			desc = agot_court_outcome.2000.opening
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:proposer_target = {
+						has_any_court_relationship_with = { CHARACTER = root }
+					}
+				}
+				desc = agot_court_outcome.2000.my.relation
+			}
+			triggered_desc = {
+				trigger = {
+					exists = scope:proposer_target_liege
+					scope:proposer_target = {
+						NOT = { is_courtier_of = root }
+						has_any_court_relationship_with = { CHARACTER = scope:proposer_target_liege }
+					}
+				}
+				desc = agot_court_outcome.2000.other.relation
+			}
+			triggered_desc = {
+				trigger = {
+					scope:proposer = { is_courtier_of = root }
+					scope:proposer_target = { is_courtier_of = root }
+				}
+				desc = agot_court_outcome.2000.both.my.courtier
+			}
+			triggered_desc = {
+				trigger = {
+					scope:proposer_target = { is_courtier_of = root }
+				}
+				desc = agot_court_outcome.2000.my.courtier
+			}
+			desc = agot_court_outcome.2000.stranger
+		}
+		triggered_desc = {
+			trigger = {
+				scope:proposer = {
+					has_trait = refusing_marriage
+					is_close_or_extended_family_of = root
+				}
+			}
+			desc = agot_court_outcome.2000.proposer.family.willnotwed
+		}
+		triggered_desc = {
+			trigger = {
+				scope:proposer = {
+					NOT = { has_trait = refusing_marriage }
+					is_close_or_extended_family_of = root
+				}
+			}
+			desc = agot_court_outcome.2000.proposer.family
+		}
+		triggered_desc = {
+			trigger = {
+				scope:proposer = {
+					NOT = { is_close_or_extended_family_of = root }
+					has_dynasty = yes
+					dynasty = root.dynasty
+				}
+			}
+			desc = agot_court_outcome.2000.proposer.dynasty
+		}
+		triggered_desc = {
+			trigger = {
+				scope:proposer = {
+					is_courtier_of = root
+					NOR = {
+						is_close_or_extended_family_of = root
+						dynasty ?= root.dynasty
+					}
+				}
+			}
+			desc = agot_court_outcome.2000.proposer.courtier
+		}
+		triggered_desc = {
+			trigger = {
+				scope:proposer = {
+					is_courtier = no
+					is_playable_character = no
+					exists = host
+					host = root
+					NOR = {
+						is_close_or_extended_family_of = root
+						dynasty ?= root.dynasty
+					}
+				}
+			}
+			desc = agot_court_outcome.2000.proposer.guest
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					only_liege_to_ask_permission_trigger = yes
+				}
+				desc = agot_court_outcome.2000.onlyliege
+			}
+			desc = agot_court_outcome.2000.otherliege
+		}
+	}
+	sender = scope:proposer
+
+	trigger = {
+		trigger_if = {
+			limit = { has_character_flag = auto_approve_unimportant_marriages }
+			OR = {
+				scope:proposer = { has_any_court_relationship_with = { CHARACTER = root } }
+				scope:proposer_target = { has_any_court_relationship_with = { CHARACTER = root } }
+			}
+		}
+		trigger_else = {
+			always = yes
+		}
+	}
+
+	on_trigger_fail = {
+		hidden_effect = {
+			marriage_permission_given_effect = yes
+			if = {
+				limit = { only_liege_to_ask_permission_trigger = yes }
+				root = { save_scope_as = permission_granter }
+				send_interface_message = {
+					type = event_generic_neutral_with_text
+					title =  lmf_scheme.1031.auto.permission.title.tt
+					desc =  lmf_scheme.1031.auto.permission.tt
+					right_icon = scope:proposer
+				}
+				scope:proposer = {
+					trigger_event = agot_court_outcome.2003
+				}
+			}
+			else = {
+				send_interface_message = {
+					type = event_generic_neutral_with_text
+					title =  lmf_scheme.1031.auto.permission.title.tt
+					desc =  lmf_scheme.1031.auto.permission.maybe.tt
+					right_icon = scope:proposer
+				}
+				scope:proposer = {
+					trigger_event = agot_court_outcome.2001
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_court_outcome.2000.a #Give them leave
+		marriage_permission_given_effect = yes
+		if = {
+			limit = { only_liege_to_ask_permission_trigger = yes }
+			show_as_tooltip = { courtiers_marry_effect = yes }
+			root = { save_scope_as = permission_granter }
+			scope:proposer = {
+				trigger_event = agot_court_outcome.2003
+			}
+		}
+		else = {
+			custom_tooltip = agot_court_outcome.2000.a.seek.permission.tt
+			show_as_tooltip = {
+				random_list = {
+					1 = {
+						desc = agot_court_outcome.2000.a.permission.granted.tt
+						show_chance = no
+						courtiers_marry_effect = yes
+					}
+					1 = {
+						desc = agot_court_outcome.2000.a.permission.refused.tt
+						show_chance = no
+						custom_tooltip = agot_court_outcome.2000.b.tt
+					}
+				}
+			}
+			scope:proposer = {
+				trigger_event = agot_court_outcome.2001
+			}
+		}
+		ai_chance = {
+			base = 0
+			ai_target_ruler_proposal_agree_modifier = yes
+		}
+	}
+	option = {
+		name = agot_court_outcome.2000.b #Refuse
+		custom_tooltip = agot_court_outcome.2000.b.tt
+		marriage_permission_refused_effect = yes
+		scope:proposer = {
+			trigger_event = agot_court_outcome.2004
+		}
+		ai_chance = {
+			base = 50
+			ai_target_ruler_proposal_refuse_modifier = yes
+		}
+	}
+	option = {
+		name = lmf_scheme.1031.c #Ignore unimportant requests
+		trigger = {
+			is_ai = no
+			NOR = {
+				scope:proposer = { has_any_court_relationship_with = { CHARACTER = root } }
+				scope:proposer_target = { has_any_court_relationship_with = { CHARACTER = root } }
+			}
+		}
+		custom_tooltip = lmf_scheme.1031.c.tt
+		add_character_flag = auto_approve_unimportant_marriages
+		marriage_permission_given_effect = yes
+		if = {
+			limit = { only_liege_to_ask_permission_trigger = yes }
+			show_as_tooltip = { courtiers_marry_effect = yes }
+			root = { save_scope_as = permission_granter }
+			scope:proposer = {
+				trigger_event = agot_court_outcome.2003
+			}
+		}
+		else = {
+			custom_tooltip = agot_court_outcome.2000.a.seek.permission.tt
+			show_as_tooltip = {
+				random_list = {
+					1 = {
+						desc = agot_court_outcome.2000.a.permission.granted.tt
+						show_chance = no
+						courtiers_marry_effect = yes
+					}
+					1 = {
+						desc = agot_court_outcome.2000.a.permission.refused.tt
+						show_chance = no
+						custom_tooltip = agot_court_outcome.2000.b.tt
+					}
+				}
+			}
+			scope:proposer = {
+				trigger_event = agot_court_outcome.2001
+			}
+		}
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+# Liege says yes, but he's not the only one the proposer has to ask
+agot_court_outcome.2001 = {
+	type = letter_event
+	opening = {
+		desc = agot_court_outcome.2001.opening
+	}
+	desc = agot_court_outcome.2001.desc
+	sender = scope:proposer_liege
+
+	option = {
+		name = agot_court_outcome.2001.a
+		scope:proposer_target_liege = {
+			trigger_event = agot_court_outcome.2002
+		}
+	}
+}
+
+# Letter from proposer to target's liege asking for permission to marry target
+agot_court_outcome.2002 = {
+	type = letter_event
+	opening = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:proposer = { is_close_or_extended_family_of = root }
+				}
+				desc = agot_court_outcome.2000.family.opening
+			}
+			triggered_desc = {
+				trigger = {
+					scope:proposer = { is_courtier_of = root }
+				}
+				desc = agot_court_outcome.2000.courtier.opening
+			}
+			desc = agot_court_outcome.2000.opening
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:proposer_target = {
+						has_any_court_relationship_with = { CHARACTER = root }
+					}
+				}
+				desc = agot_court_outcome.2000.my.relation
+			}
+			triggered_desc = {
+				trigger = {
+					scope:proposer_target = { is_courtier_of = root }
+				}
+				desc = agot_court_outcome.2000.my.courtier
+			}
+			desc = agot_court_outcome.2000.stranger
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:proposer_liege
+					NOT = { scope:proposer_liege = root }
+				}
+				desc = {
+					desc = agot_court_outcome.2000.second.liege
+					desc = agot_court_outcome.2000.onlyliege
+				}
+			}
+			triggered_desc = {
+				trigger = {
+					scope:proposer = { is_close_or_extended_family_of = root }
+				}
+				desc = {
+					desc = agot_court_outcome.2000.proposer.family
+					desc = agot_court_outcome.2000.onlyliege
+				}
+			}
+			triggered_desc = {
+				trigger = {
+					scope:proposer = {
+						NOT = { is_close_or_extended_family_of = root }
+						has_dynasty = yes
+						dynasty = root.dynasty
+					}
+				}
+				desc = {
+					desc = agot_court_outcome.2000.proposer.dynasty
+					desc = agot_court_outcome.2000.onlyliege
+				}
+			}
+			triggered_desc = {
+				trigger = {
+					scope:proposer = {
+						is_courtier_of = root
+						NOR = {
+							is_close_or_extended_family_of = root
+							dynasty ?= root.dynasty
+						}
+					}
+				}
+				desc = {
+					desc = agot_court_outcome.2000.proposer.courtier
+					desc = agot_court_outcome.2000.onlyliege
+				}
+			}
+			triggered_desc = {
+				trigger = {
+					scope:proposer = {
+						is_courtier = no
+						is_playable_character = no
+						exists = host
+						host = root
+						NOR = {
+							is_close_or_extended_family_of = root
+							dynasty ?= root.dynasty
+						}
+					}
+				}
+				desc = {
+					desc = agot_court_outcome.2000.proposer.guest
+					desc = agot_court_outcome.2000.onlyliege
+				}
+			}
+			desc = agot_court_outcome.2000.onlyliege
+		}
+	}
+	sender = scope:proposer
+
+	trigger = {
+		trigger_if = {
+			limit = { has_character_flag = auto_approve_unimportant_marriages }
+			OR = {
+				scope:proposer = { has_any_court_relationship_with = { CHARACTER = root } }
+				scope:proposer_target = { has_any_court_relationship_with = { CHARACTER = root } }
+			}
+		}
+		trigger_else = {
+			always = yes
+		}
+	}
+
+	on_trigger_fail = {
+		hidden_effect = {
+			marriage_permission_given_effect = yes
+			root = { save_scope_as = permission_granter }
+			send_interface_message = {
+				type = event_generic_neutral_with_text
+				title =  lmf_scheme.1031.auto.permission.title.tt
+				desc =  lmf_scheme.1031.auto.permission.tt
+				right_icon = scope:proposer
+			}
+			scope:proposer = {
+				trigger_event = agot_court_outcome.2003
+			}
+		}
+	}
+
+	option = {
+		name = agot_court_outcome.2000.a #Give them leave
+		marriage_permission_given_effect = yes
+		show_as_tooltip = { courtiers_marry_effect = yes }
+		root = { save_scope_as = permission_granter }
+		scope:proposer = {
+			trigger_event = agot_court_outcome.2003
+		}
+		ai_chance = {
+			base = 10
+			ai_other_ruler_proposal_agree_modifier = yes
+		}
+	}
+	option = {
+		name = agot_court_outcome.2000.b #Refuse
+		custom_tooltip = agot_court_outcome.2000.b.tt
+		marriage_permission_refused_effect = yes
+		scope:proposer = {
+			trigger_event = agot_court_outcome.2004
+		}
+		ai_chance = {
+			base = 50
+			ai_other_ruler_proposal_refuse_modifier = yes
+		}
+	}
+	option = {
+		name = lmf_scheme.1031.c #Ignore unimportant requests
+		trigger = {
+			is_ai = no
+			NOR = {
+				scope:proposer = { has_any_court_relationship_with = { CHARACTER = root } }
+				scope:proposer_target = { has_any_court_relationship_with = { CHARACTER = root } }
+			}
+		}
+		custom_tooltip = lmf_scheme.1031.c.tt
+		add_character_flag = auto_approve_unimportant_marriages
+		marriage_permission_given_effect = yes
+		show_as_tooltip = { courtiers_marry_effect = yes }
+		root = { save_scope_as = permission_granter }
+		scope:proposer = {
+			trigger_event = agot_court_outcome.2003
+		}
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+# Permission Granted
+agot_court_outcome.2003 = {
+	type = character_event
+	title = agot_court_outcome.2003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { root = scope:proposer }
+				desc = agot_court_outcome.2003.proposer
+			}
+			desc = agot_court_outcome.2003.proposer_target
+		}
+	}
+	theme = romance_scheme
+
+	left_portrait = {
+		character = scope:spouse_1_portrait
+		animation = wedding_bride_left
+	}
+	right_portrait = {
+		character = scope:spouse_2_portrait
+		animation = wedding_groom_right
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				location.culture ?= { has_graphical_india_culture_group_trigger = yes }
+			}
+			play_sound_effect = "event:/DLC/EP2/SFX/Stingers/Grand_Activities/ep2_mx_sting_wedding_india"
+		}
+		else_if = {
+			limit = {
+				OR = {
+					location.culture ?= { has_graphical_mena_culture_group_trigger = yes }
+					location.culture ?= { has_graphical_steppe_culture_group_trigger = yes }
+					location.culture ?= { has_graphical_african_culture_group_trigger = yes }
+				}
+			}
+			play_sound_effect = "event:/DLC/EP2/SFX/Stingers/Grand_Activities/ep2_mx_sting_wedding_mena"
+		}
+		else = {
+			play_sound_effect = "event:/DLC/EP2/SFX/Stingers/Grand_Activities/ep2_mx_sting_wedding_west"
+		}
+		if = {
+			limit = {
+				scope:proposer = {
+					sex_opposite_of = scope:proposer_target
+					is_male = yes
+				}
+			}
+			scope:proposer = {
+				save_scope_as = spouse_2_portrait
+			}
+			scope:proposer_target = {
+				save_scope_as = spouse_1_portrait
+			}
+		}
+		else = {
+			scope:proposer = {
+				save_scope_as = spouse_1_portrait
+			}
+			scope:proposer_target = {
+				save_scope_as = spouse_2_portrait
+			}
+		}
+	}
+
+	option = {
+		name = agot_court_outcome.2003.a
+		if = {
+			limit = { root = scope:proposer }
+			if = {
+				limit = {
+					should_marry_matrilineally_trigger = { PROPOSER = scope:proposer TARGET = scope:proposer_target }
+				}
+				show_as_tooltip = {
+					court_scheme_marriage_effect = yes
+					scope:proposer = { marry_matrilineal = scope:proposer_target }
+				}
+			}
+			else = {
+				show_as_tooltip = {
+					court_scheme_marriage_effect = yes
+					scope:proposer = { marry = scope:proposer_target }
+				}
+			}
+			show_as_tooltip = {
+				move_characters_to_proper_court_effect = { CHARACTER_1 = scope:proposer CHARACTER_2 = scope:proposer_target }
+			}
+			scope:proposer_target = {
+				trigger_event = agot_court_outcome.2003
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					should_marry_matrilineally_trigger = { PROPOSER = scope:proposer TARGET = scope:proposer_target }
+				}
+				court_scheme_marriage_effect = yes
+				scope:proposer = { marry_matrilineal = scope:proposer_target }
+			}
+			else = {
+				add_marry_for_love_flag_effect = { PARTNER1 = scope:proposer PARTNER2 = scope:proposer_target }
+				court_scheme_marriage_effect = yes
+				scope:proposer = { marry = scope:proposer_target }
+			}
+			move_characters_to_proper_court_effect = { CHARACTER_1 = scope:proposer CHARACTER_2 = scope:proposer_target }
+		}
+	}
+}
+
+# Permission refused - to proposer
+agot_court_outcome.2004 = {
+	type = character_event
+	title = agot_court_outcome.2004.t
+	desc = agot_court_outcome.2004.desc
+	theme = romance_scheme
+
+	left_portrait = {
+		character = scope:permission_refuser
+		animation = disapproval
+	}
+	right_portrait = {
+		character = scope:proposer
+		animation = shock
+	}
+
+	immediate = {
+		if = {
+			limit = { exists = scope:is_pregnancy_proposal }
+			bastardy_pregnancy_announcement_effect = yes
+		}
+	}
+
+	option = {
+		name = agot_court_outcome.2004.a #Then we elope!
+		trigger = {
+			NOT = { exists = scope:is_non_lover_proposal }
+			can_start_scheme = {
+				type = elope
+				target_character = scope:proposer_target
+			}
+
+			# they must be willing to betray their current spouse
+			custom_description = {
+				text = will_not_betray_spouse
+				object = scope:proposer_target
+				scope:proposer_target = {
+					OR = {
+						is_ai = no
+						is_married = no
+						AND = {
+							is_married = yes
+							exists = primary_spouse
+							might_cheat_on_partner_trigger = { PARTNER = scope:proposer_target.primary_spouse }
+						}
+					}
+				}
+			}
+
+			# they must be willing to betray their current betrothed
+			custom_description = {
+				text = will_not_betray_betrothed
+				object = scope:proposer_target
+				scope:proposer_target = {
+					OR = {
+						is_ai = no
+						is_betrothed = no
+						AND = {
+							exists = betrothed
+							might_cheat_on_partner_trigger = { PARTNER = scope:proposer_target.betrothed }
+						}
+					}
+				}
+			}
+		}
+		show_as_unavailable = {
+			OR = {
+				NOT = {
+					can_start_scheme = {
+						type = elope
+						target_character = scope:proposer_target
+					}
+				}
+				scope:proposer_target = {
+					NOR = {
+						is_ai = no
+						is_married = no
+						AND = {
+							is_married = yes
+							exists = primary_spouse
+							might_cheat_on_partner_trigger = { PARTNER = scope:proposer_target.primary_spouse }
+						}
+					}
+				}
+				scope:proposer_target = {
+					NOR = {
+						is_ai = no
+						is_betrothed = no
+						AND = {
+							exists = betrothed
+							might_cheat_on_partner_trigger = { PARTNER = scope:proposer_target.betrothed }
+						}
+					}
+				}
+			}
+		}
+		stress_impact = {
+			honest = minor_stress_impact_gain
+			just = minor_stress_impact_gain
+		}
+		show_as_tooltip = {
+			start_scheme = {
+				type = elope
+				target_character = scope:proposer_target
+			}
+		}
+		set_variable = { name = waiting_to_elope value = scope:proposer_target years = 20 }
+		scope:proposer_target = {
+			add_character_flag = will_elope
+			trigger_event = agot_court_outcome.2005
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 25
+				is_married = no
+			}
+			ai_value_modifier = {
+				ai_boldness = 1
+				ai_honor = -0.5
+				ai_vengefulness = 0.3
+			}
+			modifier = {
+				add = {
+					value = scope:proposer.intrigue
+					multiply = 2.5
+				}
+			}
+			modifier = {
+				add = {
+					value = scope:proposer_target.intrigue
+					multiply = 2.5
+				}
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_court_outcome.2004.b #Our love shall never die
+		trigger = {
+			NOT = { exists = scope:is_non_lover_proposal }
+			custom_description = {
+				text = will_not_betray_spouse
+				object = scope:proposer_target
+				scope:proposer_target = {
+					OR = {
+						is_ai = no
+						is_married = no
+						AND = {
+							is_married = yes
+							exists = primary_spouse
+							NOT = { primary_spouse = root }
+							might_cheat_on_partner_trigger = { PARTNER = scope:proposer_target.primary_spouse }
+						}
+					}
+				}
+			}
+			custom_description = {
+				text = unwilling_to_take_lover
+				object = scope:proposer_target
+				scope:proposer_target = {
+					OR = {
+						is_ai = no
+						has_relation_lover = scope:proposer
+						willing_to_take_character_as_lover = { LOVER = scope:proposer }
+					}
+				}
+			}
+		}
+		show_as_unavailable = {
+			OR = {
+				scope:proposer_target = {
+					NOR = {
+						is_ai = no
+						is_married = no
+						AND = {
+							is_married = yes
+							exists = primary_spouse
+							NOT = { primary_spouse = root }
+							might_cheat_on_partner_trigger = { PARTNER = scope:proposer_target.primary_spouse }
+						}
+					}
+				}
+				scope:proposer_target = {
+					NOR = {
+						is_ai = no
+						has_relation_lover = scope:proposer
+						willing_to_take_character_as_lover = { LOVER = scope:proposer }
+					}
+				}
+			}
+		}
+		custom_tooltip = agot_court_outcome.2004.b.tt
+
+		set_variable = { name = waiting_to_elope value = scope:proposer_target years = 20 }
+		create_story = { type = lmf_waiting_to_elope_story_cycle }
+
+		show_as_tooltip = {
+			had_sex_with_effect = { #Run this in target scope because owner has own tooltip
+				CHARACTER = scope:proposer_target
+				PREGNANCY_CHANCE = pregnancy_chance
+			}
+		}
+		scope:proposer_target = {
+			add_character_flag = continue_soulmate
+			trigger_event = agot_court_outcome.2005
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_boldness = 0.5
+				ai_honor = -1
+			}
+			modifier = {
+				add = 25
+				has_trait = lustful
+			}
+			modifier = {
+				factor = 0.5
+				is_married = yes
+				ai_zeal >= 0
+			}
+			modifier = {
+				factor = 0
+				has_trait = chaste
+			}
+			modifier = {
+				factor = 0
+				NOT = {
+					willing_to_take_character_as_lover = { LOVER = scope:proposer_target }
+				}
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_court_outcome.2004.c #If we cannot be together, what is the point?
+		custom_tooltip = agot_court_outcome.2004.c.tt
+		show_as_tooltip = {
+			if = {
+				limit = { has_relation_soulmate = scope:proposer_target }
+				remove_relation_soulmate = scope:proposer_target
+			}
+			else_if = {
+				limit = { has_relation_lover = scope:proposer_target }
+				remove_relation_lover = scope:proposer_target
+			}
+			else_if = {
+				limit = { exists = scope:is_non_lover_proposal }
+				add_character_flag = {
+					flag = no_nonlover_proposals
+					years = 10
+				}
+				remove_opinion = {
+					modifier = love_opinion
+					target = scope:proposer_target
+				}
+				scope:proposer_target = {
+					add_character_flag = {
+						flag = no_nonlover_proposals
+						years = 10
+					}
+					remove_opinion = {
+						modifier = love_opinion
+						target = scope:proposer
+					}
+				}
+			}
+			set_relation_potential_lover = scope:proposer_target
+		}
+		reverse_add_opinion = {
+			target = scope:proposer_target
+			modifier = lingering_love_opinion
+		}
+		scope:proposer_target = {
+			add_character_flag = end_soulmate
+			trigger_event = agot_court_outcome.2005
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				exists = scope:is_pregnancy_proposal
+				add = -50
+			}
+			ai_value_modifier = {
+				ai_boldness = -1
+				ai_honor = 0.5
+				ai_compassion = 0.3
+			}
+			min = 1
+		}
+	}
+}
+
+# Permission refused - to target
+agot_court_outcome.2005 = {
+	type = character_event
+	title = agot_court_outcome.2004.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { has_character_flag = will_elope }
+				desc = agot_court_outcome.2005.elope
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = continue_soulmate }
+				desc = agot_court_outcome.2005.continue
+			}
+			desc = agot_court_outcome.2005.breakup
+		}
+	}
+	theme = romance_scheme
+
+	left_portrait = {
+		character = scope:proposer
+		triggered_animation = {
+			trigger = { scope:proposer_target = { has_character_flag = will_elope } }
+			animation = anger
+		}
+		triggered_animation = {
+			trigger = { scope:proposer_target = { has_character_flag = continue_soulmate } }
+			animation = personality_bold
+		}
+		animation = sadness
+	}
+	right_portrait = {
+		character = scope:proposer_target
+		animation = shock
+	}
+
+	option = {
+		name = agot_court_outcome.2005.a
+		trigger = { has_character_flag = will_elope }
+		remove_character_flag = will_elope
+		scope:proposer = {
+			show_as_tooltip = {
+				start_scheme = {
+					type = elope
+					target_character = scope:proposer_target
+				}
+			}
+		}
+		hidden_effect = {
+			set_variable = { name = waiting_to_elope value = scope:proposer years = 20 }
+			scope:proposer = {
+				send_interface_toast = {
+					title = elope_interaction_notification
+
+					left_icon = scope:proposer
+					right_icon = scope:proposer_target
+
+					begin_scheme_basic_effect = {
+						SCHEME_TYPE = elope
+						TARGET_TYPE = target_character
+						TARGET_SCOPE = scope:proposer_target
+					}
+
+					show_as_tooltip = {
+						stress_impact = {
+							honest = minor_stress_impact_gain
+							just = minor_stress_impact_gain
+						}
+					}
+				}
+				random_scheme = {
+					limit = {
+						scheme_type = elope
+						scheme_target_character = scope:proposer_target
+					}
+					add_scheme_modifier = {
+						type = determined_elopement_modifier
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_court_outcome.2005.b
+		trigger = { has_character_flag = continue_soulmate }
+		remove_character_flag = continue_soulmate
+
+		set_variable = { name = waiting_to_elope value = scope:proposer years = 20 }
+		create_story = {
+			type = lmf_waiting_to_elope_story_cycle
+			save_scope_as = story
+		}
+		scope:story = {
+			# a player has just 3 years to get it underway
+			if = {
+				limit = { scope:proposer = { is_ai = no } }
+				set_variable = { name = elope_promised value = 3 }
+			}
+			# but the AI has 10
+			else = {
+				set_variable = { name = elope_promised value = 10 }
+			}
+		}
+
+		had_sex_with_effect = { #Run this in target scope because owner has own tooltip
+			CHARACTER = scope:proposer
+			PREGNANCY_CHANCE = pregnancy_chance
+		}
+	}
+	option = {
+		name = agot_court_outcome.2005.c
+		trigger = { has_character_flag = end_soulmate }
+		remove_character_flag = end_soulmate
+		scope:proposer = {
+			if = {
+				limit = { has_relation_soulmate = scope:proposer_target }
+				remove_relation_soulmate = scope:proposer_target
+			}
+			else_if = {
+				limit = { has_relation_lover = scope:proposer_target }
+				remove_relation_lover = scope:proposer_target
+			}
+			else_if = {
+				limit = { exists = scope:is_non_lover_proposal }
+				add_character_flag = {
+					flag = no_nonlover_proposals
+					years = 10
+				}
+				remove_opinion = {
+					modifier = love_opinion
+					target = scope:proposer_target
+				}
+				scope:proposer_target = {
+					add_character_flag = {
+						flag = no_nonlover_proposals
+						years = 10
+					}
+					remove_opinion = {
+						modifier = love_opinion
+						target = scope:proposer
+					}
+				}
+			}
+			if = {
+				limit = {
+					can_set_relation_potential_lover_trigger = { CHARACTER = scope:proposer_target }
+				}
+				set_relation_potential_lover = scope:proposer_target
+			}
+		}
+		reverse_add_opinion = {
+			target = scope:proposer
+			modifier = lingering_love_opinion
+		}
+	}
+}
+
+# Lover will no longer wait for elopement
+agot_court_outcome.2010 = {
+	type = letter_event
+	opening = {
+		desc = agot_court_outcome.2010.opening
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:target = { is_imprisoned = yes } }
+				desc = agot_court_outcome.2010.imprison
+			}
+			desc = agot_court_outcome.2010.normal
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { reverse_opinion = { target = scope:target value <= 0 } }
+				desc = agot_court_outcome.2010.hate
+			}
+			desc = agot_court_outcome.2010.nothate
+		}
+		desc = agot_court_outcome.2010.end
+	}
+	sender = scope:target
+
+	right_portrait = {
+		character = scope:target
+		animation = sadness
+	}
+
+	trigger = {
+		exists = scope:target
+		scope:target = {
+			is_alive = yes
+			has_relation_soulmate = root
+		}
+		can_elope_character_trigger = { CHARACTER = scope:target }
+		NOT = {
+			any_scheme = {
+				scheme_type = elope
+				scheme_target_character = scope:target
+			}
+		}
+	}
+
+	option = {
+		name = agot_court_outcome.2010.a
+		if = {
+			limit = { has_relation_soulmate = scope:target }
+			remove_relation_soulmate = scope:target
+		}
+	}
+
+	after = {
+		random_owned_story = {
+			limit = {
+				story_type = lmf_waiting_to_elope_story_cycle
+				var:elope_target ?= scope:target
+			}
+			end_story = yes
+		}
+	}
+}

@@ -1,0 +1,85 @@
+﻿agot_kingsguard_white_book_visibility = {
+	is_shown = {
+		trigger_if = {
+			limit = {
+				scope:house ?= yes
+				scope:personal ?= no
+				scope:fallback ?= no
+			}
+
+			exists = root.var:kingsguard_member.house
+			NOT = { has_variable = my_personal_coa }
+		}
+		trigger_else_if = {
+			limit = {
+				scope:house ?= yes
+				scope:personal ?= yes
+				scope:fallback ?= no
+			}
+
+			exists = root.var:kingsguard_member.house
+			has_variable = my_personal_coa
+		}
+		trigger_else_if = {
+			limit = {
+				scope:house ?= no
+				scope:personal ?= yes
+				scope:fallback ?= no
+			}
+
+			NOT = { exists = root.var:kingsguard_member.house }
+			has_variable = my_personal_coa
+		}
+		trigger_else_if = {
+			limit = {
+				scope:house ?= no
+				scope:personal ?= no
+				scope:fallback ?= yes
+			}
+			NOR = {
+				has_variable = my_personal_coa
+				exists = root.var:kingsguard_member.house
+			}
+		}
+		trigger_else = {
+			always = no
+		}
+	}
+}
+
+agot_kingsguard_white_book = {
+	is_shown = {
+		var:selected_white_book_page ?= scope:selected_white_book_page
+	}
+	effect = {
+		if = { # removes selection --> no selection at all
+			limit = {
+				exists = var:selected_white_book_page
+				exists = scope:selected_white_book_page
+				var:selected_white_book_page ?= scope:selected_white_book_page
+
+				always = no # enable variable below once we have an instance where you should be allowed to unselect a character
+				#has_variable = is_allow_unselecting_character # set this variable on the character if you want to be allowed to unselect
+			}
+			root ?= { remove_variable = selected_white_book_page }
+		}
+		else_if = {
+			limit = { exists = scope:selected_white_book_page }
+			if = {
+				limit = {
+					exists = var:selected_white_book_page
+					NOT = { var:selected_white_book_page ?= scope:selected_white_book_page }
+				}
+				var:selected_white_book_page ?= {
+					remove_variable = selected_white_book_page
+				}
+			}
+			root ?= {
+				set_variable = {
+					name = selected_white_book_page
+					value = scope:selected_white_book_page
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,4665 @@
+﻿namespace = agot_travel_events
+
+###############################
+# AT THE CROSSROADS 0001-0011 #
+# By Vortavor                 #
+###############################
+# agot_travel_events.0001 # [START] The Crossroads Inn
+# agot_travel_events.0002 # Inn festivities
+# agot_travel_events.0003 # Disenchanted Sellsword
+# agot_travel_events.0004 # Drunk knight challenge if root is knight of renown!
+# agot_travel_events.0005 # Ironborn challenges root to a finger dance!
+# agot_travel_events.0006 # Inn troubles
+# agot_travel_events.0007 # Knight suggests an ambush
+# agot_travel_events.0008 # Bandit shows up
+# agot_travel_events.0009 # [MAINTENANCE] Post duel clean up
+# agot_travel_events.0010 # [END] Innkeeper offers reward
+# agot_travel_events.0011 # [END] The attack never comes
+#############################################################
+
+#You come across the Inn at the Crossroads during your travel - Chain start
+agot_travel_events.0001 = {
+	type = character_event
+	title = agot_travel_events.0001.t
+	desc = agot_travel_events.0001.desc
+	theme = travel
+	override_background = {
+		reference = terrain
+	}
+	left_portrait = {
+		character = root
+	}
+	cooldown = { years = 30 }
+
+	trigger = {
+		location = province:1882
+		is_available_travelling = yes
+		is_landed = yes
+		is_adult = yes
+		is_location_valid_for_travel_event_on_land = yes
+		NOT = { location.county.holder = root }
+	}
+
+	weight_multiplier = {
+		base = 1
+		#Large entourage likelier to stop more often
+		modifier = {
+			factor = 2
+			current_travel_plan = {
+				any_entourage_character = { count >= 10 }
+			}
+		}
+		modifier = {
+			factor = 3
+			current_travel_plan = {
+				any_entourage_character = { count >= 15 }
+			}
+		}
+	}
+
+	immediate = {
+		location.barony = {
+			save_scope_as = travel_stop
+		}
+		location.barony.holder = {
+			save_scope_as = innkeeper
+		}
+	}
+
+	#Make a stop at the inn
+	option = {
+		name = agot_travel_events.0001.a
+		custom_tooltip = agot_travel_events.0001.a.tt
+		hidden_effect = {
+			random_list = {
+				50 = { #The inn is booming with life
+					trigger_event = agot_travel_events.0002
+				}
+				50 = { #Gloomy atmosphere, something is not right...
+					trigger_event = agot_travel_events.0006
+				}
+			}
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_sociability = 1
+			}
+			modifier = {
+				add = 50
+				has_trait = gregarious
+			}
+			modifier = {
+				add = 50
+				has_trait = lazy
+			}
+		}
+	}
+
+	#Ignore - No time for stops
+	option = {
+		name = agot_travel_events.0001.b
+		custom_tooltip = agot_travel_events.0001.b.tt
+
+		stress_impact = {
+			gluttonous = minor_stress_impact_gain
+			gregarious = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 50
+				has_trait = impatient
+			}
+			modifier = {
+				add = 50
+				has_trait = callous
+			}
+			modifier = {
+				add = 50
+				has_trait = inappetetic
+			}
+		}
+	}
+}
+
+#[GOOD PATH] Join festivities
+agot_travel_events.0002 = {
+	title = agot_travel_events.0002.t
+	desc = agot_travel_events.0002.desc
+	type = character_event
+	theme = party
+	override_background = {
+		reference = tavern
+	}
+	right_portrait = {
+		character = root
+		animation = toast
+	}
+	left_portrait = {
+		character = scope:fellow_traveler
+		animation = laugh
+	}
+
+	immediate = {
+		current_travel_plan = {
+			random_entourage_character = {
+				limit = {
+					NOR = {
+						has_relation_nemesis = root
+						has_relation_rival = root
+					}
+					is_adult = yes
+				}
+				save_scope_as = fellow_traveler
+			}
+		}
+	}
+
+	#Spend time drinking with a random person from entourage
+	option = {
+		name = agot_travel_events.0002.a
+		trigger = {
+			exists = scope:fellow_traveler
+		}
+		progress_towards_friend_effect = {
+			REASON = friend_bonded_over_botany
+			CHARACTER = scope:fellow_traveler
+			OPINION = default_friend_opinion
+		}
+
+		stress_impact = {
+			shy = medium_stress_impact_gain
+			gregarious = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 0.5
+			}
+		}
+	}
+
+	#Reveler/Gregarious option
+	option = {
+		name = agot_travel_events.0002.gregarious
+
+		trigger = {
+			OR = {
+				has_trait = gregarious
+				has_trait = lifestyle_reveler
+				has_trait = drunkard
+			}
+		}
+		if = {
+			limit = {
+				has_trait = lifestyle_reveler
+			}
+			add_trait_xp = {
+				trait = lifestyle_reveler
+				value = 10
+			}
+		}
+		else = {
+			random = {
+				chance = 25
+				modifier = {
+					has_trait = drunkard
+					factor = 2
+				}
+				if = {
+					limit = {
+						NOT = { has_trait = lifestyle_reveler }
+					}
+					add_trait = lifestyle_reveler
+				}
+			}
+		}
+		remove_short_term_gold = 50
+
+		#Prevent everyone from showing up in the tooltip
+		custom_tooltip = agot_travel_events.0002.gregarious.tt
+		hidden_effect = {
+			current_travel_plan = {
+				every_entourage_character = {
+					limit = {
+						NOR = {
+							has_trait = shy
+							has_trait = depressed
+							has_trait = inappetetic
+						}
+					}
+					add_opinion = {
+						modifier = pleased_opinion
+						target = root
+						opinion = 20
+					}
+				}
+			}
+		}
+
+		stress_impact = {
+			shy = major_stress_impact_gain
+			temperate = medium_stress_impact_gain
+			sadistic = medium_stress_impact_gain
+			gregarious = medium_stress_impact_loss
+			gluttonous = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 2
+			}
+		}
+	}
+
+	#Join the group of knights
+	option = {
+		name = agot_travel_events.0002.b
+		custom_tooltip = agot_travel_events.0002.b.tt
+		hidden_effect = {
+			random_list = {
+				25 = {
+					trigger_event = agot_travel_events.0004
+				}
+				75 = {
+					trigger_event = agot_travel_events.0003
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 0.75
+			}
+		}
+	}
+
+	#Investigate outside
+	option = {
+		name = agot_travel_events.0002.c
+		custom_tooltip = agot_travel_events.0002.c.tt
+		trigger_event = agot_travel_events.0005
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = -0.5
+			}
+		}
+	}
+
+	#Lemon cakes?
+	option = {
+		name = agot_travel_events.0002.gluttonous
+		custom_tooltip = agot_travel_events.0002.gluttonous.tt
+		stress_impact = {
+			base = minor_stress_loss
+			gluttonous = medium_stress_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = -0.5
+			}
+		}
+	}
+}
+
+#Disenchanted Sellsword
+agot_travel_events.0003 = {
+	title = agot_travel_events.0003.t
+	desc = agot_travel_events.0003.desc
+	type = character_event
+	theme = party
+	override_background = {
+		reference = tavern
+	}
+	left_portrait = {
+		character = root
+		animation = drink
+	}
+	right_portrait = {
+		character = scope:sellsword
+		animation = worry
+	}
+
+	immediate = {
+		create_character = {
+			template = new_warrior_character
+			location = root.location
+			culture = root.location.culture
+			gender_female_chance = 0
+			faith = root.location.faith
+			prowess = { 10 18 }
+			age = { 20 30 }
+			save_scope_as = sellsword
+		}
+	}
+
+	#Offer the sellsword to join you
+	option = {
+		name = agot_travel_events.0003.a
+
+		stress_impact = {
+			gregarious = minor_stress_impact_loss
+			shy = medium_stress_impact_gain
+			paranoid = medium_stress_impact_gain
+			greedy = medium_stress_impact_gain
+		}
+
+		pay_short_term_gold = {
+			target = scope:sellsword
+			gold = 50
+		}
+		scope:sellsword = {
+			add_opinion = {
+				target = root
+				modifier = grateful_opinion
+				opinion = 30
+			}
+		}
+		add_courtier = scope:sellsword
+		current_travel_plan = {
+			add_companion = scope:sellsword
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_sociability = 1
+				ai_greed = -1
+			}
+			modifier = {
+				add = 50
+				has_trait = compassionate
+			}
+			modifier = {
+				add = 30
+				has_trait = generous
+			}
+			modifier = {
+				add = 30
+				has_trait = gregarious
+			}
+			modifier = {
+				add = 20
+				has_trait = trusting
+			}
+			modifier = {
+				add = -200
+				has_trait = paranoid
+			}
+		}
+	}
+
+	#I'll hire the sellsword's band
+	option = {
+		name = agot_travel_events.0003.b
+
+		stress_impact = {
+			greedy = medium_stress_impact_gain
+			paranoid = medium_stress_impact_gain
+		}
+
+		remove_short_term_gold = 75
+		add_character_modifier = {
+			modifier = agot_hired_outlaw_band
+			years = 2
+		}
+		hidden_effect = {
+			scope:sellsword = {
+				death = {
+					death_reason = death_disappearance
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -1.5
+				ai_sociability = 0.5
+			}
+			modifier = {
+				add = 30
+				has_trait = generous
+			}
+			modifier = {
+				add = 10
+				has_trait = trusting
+			}
+			modifier = {
+				add = -50
+				has_trait = paranoid
+			}
+		}
+	}
+
+	#Not my problem
+	option = {
+		name = agot_travel_events.0003.c
+		hidden_effect = {
+			scope:sellsword = {
+				death = {
+					death_reason = death_disappearance
+				}
+			}
+		}
+
+		stress_impact = {
+			compassionate = medium_stress_impact_gain
+			gregarious = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_greed = -2
+			}
+			modifier = {
+				add = 50
+				has_trait = callous
+			}
+			modifier = {
+				add = 50
+				has_trait = paranoid
+			}
+		}
+	}
+}
+
+#Challenged by a drunk knight
+agot_travel_events.0004 = {
+	title = agot_travel_events.0004.t
+	desc = agot_travel_events.0004.desc
+	type = character_event
+	theme = unfriendly
+	override_background = {
+		reference = tavern
+	}
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+	right_portrait = {
+		character = scope:drunk_knight
+		animation = rage
+	}
+
+	trigger = {
+		AND = {
+			has_trait = tourney_participant
+			OR = {
+				has_trait_xp = {
+					trait = tourney_participant
+					track = foot
+					value >= 25
+				}
+				has_trait_xp = {
+					trait = tourney_participant
+					track = horse
+					value >= 25
+				}
+				has_trait_xp = {
+					trait = tourney_participant
+					track = bow
+					value >= 25
+				}
+			}
+		}
+	}
+	on_trigger_fail = {
+		trigger_event = agot_travel_events.0003
+	}
+
+	immediate = {
+		create_character = {
+			template = new_warrior_character
+			location = root.location
+			culture = root.location.culture
+			faith = root.location.faith
+			gender_female_chance = 0
+			trait = knight
+			prowess = { 12 24 }
+			age = { 20 40 }
+			save_scope_as = drunk_knight
+		}
+	}
+
+	#You wanna fight? i'll knock ye teeth out!
+	option = {
+		name = agot_travel_events.0004.a
+
+		duel = {
+			skill = prowess
+			target = scope:drunk_knight
+			#You win
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.5
+					min = -49
+				}
+				desc = agot_travel_events.0004.a.success
+				send_interface_toast = {
+					title = agot_travel_events.0004.a.success
+					left_icon = root
+					add_prestige = minor_prestige_gain
+					add_character_modifier = {
+						modifier = agot_won_tavern_brawl
+						years = 5
+					}
+				}
+			}
+			#You lose...
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.5
+					min = -49
+				}
+				desc = agot_travel_events.0004.a.failure
+				send_interface_toast = {
+					title = agot_travel_events.0004.a.failure
+					left_icon = root
+					add_prestige = minor_prestige_loss
+					random = {
+						chance = 10
+						increase_wounds_effect = { REASON = fight }
+					}
+				}
+			}
+		}
+		hidden_effect = {
+			scope:drunk_knight = {
+				death = {
+					death_reason = death_disappearance
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 0.5
+			}
+			modifier = {
+				add = 50
+				has_trait = wrathful
+			}
+			modifier = {
+				add = 20
+				has_trait = brave
+			}
+			modifier = {
+				add = 20
+				has_trait = stubborn
+			}
+			modifier = {
+				add = -200
+				has_trait = craven
+			}
+		}
+	}
+
+	#Want to prove yourself? Join me instead!
+	option = {
+		name = agot_travel_events.0004.b
+		duel = {
+			skill = diplomacy
+			target = scope:drunk_knight
+			#He agrees
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.5
+				}
+				desc = agot_travel_events.0004.b.success
+				current_travel_plan = {
+					add_companion = scope:drunk_knight
+				}
+				send_interface_toast = {
+					title = agot_travel_events.0004.b.success
+					left_icon = root
+					right_icon = scope:drunk_knight
+				}
+			}
+			#He mocks you
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.5
+				}
+				desc = agot_travel_events.0004.b.failure
+				send_interface_toast = {
+					title = agot_travel_events.0004.b.failure
+					left_icon = root
+					add_prestige = medium_prestige_loss
+				}
+				hidden_effect = {
+					scope:drunk_knight = {
+						death = {
+							death_reason = death_disappearance
+						}
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 0.25
+				ai_rationality = 0.25
+			}
+			modifier = {
+				add = 20
+				has_trait = generous
+			}
+			modifier = {
+				add = 20
+				has_trait = trusting
+			}
+			modifier = {
+				add = -200
+				has_trait = paranoid
+			}
+		}
+	}
+
+	#Convince the knight its a terrible misunderstanding
+	option = {
+		name = agot_travel_events.0004.c
+
+		duel = {
+			skill = intrigue
+			target = scope:drunk_knight
+			#Your ruse is successful
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2.5
+					min = -49
+				}
+				desc = agot_travel_events.0004.c.success
+				send_interface_toast = {
+					title = agot_travel_events.0004.c.success
+					left_icon = root
+					desc = agot_travel_events.0004.c.success.tt
+				}
+			}
+			#He mocks you
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2.5
+					min = -49
+				}
+				desc = agot_travel_events.0004.c.failure
+				send_interface_toast = {
+					title = agot_travel_events.0004.c.failure
+					left_icon = root
+					add_prestige = medium_prestige_loss
+				}
+			}
+		}
+		hidden_effect = {
+			scope:drunk_knight = {
+				death = {
+					death_reason = death_disappearance
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = -0.5
+				ai_rationality = 0.25
+			}
+			modifier = {
+				add = 100
+				has_trait = craven
+			}
+			modifier = {
+				add = 50
+				has_trait = deceitful
+			}
+			modifier = {
+				add = 20
+				has_trait = shy
+			}
+			modifier = {
+				add = -50
+				has_trait = brave
+			}
+			modifier = {
+				add = -200
+				has_trait = wrathful
+			}
+		}
+	}
+}
+
+#Ironborn challenges you to a finger dance!
+agot_travel_events.0005 = {
+	title = agot_travel_events.0005.t
+	desc = agot_travel_events.0005.desc
+	type = character_event
+	theme = travel
+	override_background = {
+		reference = alley_night
+	}
+	right_portrait = {
+		character = scope:drunk_ironborn
+		animation = celebrate_axe
+	}
+
+	immediate = {
+		create_character = {
+			template = new_raider_character
+			location = root.location
+			culture = culture:ironborn
+			faith = faith:drowned_god
+			save_scope_as = drunk_ironborn
+			gender_female_chance = 0
+		}
+	}
+
+	#Accept, prowess challenge againt drunk ironborn
+	option = {
+		name = agot_travel_events.0005.a
+
+		stress_impact = {
+			base = medium_stress_impact_gain
+			brave = medium_stress_impact_loss
+			craven = major_stress_impact_gain
+			arrogant = minor_stress_impact_loss
+		}
+
+		duel = {
+			skill = prowess
+			target = scope:drunk_ironborn
+			#You win
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2
+					min = -49
+				}
+				desc = agot_travel_events.0005.success
+				send_interface_toast = {
+					title = agot_travel_events.0005.success
+					left_icon = root
+					add_character_modifier = {
+						modifier = agot_won_finger_dance
+						years = 5
+					}
+					add_gold = 50
+				}
+			}
+			#You lose...
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2
+					min = -49
+				}
+				desc = agot_travel_events.0005.failure
+				send_interface_toast = {
+					title = agot_travel_events.0005.failure
+					left_icon = root
+					remove_short_term_gold = 50
+					#... and the axe catches you!
+					random = {
+						chance = 30
+						increase_wounds_effect = { REASON = fight }
+					}
+					random = {
+						chance = 5
+						add_trait = maimed
+					}
+				}
+			}
+		}
+		hidden_effect = {
+			scope:drunk_ironborn = {
+				death = {
+					death_reason = death_disappearance
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 10
+			ai_value_modifier = {
+				ai_greed = 0.25
+				ai_energy = 0.25
+				ai_rationality = -1
+			}
+			modifier = {
+				add = 50
+				has_trait = brave
+			}
+			modifier = {
+				add = 30
+				has_trait = arrogant
+			}
+			modifier = {
+				add = -50
+				has_trait = paranoid
+			}
+			modifier = {
+				add = -200
+				has_trait = craven
+			}
+		}
+	}
+
+	#Accept, i'll take your axe instead!
+	option = {
+		name = agot_travel_events.0005.b
+
+		stress_impact = {
+			base = medium_stress_impact_gain
+			brave = medium_stress_impact_loss
+			craven = major_stress_impact_gain
+			arrogant = minor_stress_impact_loss
+		}
+
+		duel = {
+			skill = prowess
+			target = scope:drunk_ironborn
+			#You win
+			40 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2
+					min = -49
+				}
+				desc = agot_travel_events.0005.success
+				send_interface_toast = {
+					title = agot_travel_events.0005.success
+					left_icon = root
+					add_character_modifier = {
+						modifier = agot_won_finger_dance
+						years = 5
+					}
+					create_artifact = {
+						name = ironborn_axe
+						description = ironborn_axe_description
+						type = axe
+						visuals = axe
+						quality = 80
+						modifier = artifact_prowess_3_modifier
+						save_scope_as = ironborn_axe
+						history = {
+							type = given
+							actor = scope:drunk_ironborn
+							recipient = root
+							location = scope:drunk_ironborn.location
+						}
+					}
+				}
+			}
+			#You lose...
+			60 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2
+					min = -49
+				}
+				desc = agot_travel_events.0005.failure
+				send_interface_toast = {
+					title = agot_travel_events.0005.failure
+					left_icon = root
+					remove_short_term_gold = 50
+					#... and the axe catches you!
+					random = {
+						chance = 30
+						increase_wounds_effect = { REASON = fight }
+					}
+					random = {
+						chance = 5
+						add_trait = maimed
+					}
+				}
+			}
+		}
+		hidden_effect = {
+			scope:drunk_ironborn = {
+				death = {
+					death_reason = death_disappearance
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 10
+			ai_value_modifier = {
+				ai_greed = 0.5
+				ai_energy = 0.25
+				ai_rationality = -1
+			}
+			modifier = {
+				add = 50
+				has_trait = brave
+			}
+			modifier = {
+				add = 30
+				has_trait = arrogant
+			}
+			modifier = {
+				add = 20
+				has_trait = greedy
+			}
+			modifier = {
+				add = -200
+				has_trait = craven
+			}
+		}
+	}
+
+	#HAH! recruit as court fool
+	option = {
+		name = agot_travel_events.0005.c
+
+		trigger = {
+			can_employ_court_position_type = court_jester_court_position
+		}
+
+		stress_impact = {
+			arrogant = minor_stress_impact_loss
+			sadistic = minor_stress_impact_loss
+			humble = minor_stress_impact_loss
+			compassionate = medium_stress_impact_loss
+		}
+
+		random_list = {
+			95 = { #Offended
+				send_interface_toast = {
+					title = agot_travel_events.0005.c.failure
+					add_prestige = minor_prestige_loss
+					if = {
+						limit = {
+							NOT = { scope:drunk_ironborn.culture = root.culture }
+						}
+						root.culture = {
+							change_cultural_acceptance = {
+								target = scope:drunk_ironborn.culture
+								value = minor_cultural_acceptance_loss
+								desc = cultural_acceptance_mocked_customs
+							}
+						}
+					}
+				}
+				hidden_effect = {
+					scope:drunk_ironborn = {
+						death = {
+							death_reason = death_disappearance
+						}
+					}
+				}
+			}
+			5 = { #He... agrees?
+				send_interface_toast = {
+					title = agot_travel_events.0005.c.success
+					pay_short_term_gold = {
+						target = scope:drunk_ironborn
+						gold = 50
+					}
+					current_travel_plan = {
+						add_companion = scope:drunk_ironborn
+					}
+					appoint_court_position = {
+						recipient = scope:drunk_ironborn
+						court_position = court_jester_court_position
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_rationality = 0.5
+			}
+			modifier = {
+				add = 100
+				has_trait = rude
+			}
+			modifier = {
+				add = 30
+				has_trait = arrogant
+			}
+		}
+	}
+
+	#Ignore them
+	option = {
+		name = agot_travel_events.0005.d
+		custom_tooltip = agot_travel_events.0005.d.tt
+
+		stress_impact = {
+			brave = medium_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_rationality = 2
+				ai_boldness = -0.25
+			}
+			modifier = {
+				add = 200
+				has_trait = craven
+			}
+			modifier = {
+				add = 100
+				has_trait = rude
+			}
+		}
+	}
+}
+
+#[BAD PATH] Innkeeper asks for help against bandits
+agot_travel_events.0006 = {
+	title = agot_travel_events.0006.t
+	desc = agot_travel_events.0006.desc
+	type = character_event
+	theme = travel_danger
+	override_background = {
+		reference = sitting_room
+	}
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	right_portrait = {
+		character = scope:innkeeper
+		animation = worry
+	}
+
+	immediate = {
+		current_travel_plan = {
+			random_entourage_character = {
+				limit = {
+					OR = {
+						is_agot_knight_trigger = yes
+						is_knight = yes
+					}
+					intrigue >= 12
+				}
+				save_scope_as = fellow_knight
+			}
+		}
+	}
+
+	#Help defending the inn
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							AND = {
+								has_trait = brave
+								is_agot_knight_trigger = yes
+							}
+							NOR = {
+								has_trait = sadistic
+								has_trait = callous
+							}
+						}
+						desc = agot_travel_events.0006.a.brave
+					}
+					desc = agot_travel_events.0006.a
+				}
+
+			}
+		}
+		custom_tooltip = agot_travel_events.0006.a.tt
+		current_travel_plan = {
+			delay_travel_plan = { days = 5 }
+		}
+		hidden_effect = {
+			random_list = {
+				95= { #the inn is attacked
+					trigger_event = {
+						id = agot_travel_events.0007
+						days = 3
+					}
+				}
+				5 = { #the attack never comes
+					trigger_event = {
+						id = agot_travel_events.0011
+						days = 3
+					}
+				}
+			}
+		}
+
+		stress_impact = {
+			craven = medium_stress_impact_gain
+			paranoid = minor_stress_impact_gain
+			brave = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 1
+				ai_energy = 1
+				ai_honor = 0.5
+			}
+		}
+	}
+
+	#I could help, for the right sum
+	option = {
+		name = agot_travel_events.0006.b
+		trigger = {
+			OR = {
+				has_trait = greedy
+				has_trait = callous
+			}
+		}
+
+		stress_impact = {
+			compassionate = medium_stress_impact_gain
+			just = major_stress_impact_gain
+			craven = medium_stress_impact_gain
+			brave = minor_stress_impact_loss
+		}
+
+		duel = {
+			skill = diplomacy
+			target = scope:innkeeper
+			60 = {#WIN
+				desc = agot_travel_events.0006.b.success
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3
+					min = -49
+				}
+				current_travel_plan = {
+					delay_travel_plan = { days = 5 }
+				}
+				send_interface_toast = {
+					title = agot_travel_events.0006.b.success
+					left_icon = root
+					right_icon = scope:innkeeper
+					add_gold = 50
+					stress_impact = {
+						greedy = medium_stress_impact_loss
+					}
+				}
+				trigger_event = {
+					id = agot_travel_events.0007
+					days = 3
+				}
+				add_character_flag = inn_took_money
+			}
+			40 = {#FAIL
+				desc = agot_travel_events.0006.b.failure
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2
+					min = -49
+				}
+				send_interface_toast = {
+					title = agot_travel_events.0006.b.failure
+					left_icon = root
+					add_prestige = minor_prestige_loss
+					stress_impact = {
+						base = minor_stress_gain
+						gregarious = medium_stress_impact_gain
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 1
+				ai_energy = 0.5
+				ai_greed = 2
+				ai_honor = -0.5
+			}
+		}
+	}
+
+	#Leave the inn to its fate
+	option = {
+		name = agot_travel_events.0006.c
+
+		stress_impact = {
+			brave = medium_stress_impact_gain
+			compassionate = minor_stress_impact_gain
+			just = minor_stress_impact_gain
+			sadistic = minor_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 0.5
+				ai_energy = 0.25
+				ai_greed = 0.5
+				ai_honor = -0.5
+			}
+		}
+	}
+}
+
+#A knight/captain suggests an ambush...
+agot_travel_events.0007 = {
+	title = agot_travel_events.0007.t
+	desc = agot_travel_events.0007.desc
+	type = character_event
+	theme = intrigue
+	override_background = {
+		reference = alley_night
+	}
+	right_portrait = {
+		character = root
+		animation = personality_rational
+	}
+	left_portrait = {
+		character = scope:fellow_knight
+		animation = personality_bold
+	}
+
+	trigger = {
+		exists = scope:fellow_knight
+	}
+	on_trigger_fail = {
+		trigger_event = agot_travel_events.0008
+	}
+
+	#Too risky
+	option = {
+		name = agot_travel_events.0007.a
+		custom_tooltip = agot_travel_events.0007.a.tt
+		trigger_event = agot_travel_events.0008
+
+		stress_impact = {
+			deceitful = minor_stress_impact_gain
+			compassionate = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			ai_value_modifier = {
+				ai_boldness = 1
+				ai_honor = 1
+			}
+		}
+	}
+
+	#Accept
+	option = {
+		name = agot_travel_events.0007.b
+		custom_tooltip = agot_travel_events.0007.b.tt
+		trigger = {
+			scope:fellow_knight = {
+				intrigue >= 12
+			}
+		}
+
+		random_list = {
+			70 = { #the ambush is successful
+				custom_tooltip = agot_travel_events.0007.b.success
+
+				modifier = {
+					add = 20
+					scope:fellow_knight = {
+						has_trait = brave
+					}
+				}
+				modifier = {
+					add = 20
+					scope:fellow_knight = {
+						OR = {
+							has_trait = education_martial_prowess_3
+							has_trait = education_martial_prowess_4
+							has_trait = education_martial_prowess_5
+						}
+					}
+				}
+				modifier = {
+					add = 20
+					scope:fellow_knight = {
+						has_trait = forest_fighter
+					}
+				}
+				modifier = {
+					add = 20
+					scope:fellow_knight = {
+						has_trait = strategist
+					}
+				}
+				modifier = {
+					add = 20
+					scope:fellow_knight = {
+						has_trait = deceitful
+					}
+				}
+				modifier = {
+					add = 20
+					scope:fellow_knight = {
+						has_trait = deceitful
+					}
+				}
+				send_interface_toast = {
+					title = agot_travel_events.0007.b.success
+					left_icon = root
+					right_icon = scope:fellow_knight
+					add_prestige = minor_prestige_gain
+					scope:fellow_knight = {
+						if = {
+							limit = {
+								is_acclaimed = yes
+							}
+							accolade = {add_glory = minor_glory_gain}
+						}
+						add_prestige = 75
+					}
+				}
+				trigger_event = {
+					id = agot_travel_events.0010
+					days = 2
+				}
+			}
+			30 = { #the ambush is foiled
+				custom_tooltip = agot_travel_events.0007.b.fail
+				send_interface_toast = {
+					title = agot_travel_events.0007.b.fail
+					desc = agot_travel_events.0007.b.fail
+					left_icon = scope:fellow_knight
+					scope:fellow_knight = {
+						death = {
+							death_reason = death_disappearance
+						}
+					}
+				}
+				modifier = {
+					add = 20
+					scope:fellow_knight = {
+						has_trait = craven
+					}
+				}
+				modifier = {
+					add = 10
+					scope:fellow_knight = {
+						has_trait = impatient
+					}
+				}
+				modifier = {
+					add = 20
+					scope:fellow_knight = {
+						has_trait = education_martial_prowess_1
+					}
+				}
+				trigger_event = {
+					id = agot_travel_events.0008
+					days = 2
+				}
+			}
+		}
+
+		stress_impact = {
+			brave = minor_stress_impact_gain
+		}
+
+		ai_chance = {
+			base = 0
+			ai_value_modifier = {
+				ai_honor = -2
+				ai_energy = 0.5
+			}
+			modifier = {
+				add = 25
+				has_trait = deceitful
+			}
+			modifier = {
+				add = 25
+				has_trait = strategist
+			}
+		}
+	}
+}
+
+#The bandits appear
+agot_travel_events.0008 = {
+	title = agot_travel_events.0008.t
+	desc = agot_travel_events.0008.desc
+	type = character_event
+	theme = battle
+	override_background = {
+		reference = alley_night
+	}
+	left_portrait = {
+		character = root
+		animation = aggressive_sword
+	}
+	right_portrait = {
+		character = scope:evil_bandit
+		animation = anger
+	}
+
+	immediate = {
+		create_character = {
+			location = root.location
+			template = agot_hedgeknight_character
+			prowess = { 6 12 }
+			random_culture = {
+				culture:riverman_main = { }
+				culture:crownlander = { }
+				culture:stormlander_main = { }
+				culture:valeman_main = { }
+			}
+			save_scope_as = evil_bandit
+		}
+	}
+
+	#Challenge the leader to a duel!
+	option = {
+		name = agot_travel_events.0008.a
+		custom_tooltip = agot_travel_events.0008.a.tt
+
+		stress_impact = {
+			craven = major_stress_impact_gain
+			brave = major_stress_impact_loss
+		}
+		scope:evil_bandit = {
+			add_character_flag = challenged_to_duel
+		}
+		configure_start_single_combat_effect = {
+			SC_INITIATOR = root
+			SC_ATTACKER = root
+			SC_DEFENDER = scope:evil_bandit
+			FATALITY = always
+			FIXED = no
+			LOCALE = alley_night
+			OUTPUT_EVENT = agot_travel_events.0009
+			INVALIDATION_EVENT = fp1_tbc.0102
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+
+	#Face the bandits with your army
+	option = {
+		name = agot_travel_events.0008.b
+
+		stress_impact = {
+			craven = medium_stress_impact_gain
+			brave = medium_stress_impact_loss
+		}
+
+		duel = {
+			skill = martial
+			target = scope:evil_bandit
+			50 = {#WIN
+				desc = agot_travel_events.0008.b.success
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2
+					min = -49
+				}
+				send_interface_toast = {
+					title = agot_travel_events.0008.b.success
+					left_icon = root
+					right_icon = scope:innkeeper
+					scope:evil_bandit = {
+						death = {
+							death_reason = death_battle
+							killer = root
+						}
+					}
+				}
+				trigger_event = agot_travel_events.0010
+			}
+			50 = {#FAIL
+				desc = agot_travel_events.0008.b.failure
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2
+					min = -49
+				}
+				send_interface_toast = {
+					title = agot_travel_events.0008.b.failure
+					left_icon = root
+					add_prestige = minor_prestige_loss
+					hidden_effect = {
+						if = {
+							limit = { has_character_flag = inn_took_money }
+							remove_character_flag = inn_took_money
+						}
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	#Attempt to escape
+	option = {
+		name = agot_travel_events.0008.c
+
+		stress_impact = {
+			base = major_stress_impact_gain
+		}
+
+		random_list = {
+			66 = { #Successful escape
+				send_interface_toast = {
+					title = agot_travel_events.0008.c.escape
+					left_icon = root
+					add_prestige = medium_prestige_loss
+				}
+			}
+			33 = { #You escape but you take an arrow to the knee [WOUNDED]
+				send_interface_toast = {
+					title = agot_travel_events.0008.c.wounded
+					left_icon = root
+					increase_wounds_effect = { REASON = fight }
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 10
+			modifier = {
+				add = 200
+				has_trait = craven
+			}
+		}
+	}
+
+	after = {
+		hidden_effect = {
+			if = {
+				limit = {
+					scope:evil_bandit ?= {
+						is_alive = yes
+						NOT = {
+							has_character_flag = challenged_to_duel
+						}
+					}
+				}
+				scope:evil_bandit = {
+					death = {
+						death_reason = death_disappearance
+					}
+				}
+			}
+		}
+	}
+}
+
+#Post duel maintenance
+agot_travel_events.0009 = {
+
+	hidden = yes
+
+	immediate = {
+		# root died in duel
+		if = {
+			limit = { scope:sc_victor = scope:evil_bandit }
+			scope:evil_bandit = {
+				if = {
+					limit = { is_alive = yes }
+				}
+				death = {
+					death_reason = death_disappearance
+				}
+			}
+
+		}
+		# else, root won.
+		else = {
+			trigger_event = {
+				id = agot_travel_events.0010
+				days = 1
+			}
+		}
+	}
+}
+#[END] Bandits defeated - Inkeeper offers reward
+agot_travel_events.0010 = {
+	title = agot_travel_events.0010.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					has_character_flag = inn_took_money
+				}
+				desc = agot_travel_events.0010.greed_desc
+			}
+			desc = agot_travel_events.0010.desc
+		}
+	}
+	type = character_event
+	theme = friendly
+	override_background = {
+		reference = tavern
+	}
+	right_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	left_portrait = {
+		character = scope:innkeeper
+		animation = happiness
+	}
+
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							has_character_flag = inn_took_money
+						}
+						desc = agot_travel_events.0010.a
+					}
+					desc = agot_travel_events.0010.aa
+				}
+			}
+		}
+		custom_tooltip = agot_travel_events.0010.b.tt
+		if = {
+			limit = {
+				has_character_flag = inn_took_money
+			}
+			add_prestige = 100
+			hidden_effect = {
+				current_travel_plan = {
+					every_entourage_character = {
+						limit = {
+							NOR = {
+								has_trait = sadistic
+								has_trait = callous
+							}
+						}
+						add_opinion = {
+							modifier = respect_opinion
+							target = root
+							opinion = 10
+						}
+					}
+				}
+			}
+		}
+		else = {
+			add_prestige = 100
+			add_gold = 50
+			hidden_effect = {
+				current_travel_plan = {
+					every_entourage_character = {
+						limit = {
+							NOR = {
+								has_trait = sadistic
+								has_trait = callous
+							}
+						}
+						add_opinion = {
+							modifier = respect_opinion
+							target = root
+							opinion = 20
+						}
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_greed = 1
+			}
+		}
+
+	}
+	option = {
+		name = agot_travel_events.0010.b
+		trigger = {
+			is_agot_knight_trigger = yes
+			NOT = { has_character_flag = inn_took_money }
+		}
+		add_prestige = 150
+		add_piety = 100
+
+		add_character_modifier = {
+			modifier = agot_true_knight
+			years = 5
+		}
+		custom_tooltip = agot_travel_events.0010.b.tt
+		hidden_effect = {
+			current_travel_plan = {
+				every_entourage_character = {
+					limit = {
+						NOR = {
+							has_trait = sadistic
+							has_trait = callous
+						}
+					}
+					add_opinion = {
+						modifier = respect_opinion
+						target = root
+						opinion = 10
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_honor = 2
+				ai_zeal = 0.25
+			}
+		}
+	}
+
+	after = { #Clean up
+		if = {
+			limit = { has_character_flag = inn_took_money }
+			remove_character_flag = inn_took_money
+		}
+	}
+}
+
+#[END] The attack never comes
+agot_travel_events.0011 = {
+	title = agot_travel_events.0011.t
+	desc = {
+		desc = agot_travel_events.0011.desc.intro
+		first_valid = {
+			# Took payment?
+			triggered_desc = {
+				trigger = {
+					NOT = { has_character_flag = inn_took_money }
+				}
+				desc = agot_travel_events.0011.wasgreedy
+			}
+		}
+	}
+	type = character_event
+	theme = travel
+	override_background = {
+		reference = tavern
+	}
+	right_portrait = {
+		character = root
+	}
+	left_portrait = {
+		character = scope:innkeeper
+	}
+
+	option = {
+		name = agot_travel_events.0011.a
+		if = { #Already took money at the start
+			limit = { has_character_flag = inn_took_money }
+			add_prestige = 50
+		}
+		else = { #Else, innkeeper offers small reward for trouble
+			add_prestige = 75
+			add_gold = 25
+		}
+	}
+
+	#Clean-up
+	after = {
+		if = {
+			limit = { has_character_flag = inn_took_money }
+			remove_character_flag = inn_took_money
+		}
+	}
+}
+
+#Winterfell Start
+agot_travel_events.1000 = {
+	type = character_event
+	title = agot_travel_events.1000.t
+	desc = agot_travel_events.1000.desc
+	theme = travel
+	override_background = { reference = courtyard }
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+
+	trigger = {
+		location = province:77 #Winterfell
+		current_travel_plan.travel_plan_owner = root
+		is_landed = yes
+		is_location_valid_for_travel_event_on_land = yes #Should not be needed...
+		NOT = { location.county.holder = root } #If I own it then it does not make sense to visit it.
+		NOT = {
+			any_memory = { #Did I come here before?
+				has_memory_type = agot_memory_interesting_area_explored
+				has_variable = exploration_location
+				var:exploration_location = root.location
+			}
+		}
+	}
+
+	immediate = {
+		agot_debug_log_effect = { MSG = agot_debug_msg_travel_events_1000 }
+		play_music_cue = mx_cue_travel_arrival
+		location = { save_scope_as = city_province }
+		title:c_winterfell.holder = { save_scope_as = winterfell_lord }
+	}
+
+	option = {
+		name = agot_travel_events.1000.godswood
+
+		current_travel_plan = {
+			delay_travel_plan = {
+				days = 2
+			}
+		}
+
+		trigger_event = agot_travel_events.1001
+
+		stress_impact = {
+			lazy = medium_stress_impact_loss
+			calm = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				factor = 2
+				has_trait = lazy
+			}
+			modifier = {
+				factor = 2
+				has_trait = calm
+			}
+			modifier = {
+				factor = 4
+				religion = religion:the_pact_religion
+			}
+			modifier = {
+				factor = 4
+				religion = religion:the_pact_religion
+				has_trait = zealous
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.1000.tombs
+
+		current_travel_plan = {
+			delay_travel_plan = {
+				days = 2
+			}
+		}
+
+		hidden_effect = {
+			trigger_event = agot_travel_events.1004
+		}
+
+		stress_impact = {
+			humble = minor_stress_impact_loss
+			compassionate = minor_stress_impact_loss
+			craven = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				factor = 2
+				has_trait = humble
+			}
+			modifier = {
+				factor = 2
+				has_trait = compassionate
+			}
+			modifier = {
+				factor = 0
+				has_trait = craven
+			}
+			modifier = {
+				factor = 2
+				learning > 10
+			}
+			modifier = {
+				factor = 2
+				learning > 20
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.1000.glass_gardens
+
+		current_travel_plan = {
+			delay_travel_plan = {
+				days = 2
+			}
+		}
+
+		trigger_event = agot_travel_events.1008
+
+		stress_impact = {
+			diligent = minor_stress_impact_loss
+			lifestyle_herbalist = medium_stress_impact_loss
+			lifestyle_gardener = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				factor = 4
+				OR = {
+					has_trait = lifestyle_herbalist
+					has_trait = lifestyle_gardener
+				}
+			}
+			modifier = {
+				factor = 2
+				has_trait = diligent
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.1000.wintertown
+
+		trigger = {
+			is_adult = yes
+			NOT = { has_trait = celibate }
+		}
+
+		current_travel_plan = {
+			delay_travel_plan = {
+				days = 2
+			}
+		}
+
+		hidden_effect = {
+			create_character = {
+				template = brothel_character_template
+				location = root.location
+				save_scope_as = brothel_character
+			}
+		}
+
+		trigger_event = agot_travel_events.1009
+
+		stress_impact = {
+			lustful = medium_stress_impact_loss
+			rakish = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 25
+				has_trait = lustful
+			}
+			modifier = {
+				add = 25
+				has_trait = rakish
+			}
+			modifier = {
+				add = 25
+				has_trait = seducer
+			}
+			modifier = {
+				factor = 0
+				might_cheat_on_every_partner_trigger = no
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.1000.opt_out
+
+		#This one just opts out
+		#No travel time loss
+
+		stress_impact = {
+			lifestyle_traveler = minor_stress_impact_loss
+		}
+
+		ai_chance = {
+			base = 25
+		}
+	}
+
+	after = {
+		create_character_memory = {
+			type = agot_memory_interesting_area_explored
+		}
+		scope:new_memory = {
+			save_scope_as = exploration_memory
+		}
+		scope:exploration_memory = {
+			set_variable = {
+				name = exploration_location
+				value = scope:city_province
+			}
+		}
+	}
+}
+
+#Godswood
+agot_travel_events.1001 = {
+	title = agot_travel_events.1001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					religion = religion:the_pact_religion
+				}
+				desc = agot_travel_events.1001.intro_old_gods
+			}
+			desc = agot_travel_events.1001.intro_other
+		}
+		desc = agot_travel_events.1001.desc
+	}
+	type = character_event
+	theme = travel
+	override_background = {
+		reference = agot_weirwood_event
+	}
+
+	right_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_travel_events.1001.a
+		trigger_event = agot_travel_events.1002
+
+		if = {
+			limit = {
+				NOR = {
+					faith.religion = religion:the_pact_religion
+					faith = { has_doctrine = doctrine_pantheon_old_gods }
+					faith = { has_doctrine = doctrine_syncretism_the_pact }
+				}
+			}
+
+			stress_impact = {
+				zealous = medium_stress_impact_gain
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.1001.b
+		trigger_event = agot_travel_events.1003
+	}
+}
+
+#Godswood Heart Tree
+agot_travel_events.1002 = {
+	title = agot_travel_events.1002.t
+	desc = agot_travel_events.1002.desc
+	type = character_event
+	theme = travel
+	override_background = {
+		reference = agot_weirwood_event
+	}
+
+	right_portrait = {
+		character = root
+		animation = personality_zealous
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_travel_events.1002.a
+		trigger = {
+			NOT = { religion = religion:the_pact_religion }
+		}
+		set_character_faith = faith:old_gods_wnw
+
+		if = {
+			limit = {
+				NOR = {
+					faith = { has_doctrine = doctrine_pantheon_old_gods }
+					faith = { has_doctrine = doctrine_syncretism_the_pact }
+				}
+			}
+
+			stress_impact = {
+				zealous = medium_stress_impact_gain
+			}
+		}
+		else = {
+			stress_impact = {
+				zealous = major_stress_impact_gain
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.1002.b
+		trigger = {
+			NOT = { religion = religion:the_pact_religion }
+		}
+
+		stress_impact = {
+			base = medium_stress_impact_gain
+			zealous = minor_stress_impact_loss
+		}
+	}
+
+	option = {
+		name = agot_travel_events.1002.c
+		trigger = { religion = religion:the_pact_religion }
+		add_piety = medium_piety_gain
+	}
+}
+
+#Godswood Hot Springs
+agot_travel_events.1003 = {
+	title = agot_travel_events.1003.t
+	desc = agot_travel_events.1003.desc
+	type = character_event
+	theme = travel
+	override_background = {
+		reference = ep2_hunt_foggy_forest
+	}
+
+	right_portrait = {
+		character = root
+		animation = personality_content
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_travel_events.1003.a
+		add_stress = major_stress_loss
+	}
+}
+
+#Descend to crypts
+agot_travel_events.1004 = {
+	title = agot_travel_events.1004.t
+	desc = agot_travel_events.1004.desc
+	type = character_event
+	theme = travel
+	override_background = { reference = agot_underground }
+
+	right_portrait = {
+		character = root
+		animation = lantern
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_travel_events.1004.a
+		hidden_effect = {
+			random_list = {
+				499 = {
+					trigger_event = agot_travel_events.1005
+				}
+				1 = {
+					trigger = { game_start_date > 8129.6.1 }
+					modifier = {
+						factor = 0
+						has_global_variable = winterfell_dragon_egg_found
+					}
+					modifier = {
+						OR = {
+							dynasty = dynasty:dynn_Targaryen
+							dynasty = dynasty:dynn_Velaryon
+							dynasty = dynasty:dynn_Strong
+						}
+						add = 9
+					}
+
+					trigger_event = agot_travel_events.1007
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.1004.b
+		hidden_effect = {
+			random_list = {
+				499 = {
+					trigger_event = agot_travel_events.1005
+				}
+				1 = {
+					trigger = { game_start_date > 8129.6.1 }
+					modifier = {
+						factor = 0
+						has_global_variable = winterfell_dragon_egg_found
+					}
+					modifier = {
+						OR = {
+							dynasty = dynasty:dynn_Targaryen
+							dynasty = dynasty:dynn_Velaryon
+							dynasty = dynasty:dynn_Strong
+						}
+						add = 9
+					}
+
+					trigger_event = agot_travel_events.1007
+				}
+			}
+		}
+	}
+}
+
+#Crypts/Pay respects
+agot_travel_events.1005 = {
+	title = agot_travel_events.1005.t
+	desc = {
+		desc = agot_travel_events.1005.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:stark_ancestor = character:Stark_18
+				}
+				desc = agot_travel_events.1005.jon
+			}
+			triggered_desc = {
+				trigger = {
+					scope:stark_ancestor = character:Stark_15
+				}
+				desc = agot_travel_events.1005.brandon
+			}
+			triggered_desc = {
+				trigger = {
+					scope:stark_ancestor = character:Stark_21
+				}
+				desc = agot_travel_events.1005.theon
+			}
+			triggered_desc = {
+				trigger = {
+					scope:stark_ancestor = character:Stark_35
+				}
+				desc = agot_travel_events.1005.rodrik
+			}
+		}
+	}
+	type = character_event
+	theme = travel
+	override_background = { reference = agot_underground }
+
+	right_portrait = {
+		character = root
+		animation = personality_honorable
+	}
+
+	lower_left_portrait = {
+		character = scope:stark_ancestor
+	}
+
+	immediate = {
+		random_list = {
+			25 = {
+				character:Stark_18 = { save_scope_as = stark_ancestor }
+			}
+			25 = {
+				character:Stark_15 = { save_scope_as = stark_ancestor }
+			}
+			25 = {
+				character:Stark_21 = { save_scope_as = stark_ancestor }
+			}
+			25 = {
+				character:Stark_35 = { save_scope_as = stark_ancestor }
+			}
+		}
+
+	}
+
+	option = {
+		name = agot_travel_events.1005.a
+		trigger_event = agot_travel_events.1006
+		add_character_modifier = {
+			modifier = agot_visited_crypts
+			years = 1
+		}
+	}
+}
+
+#Crypts/Return
+agot_travel_events.1006 = {
+	title = agot_travel_events.1006.t
+	desc = agot_travel_events.1006.desc
+	type = character_event
+	theme = travel
+	override_background = { reference = agot_underground }
+
+	right_portrait = {
+		character = root
+	}
+
+	option = {
+		name = agot_travel_events.1006.a
+	}
+}
+
+#Crypts/Dragon Egg
+agot_travel_events.1007 = {
+	title = agot_travel_events.1007.t
+	desc = agot_travel_events.1007.desc
+	type = character_event
+	theme = travel
+	override_background = { reference = agot_underground }
+
+	right_portrait = {
+		character = root
+		animation = ecstasy
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_travel_events.1007.a
+		ai_chance = 0
+	}
+
+	option = {
+		name = agot_travel_events.1007.b
+		ai_chance = 100
+		set_global_variable = winterfell_dragon_egg_found
+		character:dragon_vermax = { save_scope_as = dragon_parent }
+		create_artifact_dragon_egg_icefire_effect = { OWNER = root }
+	}
+}
+
+#Glass Gardens
+agot_travel_events.1008 = {
+	title = agot_travel_events.1008.t
+	desc = agot_travel_events.1008.desc
+	type = character_event
+	theme = travel
+	override_background = { reference = garden }
+
+	right_portrait = {
+		character = root
+		animation = ecstasy
+	}
+
+	option = {
+		name = agot_travel_events.1008.a
+		trigger = {
+			NOT = { has_character_flag = unlocked_glass_garden }
+		}
+		add_character_flag = unlocked_glass_garden
+		custom_tooltip = agot_travel_events_unlocked_glass_garden
+	}
+
+	option = {
+		name = agot_travel_events.1008.b
+		agot_create_artifact_winter_rose_effect = { OWNER = root }
+	}
+
+	option = {
+		name = agot_travel_events.1008.c
+		add_stress = medium_stress_loss
+	}
+}
+
+#Visit brothel
+agot_travel_events.1009 = {
+	title = agot_travel_events.1009.t
+	desc = agot_travel_events.1009.desc
+	type = character_event
+	theme = travel
+	override_background = {
+		reference = tavern
+	}
+	left_portrait = {
+		character = root
+		animation = flirtation_left
+	}
+	right_portrait = {
+		character = scope:brothel_character
+		animation = love
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_travel_events.1009.a
+		had_sex_with_effect = {
+			CHARACTER = scope:brothel_character
+			PREGNANCY_CHANCE = seduce_pregnancy_chance
+		}
+
+		remove_short_term_gold = medium_gold_value
+
+		hidden_effect = {
+			random_list = {
+				50 = {}
+				50 = { add_trait = lovers_pox }
+			}
+		}
+
+		stress_impact = {
+			lustful = major_stress_impact_loss
+			rakish = major_stress_impact_loss
+			seducer = major_stress_impact_loss
+			chaste = major_stress_impact_gain
+			just = major_stress_impact_gain
+		}
+
+		ai_chance = 100
+	}
+
+	option = {
+		name = agot_travel_events.1009.b
+
+		hidden_effect = {
+			random_list = {
+				90 = {}
+				10 = {
+					add_trait = drunkard
+					modifier = {
+						factor = 5
+						has_character_modifier = patron_drunken_god_modifier
+					}
+				}
+			}
+		}
+
+		stress_impact = {
+			gregarious = major_stress_impact_loss
+			lustful = medium_stress_impact_gain
+			rakish = medium_stress_impact_gain
+			seducer = medium_stress_impact_gain
+		}
+
+		ai_chance = 0
+	}
+}
+
+# A Dragon, I saw a dragon!
+agot_travel_events.0012 = {
+	title = agot_travel_events.0012.t
+	desc = agot_travel_events.0012.desc
+	type = character_event
+	theme = travel
+	override_background = {
+		reference = alley_day
+	}
+	right_portrait = {
+		character = root
+		animation = eavesdrop
+	}
+
+	immediate = {
+		location = {
+			save_scope_as = location
+		}
+		stress_impact = {
+			craven = medium_stress_gain
+		}
+	}
+
+	trigger = {
+		agot_dragon_population_extinct = yes
+	}
+
+	cooldown = { years = 100 }
+
+	option = { # A dragon? We shall search for it at once!
+		name = agot_travel_events.0012.a
+		flavor = agot_travel_events.0012.a.f
+
+		ai_chance = {
+			base = 30
+			ai_value_modifier = {
+				ai_energy = 0.2
+				ai_honor = 0.2
+				ai_rationality = -0.3
+			}
+		}
+
+		current_travel_plan = { delay_travel_plan = { days = 7 } }
+		stress_impact = {
+			base = minor_stress_impact_loss # Feels a bit reasured
+			craven = minor_stress_impact_gain # Feels a bit more scared to go looking
+			brave = minor_stress_impact_loss # Wants to find the dragon
+			paranoid = minor_stress_impact_loss # Feels better checking
+		}
+		hidden_effect = {
+			send_interface_toast = {
+				title = agot_travel_events.0012.a.toast.title
+				custom_tooltip = agot_travel_events.0012.a.toast.desc
+				stress_impact = {
+					craven = medium_stress_impact_loss # Feels better after not finding it
+					fire_obsessed = medium_stress_impact_gain # Wanted to find dragon
+				}
+			}
+		}
+	}
+
+	option = { # Oh you poor dear, let me pay for some help
+		name = agot_travel_events.0012.b
+		flavor = agot_travel_events.0012.b.f
+
+		trigger = {
+			NOT = { has_trait = lunatic_1 }
+			NOT = { has_trait = lunatic_genetic }
+			NOT = { has_trait = eccentric }
+		}
+
+		ai_chance = {
+			base = 30
+			ai_value_modifier = {
+				ai_greed = -0.3
+				ai_honor = 0.3
+			}
+			modifier = {
+				gold < minor_gold_value
+				add = -999
+			}
+			modifier = {
+				gold > massive_gold_value
+				NOT = { has_trait = greedy }
+				add = 40
+			}
+		}
+
+		remove_short_term_gold = minor_gold_value
+		stress_impact = {
+			base = minor_stress_impact_loss
+			compassionate = minor_stress_impact_loss
+			generous = minor_stress_impact_loss
+			improvident = minor_stress_impact_loss
+			greedy = medium_stress_impact_gain
+		}
+	}
+
+	option = { # What a strange woman
+		name = agot_travel_events.0012.c
+		flavor = agot_travel_events.0012.c.f
+
+		ai_chance = {
+			base = 30
+			ai_value_modifier = {
+				ai_compassion = -0.3
+				ai_honor = -0.3
+				ai_rationality = 0.1
+			}
+			modifier = {
+				OR = {
+					has_trait = compassionate
+					has_trait = generous
+					has_trait = improvident
+				}
+				add = -30
+			}
+		}
+
+		stress_impact = {
+			compassionate = minor_stress_impact_gain
+			generous = minor_stress_impact_gain
+			improvident = minor_stress_impact_gain
+		}
+	}
+
+	option = { # Oh yes! I've seen them too!
+		name = agot_travel_events.0012.d
+		flavor = agot_travel_events.0012.d.f
+		trigger = {
+			OR = {
+				has_trait = lunatic_1
+				has_trait = lunatic_genetic
+				has_trait = eccentric
+			}
+		}
+
+		ai_chance = {
+			base = 80
+			ai_value_modifier = {
+				ai_rationality = -0.8
+			}
+		}
+
+		add_stress = major_stress_loss
+		location.county = {
+			add_county_modifier = {
+				modifier = agot_rumors_of_dragons
+				years = 2
+			}
+		}
+	}
+}
+
+# Visit the Myr Scholastic Guilds
+agot_travel_events.0013 = {
+	title = agot_travel_events.0013.t
+	desc = agot_travel_events.0013.desc
+	type = character_event
+	theme = travel
+	override_background = {
+		reference = alley_day
+	}
+	right_portrait = {
+		character = root
+		animation = idle
+	}
+	left_portrait = {
+		character = scope:the_scholar
+		animation = admiration
+	}
+
+	trigger = {
+		location = province:7559 #Myr
+		current_travel_plan.travel_plan_owner = root
+		is_landed = yes
+		is_location_valid_for_travel_event_on_land = yes #Should not be needed...
+		NOT = { location.county.holder = root } #If I own it then it does not make sense to visit it.
+		NOT = {
+			has_character_flag = agot_visited_myr_flag
+		}
+	}
+
+	immediate = {
+		agot_debug_log_effect = { MSG = agot_debug_msg_travel_events_0013 }
+		create_character = {
+			gender = male
+			location = province:7556
+			faith = province:7556.faith #Myr
+			culture = province:7556.culture
+			age = { 40 55 }
+			random_traits_list = {
+				count = 1
+				education_learning_2 = {}
+				education_learning_3 = {}
+				education_learning_4 = {}
+			}
+			random_traits_list = {
+				count = { 0 1 }
+				intellect_good_1 = {}
+				intellect_good_2 = {}
+				intellect_good_3 = {}
+			}
+			trait = scholar
+			save_scope_as = the_scholar
+		}
+	}
+
+	option = {				 # I could invite some scholars to my city.
+		name = agot_travel_events.0013.a
+		trigger = {
+			NOT = {
+				has_character_flag = unlocked_observatory
+			}
+		}
+		remove_short_term_gold = 300
+		add_character_flag = unlocked_observatory
+		custom_tooltip = agot_travel_events_unlocked_observatory
+		add_character_modifier = {
+			modifier = agot_invite_scholars
+			years = 10
+		}
+		current_travel_plan = { delay_travel_plan = { days = 15 } }
+		ai_chance = {
+			base = 10
+			modifier = {
+				add = 10
+				gold > 300
+			}
+			modifier = {
+				add = 20
+				gold > 300
+			}
+			modifier = {
+				factor = 0
+				highest_held_title_tier = tier_county
+			}
+		}
+	}
+
+	option = {				# Stop and discuss it with them.
+		name = agot_travel_events.0013.b
+		add_character_modifier = {
+			modifier = agot_discuss_scholars
+			years = 3
+		}
+		current_travel_plan = { delay_travel_plan = { days = 5 } }
+		ai_chance = {
+			base = 20
+			modifier = {
+				add = 10
+				has_trait = scholar
+			}
+			modifier = {
+				add = 10
+				learning >= 15
+			}
+		}
+	}
+
+	option = { 				# I will continue on my way.
+		name = agot_travel_events.0013.c
+		ai_chance = {
+			base = 50
+		}
+	}
+
+	after = {
+		scope:the_scholar = {
+			silent_disappearance_effect = yes
+		}
+		add_character_flag = { # Prevent the event fire frequently
+			flag = agot_visited_myr_flag
+			years = 5
+		}
+	}
+}
+
+##############################
+# Real Dragon Events
+##############################
+agot_travel_events.2000 = { #Dragon Ambush
+	type = character_event
+	window = agot_dragon_character_event
+	title = agot_travel_events.2000.t
+	desc = agot_travel_events.2000.desc
+	theme = travel
+
+	cooldown = { years = 25 }
+	right_portrait = {
+		trigger = {
+			exists = scope:wild_dragon
+		}
+		character = scope:wild_dragon
+		animation = dragon_main
+		camera = camera_dragonrider_normal_event
+		outfit_tags = { linear_camera_zoom }
+		#Add this so dragon fits within event window
+	}
+
+	left_portrait = {
+		character = root
+		animation = fear
+	}
+
+	trigger = {
+		NOT = { has_character_flag = in_dragon_combat }
+
+		current_travel_plan.travel_plan_owner = root
+		is_landed = yes
+		exists = location.county
+		is_location_valid_for_travel_event_on_land = yes #Should not be needed...
+		NOT = { location.county.holder = root } #If I own it then it does not make sense to visit it.
+
+		any_in_global_list = {
+			variable = living_dragons
+			exists = location.county
+			location.county = root.location.county
+			dragon_size >= dragon_taming_minimum_size
+			NOR = {
+				has_character_flag = owned_dragon
+				has_character_flag = in_dragon_combat
+			}
+
+			NOR = { # Dragon is not badly wounded
+				has_trait = dragon_wounded_3
+				has_trait = dragon_wounded_4
+				has_trait = dragon_wounded_5
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = {
+			factor = 1
+			any_in_global_list = {
+				variable = living_dragons
+				exists = location.county
+				location.county = root.location.county
+				dragon_size >= dragon_taming_minimum_size
+				NOR = {
+					has_character_flag = owned_dragon
+					has_character_flag = in_dragon_combat
+				}
+
+				NOR = { # Dragon is not badly wounded
+					has_trait = dragon_wounded_3
+					has_trait = dragon_wounded_4
+					has_trait = dragon_wounded_5
+				}
+				save_temporary_scope_as = wild_dragon
+			}
+		}
+
+		modifier = {
+			factor = 0.5
+			OR = {
+				scope:wild_dragon = {
+					has_trait = dragon_friendly
+					has_trait = dragon_solitary
+					has_trait = dragon_skittish
+					has_trait = dragon_restrained
+				}
+			}
+		}
+		modifier = {
+			factor = 2
+			OR = {
+				scope:wild_dragon = {
+					has_trait = dragon_bloodthirsty
+					has_trait = dragon_aggressive
+					has_trait = dragon_voracious
+				}
+			}
+		}
+	}
+
+	immediate = {
+		random_in_global_list = {
+			variable = living_dragons
+			limit = {
+				location.county = root.location.county
+				dragon_size >= dragon_taming_minimum_size
+				NOT = {
+					has_character_flag = owned_dragon
+					has_character_flag = in_dragon_combat
+				}
+
+				NOR = { # Dragon is not badly wounded
+					has_trait = dragon_wounded_3
+					has_trait = dragon_wounded_4
+					has_trait = dragon_wounded_5
+				}
+			}
+			save_scope_as = wild_dragon
+			agot_set_dragon_animation_flag_effect = { FLAG = dragon_flying RIDING_DRAGON = no }
+		}
+
+
+		scope:wild_dragon.location = {
+			save_scope_as = wild_dragon_location
+		}
+		location = {
+			save_scope_as = background_wilderness_scope
+			save_scope_as = location
+		}
+		agot_ds_compare_skills_effect = { DRAGON = scope:wild_dragon HUMAN = root }
+	}
+
+	option = {
+		trigger = {
+			NOT = { has_trait = craven }
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+		}
+		name = agot_travel_events.2000.fight
+		custom_tooltip = agot_travel_events.2000.fight.tt
+		agot_configure_start_dragon_slay_effect = {
+			INITIATOR = scope:wild_dragon
+			HUMAN = root
+			DRAGON = scope:wild_dragon
+			PROXIMITY = 2
+			LOCALE = wilderness_scope
+			INVALIDATION_EVENT = single_combat.1006
+		}
+
+		ai_chance = { # Maximum this is reasonably about 55, so 1/3 chance of confrontation
+			base = 0
+			modifier = {
+				add = {
+					value = prowess
+					multiply = 0.5
+				}
+			}
+			ai_value_modifier = {
+				ai_boldness = 0.1
+			}
+			modifier = {
+				has_trait = dragonslayer
+				add = 25
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.2000.run
+		random_list = {
+			20 = { # Unscathed
+				custom_tooltip = agot_dragon_slaying_events.0100.tt.unscathed
+				# Full boar and into the abyss
+				modifier = {
+					add = -2
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 1
+							scope:human.var:ds_combat_difference = 2
+						}
+					}
+				}
+				modifier = {
+					add = -4
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 3
+							scope:human.var:ds_combat_difference = 4
+						}
+					}
+				}
+				modifier = {
+					add = -6
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 5
+							scope:human.var:ds_combat_difference = 6
+						}
+					}
+				}
+				modifier = {
+					add = -8
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 7
+							scope:human.var:ds_combat_difference = 8
+						}
+					}
+				}
+				modifier = { # You're boned
+					add = -10
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 9
+							scope:human.var:ds_combat_difference = 10
+						}
+					}
+				}
+
+				# Increase chances of no consequences
+				modifier = {
+					add = 5
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -1
+							scope:human.var:ds_combat_difference = -2
+						}
+					}
+				}
+				modifier = {
+					add = 10
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -3
+							scope:human.var:ds_combat_difference = -4
+						}
+					}
+				}
+				modifier = {
+					add = 15
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -5
+							scope:human.var:ds_combat_difference = -6
+						}
+					}
+				}
+				modifier = {
+					add = 20
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -7
+							scope:human.var:ds_combat_difference = -8
+						}
+					}
+				}
+				modifier = {
+					add = 25
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -9
+							scope:human.var:ds_combat_difference = -10
+						}
+					}
+				}
+			}
+			35 = { # Burns but live - unless this tops your burns
+				custom_tooltip = {
+					text = agot_dragon_slaying_events.0100.tt.burn_major
+					agot_burn_effect = { MIN = 30 MAX = 60 }
+				}
+				# Probably not necessary, just doing this to balance at 100
+				modifier = { # The minus shouldn't alarm, this is just a full burn now :)
+					add = -3
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 1
+							scope:human.var:ds_combat_difference = 2
+						}
+					}
+				}
+				modifier = {
+					add = -6
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 3
+							scope:human.var:ds_combat_difference = 4
+						}
+					}
+				}
+				modifier = {
+					add = -9
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 5
+							scope:human.var:ds_combat_difference = 6
+						}
+					}
+				}
+				modifier = {
+					add = -12
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 7
+							scope:human.var:ds_combat_difference = 8
+						}
+					}
+				}
+				modifier = {
+					add = -15
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 9
+							scope:human.var:ds_combat_difference = 10
+						}
+					}
+				}
+				# The chances of "minor" burns I guess will stay the same for good skill
+			}
+			45 = { # Full burn, death
+				custom_tooltip = {
+					text = agot_dragon_slaying_events.0100.tt.burn_death
+					agot_burn_effect = { MIN = 100 MAX = 100 }
+				}
+				modifier = {
+					add = 5
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 1
+							scope:human.var:ds_combat_difference = 2
+						}
+					}
+				}
+				modifier = {
+					add = 10
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 3
+							scope:human.var:ds_combat_difference = 4
+						}
+					}
+				}
+				modifier = {
+					add = 15
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 5
+							scope:human.var:ds_combat_difference = 6
+						}
+					}
+				}
+				modifier = {
+					add = 20
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 7
+							scope:human.var:ds_combat_difference = 8
+						}
+					}
+				}
+				modifier = {
+					add = 25
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = 9
+							scope:human.var:ds_combat_difference = 10
+						}
+					}
+				}
+
+				# For the human, decrease chance of burning to death
+				modifier = {
+					add = -5
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -1
+							scope:human.var:ds_combat_difference = -2
+						}
+					}
+				}
+				modifier = {
+					add = -10
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -3
+							scope:human.var:ds_combat_difference = -4
+						}
+					}
+				}
+				modifier = {
+					add = -15
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -5
+							scope:human.var:ds_combat_difference = -6
+						}
+					}
+				}
+				modifier = {
+					add = -20
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -7
+							scope:human.var:ds_combat_difference = -8
+						}
+					}
+				}
+				modifier = {
+					add = -25
+					trigger = {
+						OR = {
+							scope:human.var:ds_combat_difference = -9
+							scope:human.var:ds_combat_difference = -10
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_trait_xp = {
+					trait = burned
+					value >= 100
+				}
+			}
+
+			death = {
+				death_reason = death_dragon_fire
+				killer = scope:dragon
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	after = {
+		scope:dragon = { agot_clear_dragon_animation_flags = yes }
+	}
+}
+
+###################
+# Warband Tryouts #
+###################
+
+agot_travel_events.3000 = {
+	type = character_event
+	title = agot_travel_events.3000.t
+	desc = {
+		desc = agot_travel_events.3000.desc
+		triggered_desc = {
+			trigger = {
+				NOT = {
+					culture = { agot_is_wildling_culture = yes }
+				}
+			}
+			desc = agot_travel_events.3000.kneeler.desc
+		}
+	}
+
+	theme = travel
+
+	override_background = {
+		reference = fp1_runestone_circle
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+
+	right_portrait = {
+		character = scope:3000_county_liege
+		animation = war_defender
+	}
+	trigger = {
+		is_available_travelling = yes
+		is_location_valid_for_travel_event_on_land = yes
+		location = {
+			geographical_region = world_westeros_beyond_the_wall
+		}
+		AND = {
+			exists = scope:3000_county_liege
+			scope:3000_county_liege = {
+				culture = {
+					agot_is_wildling_culture = yes
+				}
+			}
+		}
+	}
+
+	cooldown = { months = 36 }
+
+	weight_multiplier = { base = 2 }
+
+	immediate = {
+		location = {
+			save_scope_as = location
+		}
+
+		create_character = {
+			template = skilled_fighter_character
+			culture = location.county.culture
+			faith = location.county.faith
+			dynasty = none
+			location = root.location
+			gender_female_chance = 15
+			save_scope_as = skilled_fighter
+		}
+
+		create_character = {
+			template = fit_fighter_character
+			culture = location.county.culture
+			faith = location.county.faith
+			dynasty = none
+			location = root.location
+			gender_female_chance = 15
+			save_scope_as = fit_fighter
+		}
+
+		create_character = {
+			template = big_fighter_character
+			culture = location.county.culture
+			faith = location.county.faith
+			dynasty = none
+			location = root.location
+			gender_female_chance = 15
+			save_scope_as = big_fighter
+		}
+
+		scope:skilled_fighter = {
+			add_to_list = tryouts_contestants
+		}
+		scope:fit_fighter = {
+			add_to_list = tryouts_contestants
+		}
+		scope:big_fighter = {
+			add_to_list = tryouts_contestants
+		}
+
+		location.county.holder = {
+			if = {
+				limit = {
+					NOT = { this = root }
+				}
+				save_scope_as = 3000_county_liege
+			}
+		}
+	}
+
+	option = { #poach candidates because you're more prestigious
+		name = agot_travel_events.3000.a
+		custom_tooltip = agot_travel_events.3000.a.tt
+		trigger = {
+			culture = {
+				agot_is_wildling_culture = yes
+			}
+			AND = {
+				prestige_level >= 3
+				scope:3000_county_liege = { prestige_level < 3 }
+			}
+		}
+		trigger_event = {
+			id = agot_travel_events.3001
+		}
+		scope:3000_county_liege = {
+			add_opinion = {
+				modifier = insulted_opinion
+				opinion = -20
+				target = root
+			}
+		}
+		stress_impact = {
+			ambitious = minor_stress_impact_loss
+			arrogant = minor_stress_impact_loss
+			humble = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = 33
+				has_trait = ambitious
+			}
+			modifier = {
+				add = 33
+				has_trait = arrogant
+			}
+			modifier = {
+				add = -33
+				has_trait = humble
+			}
+			modifier = {
+				add = -33
+				has_trait = content
+			}
+		}
+	}
+
+	option = { #convince local chief to let you poach someone
+		name = agot_travel_events.3000.b
+		custom_tooltip = agot_travel_events.3000.b.tt
+		trigger = {
+			root.culture = {
+				agot_is_wildling_culture = yes
+			}
+			NAND = {
+				prestige_level > 3
+				scope:3000_county_liege = { prestige_level < 3 }
+			}
+		}
+
+		duel = {
+			skill = diplomacy
+			target = scope:3000_county_liege
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				custom_tooltip = agot_travel_events.3000.b.success.tt
+				trigger_event = {
+					id = agot_travel_events.3001
+				}
+			}
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				custom_tooltip = agot_travel_events.3000.b.failure.tt
+				add_prestige = major_prestige_loss
+				scope:3000_county_liege = {
+					add_opinion = {
+						modifier = insulted_opinion
+						opinion = -20
+						target = root
+					}
+				}
+			}
+		}
+		stress_impact = {
+			ambitious = minor_stress_impact_loss
+			arrogant = minor_stress_impact_loss
+			humble = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = 33
+				has_trait = ambitious
+			}
+			modifier = {
+				add = 33
+				has_trait = arrogant
+			}
+			modifier = {
+				add = -33
+				has_trait = humble
+			}
+			modifier = {
+				add = -33
+				has_trait = content
+			}
+		}
+	}
+
+	option = { #compete in the tryouts
+		name = agot_travel_events.3000.c
+		custom_tooltip = agot_travel_events.3000.c.tt
+
+
+		trigger_event = {
+			id = agot_travel_events.3010
+		}
+
+		stress_impact = {
+			brave = medium_stress_impact_loss
+			craven = massive_stress_impact_gain
+		}
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = -100
+				has_trait = craven
+			}
+			modifier = {
+				add = 67
+				has_trait = brave
+			}
+		}
+	}
+
+	option = { #walk away
+		name = agot_travel_events.3000.d
+		custom_tooltip = agot_travel_events.3000.d.tt
+		add_prestige = minor_prestige_loss
+		stress_impact = {
+			brave = medium_stress_impact_gain
+			ambitious = medium_stress_impact_gain
+			content = medium_stress_impact_loss
+			lazy = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 33
+			modifier = {
+				add = 33
+				has_trait = content
+			}
+			modifier = {
+				add = 33
+				has_trait = lazy
+			}
+			modifier = {
+				add = -33
+				has_trait = ambitious
+			}
+			modifier = {
+				add = -33
+				has_trait = brave
+			}
+		}
+	}
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}
+
+agot_travel_events.3001 = {
+	type = character_event
+	title = agot_travel_events.3001.t
+	desc = agot_travel_events.3001.desc
+	theme = travel
+
+	override_background = {
+		reference = fp1_runestone_circle
+	}
+
+	left_portrait = {
+		character = root
+		animation = scheme
+	}
+
+	right_portrait = {
+		character = scope:3000_county_liege
+		animation = boredom
+	}
+
+	lower_left_portrait = {
+		character = scope:skilled_fighter
+	}
+
+	lower_center_portrait = {
+		character = scope:fit_fighter
+	}
+
+	lower_right_portrait = {
+		character = scope:big_fighter
+	}
+
+	option = { #let the best man win
+		name = agot_travel_events.3001.a
+		custom_tooltip = agot_travel_events.3001.a.tt
+		trigger_event = {
+			id = agot_travel_events.3002
+		}
+	}
+
+	option = { #I already know who to pick
+		name = agot_travel_events.3001.b
+		custom_tooltip = agot_travel_events.3001.b.tt
+		trigger_event = {
+			id = agot_travel_events.3003
+		}
+	}
+}
+
+agot_travel_events.3002 = {
+	type = character_event
+	title = agot_travel_events.3002.t
+	desc = agot_travel_events.3002.desc
+	theme = travel
+
+	override_background = {
+		reference = fp1_runestone_circle
+	}
+
+	left_portrait = {
+		character = root
+		animation = throne_room_applaud_1
+	}
+
+	right_portrait = {
+		character = scope:tryouts_winner
+		animation = celebrate_sword
+	}
+
+	immediate = {
+		ordered_in_list = {
+			list = tryouts_contestants
+			order_by = prowess
+			position = 0
+			save_scope_as = tryouts_winner
+		}
+	}
+
+	option = {
+		name = agot_travel_events.3002.a
+		add_courtier = scope:tryouts_winner
+		root.current_travel_plan = {
+			add_companion = scope:tryouts_winner
+		}
+	}
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}
+
+agot_travel_events.3003 = {
+	type = character_event
+	title = agot_travel_events.3003.t
+	desc = agot_travel_events.3003.desc
+	theme = travel
+
+	override_background = {
+		reference = fp1_runestone_circle
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+
+	lower_left_portrait = {
+		character = scope:skilled_fighter
+	}
+
+	lower_center_portrait = {
+		character = scope:fit_fighter
+	}
+
+	lower_right_portrait = {
+		character = scope:big_fighter
+	}
+
+	option = {
+		name = agot_travel_events.3003.a
+		add_courtier = scope:skilled_fighter
+		root.current_travel_plan = {
+			add_companion = scope:skilled_fighter
+		}
+		hidden_effect = {
+			scope:big_fighter = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+			scope:fit_fighter = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_travel_events.3003.b
+		add_courtier = scope:fit_fighter
+		root.current_travel_plan = {
+			add_companion = scope:fit_fighter
+		}
+		hidden_effect = {
+			scope:big_fighter = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+			scope:skilled_fighter = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.3003.c
+		add_courtier = scope:big_fighter
+		root.current_travel_plan = {
+			add_companion = scope:big_fighter
+		}
+		hidden_effect = {
+			scope:fit_fighter = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+			scope:skilled_fighter = {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+		}
+	}
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}
+
+agot_travel_events.3010 = { #string of duels, relevant files: common\scripted_effects\00_single_combat_effects.txt, events\single_combat_events.txt
+	type = character_event
+	title = agot_travel_events.3010.t
+	desc = agot_travel_events.3010.desc
+	theme = travel
+
+	override_background = {
+		reference = fp1_runestone_circle
+	}
+
+	left_portrait = {
+		character = root
+		scripted_animation = duel_wield_weapon
+	}
+	right_portrait = {
+		character = scope:first_duelist
+		scripted_animation = duel_wield_weapon
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_combat_stinger"
+		ordered_in_list = {
+			list = tryouts_contestants
+			order_by = prowess
+			position = 0
+			save_scope_as = first_duelist
+		}
+		random_in_list = {
+			limit = {
+				NOT = { this = scope:first_duelist }
+			}
+			list = tryouts_contestants
+			save_scope_as = second_duelist
+		}
+		random_in_list = {
+			limit = {
+				NOR = {
+					this = scope:first_duelist
+					this = scope:second_duelist
+				}
+			}
+			list = tryouts_contestants
+			save_scope_as = third_duelist
+		}
+	}
+
+	option = {
+		name = agot_travel_events.3010.a
+		custom_tooltip = agot_travel_events.3010.a.tt
+
+		configure_start_single_combat_effect = {
+			SC_INITIATOR = root
+			SC_ATTACKER = root
+			SC_DEFENDER = scope:first_duelist
+			FATALITY = no
+			FIXED = no
+			LOCALE = terrain_scope
+			OUTPUT_EVENT = agot_travel_events.3011
+			INVALIDATION_EVENT = agot_travel_events.3014
+		}
+
+		stress_impact = {
+			craven = massive_stress_impact_gain
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -100
+				has_trait = craven
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.3010.b
+		custom_tooltip = agot_travel_events.3010.b.tt
+		stress_impact = {
+			ambitious = medium_stress_impact_gain
+			brave = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				has_trait = craven
+			}
+		}
+	}
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}
+
+agot_travel_events.3011 = {
+	hidden = yes
+
+	immediate = {
+		current_travel_plan = {
+			delay_travel_plan = { days = 1 }
+		}
+		if = {
+			limit = { scope:sc_victor = root }
+			trigger_event = {
+				id = agot_travel_events.3012
+				days = 1
+			}
+		}
+		else_if = {
+			limit = { scope:sc_victor = scope:first_duelist }
+			add_stress = medium_stress_gain
+
+			trigger_event = {
+				id = agot_travel_events.3013
+				days = 1
+			}
+		}
+	}
+}
+
+agot_travel_events.3012 = {
+
+	type = character_event
+	title = agot_travel_events.3012.t
+	desc = agot_travel_events.3012.desc
+	theme = travel
+
+	override_background = {
+		reference = fp1_runestone_circle
+	}
+
+	left_portrait = {
+		character = root
+		animation = war_over_win
+	}
+
+	right_portrait = {
+		character = scope:first_duelist
+		animation = throne_room_bow_1
+	}
+
+	lower_center_portrait = {
+		character = scope:second_duelist
+	}
+
+	lower_right_portrait = {
+		character = scope:third_duelist
+	}
+
+	option = {
+		name = agot_travel_events.3012.a
+		custom_tooltip = agot_travel_events.3012.a.tt
+		trigger = {
+			NOT = {
+				culture = location.county.culture
+			}
+		}
+		add_prestige = massive_prestige_gain
+		culture = {
+			change_cultural_acceptance = {
+				target = scope:location.county.culture
+				value = -10
+				desc = cultural_intolerance_tt
+			}
+		}
+		hidden_effect = {
+			scope:first_duelist = {
+				death = { death_reason = death_vanished }
+			}
+			scope:second_duelist = {
+				death = { death_reason = death_vanished }
+			}
+			scope:third_duelist = {
+				death = { death_reason = death_vanished }
+			}
+		}
+		stress_impact = {
+			arrogant = medium_stress_impact_loss
+			sadistic = minor_stress_impact_loss
+			humble = medium_stress_impact_gain
+			compassionate = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 75
+				has_trait = arrogant
+			}
+			modifier = {
+				add = 50
+				has_trait = sadistic
+			}
+			modifier = {
+				add = -25
+				has_trait = humble
+			}
+			modifier = {
+				add = -15
+				has_trait = compassionate
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.3012.b
+		custom_tooltip = agot_travel_events.3012.b.tt
+		trigger = {
+			culture = location.county.culture
+		}
+		add_prestige = massive_prestige_gain
+		scope:3000_county_liege = {
+			add_opinion = {
+				target = root
+				opinion = -40
+				modifier = insulted_opinion
+			}
+			add_prestige = major_prestige_loss
+		}
+		hidden_effect = {
+			scope:first_duelist = {
+				death = { death_reason = death_vanished }
+			}
+			scope:second_duelist = {
+				death = { death_reason = death_vanished }
+			}
+			scope:third_duelist = {
+				death = { death_reason = death_vanished }
+			}
+		}
+		stress_impact = {
+			arrogant = medium_stress_impact_loss
+			sadistic = minor_stress_impact_loss
+			humble = medium_stress_impact_gain
+			compassionate = minor_stress_impact_gain
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 75
+				has_trait = arrogant
+			}
+			modifier = {
+				add = 50
+				has_trait = sadistic
+			}
+			modifier = {
+				add = -25
+				has_trait = humble
+			}
+			modifier = {
+				add = -15
+				has_trait = compassionate
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.3012.c
+		custom_tooltip = agot_travel_events.3012.c.tt
+		add_courtier = scope:first_duelist
+		add_courtier = scope:second_duelist
+		add_courtier = scope:third_duelist
+		root.current_travel_plan = {
+			add_companion = scope:first_duelist
+			add_companion = scope:second_duelist
+			add_companion = scope:third_duelist
+		}
+		stress_impact = {
+			gregarious = medium_stress_impact_loss
+			ambitious = minor_stress_impact_loss
+			shy = medium_stress_impact_gain
+			paranoid = major_stress_impact_gain
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 50
+				has_trait = gregarious
+			}
+			modifier = {
+				add = 50
+				has_trait = ambitious
+			}
+			modifier = {
+				add = -25
+				has_trait = shy
+			}
+			modifier = {
+				add = -50
+				has_trait = paranoid
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.3012.d
+		custom_tooltip = agot_travel_events.3012.d.tt
+		add_prestige = major_prestige_gain
+		scope:3000_county_liege = {
+			add_courtier = scope:first_duelist
+		}
+		hidden_effect = {
+			scope:second_duelist = {
+				death = { death_reason = death_vanished }
+			}
+			scope:third_duelist = {
+				death = { death_reason = death_vanished }
+			}
+		}
+		stress_impact = {
+			generous = medium_stress_impact_loss
+			ambitious = minor_stress_impact_gain
+			greedy = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				add = 50
+				has_trait = generous
+			}
+			modifier = {
+				add = -25
+				has_trait = ambitious
+			}
+			modifier = {
+				add = -50
+				has_trait = greedy
+			}
+		}
+	}
+
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}
+
+agot_travel_events.3013 = {
+	type = character_event
+	title = agot_travel_events.3013.t
+	desc = agot_travel_events.3013.desc
+	theme = travel
+
+	override_background = {
+		reference = fp1_runestone_circle
+	}
+
+	left_portrait = {
+		character = root
+		animation = shock
+	}
+	right_portrait = {
+		character = scope:first_duelist
+		animation = celebrate_sword
+	}
+
+	option = {
+		name = agot_travel_events.3013.a
+		custom_tooltip = agot_travel_events.3013.a.tt
+		add_prestige = medium_prestige_loss
+		hidden_effect = {
+			scope:second_duelist = {
+				death = { death_reason = death_vanished }
+			}
+			scope:third_duelist = {
+				death = { death_reason = death_vanished }
+			}
+			scope:3000_county_liege = {
+				add_courtier = scope:first_duelist
+			}
+		}
+	}
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}
+
+agot_travel_events.3014 = { #dummy duel invalidate event
+	type = character_event
+	title = agot_travel_events.3014.t
+	desc = agot_travel_events.3014.desc
+	theme = travel
+
+	override_background = {
+		reference = fp1_runestone_circle
+	}
+
+	left_portrait = {
+		character = root
+		animation = disbelief
+	}
+
+	option = {
+		name = agot_travel_events.3014.a
+		custom_tooltip = agot_travel_events.3014.a.tt
+		add_prestige = medium_prestige_gain
+		hidden_effect = {
+			scope:first_duelist = {
+				death = { death_reason = death_vanished }
+			}
+			scope:second_duelist = {
+				death = { death_reason = death_vanished }
+			}
+			scope:third_duelist = {
+				death = { death_reason = death_vanished }
+			}
+		}
+	}
+
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}
+
+#########################
+# Laughter in the Trees #
+#########################
+
+agot_travel_events.4000 = {
+	type = character_event
+	title = agot_travel_events.4000.t
+	desc = {
+		desc = agot_travel_events.4000.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOR = {
+						culture = { agot_is_wildling_culture = yes }
+						AND = {
+							culture = {
+								any_parent_culture_or_above = { this = culture:first_man }
+							}
+							learning > medium_skill_rating
+						}
+						learning > high_skill_rating
+					}
+				}
+				desc = agot_travel_events.4000.unknownchildren.desc
+			}
+			triggered_desc = {
+				trigger = {
+					OR = {
+						culture = { agot_is_wildling_culture = yes }
+						AND = {
+							culture = {
+								any_parent_culture_or_above = { this = culture:first_man }
+							}
+							learning > medium_skill_rating
+						}
+						learning > high_skill_rating
+					}
+				}
+				desc = agot_travel_events.4000.unknownchildren.desc
+			}
+		}
+	}
+	theme = travel
+
+	left_portrait = {
+		character = root
+		animation = eavesdrop
+	}
+
+	right_portrait = {
+		character = scope:other_traveller
+		animation = lunatic
+	}
+
+	trigger = {
+		is_available_travelling = yes
+		is_location_valid_for_travel_event_on_land = yes
+		location = {
+			geographical_region = world_westeros_beyond_the_wall
+			agot_is_taiga_terrain = yes
+			has_holding = no
+		}
+	}
+
+	cooldown = { years = 100 }
+
+	immediate = {
+		current_travel_plan = {
+			random_entourage_character = {
+				limit = {
+					is_adult = yes
+				}
+				save_scope_as = other_traveller
+			}
+		}
+		location = {
+			save_scope_as = location
+		}
+	}
+
+	option = { #run after them
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = { NOT = { agot_is_landless_nw_character = yes } }
+						desc = agot_travel_events.4000.a
+					}
+					triggered_desc = {
+						trigger = { agot_is_landless_nw_character = yes }
+						desc = agot_travel_events.4000.a.first_ranger
+					}
+				}
+			}
+		}
+		custom_tooltip = agot_travel_events.4000.a.tt
+		trigger_event = agot_travel_events.4001
+		stress_impact = {
+			wrathful = medium_stress_impact_loss
+			irritable = medium_stress_impact_loss
+			calm = medium_stress_impact_gain
+			forgiving = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 50
+				OR = {
+					has_trait = wrathful
+					has_trait = arrogant
+					has_trait = irritable
+				}
+			}
+			modifier = {
+				add = 50
+				OR = {
+					has_trait = intellect_bad
+					has_trait = dull
+				}
+			}
+		}
+	}
+
+	option = { #make camp
+		name = agot_travel_events.4000.b
+		custom_tooltip = agot_travel_events.4000.b.tt
+		trigger = {
+			OR = {
+				culture = { agot_is_wildling_culture = yes }
+				AND = {
+					culture = {
+						any_parent_culture_or_above = { this = culture:first_man }
+					}
+					learning > medium_skill_rating
+				}
+				learning > high_skill_rating
+			}
+		}
+		trigger_event = agot_travel_events.4003
+		stress_impact = {
+			gregarious = medium_stress_impact_loss
+			inquisitive = medium_stress_impact_loss
+			craven = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 25
+				has_trait = gregarious
+			}
+			modifier = {
+				add = 25
+				has_trait = forgiving
+			}
+			modifier = {
+				add = 25
+				has_trait = calm
+			}
+			modifier = {
+				add = 25
+				has_trait = education_diplomacy
+			}
+		}
+	}
+
+	option = { #keep moving
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							OR = {
+								culture = { agot_is_wildling_culture = yes }
+								AND = {
+									culture = {
+										any_parent_culture_or_above = { this = culture:first_man }
+									}
+									learning > medium_skill_rating
+								}
+								learning > high_skill_rating
+							}
+						}
+						desc = agot_travel_events.4000.c.knownchildren
+					}
+					triggered_desc = {
+						trigger = {
+							always = yes
+						}
+						desc = agot_travel_events.4000.c.unknownchildren
+					}
+				}
+			}
+		}
+		custom_tooltip = agot_travel_events.4000.c.tt
+		add_prestige = medium_prestige_loss
+		stress_impact = {
+			craven = medium_stress_impact_loss
+			impatient = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 25
+		}
+	}
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}
+
+agot_travel_events.4001 = { #chase decision
+	type = character_event
+	title = agot_travel_events.4001.t
+	desc = agot_travel_events.4001.desc
+
+	theme = travel
+
+	left_portrait = {
+		character = root
+		animation = aggressive_sword
+	}
+
+	option = {
+		name = agot_travel_events.4001.a
+		custom_tooltip = agot_travel_events.4001.a.tt
+		trigger_event = agot_travel_events.4002
+		stress_impact = {
+			wrathful = medium_stress_impact_loss
+			irritable = medium_stress_impact_loss
+			calm = medium_stress_impact_gain
+			forgiving = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				OR = {
+					has_trait = intellect_bad
+					has_trait = drunkard
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_travel_events.4001.b
+		custom_tooltip = agot_travel_events.4001.b.tt
+		add_prestige = major_prestige_loss
+		current_travel_plan = {
+			delay_travel_plan = { days = 3 }
+		}
+		stress_impact = {
+			arrogant = medium_stress_impact_gain
+			stubborn = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 25
+		}
+	}
+
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}
+
+agot_travel_events.4002 = { #chase too late
+	type = character_event
+	title = agot_travel_events.4002.t
+	desc = agot_travel_events.4002.desc
+
+	theme = travel
+
+	left_portrait = {
+		character = root
+		animation = lunatic
+	}
+
+	option = {
+		name = agot_travel_events.4002.a
+		custom_tooltip = agot_travel_events.4002.a.tt
+		death = {
+			death_reason = death_childrenoftheforest
+		}
+	}
+}
+
+agot_travel_events.4003 = { #camp
+	type = character_event
+	title = agot_travel_events.4003.t
+	desc = agot_travel_events.4003.desc
+
+	theme = travel
+
+	override_background = {
+		reference = bp1_bonfire
+	}
+
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+
+	right_portrait = {
+		character = scope:other_traveller
+		animation = personality_content
+	}
+
+	artifact = {
+		trigger = { exists = scope:artifact_gift }
+		target = scope:artifact_gift
+		position = lower_center_portrait
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				any_character_artifact = {
+					is_equipped = no
+					NOR = {
+						rarity = illustrious
+						rarity = famed
+					}
+				}
+			}
+			random_character_artifact = {
+				limit = {
+					is_equipped = no
+					NOR = {
+						rarity = illustrious
+						rarity = famed
+					}
+				}
+				save_scope_as = artifact_gift
+			}
+			add_character_flag = had_spare_artifact
+		}
+		else_if = {
+			limit = {
+				any_character_artifact = {
+					NOR = {
+						rarity = illustrious
+						rarity = famed
+					}
+				}
+			}
+			random_character_artifact = {
+				limit = {
+					NOR = {
+						rarity = illustrious
+						rarity = famed
+					}
+				}
+				save_scope_as = artifact_gift
+			}
+		}
+		else_if = {
+			limit = {
+				any_character_artifact = {
+					is_equipped = no
+					OR = {
+						rarity = illustrious
+						rarity = famed
+					}
+				}
+			}
+			random_character_artifact = {
+				limit = {
+					is_equipped = no
+					OR = {
+						rarity = illustrious
+						rarity = famed
+					}
+				}
+				save_scope_as = artifact_gift
+			}
+		}
+		else_if = {
+			limit = {
+				any_character_artifact = {
+					OR = {
+						rarity = illustrious
+						rarity = famed
+					}
+				}
+			}
+			random_character_artifact = {
+				limit = {
+					OR = {
+						rarity = illustrious
+						rarity = famed
+					}
+				}
+				save_scope_as = artifact_gift
+			}
+		}
+	}
+
+	option = { #give some supplies/gold
+		name = agot_travel_events.4003.a
+		custom_tooltip = agot_travel_events.4003.a.tt
+		if = {
+			limit = {
+				is_landless_adventurer = yes
+			}
+			domicile = {
+				change_provisions = minor_provisions_loss
+			}
+		}
+		else = {
+			remove_short_term_gold = 15
+		}
+		add_character_flag = small_artifact_reward
+		trigger_event = agot_travel_events.4004
+		stress_impact = {
+			generous = medium_stress_impact_loss
+			greedy = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = -50
+				domicile ?= {
+					provisions <= provisions_privation_threshold_very_low
+				}
+			}
+		}
+	}
+
+	option = { #give artifact
+		name = agot_travel_events.4003.b
+		custom_tooltip = agot_travel_events.4003.b.tt
+		trigger = {
+			exists = scope:artifact_gift
+		}
+		hidden_effect = { destroy_artifact = scope:artifact_gift }
+		add_character_flag = big_artifact_reward
+		trigger_event = agot_travel_events.4004
+		stress_impact = {
+			generous = major_stress_impact_loss
+			greedy = major_stress_impact_gain
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 25
+				has_trait = generous
+			}
+			modifier = {
+				add = 50
+				has_character_flag = had_spare_artifact
+			}
+		}
+	}
+
+	option = { #just chill
+		name = agot_travel_events.4003.c
+		custom_tooltip = agot_travel_events.4003.c.tt
+		trigger_event = agot_travel_events.4004
+		stress_impact = {
+			content = major_stress_impact_loss
+			generous = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 50
+			modifier = {
+				add = 50
+				has_trait = content
+			}
+			modifier = {
+				add = 50
+				has_trait = greedy
+			}
+			modifier = {
+				add = -50
+				has_trait = generous
+			}
+		}
+	}
+}
+
+agot_travel_events.4004 = { #morning
+	type = character_event
+	title = agot_travel_events.4004.t
+	desc = {
+		desc = agot_travel_events.4004.desc
+		triggered_desc = {
+			trigger = {
+				OR = {
+					has_character_flag = big_artifact_reward
+					has_character_flag = small_artifact_reward
+				}
+			}
+			desc = agot_travel_events.4004.gotreward.desc
+		}
+	}
+
+	theme = travel
+
+	left_portrait = {
+		character = root
+		animation = admiration
+	}
+
+	right_portrait = {
+		character = scope:other_traveller
+		animation = personality_content
+	}
+
+	artifact = {
+		trigger = { exists = scope:reward_artifact }
+		target = scope:reward_artifact
+		position = lower_center_portrait
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				has_character_flag = big_artifact_reward
+			}
+			agot_create_weirwood_flute_effect = {
+				OWNER = root
+			}
+			scope:newly_created_artifact = {
+				save_scope_as = reward_artifact
+			}
+		}
+		else_if = {
+			limit = {
+				has_character_flag = small_artifact_reward
+			}
+			agot_create_brewing_herbs_effect = {
+				OWNER = root
+			}
+			scope:newly_created_artifact = {
+				save_scope_as = reward_artifact
+			}
+		}
+	}
+
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							OR = {
+								has_character_flag = small_artifact_reward
+								has_character_flag = big_artifact_reward
+							}
+						}
+						desc = agot_travel_events.4004.a.gotreward
+					}
+					triggered_desc = {
+						trigger = {
+							always = yes
+						}
+						desc = agot_travel_events.4004.a.noreward
+					}
+				}
+			}
+		}
+		custom_tooltip = agot_travel_events.4004.a.tt
+		add_character_modifier = agot_cheerful_disposition_modifier
+	}
+
+	after = {
+		mp_resume_travel_plan = yes
+	}
+}

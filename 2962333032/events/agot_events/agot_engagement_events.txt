@@ -1,0 +1,3999 @@
+﻿namespace = agot_engagement_events
+
+scripted_trigger agot_engagement_already_has_lover = {
+	$BETROTHED_1$ = {
+		any_relation = {
+			type = lover
+			NOT = { this = $BETROTHED_2$ }
+		}
+	}
+}
+
+scripted_trigger agot_check_existing_objections = {
+	NAND = {
+		exists = scope:objection_1
+		OR = {
+			scope:objection_1 = flag:$OBJECTION$
+			scope:objection_1 = flag:fallthrough
+		}
+	}
+	NAND = {
+		exists = scope:objection_2
+		OR = {
+			scope:objection_2 = flag:$OBJECTION$
+			scope:objection_2 = flag:fallthrough
+		}
+	}
+}
+
+scripted_trigger agot_betrothed_lover_elope_possible = {
+	scope:betrothed_1 = {
+		NOR = {
+			has_variable = waiting_to_elope # handled via story
+			is_involved_in_any_romantic_scheme = yes
+		}
+	}
+	scope:betrothed_lover ?= {
+		is_physically_able_ai_adult = yes
+		can_elope_character_trigger = { CHARACTER = scope:betrothed_1 }
+		OR = {
+			is_married = no
+			might_cheat_on_partner_trigger = { PARTNER = scope:betrothed_lover.primary_spouse }
+		}
+		NOR = {
+			has_variable = waiting_to_elope # handled via story
+			is_involved_in_any_romantic_scheme = yes
+		}
+	}
+}
+
+scripted_trigger agot_has_wrong_lineality_betrothal = {
+	exists = betrothed
+	is_lowborn = no
+	OR = {
+		AND = {
+			is_female = yes
+			patrilinear_betrothal = yes
+		}
+		AND = {
+			is_male = yes
+			matrilinear_betrothal = yes
+		}
+	}
+	trigger_if = {
+		limit = {
+			betrothed = { has_dynasty = yes }
+		}
+		NOT = { dynasty = betrothed.dynasty }
+	}
+}
+
+scripted_trigger agot_should_have_proper_lineality = {
+	OR = {
+		is_ruler = yes
+		any_heir_title = { count > 0 }
+		is_eldest_preferred_grandchild_of = { GRANDPARENT = $RULER$ }
+	}
+}
+
+scripted_effect agot_assign_engagement_objection = {
+	if = {
+		limit = {
+			NOT = { exists = scope:objection_1 }
+		}
+		save_scope_value_as = { name = objection_1 value = flag:$OBJECTION$ }
+	}
+	else_if = {
+		limit = {
+			NOT = { exists = scope:objection_2 }
+		}
+		save_scope_value_as = { name = objection_2 value = flag:$OBJECTION$ }
+	}
+	else = {
+		save_scope_value_as = { name = objection_3 value = flag:$OBJECTION$ }
+	}
+}
+
+scripted_effect agot_pick_engagement_objection = {
+	random_list = {
+		# negative opinion
+		10 = {
+			trigger = {
+				opinion = { target = scope:betrothed_2 value < 0 }
+				agot_check_existing_objections = { OBJECTION = neg_opinion }
+			}
+			modifier = {
+				factor = 10
+				opinion = { target = scope:betrothed_2 value < -50 }
+			}
+			modifier = {
+				factor = 10
+				has_relation_rival = scope:betrothed_2
+			}
+			agot_assign_engagement_objection = { OBJECTION = neg_opinion }
+		}
+		# incest
+		1000 = {
+			trigger = {
+				OR = {
+					AND = {
+						is_sibling_of = scope:betrothed_2
+						faith = {
+							NOT = { has_doctrine_parameter = allows_sibling_marriage }
+						}
+					}
+					AND = {
+						OR = {
+							is_uncle_or_aunt_of = scope:betrothed_2
+							scope:betrothed_2 = { is_uncle_or_aunt_of = scope:betrothed_1 }
+						}
+						faith = {
+							NOT = { has_doctrine_parameter = allows_aunt_nephew_and_uncle_niece_marriage }
+						}
+					}
+					AND = {
+						is_cousin_of = scope:betrothed_2
+						faith = {
+							NOT = { has_doctrine_parameter = allows_cousin_marriage }
+						}
+					}
+				}
+				ai_zeal >= high_positive_ai_value
+				has_negative_attitude_towards_trait_trigger = { TRAIT = trait:incestuous GENDER_CHARACTER = scope:betrothed_1 }
+				agot_check_existing_objections = { OBJECTION = incest }
+			}
+			agot_assign_engagement_objection = { OBJECTION = incest }
+		}
+		# lowborn
+		100 = {
+			trigger = {
+				scope:betrothed_2 = { is_lowborn = yes }
+				agot_check_existing_objections = { OBJECTION = lowborn }
+			}
+			agot_assign_engagement_objection = { OBJECTION = lowborn }
+		}
+		# bastard
+		100 = {
+			trigger = {
+				is_illegitimate = no
+				faith ?= {
+					NOT = { has_doctrine_parameter = bastards_none }
+				}
+				scope:betrothed_2 = { is_illegitimate = yes }
+				agot_check_existing_objections = { OBJECTION = bastard }
+			}
+			modifier = {
+				factor = 10
+				religion = religion:the_seven_religion
+			}
+			agot_assign_engagement_objection = { OBJECTION = bastard }
+		}
+		# not attracted to me
+		100 = {
+			trigger = {
+				scope:betrothed_2 = {
+					NOR = {
+						has_sexuality = none
+						is_attracted_to_gender_of = scope:betrothed_1
+					}
+				}
+				agot_check_existing_objections = { OBJECTION = attracted_to_me }
+				agot_check_existing_objections = { OBJECTION = attracted_to_them }
+			}
+			modifier = {
+				factor = 10
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = sodomite
+						any_secret = {
+							secret_type = secret_homosexual
+							is_known_by = scope:betrothed_1
+						}
+					}
+				}
+				has_negative_attitude_towards_trait_trigger = { TRAIT = trait:sodomite GENDER_CHARACTER = scope:betrothed_2 }
+			}
+			agot_assign_engagement_objection = { OBJECTION = attracted_to_me }
+		}
+		# not attracted to them
+		100 = {
+			trigger = {
+				NOR = {
+					has_sexuality = none
+					is_attracted_to_gender_of = scope:betrothed_2
+				}
+				agot_check_existing_objections = { OBJECTION = attracted_to_me }
+				agot_check_existing_objections = { OBJECTION = attracted_to_them }
+			}
+			agot_assign_engagement_objection = { OBJECTION = attracted_to_them }
+		}
+		# dwarf
+		1000 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = dwarf }
+				is_malformed_trigger = no
+				agot_check_existing_objections = { OBJECTION = dwarf }
+				agot_check_existing_objections = { OBJECTION = hunchback }
+				agot_check_existing_objections = { OBJECTION = greyscale }
+				agot_check_existing_objections = { OBJECTION = hideous }
+				agot_check_existing_objections = { OBJECTION = ugly }
+				agot_check_existing_objections = { OBJECTION = unattractive }
+			}
+			agot_assign_engagement_objection = { OBJECTION = dwarf }
+		}
+		# hunchback
+		1000 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = hunchbacked }
+				is_malformed_trigger = no
+				agot_check_existing_objections = { OBJECTION = dwarf }
+				agot_check_existing_objections = { OBJECTION = hunchback }
+				agot_check_existing_objections = { OBJECTION = greyscale }
+				agot_check_existing_objections = { OBJECTION = hideous }
+				agot_check_existing_objections = { OBJECTION = ugly }
+				agot_check_existing_objections = { OBJECTION = unattractive }
+			}
+			agot_assign_engagement_objection = { OBJECTION = hunchback }
+		}
+		# greyscale
+		1000 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = greyscale }
+				is_malformed_trigger = no
+				agot_check_existing_objections = { OBJECTION = dwarf }
+				agot_check_existing_objections = { OBJECTION = hunchback }
+				agot_check_existing_objections = { OBJECTION = greyscale }
+				agot_check_existing_objections = { OBJECTION = hideous }
+				agot_check_existing_objections = { OBJECTION = ugly }
+				agot_check_existing_objections = { OBJECTION = unattractive }
+			}
+			agot_assign_engagement_objection = { OBJECTION = greyscale }
+		}
+		# hideous
+		1000 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						is_malformed_trigger = yes
+						has_trait = beauty_bad_3
+					}
+					NOR = {
+						has_trait = dwarf
+						has_trait = hunchbacked
+						has_trait = greyscale
+					}
+				}
+				is_malformed_trigger = no
+				NOT = { has_trait = beauty_bad }
+				agot_check_existing_objections = { OBJECTION = dwarf }
+				agot_check_existing_objections = { OBJECTION = hunchback }
+				agot_check_existing_objections = { OBJECTION = greyscale }
+				agot_check_existing_objections = { OBJECTION = hideous }
+				agot_check_existing_objections = { OBJECTION = ugly }
+				agot_check_existing_objections = { OBJECTION = unattractive }
+			}
+			agot_assign_engagement_objection = { OBJECTION = hideous }
+		}
+		# ugly
+		100 = {
+			trigger = {
+				scope:betrothed_2 = {
+					is_malformed_trigger = no
+					has_trait = beauty_bad_2
+				}
+				is_malformed_trigger = no
+				NOT = { has_trait = beauty_bad }
+				agot_check_existing_objections = { OBJECTION = dwarf }
+				agot_check_existing_objections = { OBJECTION = hunchback }
+				agot_check_existing_objections = { OBJECTION = greyscale }
+				agot_check_existing_objections = { OBJECTION = hideous }
+				agot_check_existing_objections = { OBJECTION = ugly }
+				agot_check_existing_objections = { OBJECTION = unattractive }
+			}
+			agot_assign_engagement_objection = { OBJECTION = ugly }
+		}
+		# unattractive
+		100 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = beauty_bad_1
+						AND = {
+							OR = {
+								current_weight > overweight_value
+								current_weight < underweight_value
+							}
+							scope:betrothed_1 = {
+								current_weight <= overweight_value
+								current_weight >= underweight_value
+							}
+						}
+					}
+					NOR = {
+						is_malformed_trigger = yes
+						has_trait = beauty_bad_2
+						has_trait = beauty_bad_3
+					}
+				}
+				is_malformed_trigger = no
+				NOT = { has_trait = beauty_bad }
+				agot_check_existing_objections = { OBJECTION = dwarf }
+				agot_check_existing_objections = { OBJECTION = hunchback }
+				agot_check_existing_objections = { OBJECTION = greyscale }
+				agot_check_existing_objections = { OBJECTION = hideous }
+				agot_check_existing_objections = { OBJECTION = ugly }
+				agot_check_existing_objections = { OBJECTION = unattractive }
+			}
+			agot_assign_engagement_objection = { OBJECTION = unattractive }
+		}
+		# idiot
+		1000 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = intellect_bad_3
+						has_trait = intellect_bad_2
+					}
+				}
+				NOR = {
+					has_trait = intellect_bad
+					has_trait = dull
+				}
+				agot_check_existing_objections = { OBJECTION = idiot }
+				agot_check_existing_objections = { OBJECTION = dull }
+			}
+			agot_assign_engagement_objection = { OBJECTION = idiot }
+		}
+		# dull
+		100 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = intellect_bad_1
+						has_trait = dull
+					}
+				}
+				NOR = {
+					has_trait = intellect_bad
+					has_trait = dull
+				}
+				agot_check_existing_objections = { OBJECTION = idiot }
+				agot_check_existing_objections = { OBJECTION = dull }
+			}
+			agot_assign_engagement_objection = { OBJECTION = dull }
+		}
+		# weak
+		10 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = weak
+						has_trait = physique_bad
+					}
+				}
+				NOR = {
+					has_trait = weak
+					has_trait = physique_bad
+				}
+				agot_check_existing_objections = { OBJECTION = weak }
+			}
+			modifier = {
+				factor = 10
+				scope:betrothed_2 = { has_trait = physique_bad_3 }
+			}
+			agot_assign_engagement_objection = { OBJECTION = weak }
+		}
+		# lesser family
+		100 = {
+			trigger = {
+				NOT = { has_trait = humble }
+				scope:betrothed_2 = { exists = dynasty }
+				trigger_if = {
+					limit = {
+						OR = {
+							has_trait = arrogant
+							has_trait = ambitious
+							has_trait = greedy
+						}
+					}
+					dynasty.dynasty_prestige_level >= scope:betrothed_2.dynasty.dynasty_prestige_level
+				}
+				trigger_else = {
+					dynasty.dynasty_prestige_level >= scope:betrothed_2.dynasty.dynasty_prestige_level_plus_2
+				}
+				agot_check_existing_objections = { OBJECTION = lesser }
+			}
+			agot_assign_engagement_objection = { OBJECTION = lesser }
+		}
+		# lazy
+		10 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = lazy }
+				NOT = { has_trait = lazy }
+				OR = {
+					has_trait = diligent
+					ai_energy >= high_positive_ai_value
+					AND = {
+						faith = { trait_is_sin = lazy }
+						num_sinful_traits < 1
+					}
+				}
+				agot_check_existing_objections = { OBJECTION = lazy }
+			}
+			agot_assign_engagement_objection = { OBJECTION = lazy }
+		}
+		# deceitful
+		10 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = deceitful }
+				NOT = { has_trait = deceitful }
+				OR = {
+					has_trait = honest
+					ai_honor >= high_positive_ai_value
+					AND = {
+						faith = { trait_is_sin = deceitful }
+						num_sinful_traits < 1
+					}
+				}
+				agot_check_existing_objections = { OBJECTION = deceitful }
+			}
+			agot_assign_engagement_objection = { OBJECTION = deceitful }
+		}
+		# craven
+		10 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = craven }
+				NOT = { has_trait = craven }
+				OR = {
+					has_trait = brave
+					ai_boldness >= high_positive_ai_value
+					AND = {
+						faith = { trait_is_sin = craven }
+						num_sinful_traits < 1
+					}
+				}
+				agot_check_existing_objections = { OBJECTION = craven }
+			}
+			agot_assign_engagement_objection = { OBJECTION = craven }
+		}
+		# shy
+		10 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = shy }
+				NOT = { has_trait = shy }
+				OR = {
+					has_trait = gregarious
+					ai_sociability >= high_positive_ai_value
+					AND = {
+						faith = { trait_is_sin = shy }
+						num_sinful_traits < 1
+					}
+				}
+				agot_check_existing_objections = { OBJECTION = shy }
+			}
+			agot_assign_engagement_objection = { OBJECTION = shy }
+		}
+		# bold
+		10 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = ambitious
+						has_trait = arrogant
+					}
+				}
+				NOR = {
+					has_trait = ambitious
+					has_trait = arrogant
+				}
+				OR = {
+					has_trait = humble
+					has_trait = content
+					ai_boldness <= high_negative_ai_value
+				}
+				agot_check_existing_objections = { OBJECTION = bold }
+			}
+			agot_assign_engagement_objection = { OBJECTION = bold }
+		}
+		# meek
+		10 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = humble
+						has_trait = content
+					}
+				}
+				NOR = {
+					has_trait = humble
+					has_trait = content
+				}
+				OR = {
+					has_trait = ambitious
+					has_trait = arrogant
+					ai_boldness >= high_positive_ai_value
+				}
+				agot_check_existing_objections = { OBJECTION = meek }
+			}
+			agot_assign_engagement_objection = { OBJECTION = meek }
+		}
+		# drunkard
+		100 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = drunkard }
+				NOR = {
+					has_trait = drunkard
+					has_trait = gluttonous
+					has_trait = lifestyle_reveler
+				}
+				agot_check_existing_objections = { OBJECTION = drunkard }
+			}
+			agot_assign_engagement_objection = { OBJECTION = drunkard }
+		}
+		# sad
+		10 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = depressed }
+				NOR = {
+					has_trait = depressed
+					ai_compassion >= low_positive_ai_value
+				}
+				agot_check_existing_objections = { OBJECTION = sad }
+			}
+			agot_assign_engagement_objection = { OBJECTION = sad }
+		}
+		# crazy
+		100 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = lunatic
+						has_trait = possessed
+					}
+				}
+				NOR = {
+					has_trait = lunatic
+					has_trait = possessed
+				}
+				agot_check_existing_objections = { OBJECTION = crazy }
+			}
+			agot_assign_engagement_objection = { OBJECTION = crazy }
+		}
+		# unkind
+		100 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = sadistic
+						has_trait = callous
+					}
+				}
+				NOR = {
+					has_trait = sadistic
+					has_trait = callous
+				}
+				OR = {
+					has_trait = compassionate
+					ai_compassion >= high_positive_ai_value
+				}
+				agot_check_existing_objections = { OBJECTION = unkind }
+			}
+			agot_assign_engagement_objection = { OBJECTION = unkind }
+		}
+		# prude
+		10 = {
+			trigger = {
+				scope:betrothed_2 = { has_trait = chaste }
+				NOT = { has_trait = chaste }
+				likely_to_take_lover_trigger = yes
+				agot_check_existing_objections = { OBJECTION = prude }
+			}
+			agot_assign_engagement_objection = { OBJECTION = prude }
+		}
+		# unfaithful
+		1000 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						likely_to_take_lover_trigger = yes
+						has_trait = adulterer
+						has_trait = fornicator
+						any_relation = {
+							type = lover
+							NOR = {
+								this = scope:betrothed_1
+								lover_is_secret_trigger = { CHARACTER = scope:betrothed_2 }
+							}
+						}
+					}
+				}
+				likely_to_take_lover_trigger = no
+				has_negative_attitude_towards_trait_trigger = { TRAIT = trait:adulterer GENDER_CHARACTER = scope:betrothed_2 }
+				agot_check_existing_objections = { OBJECTION = unfaithful }
+			}
+			agot_assign_engagement_objection = { OBJECTION = unfaithful }
+		}
+		# much too young
+		1000 = {
+			trigger = {
+				age >= scope:betrothed_2.age_plus_25
+				agot_check_existing_objections = { OBJECTION = much_too_young }
+				agot_check_existing_objections = { OBJECTION = too_young }
+			}
+			agot_assign_engagement_objection = { OBJECTION = much_too_young }
+		}
+		# too young
+		100 = {
+			trigger = {
+				age >= scope:betrothed_2.age_plus_10
+				agot_check_existing_objections = { OBJECTION = much_too_young }
+				agot_check_existing_objections = { OBJECTION = too_young }
+			}
+			agot_assign_engagement_objection = { OBJECTION = too_young }
+		}
+		# much too old
+		1000 = {
+			trigger = {
+				age_plus_25 <= scope:betrothed_2.age
+				agot_check_existing_objections = { OBJECTION = much_too_old }
+				agot_check_existing_objections = { OBJECTION = too_old }
+			}
+			agot_assign_engagement_objection = { OBJECTION = much_too_old }
+		}
+		# too old
+		100 = {
+			trigger = {
+				age_plus_10 <= scope:betrothed_2.age
+				agot_check_existing_objections = { OBJECTION = much_too_old }
+				agot_check_existing_objections = { OBJECTION = too_old }
+			}
+			agot_assign_engagement_objection = { OBJECTION = too_old }
+		}
+		# too unlike
+		100 = {
+			trigger = {
+				trait_compatibility = {
+					target = scope:betrothed_2
+					value <= high_negative_trait_compatibility
+				}
+				agot_check_existing_objections = { OBJECTION = unlike }
+			}
+			agot_assign_engagement_objection = { OBJECTION = unlike }
+		}
+		# std
+		100 = {
+			trigger = {
+				scope:betrothed_2 = { has_std_trigger = yes }
+				has_std_trigger = no
+				agot_check_existing_objections = { OBJECTION = std }
+			}
+			agot_assign_engagement_objection = { OBJECTION = std }
+		}
+		# reputation
+		1000 = {
+			trigger = {
+				scope:betrothed_2 = {
+					OR = {
+						has_trait = torturer
+						has_trait = murderer
+						has_trait = kinslayer_1
+						has_trait = kinslayer_2
+						has_trait = kinslayer_3
+						AND = {
+							has_trait = incestuous
+							scope:betrothed_1 = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:incestuous GENDER_CHARACTER = scope:betrothed_2 } }
+						}
+						AND = {
+							has_trait = deviant
+							scope:betrothed_1 = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:deviant GENDER_CHARACTER = scope:betrothed_2 } }
+						}
+						AND = {
+							has_trait = cannibal
+							scope:betrothed_1 = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:cannibal GENDER_CHARACTER = scope:betrothed_2 } }
+						}
+						AND = {
+							has_trait = witch
+							scope:betrothed_1 = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:witch GENDER_CHARACTER = scope:betrothed_2 } }
+						}
+						AND = {
+							has_trait = sodomite
+							is_attracted_to_gender_of = scope:betrothed_1
+							scope:betrothed_1 = { has_negative_attitude_towards_trait_trigger = { TRAIT = trait:sodomite GENDER_CHARACTER = scope:betrothed_2 } }
+						}
+					}
+				}
+				NOR = {
+					has_trait = torturer
+					has_trait = murderer
+					has_trait = kinslayer_1
+					has_trait = kinslayer_2
+					has_trait = kinslayer_3
+					has_trait = incestuous
+					has_trait = deviant
+					has_trait = cannibal
+					has_trait = witch
+					has_trait = sodomite
+				}
+				agot_check_existing_objections = { OBJECTION = reputation }
+			}
+			agot_assign_engagement_objection = { OBJECTION = reputation }
+		}
+		# has bastard child
+		100 = {
+			trigger = {
+				scope:betrothed_2 = {
+					any_child = {
+						even_if_dead = yes
+						is_illegitimate = yes
+						NOT = { is_child_of = scope:betrothed_1 }
+					}
+				}
+				is_illegitimate = no
+				NOR = {
+					has_trait = fornicator
+					has_trait = adulterer
+					any_child = {
+						even_if_dead = yes
+						is_illegitimate = yes
+					}
+				}
+				agot_check_existing_objections = { OBJECTION = child }
+			}
+			agot_assign_engagement_objection = { OBJECTION = child }
+		}
+		# unremarkable
+		5 = {
+			trigger = {
+				scope:betrothed_2 = {
+					NOR = {
+						has_trait = intellect_good
+						has_trait = physique_good
+						has_trait = beauty_good
+						has_any_high_skill_rating = yes
+					}
+				}
+				OR = {
+					has_trait = intellect_good
+					has_trait = physique_good
+					has_trait = beauty_good
+					has_any_high_skill_rating = yes
+				}
+				agot_check_existing_objections = { OBJECTION = unremarkable }
+			}
+			agot_assign_engagement_objection = { OBJECTION = unremarkable }
+		}
+		# fallthrough
+		1 = {
+			agot_assign_engagement_objection = { OBJECTION = fallthrough }
+		}
+	}
+}
+
+scripted_effect agot_end_engagement_for_recipient = {
+	#This scripted effect mimics the effects of the break betrothal character interaction
+	#but without the underlying assumption that the liege is also going against the wishes
+	#of the recipient (their child)
+
+	#Tooltip for betrothal breakage
+	show_as_tooltip = {
+		scope:rejected_betrothed = {
+			break_betrothal = scope:rejecting_betrothed
+		}
+	}
+
+	#Prestige penalty
+	if = {
+		limit = {
+			OR = {
+				scope:rejected_betrothed = { highest_held_title_tier = tier_hegemony }
+				scope:rejected_betrothal_owner = { highest_held_title_tier = tier_hegemony }
+			}
+		}
+		scope:actor = { add_prestige = monumental_prestige_loss }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				scope:rejected_betrothed = { highest_held_title_tier = tier_empire }
+				scope:rejected_betrothal_owner = { highest_held_title_tier = tier_empire }
+			}
+		}
+		scope:actor = { add_prestige = massive_prestige_loss }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				scope:rejected_betrothed = { highest_held_title_tier = tier_kingdom }
+				scope:rejected_betrothal_owner = { highest_held_title_tier = tier_kingdom }
+			}
+		}
+		scope:actor = { add_prestige = major_prestige_loss }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				scope:rejected_betrothed = { highest_held_title_tier = tier_duchy }
+				scope:rejected_betrothal_owner = { highest_held_title_tier = tier_duchy }
+			}
+		}
+		scope:actor = { add_prestige = medium_prestige_loss }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				scope:rejected_betrothed = { highest_held_title_tier = tier_county }
+				scope:rejected_betrothal_owner = { highest_held_title_tier = tier_county }
+			}
+		}
+		scope:actor = { add_prestige = minor_prestige_loss }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				scope:rejected_betrothed = { highest_held_title_tier = tier_barony }
+				scope:rejected_betrothal_owner = { highest_held_title_tier = tier_barony }
+			}
+		}
+		scope:actor = { add_prestige = miniscule_prestige_loss }
+	}
+
+	#Grand wedding promised
+	if = {
+		limit = {
+			OR = {
+				scope:rejecting_betrothed = { has_been_promised_grand_wedding = yes }
+				scope:rejected_betrothed = { has_been_promised_grand_wedding = yes }
+			}
+		}
+		scope:actor = { break_grand_wedding_betrothal_effect = yes }
+		if = {
+			limit = { scope:rejected_betrothed = root }
+			hidden_effect = {
+				add_opinion = {
+					target = scope:actor
+					modifier = broke_betrothal_opinion
+				}
+				scope:rejecting_betrothed = {
+					break_betrothal = scope:rejected_betrothed
+				}
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					NOT = { exists = scope:no_notification }
+				}
+				scope:rejected_betrothed = { trigger_event = agot_engagement_events.0003 }
+			}
+		}
+	}
+	#Otherwise, send notification
+	else = {
+		scope:rejected_betrothed = {
+			show_as_tooltip = {
+				add_opinion = {
+					target = scope:actor
+					modifier = broke_betrothal_opinion
+				}
+			}
+			if = {
+				limit = { scope:rejected_betrothed = root }
+				hidden_effect = {
+					add_opinion = {
+						target = scope:actor
+						modifier = broke_betrothal_opinion
+					}
+					scope:rejecting_betrothed = {
+						break_betrothal = scope:rejected_betrothed
+					}
+				}
+			}
+			else = {
+				if = {
+					limit = { exists = scope:no_notification }
+					hidden_effect = {
+						add_opinion = {
+							target = scope:actor
+							modifier = broke_betrothal_opinion
+						}
+						scope:rejecting_betrothed = {
+							break_betrothal = scope:rejected_betrothed
+						}
+					}
+				}
+				else = {
+					hidden_effect = { trigger_event = agot_engagement_events.0003 }
+				}
+			}
+		}
+	}
+
+	#Personal opinion hit for the rejected_betrothal_owner
+	if = {
+		limit = {
+			NOR = {
+				scope:rejected_betrothed = scope:rejected_betrothal_owner
+				scope:actor = scope:rejected_betrothal_owner
+				root = scope:rejected_betrothal_owner
+			}
+		}
+		scope:rejected_betrothal_owner = {
+			if = {
+				limit = {
+					NOR = {
+						scope:rejected_betrothed = { has_been_promised_grand_wedding = yes }
+						scope:rejecting_betrothed = { has_been_promised_grand_wedding = yes }
+					}
+				}
+				show_as_tooltip = {
+					add_opinion = {
+						target = scope:actor
+						modifier = broke_betrothal_opinion
+					}
+				}
+			}
+			if = {
+				limit = {
+					NOT = { exists = scope:no_notification }
+				}
+				hidden_effect = {
+					add_opinion = {
+						target = scope:actor
+						modifier = broke_betrothal_opinion
+					}
+				}
+			}
+			else = {
+				hidden_effect = { trigger_event = agot_engagement_events.0003 }
+			}
+		}
+	}
+
+	#Opinion hit for close relatives of the rejected_betrothed (that are not rejected_betrothal_owner)
+	if = {
+		limit = {
+			scope:rejected_betrothed = {
+				any_close_or_extended_family_member = {
+					NOR = {
+						this = scope:rejected_betrothal_owner
+						this = scope:rejecting_betrothed
+						this = scope:actor
+					}
+					count >= 1
+				}
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					scope:rejected_betrothed = { has_been_promised_grand_wedding = yes }
+					scope:rejecting_betrothed = { has_been_promised_grand_wedding = yes }
+				}
+			}
+			scope:rejected_betrothed = {
+				every_close_or_extended_family_member = {
+					limit = {
+						NOR = {
+							this = scope:rejected_betrothal_owner
+							this = scope:rejecting_betrothed
+							this = scope:actor
+						}
+					}
+					custom = all_family_members
+
+					add_opinion = {
+						target = scope:actor
+						modifier = broke_betrothal_grand_wedding_opinion
+						opinion = -50
+					}
+				}
+			}
+		}
+		else = {
+			scope:rejected_betrothed = {
+				every_close_or_extended_family_member = {
+					limit = {
+						NOR = {
+							this = scope:rejected_betrothal_owner
+							this = scope:rejecting_betrothed
+							this = scope:actor
+						}
+					}
+					custom = all_family_members
+					add_opinion = {
+						target = scope:actor
+						modifier = broke_betrothal_opinion
+					}
+				}
+			}
+		}
+	}
+
+	#Was the marriage promised to a vassal?
+	if = {
+		limit = {
+			exists = var:promised_to_marry_1
+			var:promised_to_marry_1 = {
+				this = scope:rejected_betrothed
+				any_parent = { is_vassal_of = scope:actor }
+			}
+			exists = var:promised_to_marry_2
+			var:promised_to_marry_2 = {
+				this = scope:rejecting_betrothed
+				is_close_family_of = scope:actor
+			}
+		}
+		remove_variable = promised_to_marry_1
+		remove_variable = promised_to_marry_2
+		trigger_event = clan.1002
+	}
+
+	# If we're a clan this interaction affects unity
+	add_clan_unity_interaction_effect = {
+		CHARACTER = scope:actor
+		TARGET = scope:recipient
+		VALUE = major_unity_loss
+		DESC = clan_unity_betrothal_breakage.desc
+		REVERSE_NON_HOUSE_TARGET = no
+	}
+}
+
+scripted_effect agot_allow_lover_marriage = {
+	# remove any previous marriage refusal opinions
+	hidden_effect = {
+		if = {
+			limit = {
+				reverse_has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:betrothed_1 }
+			}
+			scope:betrothed_1 = {
+				remove_opinion = { target = root modifier = refused_marriage_permission_opinion }
+			}
+		}
+		if = {
+			limit = {
+				reverse_has_opinion_modifier = { modifier = refused_marriage_permission_opinion target = scope:betrothed_lover }
+			}
+			scope:betrothed_lover = {
+				remove_opinion = { target = root modifier = refused_marriage_permission_opinion }
+			}
+		}
+	}
+	# and add new opinions
+	reverse_add_opinion = { modifier = granted_marriage_permission_opinion target = scope:betrothed_1 }
+	reverse_add_opinion = { modifier = granted_marriage_permission_opinion target = scope:betrothed_lover }
+	# add a hook to both parties
+	if = {
+		limit = {
+			can_add_hook = {
+				target = scope:betrothed_1
+				type = favor_hook
+			}
+		}
+		add_hook = {
+			type = favor_hook
+			target = scope:betrothed_1
+		}
+	}
+	if = {
+		limit = {
+			can_add_hook = {
+				target = scope:betrothed_lover
+				type = favor_hook
+			}
+		}
+		add_hook = {
+			type = favor_hook
+			target = scope:betrothed_lover
+		}
+	}
+	# remove Refusing Marriage trait and the story cycle, if possessed
+	scope:betrothed_1 = {
+		if = {
+			limit = { has_trait = refusing_marriage }
+			remove_trait = refusing_marriage
+			hidden_effect = {
+				random_owned_story = {
+					limit = { story_type = lmf_will_not_wed_story_cycle }
+					end_story = yes
+				}
+			}
+		}
+	}
+	scope:betrothed_lover = {
+		if = {
+			limit = { has_trait = refusing_marriage }
+			remove_trait = refusing_marriage
+			hidden_effect = {
+				random_owned_story = {
+					limit = { story_type = lmf_will_not_wed_story_cycle }
+					end_story = yes
+				}
+			}
+		}
+	}
+	# now marry them
+	if = {
+		# check for a special matrilineal condition
+		limit = {
+			# child is an heir or first in line to a title
+			scope:betrothed_1 = {
+				is_female = yes
+				OR = {
+					any_heir_title = {}
+					any_pretender_title = {
+						place_in_line_of_succession = {
+							target = scope:betrothed_1
+							value <= 2
+						}
+					}
+				}
+			}
+			# the lover is either a lower tier ruler
+			# or is heir/first in line to lower tier titles
+			# or is none of the above
+			scope:betrothed_lover = {
+				trigger_if = {
+					limit = { is_ruler = yes }
+					highest_held_title_tier < root.highest_held_title_tier
+				}
+				NOR = {
+					any_heir_title = { tier >= root.highest_held_title_tier }
+					any_pretender_title = {
+						tier >= root.highest_held_title_tier
+						place_in_line_of_succession = {
+							target = scope:betrothed_lover
+							value <= 2
+						}
+					}
+				}
+			}
+		}
+		marry_matrilineal = scope:proposer_target
+	}
+	# failing the above conditions, we check the normal matrilineal rules
+	else_if = {
+		limit = {
+			should_marry_matrilineally_trigger = { PROPOSER = scope:betrothed_1 TARGET = scope:betrothed_lover }
+		}
+		scope:proposer = {
+			marry_matrilineal = scope:proposer_target
+		}
+	}
+	else = {
+		scope:betrothed_1 = {
+			marry = scope:betrothed_lover
+		}
+	}
+	hidden_effect = {
+		# move them to the proper court and
+		move_characters_to_proper_court_effect = { CHARACTER_1 = scope:betrothed_1 CHARACTER_2 = scope:betrothed_lover }
+		# they might break up with any other current lovers
+		scope:betrothed_1 = { soulmate_lover_breakup_effect = { EXCLUDE = scope:betrothed_lover } }
+		scope:betrothed_lover = { soulmate_lover_breakup_effect = { EXCLUDE = scope:betrothed_1 } }
+	}
+}
+
+# bounce event to check if the child is unhappy with their betrothal
+agot_engagement_events.0001 = {
+	hidden = yes
+
+	trigger = {
+		# is 15+ years old noble and betrothed
+		exists = betrothed
+		age > 14
+		has_dynasty = yes
+		# and essentially able to interact
+		basic_is_available_ai = yes
+
+		# their liege is their matchmaker
+		is_courtier = yes
+		matchmaker ?= liege
+
+		# and a close relative or grandparent ruler (of duke+ tier)
+		matchmaker = {
+			highest_held_title_tier > tier_county
+			dynasty ?= root.dynasty
+			OR = {
+				is_close_family_of = root
+				is_great_grandparent_of = root
+			}
+			is_physically_able_adult = yes
+			NOR = {
+				has_government = mercenary_government
+				has_government = republic_government
+				has_government = theocracy_government
+				has_government = holy_order_government
+			}
+			# who the child can break off the betrothal with
+			trigger_if = {
+				limit = { this = root.betrothed }
+				root = {
+					is_character_interaction_valid = {
+						recipient = root.betrothed
+						interaction = break_betrothal_interaction
+					}
+				}
+			}
+			# or they can break the betrothal
+			trigger_else = {
+				is_character_interaction_valid = {
+					recipient = root.betrothed
+					interaction = break_betrothal_interaction
+				}
+				# and isn't the child's rival
+				NOT = { has_relation_rival = root }
+			}
+		}
+		# the child wasn't betrothed through an introduction
+		# or already in love with their betrothed, a hostage, or submissive
+		# and didn't previously have an event which makes this impossible
+		NOR = {
+			has_relation_crush = betrothed
+			has_relation_lover = betrothed
+			has_opinion_modifier = { target = betrothed modifier = successful_marriage_introduction }
+			has_opinion_modifier = { target = betrothed modifier = failed_marriage_introduction }
+			is_hostage = yes
+			has_personality_submissive_trigger = yes
+			has_character_flag = cannot_get_refusing_marriage_trait
+			has_character_flag = cannot_get_unhappy_engagement_event
+		}
+	}
+
+	immediate = {
+		# first save their overall approval value towards their betrothed
+		betrothed = { save_temporary_scope_as = candidate }
+		save_temporary_scope_as = match
+		save_temporary_opinion_value_as = { name = match_opinion target = scope:candidate }
+		set_variable = { name = betrothed_approval value = scope:candidate.introduction_candidate_interest_value days = 1 }
+
+		# then check if the child is displeased with their betrothed
+		if = {
+			limit = {
+				# arrogant, hot-headed, or assertive children will have more exacting standards
+				# this includes the child already having a lover or not being attracted to the betrothed's gender
+				trigger_if = {
+					limit = {
+						OR = {
+							has_trait = arrogant
+							ai_boldness >= high_positive_ai_value
+							is_hot_headed_trigger = yes
+							agot_engagement_already_has_lover = { BETROTHED_1 = root BETROTHED_2 = betrothed }
+							NOT = { is_attracted_to_gender_of = betrothed }
+						}
+					}
+					var:betrothed_approval < 0
+				}
+				# otherwise they'll be a bit more lenient
+				trigger_else = {
+					var:betrothed_approval <= -20
+				}
+			}
+			# see if they will actually object
+			random = {
+				chance = 0
+				modifier = {
+					add = {
+						value = var:betrothed_approval
+						multiply = -0.5
+						max = 100
+					}
+				}
+				ai_value_modifier = {
+					ai_boldness = 1
+					ai_rationality = -1
+				}
+				modifier = {
+					add = 25
+					has_trait = stubborn
+				}
+				modifier = {
+					add = 25
+					has_trait = arrogant
+				}
+				modifier = {
+					add = -50
+					has_trait = humble
+				}
+				modifier = {
+					add = -50
+					has_trait = content
+				}
+				modifier = {
+					add = 50
+					NOT = { is_attracted_to_gender_of = betrothed }
+				}
+				modifier = {
+					add = 50
+					agot_engagement_already_has_lover = { BETROTHED_1 = root BETROTHED_2 = betrothed }
+				}
+				modifier = {
+					add = 50
+					has_relation_rival = betrothed
+				}
+				min = 0
+				max = 100
+				add_character_flag = { flag = is_objecting days = 1 }
+				save_scope_as = betrothed_1
+				betrothed = { save_scope_as = betrothed_2 }
+				# automatically break it off if the matchmaker is also the betrothed
+				if = {
+					limit = { matchmaker = scope:betrothed_2 }
+					matchmaker = { trigger_event = agot_engagement_events.0006 }
+				}
+				# special objection if the betrothed is a sibling
+				else_if = {
+					limit = { is_sibling_of = scope:betrothed_2 }
+					matchmaker = { trigger_event = agot_engagement_events.0007 }
+				}
+				# otherwise object to the betrothal
+				else = {
+					matchmaker = { trigger_event = agot_engagement_events.0002 }
+				}
+			}
+
+			# when there isn't an objection, check with any adult betrothed
+			# who otherwise might not get to make a check at all
+			if = {
+				limit = {
+					NOT = { has_character_flag = is_objecting }
+					betrothed ?= {
+						is_adult = yes
+						is_courtier = yes
+						NOT = { has_character_flag = betrothed_objection_check }
+					}
+				}
+				betrothed = {
+					add_character_flag = { flag = betrothed_objection_check days = 1 }
+					trigger_event = agot_engagement_events.0001
+				}
+			}
+		}
+	}
+}
+
+# child objects to betrothal
+agot_engagement_events.0002 = {
+	type = character_event
+	title = agot_engagement_events.0002.t
+	desc = {
+		desc = agot_engagement_events.0002.desc.intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:betrothed_1 = { has_personality_submissive_trigger = yes }
+				}
+				desc = agot_engagement_events.0002.desc.submissive
+			}
+			triggered_desc = {
+				trigger = {
+					scope:betrothed_1 = {
+						OR = {
+							has_personality_dominant_trigger = yes
+							has_personality_malicious_trigger = yes
+						}
+					}
+				}
+				desc = agot_engagement_events.0002.desc.angry
+			}
+			desc = agot_engagement_events.0002.desc.beg
+		}
+		desc = agot_engagement_events.0002.desc.mid
+		first_valid = {
+			# no objections picked
+			triggered_desc = {
+				trigger = { scope:objection_1 = flag:fallthrough }
+				desc = {
+					first_valid = {
+						triggered_desc = {
+							trigger = { exists = scope:betrothed_lover }
+							desc = {
+								desc = agot_engagement_events.0002.desc.one
+								desc = agot_engagement_events.0002.desc.lover
+							}
+						}
+						desc = agot_engagement_events.0002.desc.nothing
+					}
+				}
+			}
+			# one objection picked
+			triggered_desc = {
+				trigger = {
+					NOT = { scope:objection_1 = flag:fallthrough }
+					scope:objection_2 = flag:fallthrough
+				}
+				desc = {
+					desc = agot_engagement_events.0002.desc.one
+					first_valid = {
+						triggered_desc = {
+							trigger = { exists = scope:betrothed_lover }
+							desc = agot_engagement_events.0002.desc.lover
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:neg_opinion }
+							desc = agot_engagement_objection_negative_opinion
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:incest }
+							desc = agot_engagement_objection_incest
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:lowborn }
+							desc = agot_engagement_objection_lowborn
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:bastard }
+							desc = agot_engagement_objection_bastard
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:attracted_to_me }
+							desc = agot_engagement_objection_not_attracted_to_me
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:attracted_to_them }
+							desc = agot_engagement_objection_not_attracted_to_them
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:dwarf }
+							desc = agot_engagement_objection_dwarf
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:hunchback }
+							desc = agot_engagement_objection_hunchback
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:greyscale }
+							desc = agot_engagement_objection_greyscale
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:hideous }
+							desc = agot_engagement_objection_hideous
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:ugly }
+							desc = agot_engagement_objection_ugly
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unattractive }
+							desc = agot_engagement_objection_unattractive
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:idiot }
+							desc = agot_engagement_objection_idiot
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:dull }
+							desc = agot_engagement_objection_dull
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:weak }
+							desc = agot_engagement_objection_weak
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:lesser }
+							desc = agot_engagement_objection_lesser
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:lazy }
+							desc = agot_engagement_objection_lazy
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:deceitful }
+							desc = agot_engagement_objection_deceitful
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:craven }
+							desc = agot_engagement_objection_craven
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:shy }
+							desc = agot_engagement_objection_shy
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:bold }
+							desc = agot_engagement_objection_bold
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:meek }
+							desc = agot_engagement_objection_meek
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:drunkard }
+							desc = agot_engagement_objection_drunkard
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:sad }
+							desc = agot_engagement_objection_sad
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:crazy }
+							desc = agot_engagement_objection_crazy
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unkind }
+							desc = agot_engagement_objection_unkind
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:prude }
+							desc = agot_engagement_objection_prude
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unfaithful }
+							desc = agot_engagement_objection_unfaithful
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:too_young }
+							desc = agot_engagement_objection_too_young
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:too_old }
+							desc = agot_engagement_objection_too_old
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:much_too_young }
+							desc = agot_engagement_objection_much_too_young
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:much_too_old }
+							desc = agot_engagement_objection_much_too_old
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unlike }
+							desc = agot_engagement_objection_unlike
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:std }
+							desc = agot_engagement_objection_std
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:reputation }
+							desc = agot_engagement_objection_reputation
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:child }
+							desc = agot_engagement_objection_child
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unremarkable }
+							desc = agot_engagement_objection_unremarkable
+						}
+						desc = agot_engagement_objection_unremarkable
+					}
+				}
+			}
+			# two objections picked
+			triggered_desc = {
+				trigger = {
+					NOR = {
+						scope:objection_1 = flag:fallthrough
+						scope:objection_2 = flag:fallthrough
+					}
+					scope:objection_3 = flag:fallthrough
+				}
+				desc = {
+					desc = agot_engagement_events.0002.desc.first
+					first_valid = {
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:neg_opinion }
+							desc = agot_engagement_objection_negative_opinion
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:incest }
+							desc = agot_engagement_objection_incest
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:lowborn }
+							desc = agot_engagement_objection_lowborn
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:bastard }
+							desc = agot_engagement_objection_bastard
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:attracted_to_me }
+							desc = agot_engagement_objection_not_attracted_to_me
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:attracted_to_them }
+							desc = agot_engagement_objection_not_attracted_to_them
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:dwarf }
+							desc = agot_engagement_objection_dwarf
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:hunchback }
+							desc = agot_engagement_objection_hunchback
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:greyscale }
+							desc = agot_engagement_objection_greyscale
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:hideous }
+							desc = agot_engagement_objection_hideous
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:ugly }
+							desc = agot_engagement_objection_ugly
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unattractive }
+							desc = agot_engagement_objection_unattractive
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:idiot }
+							desc = agot_engagement_objection_idiot
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:dull }
+							desc = agot_engagement_objection_dull
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:weak }
+							desc = agot_engagement_objection_weak
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:lesser }
+							desc = agot_engagement_objection_lesser
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:lazy }
+							desc = agot_engagement_objection_lazy
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:deceitful }
+							desc = agot_engagement_objection_deceitful
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:craven }
+							desc = agot_engagement_objection_craven
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:shy }
+							desc = agot_engagement_objection_shy
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:bold }
+							desc = agot_engagement_objection_bold
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:meek }
+							desc = agot_engagement_objection_meek
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:drunkard }
+							desc = agot_engagement_objection_drunkard
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:sad }
+							desc = agot_engagement_objection_sad
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:crazy }
+							desc = agot_engagement_objection_crazy
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unkind }
+							desc = agot_engagement_objection_unkind
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:prude }
+							desc = agot_engagement_objection_prude
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unfaithful }
+							desc = agot_engagement_objection_unfaithful
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:too_young }
+							desc = agot_engagement_objection_too_young
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:too_old }
+							desc = agot_engagement_objection_too_old
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:much_too_young }
+							desc = agot_engagement_objection_much_too_young
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:much_too_old }
+							desc = agot_engagement_objection_much_too_old
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unlike }
+							desc = agot_engagement_objection_unlike
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:std }
+							desc = agot_engagement_objection_std
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:reputation }
+							desc = agot_engagement_objection_reputation
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:child }
+							desc = agot_engagement_objection_child
+						}
+						triggered_desc = {
+							trigger = { scope:objection_1 = flag:unremarkable }
+							desc = agot_engagement_objection_unremarkable
+						}
+						desc = agot_engagement_objection_unremarkable
+					}
+					desc = agot_engagement_events.0002.desc.second
+					first_valid = {
+						triggered_desc = {
+							trigger = { exists = scope:betrothed_lover }
+							desc = agot_engagement_events.0002.desc.lover
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:neg_opinion }
+							desc = agot_engagement_objection_negative_opinion
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:incest }
+							desc = agot_engagement_objection_incest
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:lowborn }
+							desc = agot_engagement_objection_lowborn
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:bastard }
+							desc = agot_engagement_objection_bastard
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:attracted_to_me }
+							desc = agot_engagement_objection_not_attracted_to_me
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:attracted_to_them }
+							desc = agot_engagement_objection_not_attracted_to_them
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:dwarf }
+							desc = agot_engagement_objection_dwarf
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:hunchback }
+							desc = agot_engagement_objection_hunchback
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:greyscale }
+							desc = agot_engagement_objection_greyscale
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:hideous }
+							desc = agot_engagement_objection_hideous
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:ugly }
+							desc = agot_engagement_objection_ugly
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:unattractive }
+							desc = agot_engagement_objection_unattractive
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:idiot }
+							desc = agot_engagement_objection_idiot
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:dull }
+							desc = agot_engagement_objection_dull
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:weak }
+							desc = agot_engagement_objection_weak
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:lesser }
+							desc = agot_engagement_objection_lesser
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:lazy }
+							desc = agot_engagement_objection_lazy
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:deceitful }
+							desc = agot_engagement_objection_deceitful
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:craven }
+							desc = agot_engagement_objection_craven
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:shy }
+							desc = agot_engagement_objection_shy
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:bold }
+							desc = agot_engagement_objection_bold
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:meek }
+							desc = agot_engagement_objection_meek
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:drunkard }
+							desc = agot_engagement_objection_drunkard
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:sad }
+							desc = agot_engagement_objection_sad
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:crazy }
+							desc = agot_engagement_objection_crazy
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:unkind }
+							desc = agot_engagement_objection_unkind
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:prude }
+							desc = agot_engagement_objection_prude
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:unfaithful }
+							desc = agot_engagement_objection_unfaithful
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:too_young }
+							desc = agot_engagement_objection_too_young
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:too_old }
+							desc = agot_engagement_objection_too_old
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:much_too_young }
+							desc = agot_engagement_objection_much_too_young
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:much_too_old }
+							desc = agot_engagement_objection_much_too_old
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:unlike }
+							desc = agot_engagement_objection_unlike
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:std }
+							desc = agot_engagement_objection_std
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:reputation }
+							desc = agot_engagement_objection_reputation
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:child }
+							desc = agot_engagement_objection_child
+						}
+						triggered_desc = {
+							trigger = { scope:objection_2 = flag:unremarkable }
+							desc = agot_engagement_objection_unremarkable
+						}
+						desc = agot_engagement_objection_unremarkable
+					}
+				}
+			}
+			# three objections picked
+			desc = {
+				desc = agot_engagement_events.0002.desc.first
+				first_valid = {
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:neg_opinion }
+						desc = agot_engagement_objection_negative_opinion
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:incest }
+						desc = agot_engagement_objection_incest
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:lowborn }
+						desc = agot_engagement_objection_lowborn
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:bastard }
+						desc = agot_engagement_objection_bastard
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:attracted_to_me }
+						desc = agot_engagement_objection_not_attracted_to_me
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:attracted_to_them }
+						desc = agot_engagement_objection_not_attracted_to_them
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:dwarf }
+						desc = agot_engagement_objection_dwarf
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:hunchback }
+						desc = agot_engagement_objection_hunchback
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:greyscale }
+						desc = agot_engagement_objection_greyscale
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:hideous }
+						desc = agot_engagement_objection_hideous
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:ugly }
+						desc = agot_engagement_objection_ugly
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:unattractive }
+						desc = agot_engagement_objection_unattractive
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:idiot }
+						desc = agot_engagement_objection_idiot
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:dull }
+						desc = agot_engagement_objection_dull
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:weak }
+						desc = agot_engagement_objection_weak
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:lesser }
+						desc = agot_engagement_objection_lesser
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:lazy }
+						desc = agot_engagement_objection_lazy
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:deceitful }
+						desc = agot_engagement_objection_deceitful
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:craven }
+						desc = agot_engagement_objection_craven
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:shy }
+						desc = agot_engagement_objection_shy
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:bold }
+						desc = agot_engagement_objection_bold
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:meek }
+						desc = agot_engagement_objection_meek
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:drunkard }
+						desc = agot_engagement_objection_drunkard
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:sad }
+						desc = agot_engagement_objection_sad
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:crazy }
+						desc = agot_engagement_objection_crazy
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:unkind }
+						desc = agot_engagement_objection_unkind
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:prude }
+						desc = agot_engagement_objection_prude
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:unfaithful }
+						desc = agot_engagement_objection_unfaithful
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:too_young }
+						desc = agot_engagement_objection_too_young
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:too_old }
+						desc = agot_engagement_objection_too_old
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:much_too_young }
+						desc = agot_engagement_objection_much_too_young
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:much_too_old }
+						desc = agot_engagement_objection_much_too_old
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:unlike }
+						desc = agot_engagement_objection_unlike
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:std }
+						desc = agot_engagement_objection_std
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:reputation }
+						desc = agot_engagement_objection_reputation
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:child }
+						desc = agot_engagement_objection_child
+					}
+					triggered_desc = {
+						trigger = { scope:objection_1 = flag:unremarkable }
+						desc = agot_engagement_objection_unremarkable
+					}
+					desc = agot_engagement_objection_unremarkable
+				}
+				desc = agot_engagement_events.0002.desc.second
+				first_valid = {
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:neg_opinion }
+						desc = agot_engagement_objection_negative_opinion
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:incest }
+						desc = agot_engagement_objection_incest
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:lowborn }
+						desc = agot_engagement_objection_lowborn
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:bastard }
+						desc = agot_engagement_objection_bastard
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:attracted_to_me }
+						desc = agot_engagement_objection_not_attracted_to_me
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:attracted_to_them }
+						desc = agot_engagement_objection_not_attracted_to_them
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:dwarf }
+						desc = agot_engagement_objection_dwarf
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:hunchback }
+						desc = agot_engagement_objection_hunchback
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:greyscale }
+						desc = agot_engagement_objection_greyscale
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:hideous }
+						desc = agot_engagement_objection_hideous
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:ugly }
+						desc = agot_engagement_objection_ugly
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:unattractive }
+						desc = agot_engagement_objection_unattractive
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:idiot }
+						desc = agot_engagement_objection_idiot
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:dull }
+						desc = agot_engagement_objection_dull
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:weak }
+						desc = agot_engagement_objection_weak
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:lesser }
+						desc = agot_engagement_objection_lesser
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:lazy }
+						desc = agot_engagement_objection_lazy
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:deceitful }
+						desc = agot_engagement_objection_deceitful
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:craven }
+						desc = agot_engagement_objection_craven
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:shy }
+						desc = agot_engagement_objection_shy
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:bold }
+						desc = agot_engagement_objection_bold
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:meek }
+						desc = agot_engagement_objection_meek
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:drunkard }
+						desc = agot_engagement_objection_drunkard
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:sad }
+						desc = agot_engagement_objection_sad
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:crazy }
+						desc = agot_engagement_objection_crazy
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:unkind }
+						desc = agot_engagement_objection_unkind
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:prude }
+						desc = agot_engagement_objection_prude
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:unfaithful }
+						desc = agot_engagement_objection_unfaithful
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:too_young }
+						desc = agot_engagement_objection_too_young
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:too_old }
+						desc = agot_engagement_objection_too_old
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:much_too_young }
+						desc = agot_engagement_objection_much_too_young
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:much_too_old }
+						desc = agot_engagement_objection_much_too_old
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:unlike }
+						desc = agot_engagement_objection_unlike
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:std }
+						desc = agot_engagement_objection_std
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:reputation }
+						desc = agot_engagement_objection_reputation
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:child }
+						desc = agot_engagement_objection_child
+					}
+					triggered_desc = {
+						trigger = { scope:objection_2 = flag:unremarkable }
+						desc = agot_engagement_objection_unremarkable
+					}
+					desc = agot_engagement_objection_unremarkable
+				}
+				desc = agot_engagement_events.0002.desc.third
+				first_valid = {
+					triggered_desc = {
+						trigger = { exists = scope:betrothed_lover }
+						desc = agot_engagement_events.0002.desc.lover
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:neg_opinion }
+						desc = agot_engagement_objection_negative_opinion
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:incest }
+						desc = agot_engagement_objection_incest
+					}
+
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:lowborn }
+						desc = agot_engagement_objection_lowborn
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:bastard }
+						desc = agot_engagement_objection_bastard
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:attracted_to_me }
+						desc = agot_engagement_objection_not_attracted_to_me
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:attracted_to_them }
+						desc = agot_engagement_objection_not_attracted_to_them
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:dwarf }
+						desc = agot_engagement_objection_dwarf
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:hunchback }
+						desc = agot_engagement_objection_hunchback
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:greyscale }
+						desc = agot_engagement_objection_greyscale
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:hideous }
+						desc = agot_engagement_objection_hideous
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:ugly }
+						desc = agot_engagement_objection_ugly
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:unattractive }
+						desc = agot_engagement_objection_unattractive
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:idiot }
+						desc = agot_engagement_objection_idiot
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:dull }
+						desc = agot_engagement_objection_dull
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:weak }
+						desc = agot_engagement_objection_weak
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:lesser }
+						desc = agot_engagement_objection_lesser
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:lazy }
+						desc = agot_engagement_objection_lazy
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:deceitful }
+						desc = agot_engagement_objection_deceitful
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:craven }
+						desc = agot_engagement_objection_craven
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:shy }
+						desc = agot_engagement_objection_shy
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:bold }
+						desc = agot_engagement_objection_bold
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:meek }
+						desc = agot_engagement_objection_meek
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:drunkard }
+						desc = agot_engagement_objection_drunkard
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:sad }
+						desc = agot_engagement_objection_sad
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:crazy }
+						desc = agot_engagement_objection_crazy
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:unkind }
+						desc = agot_engagement_objection_unkind
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:prude }
+						desc = agot_engagement_objection_prude
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:unfaithful }
+						desc = agot_engagement_objection_unfaithful
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:too_young }
+						desc = agot_engagement_objection_too_young
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:too_old }
+						desc = agot_engagement_objection_too_old
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:much_too_young }
+						desc = agot_engagement_objection_much_too_young
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:much_too_old }
+						desc = agot_engagement_objection_much_too_old
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:unlike }
+						desc = agot_engagement_objection_unlike
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:std }
+						desc = agot_engagement_objection_std
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:reputation }
+						desc = agot_engagement_objection_reputation
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:child }
+						desc = agot_engagement_objection_child
+					}
+					triggered_desc = {
+						trigger = { scope:objection_3 = flag:unremarkable }
+						desc = agot_engagement_objection_unremarkable
+					}
+					desc = agot_engagement_objection_unremarkable
+				}
+			}
+		}
+		desc = agot_engagement_events.0002.desc.end
+	}
+	theme = family
+
+	left_portrait = {
+		character = scope:betrothed_1
+		triggered_animation = {
+			trigger = {
+				scope:betrothed_1 = {
+					has_personality_submissive_trigger = yes
+				}
+			}
+			animation = shame
+		}
+		triggered_animation = {
+			trigger = {
+				scope:betrothed_1 = {
+					OR = {
+						has_personality_dominant_trigger = yes
+						has_personality_malicious_trigger = yes
+					}
+				}
+			}
+			animation = anger
+		}
+		animation = beg
+	}
+	lower_right_portrait = scope:betrothed_2
+	lower_center_portrait = {
+		trigger = { exists = scope:betrothed_lover }
+		character = scope:betrothed_lover
+	}
+
+	immediate = {
+		# grab the child's current lover
+		if = {
+			limit = {
+				agot_engagement_already_has_lover = { BETROTHED_1 = scope:betrothed_1 BETROTHED_2 = scope:betrothed_2 }
+			}
+			scope:betrothed_1 = {
+				random_relation = {
+					type = lover
+					limit = {
+						basic_is_available_ai = yes
+						bp2_valid_for_standard_interactions_trigger = yes
+						NOR = {
+							is_close_or_extended_family_of = scope:betrothed_1
+							has_relation_rival = root
+							has_relation_lover = root
+							root = { has_imprisonment_reason = prev }
+							is_at_war_with = root
+							is_consort_of = root
+							betrothed ?= root
+							liege ?= { is_at_war_with = root }
+							is_concubine = yes
+							is_diarch = yes
+							AND = {
+								exists = inspiration
+								has_completed_inspiration = no
+							}
+						}
+						# but only if it's possible they might marry
+						unlikely_to_commit = no
+						OR = {
+							AND = {
+								can_be_introduced_character_trigger = { CHARACTER = scope:betrothed_1 }
+								can_be_ordered_to_wed_by = { LIEGE = root }
+							}
+							AND = {
+								can_be_ordered_to_abandon_vows_by = { LIEGE = root }
+								is_married = no
+								is_betrothed = no
+							}
+							can_be_ordered_to_break_betrothal_by = { LIEGE = root }
+						}
+					}
+					save_scope_as = betrothed_lover
+				}
+			}
+		}
+
+		# set the scopes for the breaking betrothal, in case they're needed
+		save_scope_as = actor
+		scope:betrothed_1 = {
+			save_scope_as = recipient
+			save_scope_as = rejecting_betrothed
+		}
+		scope:betrothed_2 = {
+			save_scope_as = rejected_betrothed
+			if = {
+				limit = {
+					matchmaker ?= {
+						NOT = { this = scope:rejected_betrothed }
+						is_close_or_extended_family_of = scope:rejected_betrothed
+					}
+				}
+				matchmaker = { save_scope_as = rejected_betrothal_owner }
+			}
+			else = {
+				save_scope_as = rejected_betrothal_owner
+			}
+		}
+
+		# grab three objections for the loc, if this is a player
+		if = {
+			limit = { is_ai = no }
+			scope:betrothed_1 = {
+				agot_pick_engagement_objection = yes
+				agot_pick_engagement_objection = yes
+				agot_pick_engagement_objection = yes
+			}
+		}
+		else = {
+			save_scope_value_as = { name = objection_1 value = flag:fallthrough }
+		}
+	}
+
+	option = {
+		name = agot_engagement_events.0002.a # I'll allow it, for now
+		scope:betrothed_1 = {
+			add_opinion = { target = root modifier = grateful_opinion opinion = 30 }
+			add_trait_force_tooltip = refusing_marriage
+			hidden_effect = {
+				create_story = {
+					type = lmf_will_not_wed_story_cycle
+				}
+			}
+		}
+		improve_relationship_effect = {
+			TARGET = scope:betrothed_1
+			REASON = allowed_to_marry_at_will
+		}
+		agot_end_engagement_for_recipient = yes
+
+		# add opinion that will prevent re-engagement later
+		scope:betrothed_1 = {
+			hidden_effect = {
+				add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+				reverse_add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			opinion_modifier = {
+				who = root
+				opinion_target = scope:betrothed_1
+				multiplier = 0.5
+			}
+			ai_value_modifier = {
+				ai_compassion = 1
+			}
+			modifier = {
+				add = 50
+				scope:betrothed_1 = {
+					agot_has_wrong_lineality_betrothal = yes
+					agot_should_have_proper_lineality = { RULER = root }
+				}
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_engagement_events.0002.b # You don't have to marry him, but you will marry
+		reverse_add_opinion = { target = scope:betrothed_1 modifier = grateful_opinion opinion = 20 }
+		agot_end_engagement_for_recipient = yes
+
+		# add opinion that will prevent re-engagement later
+		scope:betrothed_1 = {
+			hidden_effect = {
+				add_character_flag = cannot_get_refusing_marriage_trait
+				add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+				reverse_add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+			}
+		}
+
+		ai_chance = {
+			base = 50
+			opinion_modifier = {
+				who = root
+				opinion_target = scope:betrothed_1
+				multiplier = 0.5
+			}
+			ai_value_modifier = {
+				ai_compassion = 0.5
+				ai_rationality = 0.5
+			}
+			modifier = {
+				add = 100
+				scope:betrothed_1 = {
+					agot_has_wrong_lineality_betrothal = yes
+					agot_should_have_proper_lineality = { RULER = root }
+				}
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_engagement_events.0002.c # You may marry your lover
+		trigger = {
+			scope:betrothed_lover ?= {
+				can_be_introduced_character_trigger = { CHARACTER = scope:betrothed_1 }
+				can_be_ordered_to_wed_by = { LIEGE = root }
+			}
+		}
+		agot_end_engagement_for_recipient = yes
+		agot_allow_lover_marriage = yes
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 0.5
+				scope:betrothed_lover = { has_no_particular_noble_roots_trigger = yes }
+			}
+			ai_value_modifier = {
+				ai_compassion = 0.5
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_engagement_events.0002.d # Lover will break betrothal and marry you instead
+		trigger = {
+			scope:betrothed_lover ?= {
+				can_be_ordered_to_break_betrothal_by = { LIEGE = root }
+			}
+		}
+		scope:betrothed_lover = { break_betrothal = scope:betrothed_lover.betrothed }
+		agot_end_engagement_for_recipient = yes
+		agot_allow_lover_marriage = yes
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 0.5
+				scope:betrothed_lover = { has_no_particular_noble_roots_trigger = yes }
+			}
+			ai_value_modifier = {
+				ai_compassion = 0.5
+				ai_honor = -0.3
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_engagement_events.0002.e # Lover will abandon their vows and marry you instead
+		trigger = {
+			scope:betrothed_lover ?= {
+				can_be_ordered_to_abandon_vows_by = { LIEGE = root }
+				is_married = no
+				is_betrothed = no
+			}
+		}
+		scope:betrothed_lover = { remove_religious_traits_effect = yes }
+		agot_end_engagement_for_recipient = yes
+		agot_allow_lover_marriage = yes
+		ai_chance = {
+			base = 50
+			modifier = {
+				factor = 0.5
+				scope:betrothed_lover = { has_no_particular_noble_roots_trigger = yes }
+			}
+			ai_value_modifier = {
+				ai_compassion = 0.5
+				ai_zeal = -0.5
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_engagement_events.0002.f # Are you mad? You'll do as I say!
+		custom_tooltip = agot_engagement_events.0002.f.tt
+		scope:betrothed_1 = {
+			worsen_relationship_effect = {
+				TARGET = root
+				REASON = overrode_marriage_wishes
+			}
+			add_opinion = {
+				target = root
+				modifier = hate_opinion
+				opinion = -50
+			}
+			add_character_flag = cannot_get_refusing_marriage_trait
+
+			# possible reaction
+			hidden_effect = {
+				random_list = {
+					# nothing happens
+					10 = {
+						ai_value_modifier = {
+							ai_rationality = 0.25
+							min = 0
+						}
+						ai_value_modifier = {
+							ai_boldness = -0.25
+							min = 0
+						}
+						ai_value_modifier = {
+							ai_vengefulness = -0.25
+							min = 0
+						}
+						modifier = {
+							scope:betrothed_1 = { has_trait = fickle }
+							add = 100
+						}
+						modifier = {
+							OR = {
+								ai_rationality <= -100
+								ai_boldness >= 100
+								ai_vengefulness >= 100
+								has_trait = stubborn
+							}
+							factor = 0
+						}
+					}
+					# mild response
+					60 = {
+						ai_value_modifier = {
+							ai_rationality = 0.5
+							min = 0
+						}
+						ai_value_modifier = {
+							ai_boldness = -0.5
+							min = 0
+						}
+						ai_value_modifier = {
+							ai_vengefulness = -0.5
+							min = 0
+						}
+						random_list = {
+							4 = {
+								trigger = {
+									NOT = { has_trait = depressed }
+								}
+								trait:depressed_1 = { save_scope_as = trait_added }
+							}
+							1 = {
+								trigger = { can_be_drunkard = yes }
+								modifier = {
+									factor = 5
+									has_character_modifier = patron_drunken_god_modifier
+								}
+								trait:drunkard = { save_scope_as = trait_added }
+							}
+							1 = {
+								trigger = { can_be_inappetetic = yes }
+								trait:inappetetic = { save_scope_as = trait_added }
+							}
+							1 = {
+								trigger = { can_be_comfort_eater = yes }
+								trait:comfort_eater = { save_scope_as = trait_added }
+							}
+							1 = {
+								trigger = { can_be_irritable = yes }
+								trait:irritable = { save_scope_as = trait_added }
+							}
+							1 = {
+								trigger = { can_be_reclusive = yes }
+								trait:reclusive = { save_scope_as = trait_added }
+							}
+							1 = {
+								trigger = { can_be_hashishiyah = yes }
+								trait:hashishiyah = { save_scope_as = trait_added }
+							}
+							1 = {}
+						}
+						if = {
+							limit = { exists = scope:trait_added }
+							root = {
+								send_interface_message = {
+									type = event_generic_neutral
+									title = agot_engagement_events.0002.mild.tt
+									left_icon = scope:betrothed_1
+									scope:betrothed_1 = {
+										add_trait_force_tooltip = scope:trait_added
+									}
+								}
+							}
+						}
+					}
+					# moderate response
+					20 = {
+						ai_value_modifier = {
+							ai_rationality = -0.5
+							min = 0
+						}
+						ai_value_modifier = {
+							ai_boldness = 0.5
+							min = 0
+						}
+						ai_value_modifier = {
+							ai_vengefulness = 0.5
+							min = 0
+						}
+						random_list = {
+							# refuses marriage with anyone
+							25 = {
+								root = { trigger_event = agot_engagement_events.0008 }
+							}
+							# it will be an unfruitful marriage
+							25 = {
+								trigger = {
+									NOT = { has_variable = unfruitful_marriage }
+								}
+								set_variable = {
+									name = unfruitful_marriage
+									value = scope:betrothed_2
+								}
+							}
+							# will become betrothed's rival
+							50 = {
+								trigger = {
+									can_set_relation_rival_trigger = { CHARACTER = scope:betrothed_2 }
+								}
+								set_relation_rival = { reason = rival_forced_betrothal target = scope:betrothed_2 }
+							}
+						}
+					}
+					# extreme response
+					10 = {
+						ai_value_modifier = {
+							ai_rationality = -0.25
+							min = 0
+						}
+						ai_value_modifier = {
+							ai_boldness = 0.25
+							min = 0
+						}
+						ai_value_modifier = {
+							ai_vengefulness = 0.25
+							min = 0
+						}
+						modifier = {
+							scope:betrothed_1 = { has_trait = stubborn }
+							add = 100
+						}
+						modifier = {
+							OR = {
+								ai_rationality >= 100
+								ai_boldness <= -100
+								ai_vengefulness <= -100
+								has_trait = fickle
+							}
+							factor = 0
+						}
+						random_list = {
+							# starts an elope story with lover
+							# we use this since either party might not be able to start a scheme right this moment
+							# and the story will guide them towards it
+							200 = {
+								trigger = {
+									agot_betrothed_lover_elope_possible = yes
+								}
+								modifier = {
+									scope:betrothed_lover = { is_married = yes }
+									factor = 0.25
+								}
+								scope:betrothed_1 = {
+									set_variable = { name = waiting_to_elope value = scope:proposer_target years = 20 }
+									create_story = { type = lmf_waiting_to_elope_story_cycle }
+								}
+								scope:betrothed_lover = {
+									set_variable = { name = waiting_to_elope value = scope:proposer years = 20 }
+									create_story = {
+										type = lmf_waiting_to_elope_story_cycle
+										save_scope_as = story
+									}
+									scope:story = {
+										set_variable = { name = elope_promised value = 10 }
+									}
+								}
+							}
+							# leaves the court
+							50 = {
+								save_scope_value_as = { name = path value = flag:leave }
+								root = { trigger_event = agot_engagement_events.0010 }
+							}
+							# goes to the north wall
+							0 = {
+								trigger = {
+									agot_valid_potential_nw_member = yes
+									ai_honor > medium_positive_honor
+									prowess > 15
+									NOT = { has_trait = lustful }
+									location = { geographical_region = world_westeros_seven_kingdoms }
+									agot_betrothed_lover_elope_possible = no
+								}
+								modifier = {
+									ai_honor > 0
+									add = ai_honor
+								}
+								modifier = {
+									culture = { has_cultural_pillar = heritage_first_man }
+									factor = 2
+								}
+								save_scope_value_as = { name = path value = flag:wall }
+								root = { trigger_event = agot_engagement_events.0010 }
+							}
+							# maester
+							0 = {
+								trigger = {
+									learning > 10
+									NOT = { has_trait = lustful }
+									culture = { has_innovation = innovation_maesters }
+									is_male = yes
+									agot_betrothed_lover_elope_possible = no
+								}
+								modifier = {
+									ai_rationality > 0
+									add = ai_rationality
+								}
+								modifier = {
+									has_trait = intellect_good
+									factor = 2
+								}
+								save_scope_value_as = { name = path value = flag:maester }
+								root = { trigger_event = agot_engagement_events.0010 }
+							}
+							# septon
+							0 = {
+								trigger = {
+									religion = religion:the_seven_religion
+									faith = { has_doctrine = doctrine_clerical_marriage_disallowed }
+									ai_zeal >= medium_positive_zeal
+									NOT = { has_trait = lustful }
+									agot_betrothed_lover_elope_possible = no
+								}
+								modifier = {
+									ai_zeal > 0
+									add = ai_zeal
+								}
+								modifier = {
+									has_trait = zealous
+									factor = 2
+								}
+								save_scope_value_as = { name = path value = flag:septon }
+								root = { trigger_event = agot_engagement_events.0010 }
+							}
+							# death
+							10 = {
+								trigger = {
+									OR = {
+										has_trait = depressed
+										ai_rationality <= high_negative_ai_value
+										has_personality_emotional_trigger = yes
+									}
+								}
+								root = { trigger_event = agot_engagement_events.0009 }
+							}
+						}
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = 50
+				exists = scope:betrothed_lover
+			}
+			ai_value_modifier = {
+				ai_honor = 1
+				min = 0
+			}
+			modifier = {
+				add = 200
+				scope:betrothed_1 = { has_been_promised_grand_wedding = yes }
+			}
+			modifier = {
+				add = 100
+				yields_alliance = {
+					candidate = scope:betrothed_1
+					target = scope:rejected_betrothal_owner
+					target_candidate = scope:rejected_betrothed
+				}
+			}
+			modifier = {
+				add = 50
+				scope:rejected_betrothal_owner = { is_powerful_vassal_of = root }
+			}
+			modifier = {
+				add = 100
+				exists = var:promised_to_marry_1
+				var:promised_to_marry_1 = {
+					this = scope:rejected_betrothed
+					any_parent = { is_vassal_of = root }
+				}
+				exists = var:promised_to_marry_2
+				var:promised_to_marry_2 = {
+					this = scope:betrothed_1
+					is_close_family_of = root
+				}
+			}
+			modifier = {
+				add = 100
+				is_at_war = yes
+				any_war_ally = { this = scope:rejected_betrothal_owner }
+			}
+			min = 1
+		}
+	}
+}
+
+# notification that the betrothal has been broken
+agot_engagement_events.0003 = {
+	type = letter_event
+	opening = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor = { this = scope:rejecting_betrothed }
+				}
+				desc = agot_engagement_events.0003.opening.harsh
+			}
+			desc = agot_engagement_events.0003.opening.apologetic
+		}
+	}
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor = { this = scope:rejecting_betrothed }
+				}
+				desc = {
+					desc = agot_engagement_events.0003.betrothed.start
+					first_valid = {
+						triggered_desc = {
+							trigger = { this = scope:rejected_betrothed }
+							desc = agot_engagement_events.0003.betrothed.torejected
+						}
+						desc = agot_engagement_events.0003.betrothed.toliege
+					}
+					desc = agot_engagement_events.0003.betrothed.end
+				}
+			}
+			desc = {
+				desc = agot_engagement_events.0003.start
+				first_valid = {
+					triggered_desc = {
+						trigger = { this = scope:rejected_betrothed }
+						desc = agot_engagement_events.0003.torejected
+					}
+					desc = agot_engagement_events.0003.toliege
+				}
+				desc = agot_engagement_events.0003.end
+			}
+		}
+	}
+	sender = {
+		character = scope:actor
+		triggered_animation = {
+			trigger = { scope:actor = scope:rejecting_betrothed }
+			animation = dismissal
+		}
+		animation = shame
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				NOT = { scope:actor = scope:rejecting_betrothed }
+			}
+			scope:rejecting_betrothed = { save_scope_as = betrothed_portrait }
+		}
+	}
+
+	option = {
+		name = agot_engagement_events.0003.a
+		add_opinion = {
+			target = scope:actor
+			modifier = broke_betrothal_opinion
+		}
+		show_as_tooltip = {
+			scope:rejecting_betrothed = {
+				break_betrothal = scope:rejected_betrothed
+			}
+		}
+	}
+
+	after = {
+		hidden_effect = {
+			if = {
+				limit = { this = scope:rejected_betrothed }
+				scope:rejecting_betrothed = {
+					break_betrothal = scope:rejected_betrothed
+				}
+			}
+		}
+	}
+}
+
+# child leaves betrothed liege
+agot_engagement_events.0006 = {
+	type = letter_event
+	opening = agot_engagement_events.0006.opening
+	desc = agot_engagement_events.0006.desc
+	sender = {
+		character = scope:betrothed_1
+		animation = disgust
+	}
+
+	immediate = {
+		# set the scopes for the breaking betrothal
+		save_scope_as = recipient
+		save_scope_as = rejected_betrothed
+		save_scope_as = rejected_betrothal_owner
+		scope:betrothed_1 = {
+			save_scope_as = actor
+			save_scope_as = rejecting_betrothed
+		}
+
+		# now end the betrothal - even though some traits would end it automatically,
+		# we still want the opinion changes and notifications
+		agot_end_engagement_for_recipient = yes
+
+		# add opinion that will prevent re-engagement later
+		scope:betrothed_1 = {
+			hidden_effect = {
+				add_opinion = { target = root modifier = ended_engagement_opinion }
+				reverse_add_opinion = { target = root modifier = ended_engagement_opinion }
+			}
+		}
+
+		# child leaves court
+		scope:betrothed_1 = {
+			add_character_flag = can_disinherit
+			remove_character_flag = cannot_get_refusing_marriage_trait
+			lose_guardians_and_wards_effect = { LIEGE = root COURTIER = scope:betrothed_1 }
+			add_trait_force_tooltip = refusing_marriage
+			hidden_effect = {
+				create_story = {
+					type = lmf_will_not_wed_story_cycle
+				}
+			}
+			set_variable = { name = forced_engagement value = root }
+			select_and_move_to_pool_effect = yes
+		}
+	}
+
+	option = {
+		name = agot_engagement_events.0006.a #She'll return in time, I'm sure of it.
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = 1
+			}
+			min = 1
+		}
+	}
+	option = {
+		trigger = {
+			culture = {
+				NOT = { has_cultural_parameter = cannot_disherit }
+			}
+		}
+		name = agot_engagement_events.0006.b #Then she'll have no inheritance of mine!
+		scope:betrothed_1 = {
+			disinherit_effect = { DISINHERITOR = root }
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = 1
+			}
+			min = 0
+		}
+	}
+}
+
+# child refuses an incestuous betrothal
+agot_engagement_events.0007 = {
+	type = character_event
+	title = agot_engagement_events.0007.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					any_spouse = {
+						even_if_dead = yes
+						is_close_family_of = root
+					}
+				}
+				desc = agot_engagement_events.0007.desc.incest
+			}
+			desc =  agot_engagement_events.0007.desc.normal
+		}
+	}
+	theme = family
+
+	left_portrait = {
+		character = scope:betrothed_1
+		animation = disgust
+	}
+
+	immediate = {
+		# set the scopes for the breaking betrothal
+		scope:betrothed_1 = {
+			save_scope_as = actor
+			save_scope_as = rejecting_betrothed
+		}
+		scope:betrothed_2 = {
+			save_scope_as = recipient
+			save_scope_as = rejected_betrothed
+			if = {
+				limit = {
+					matchmaker ?= {
+						NOT = { this = scope:rejected_betrothed }
+						is_close_or_extended_family_of = scope:rejected_betrothed
+					}
+				}
+				matchmaker = { save_scope_as = rejected_betrothal_owner }
+			}
+			else = {
+				save_scope_as = rejected_betrothal_owner
+			}
+		}
+
+		# now end the betrothal - even though some traits would end it automatically,
+		# we still want the opinion changes and notifications
+		save_scope_as = actor_liege
+		agot_end_engagement_for_recipient = yes
+
+		# add opinion that will prevent re-engagement later
+		scope:betrothed_1 = {
+			hidden_effect = {
+				add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+				reverse_add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+			}
+			# and the proper flag/modifier
+			add_character_flag = can_disinherit
+			add_character_modifier = agot_incest_aversion_modifier
+		}
+	}
+
+	option = {
+		name = agot_engagement_events.0007.a #I have no choice but to accept her decision.
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = 1
+			}
+			min = 1
+		}
+	}
+	option = {
+		trigger = {
+			culture = {
+				NOT = { has_cultural_parameter = cannot_disherit }
+			}
+		}
+		name = agot_engagement_events.0007.b #Then she shall have no inheritance of mine!
+		scope:betrothed_1 = {
+			disinherit_effect = { DISINHERITOR = root }
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = 1
+			}
+			min = 0
+		}
+	}
+}
+
+# child refuses to marry
+agot_engagement_events.0008 = {
+	type = character_event
+	title = agot_engagement_events.0008.t
+	desc = agot_engagement_events.0008.desc
+	theme = family
+
+	left_portrait = {
+		character = scope:betrothed_1
+		animation = disgust
+	}
+
+	immediate = {
+		# first switch the scopes so the child can end the betrothal directly
+		scope:betrothed_1 = { save_scope_as = actor }
+		scope:betrothed_2 = { save_scope_as = recipient }
+
+		# now end the betrothal - even though some traits would end it automatically,
+		# we still want the opinion changes and notifications
+		save_scope_as = actor_liege
+		agot_end_engagement_for_recipient = yes
+
+		# add opinion that will prevent re-engagement later
+		scope:betrothed_1 = {
+			hidden_effect = {
+				add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+				reverse_add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+			}
+			# and start the story
+			add_character_flag = can_disinherit
+			remove_character_flag = cannot_get_refusing_marriage_trait
+			add_trait = refusing_marriage
+			hidden_effect = {
+				create_story = {
+					type = lmf_will_not_wed_story_cycle
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_engagement_events.0008.a
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = 1
+			}
+			min = 1
+		}
+	}
+	option = {
+		name = agot_engagement_events.0008.b
+		rightfully_imprison_character_effect = {
+			TARGET = scope:betrothed_1
+			IMPRISONER = root
+		}
+		ai_chance = {
+			base = 30
+			ai_value_modifier = {
+				ai_vengefulness = 1
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_engagement_events.0008.c
+		scope:betrothed_1 = {
+			if = {
+				limit = {
+					root.culture = {
+						NOT = { has_cultural_parameter = cannot_disherit }
+					}
+				}
+				disinherit_effect = { DISINHERITOR = root }
+				add_character_flag = made_disinherit_demand #so they won't challenge it later
+			}
+			agot_banish_effect = { BANISHER = root }
+			set_variable = { name = forced_engagement value = root }
+			hidden_effect = {
+				random_owned_story = {
+					limit = { story_type = lmf_will_not_wed_story_cycle }
+					end_story = yes
+				}
+			}
+		}
+		ai_chance = {
+			base = 20
+			ai_value_modifier = {
+				ai_vengefulness = 0.5
+			}
+			min = 0
+		}
+	}
+}
+
+# child commits suicide after being refused
+agot_engagement_events.0009 = {
+	type = character_event
+	title = agot_engagement_events.0009.t
+	desc = agot_engagement_events.0009.desc
+	theme = death
+
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	right_portrait = {
+		character = scope:betrothed_1
+		animation = dead
+	}
+	override_background = { reference = ce1_catacombs }
+
+	immediate = {
+		scope:betrothed_1 = {
+			if = {
+				limit = {
+					NOR = {
+						has_trait = depressed
+						has_trait = possessed
+						has_trait = lunatic
+					}
+				}
+				add_trait = depressed_1
+			}
+			death = { death_reason = death_suicide }
+		}
+	}
+
+	option = {
+		name = agot_engagement_events.0009.a
+	}
+}
+
+# child leaves court after being refused
+agot_engagement_events.0010 = {
+	type = letter_event
+	opening = agot_engagement_events.0010.opening
+	desc = {
+		desc = agot_engagement_events.0010.start
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:path = flag:leave }
+				desc = agot_engagement_events.0010.leave
+			}
+			triggered_desc = {
+				trigger = { scope:path = flag:wall }
+				desc = agot_engagement_events.0010.wall
+			}
+			triggered_desc = {
+				trigger = { scope:path = flag:maester }
+				desc = agot_engagement_events.0010.maester
+			}
+			triggered_desc = {
+				trigger = { scope:path = flag:septon }
+				desc = agot_engagement_events.0010.septon
+			}
+			desc = agot_engagement_events.0010.leave
+		}
+	}
+	sender = {
+		character = scope:betrothed_1
+		animation = disgust
+	}
+
+	immediate = {
+		# first switch the scopes so the child can end the betrothal directly
+		scope:betrothed_1 = { save_scope_as = actor }
+		scope:betrothed_2 = { save_scope_as = recipient }
+
+		# now end the betrothal - even though some traits would end it automatically,
+		# we still want the opinion changes and notifications
+		save_scope_as = actor_liege
+		agot_end_engagement_for_recipient = yes
+
+		# add opinion that will prevent re-engagement later
+		scope:betrothed_1 = {
+			hidden_effect = {
+				add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+				reverse_add_opinion = { target = scope:betrothed_2 modifier = ended_engagement_opinion }
+			}
+		}
+
+		# now make the specific changes for their chosen path
+		if = {
+			limit = { scope:path = flag:wall }
+			scope:betrothed_1 = {
+				add_character_flag = can_disinherit
+				remove_character_flag = cannot_get_refusing_marriage_trait
+				agot_send_to_nightswatch_effect = { ACTOR = scope:betrothed_1 NIGHTSWATCH_CANDIDATE = scope:betrothed_1 }
+			}
+		}
+		else_if = {
+			limit = { scope:path = flag:maester }
+			scope:betrothed_1 = {
+				add_character_flag = can_disinherit
+				remove_character_flag = cannot_get_refusing_marriage_trait
+				agot_send_to_citadel_effect = { MAESTER_CANDIDATE = scope:betrothed_1 }
+			}
+		}
+		else_if = {
+			limit = { scope:path = flag:septon }
+			scope:betrothed_1 = {
+				add_character_flag = can_disinherit
+				remove_character_flag = cannot_get_refusing_marriage_trait
+				if = {
+					limit = { exists = liege }
+					lose_guardians_and_wards_effect = { LIEGE = scope:betrothed_1.liege COURTIER = scope:betrothed_1 }
+				}
+				add_trait = septon
+				add_piety_level = 1
+				if = {
+					limit = {
+						scope:betrothed_1.top_liege ?= {
+							any_vassal_or_below = {
+								government_has_flag = government_is_theocracy
+								is_landed = yes
+								faith = scope:betrothed_1.faith
+							}
+						}
+					}
+					scope:betrothed_1.top_liege = {
+						random_vassal_or_below = {
+							limit = {
+								government_has_flag = government_is_theocracy
+								is_landed = yes
+								faith = scope:betrothed_1.faith
+							}
+							weight = {
+								base = 1
+								modifier = {
+									add = 1
+									primary_title.tier > tier_barony
+								}
+								modifier = {
+									add = 2
+									has_relation_friend = root
+								}
+								modifier = {
+									add = 1
+									is_vassal_of = root
+								}
+								modifier = {
+									add = 1
+									opinion = { target = root value >= 20 }
+								}
+							}
+							add_courtier = scope:betrothed_1
+						}
+					}
+				}
+				else = {
+					select_and_move_to_pool_effect = yes
+				}
+				add_character_modifier = {
+					modifier = lust_for_adventure
+					years = 5
+				}
+			}
+		}
+		else = {
+			scope:betrothed_1 = {
+				add_character_flag = can_disinherit
+				remove_character_flag = cannot_get_refusing_marriage_trait
+				lose_guardians_and_wards_effect = { LIEGE = root COURTIER = scope:betrothed_1 }
+				add_trait_force_tooltip = refusing_marriage
+				hidden_effect = {
+					create_story = {
+						type = lmf_will_not_wed_story_cycle
+					}
+				}
+				add_character_modifier = { modifier = lust_for_adventure years = 10 }
+				set_variable = { name = forced_engagement value = root }
+				select_and_move_to_pool_effect = yes
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			NOT = { scope:path = flag:leave }
+		}
+		name = {
+			trigger = { scope:path = flag:wall }
+			text = agot_engagement_events.0010.a.wall
+		}
+		name = {
+			trigger = { scope:path = flag:maester }
+			text = agot_engagement_events.0010.a.maester
+		}
+		name = {
+			trigger = { scope:path = flag:septon }
+			text = agot_engagement_events.0010.a.septon
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+	option = {
+		trigger = {
+			scope:path = flag:leave
+			NOT = {
+				culture = { has_cultural_parameter = cannot_disherit }
+			}
+		}
+		name = agot_engagement_events.0010.a.leave #If that's what she wants, she needn't return here. Ever!
+		stress_impact = {
+			forgiving = minor_stress_impact_gain
+			compassionate = minor_stress_impact_gain
+		}
+		scope:betrothed_1 = {
+			hidden_effect = {
+				random_owned_story = {
+					limit = { story_type = lmf_will_not_wed_story_cycle }
+					end_story = yes
+				}
+			}
+			disinherit_effect = { DISINHERITOR = root }
+			add_character_flag = made_disinherit_demand #so they won't challenge it later
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = 1
+			}
+			min = 0
+		}
+	}
+	option = {
+		trigger = { scope:path = flag:leave }
+		name = agot_engagement_events.0010.b.leave #She'll return, in time. I'm certain of it.
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = 1
+			}
+			min = 1
+		}
+	}
+}
+
+
+### Betrothal renegotiation
+
+# bounce event to determine whether lineality needs to be renegotiated
+agot_engagement_events.0020 = {
+	type = character_event
+	hidden = yes
+
+	trigger = {
+		exists = betrothed
+	}
+
+	immediate = {
+		# check to see if there's a matchmaker
+		if = {
+			limit = {
+				exists = matchmaker
+				exists = dynasty
+				matchmaker = {
+					is_ai = yes
+					dynasty ?= root.dynasty
+					highest_held_title_tier >= tier_county
+					# who will stand up for them (or themselves)
+					NOR = {
+						has_trait_rank = { trait = intellect_bad rank > 1 }
+						AND = {
+							has_personality_submissive_trigger = yes
+							OR = {
+								target_is_liege_or_above = root.betrothed
+								target_is_liege_or_above = root.betrothed.matchmaker
+								has_dread_level_towards = { target = root.betrothed level >= 1 }
+								has_dread_level_towards = { target = root.betrothed.matchmaker level >= 1 }
+								highest_held_title_tier_plus_one < root.betrothed.highest_held_title_tier
+								highest_held_title_tier_plus_one < root.betrothed.matchmaker.highest_held_title_tier
+							}
+						}
+					}
+					# and can actually break the betrothal
+					is_character_interaction_valid = {
+						recipient = root.betrothed
+						interaction = break_betrothal_interaction
+					}
+				}
+			}
+			matchmaker = { save_scope_as = actor }
+			# check to see if they're an heir or ruler in a wrong-lineality betrothal
+			if = {
+				limit = {
+					is_ai = yes
+					agot_has_wrong_lineality_betrothal = yes
+					agot_should_have_proper_lineality = { RULER = scope:actor }
+				}
+				# save all the needed scopes
+				save_scope_as = recipient
+				save_scope_as = rejecting_betrothed
+				betrothed = {
+					save_scope_as = rejected_betrothed
+					if = {
+						limit = {
+							matchmaker ?= {
+								NOT = { this = scope:rejected_betrothed }
+							}
+						}
+						matchmaker = { save_scope_as = rejected_betrothal_owner }
+					}
+					else = {
+						save_scope_as = rejected_betrothal_owner
+					}
+				}
+				save_scope_value_as = { name = no_notification value = yes }
+				# now send the letter
+				scope:rejected_betrothal_owner = { trigger_event = agot_engagement_events.0021 }
+			}
+			else = {
+				if = {
+					limit = {
+						betrothed = { is_adult = yes }
+					}
+					betrothed = {
+						trigger_event = agot_engagement_events.0020
+					}
+				}
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					betrothed = { is_adult = yes }
+				}
+				betrothed = {
+					trigger_event = agot_engagement_events.0020
+				}
+			}
+		}
+	}
+}
+
+# letter demanding renegotiation of betrothal
+agot_engagement_events.0021 = {
+	type = letter_event
+	opening = agot_engagement_events.0021.opening
+	desc = {
+		desc = agot_engagement_events.0021.start
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor = {
+						this = scope:rejecting_betrothed
+						is_ruler = yes
+					}
+				}
+				desc = agot_engagement_events.0021.self.ruler
+			}
+			triggered_desc = {
+				trigger = {
+					scope:actor = {
+						this = scope:rejecting_betrothed
+						any_heir_title = {}
+					}
+				}
+				desc = agot_engagement_events.0021.self.heir
+			}
+			triggered_desc = {
+				trigger = {
+					scope:actor = {
+						this = scope:rejecting_betrothed
+					}
+				}
+				desc = agot_engagement_events.0021.self.default
+			}
+			triggered_desc = {
+				trigger = {
+					scope:rejecting_betrothed = {
+						is_ruler = yes
+					}
+				}
+				desc = agot_engagement_events.0021.other.ruler
+			}
+			triggered_desc = {
+				trigger = {
+					scope:rejecting_betrothed = {
+						any_heir_title = {}
+					}
+				}
+				desc = agot_engagement_events.0021.other.heir
+			}
+			desc = agot_engagement_events.0021.other.default
+		}
+		desc = agot_engagement_events.0021.mid
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor = {
+						this = scope:rejecting_betrothed
+					}
+					scope:rejected_betrothed = {
+						this = scope:rejected_betrothal_owner
+					}
+				}
+				desc = agot_engagement_events.0021.self.withtarget
+			}
+			triggered_desc = {
+				trigger = {
+					scope:actor = {
+						this = scope:rejecting_betrothed
+					}
+				}
+				desc = agot_engagement_events.0021.self.withother
+			}
+			triggered_desc = {
+				trigger = {
+					scope:rejected_betrothed = {
+						this = scope:rejected_betrothal_owner
+					}
+				}
+				desc = agot_engagement_events.0021.other.withtarget
+			}
+			desc = agot_engagement_events.0021.other.withother
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:rejecting_betrothed = { is_female = yes }
+				}
+				desc = agot_engagement_events.0021.matrilineal
+			}
+			desc = agot_engagement_events.0021.patrilineal
+		}
+		desc = agot_engagement_events.0021.end
+	}
+	sender = scope:actor
+
+	# these triggers are things that will prevent the rejected betrothal owner from cancelling the betrothal
+	trigger = {
+		NOR = {
+			# they've cancelled a betrothal previously
+			has_opinion_modifier = { modifier = broke_betrothal_opinion target = scope:actor }
+			has_opinion_modifier = { modifier = broke_betrothal_grand_wedding_opinion target = scope:actor }
+			has_opinion_modifier = { modifier = renegotiated_betrothal_opinion target = scope:actor }
+			# I have a hook on them
+			has_strong_hook = scope:actor
+			# they're allies at war and the marriage is where the alliance comes from
+			AND = {
+				is_ruler = yes
+				scope:actor = { is_ruler = yes }
+				is_allied_in_war = scope:actor
+				yields_alliance = {
+					candidate = scope:rejected_betrothed
+					target = scope:actor
+					target_candidate = scope:rejecting_betrothed
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_engagement_events.0021.a # Very well, I agree to your terms
+		if = {
+			limit = {
+				scope:rejecting_betrothed = { is_female = yes }
+			}
+			custom_tooltip = agot_engagement_events.0021.a.matrilineal.tt
+		}
+		else = {
+			custom_tooltip = agot_engagement_events.0021.a.patrilineal.tt
+		}
+		scope:rejecting_betrothed = {
+			hidden_effect = {
+				break_betrothal = scope:rejected_betrothed
+				if = {
+					limit = { is_female = yes }
+					create_betrothal_matrilineal = scope:rejected_betrothed
+				}
+				else = {
+					create_betrothal = scope:rejected_betrothed
+				}
+			}
+		}
+		add_opinion = {
+			target = scope:actor
+			modifier = renegotiated_betrothal_opinion
+		}
+		send_interface_message = {
+			type = event_generic_good
+			title = agot_engagement_events.0021.a.title
+			left_icon = scope:rejecting_betrothed
+			right_icon = scope:rejected_betrothed
+			scope:rejecting_betrothed = {
+				if = {
+					limit = { is_female = yes }
+					show_as_tooltip = { create_betrothal_matrilineal = scope:rejected_betrothed }
+				}
+				else = {
+					show_as_tooltip = { create_betrothal = scope:rejected_betrothed }
+				}
+			}
+		}
+		scope:actor = {
+			send_interface_message = {
+				type = event_generic_good
+				title = agot_engagement_events.0021.a.title
+				left_icon = scope:rejecting_betrothed
+				right_icon = scope:rejected_betrothed
+				scope:rejecting_betrothed = {
+					if = {
+						limit = { is_female = yes }
+						show_as_tooltip = { create_betrothal_matrilineal = scope:rejected_betrothed }
+					}
+					else = {
+						show_as_tooltip = { create_betrothal = scope:rejected_betrothed }
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 25
+			ai_value_modifier = {
+				ai_greed = -0.5
+				ai_rationality = 0.5
+			}
+			modifier = {
+				add = 75
+				scope:rejected_betrothed = {
+					NOR = {
+						any_pretender_title = {
+							holder ?= root
+							place_in_line_of_succession = {
+								target = scope:rejected_betrothed
+								value <= 4
+							}
+						}
+						any_pretender_title = {
+							place_in_line_of_succession = {
+								target = scope:rejected_betrothed
+								value <= 2
+							}
+						}
+					}
+				}
+			}
+			modifier = {
+				add = 75
+				scope:rejected_betrothed = {
+					OR = {
+						is_illegitimate = yes
+						has_trait = disputed_heritage
+						has_trait = disinherited
+						has_trait = denounced
+					}
+				}
+			}
+			modifier = {
+				add = 50
+				highest_held_title_tier <= scope:actor.highest_tier_minus_2
+			}
+			modifier = {
+				factor = 0
+				scope:rejected_betrothed = {
+					agot_should_have_proper_lineality = { RULER = root }
+				}
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_engagement_events.0021.b # I'll allow the betrothal to end, but we should maintain our alliance
+		trigger = {
+			is_ruler = yes
+			scope:actor = { is_ruler = yes }
+			is_allied_to = scope:actor
+			yields_alliance = {
+				candidate = scope:rejected_betrothed
+				target = scope:actor
+				target_candidate = scope:rejecting_betrothed
+			}
+			OR = {
+				diplomacy >= 20
+				has_perk = defensive_negotiations_perk
+			}
+		}
+		show_as_unavailable = {
+			is_ruler = yes
+			scope:actor = { is_ruler = yes }
+			yields_alliance = {
+				candidate = scope:rejected_betrothed
+				target = scope:actor
+				target_candidate = scope:rejecting_betrothed
+			}
+			NOR = {
+				diplomacy >= 20
+				has_perk = defensive_negotiations_perk
+			}
+		}
+		skill = diplomacy
+		custom_tooltip = agot_engagement_events.0021.b.tt
+		hidden_effect = {
+			add_opinion = { modifier = event_negotiated_alliance_opinion target = scope:actor }
+			reverse_add_opinion = { modifier = event_negotiated_alliance_opinion target = scope:actor }
+		}
+		scope:rejecting_betrothed = {
+			break_betrothal = scope:rejected_betrothed
+			hidden_effect = {
+				add_opinion = { target = scope:rejected_betrothed modifier = ended_engagement_opinion }
+				reverse_add_opinion = { target = scope:rejected_betrothed modifier = ended_engagement_opinion }
+			}
+		}
+		create_alliance = {
+			target = scope:actor
+			allied_through_owner = root
+			allied_through_target = scope:actor
+		}
+		add_opinion = {
+			target = scope:actor
+			modifier = renegotiated_betrothal_opinion
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_rationality = 1.0
+			}
+			min = 0
+		}
+	}
+	option = {
+		name = agot_engagement_events.0021.c # The betrothal will not be renegotiated just because you wish it so!
+		agot_end_engagement_for_recipient = yes
+		scope:rejecting_betrothed = {
+			hidden_effect = {
+				add_opinion = { target = scope:rejected_betrothed modifier = ended_engagement_opinion }
+				reverse_add_opinion = { target = scope:rejected_betrothed modifier = ended_engagement_opinion }
+			}
+		}
+		ai_chance = {
+			base = 25
+			ai_value_modifier = {
+				ai_vengefulness = 1.0
+				ai_greed = 0.5
+			}
+			opinion_modifier = {
+				opinion_target = scope:actor
+				multiplier = -0.5
+				min = -20
+			}
+			modifier = {
+				add = 50
+				scope:actor.highest_held_title_tier <= root.highest_tier_minus_2
+			}
+			modifier = {
+				add = 50
+				scope:rejected_betrothed = {
+					OR = {
+						any_pretender_title = {
+							holder ?= root
+							place_in_line_of_succession = {
+								target = scope:rejected_betrothed
+								value <= 4
+							}
+						}
+						any_pretender_title = {
+							place_in_line_of_succession = {
+								target = scope:rejected_betrothed
+								value <= 2
+							}
+						}
+					}
+					NOT = {
+						agot_should_have_proper_lineality = { RULER = root }
+					}
+				}
+			}
+			modifier = {
+				add = 50
+				has_trait = arrogant
+			}
+			modifier = {
+				add = 25
+				has_trait = ambitious
+			}
+			modifier = {
+				add = 25
+				has_trait = stubborn
+			}
+			modifier = {
+				factor = 0.5
+				is_ruler = no
+			}
+			min = 1
+		}
+	}
+}

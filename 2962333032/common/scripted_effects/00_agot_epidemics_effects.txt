@@ -1,0 +1,234 @@
+﻿# root = epidemic when used in on_start
+# scope:epidemic when used in on_province_infected
+
+# Check where the epidemic started and designate corresponding flags for forced containment
+agot_epidemic_spread_containment_effect = {
+	if = {
+		limit = { root.outbreak_province = { geographical_region = world_westeros_beyond_the_wall } }
+		root = {
+			set_variable = {
+				name = epidemic_containment
+				value = flag:btw
+			}
+		}
+	}
+	if = {
+		limit = { root.outbreak_province = { geographical_region = world_lands_less_traveled } }
+		root = {
+			set_variable = {
+				name = epidemic_containment
+				value = flag:llt
+			}
+		}
+	}
+	if = {
+		limit = {
+			root.outbreak_province = {
+				NOT = { geographical_region = world_westeros_beyond_the_wall }
+				NOT = { geographical_region = world_lands_less_traveled }
+			}
+		}
+		root = {
+			set_variable = {
+				name = epidemic_containment
+				value = flag:not_btw_or_llt
+			}
+		}
+	}
+	if = {
+		limit = {
+			epidemic_type.epidemic_trait = trait:bubonic_plague
+			outbreak_intensity = apocalyptic
+			root.outbreak_province = {
+				NOT = { geographical_region = world_essos }
+				NOT = { geographical_region = world_stepstones }
+			}
+		}
+		root = {
+			set_variable = {
+				name = epidemic_containment_bubonic
+				value = flag:not_stepstones_or_essos
+			}
+		}
+	}
+}
+
+# Check where the epidemic started and set the flag to epidemic_can_be_blocked where applicable
+agot_epidemic_spread_containment_decision_effect = {
+	if = {
+		limit = {
+			outbreak_intensity = apocalyptic
+			root.outbreak_province = {
+				NOT = { geographical_region = world_westeros_dorne }
+				NOT = { geographical_region = world_westeros_beyond_the_wall }
+				NOT = { geographical_region = world_lands_less_traveled }
+			}
+		}
+		root = {
+			set_variable = {
+				name = epidemic_containment_decision_dorne
+				value = flag:epidemic_can_be_blocked
+			}
+		}
+	}
+	if = {
+		limit = {
+			outbreak_intensity = apocalyptic
+			root.outbreak_province = {
+				NOT = { geographical_region = world_westeros_the_vale }
+				NOT = { geographical_region = world_westeros_beyond_the_wall }
+				NOT = { geographical_region = world_lands_less_traveled }
+			}
+		}
+		root = {
+			set_variable = {
+				name = epidemic_containment_decision_the_vale
+				value = flag:epidemic_can_be_blocked
+			}
+		}
+	}
+	if = {
+		limit = {
+			outbreak_intensity = apocalyptic
+			root.outbreak_province = {
+				NOT = { geographical_region = world_westeros_the_north }
+				NOT = { geographical_region = world_westeros_beyond_the_wall }
+				NOT = { geographical_region = world_lands_less_traveled }
+			}
+		}
+		root = {
+			set_variable = {
+				name = epidemic_containment_decision_the_north
+				value = flag:epidemic_can_be_blocked
+			}
+		}
+	}
+	if = {
+		limit = {
+			outbreak_intensity = apocalyptic
+			root.outbreak_province = {
+				NOT = { geographical_region = world_westeros_the_iron_islands }
+				NOT = { geographical_region = world_westeros_beyond_the_wall }
+				NOT = { geographical_region = world_lands_less_traveled }
+			}
+		}
+		root = {
+			set_variable = {
+				name = epidemic_containment_decision_the_iron_islands
+				value = flag:epidemic_can_be_blocked
+			}
+		}
+	}
+}
+
+# Upon containment failure set the flag on the epidemic to epidemic_cannot_be_blocked
+agot_uncontrolled_epidemic_spread_effect = {
+	if = {
+		limit = {
+			any_county_in_region = {
+				region = world_westeros_dorne
+				any_county_province = {
+					count >= 1
+					any_province_epidemic = {
+						this ?= scope:epidemic
+					}
+				}
+			}
+		}
+		scope:epidemic = {
+			remove_variable = epidemic_containment_decision_dorne
+			set_variable = {
+				name = epidemic_containment_decision_dorne
+				value = flag:epidemic_cannot_be_blocked
+			}
+		}
+		debug_log = "AGOT: Dorne uncontained by epidemic"
+		debug_log_scopes = yes
+	}
+	if = {
+		limit = {
+			any_county_in_region = {
+				region = world_westeros_the_vale
+				any_county_province = {
+					count >= 1
+					any_province_epidemic = {
+						this ?= scope:epidemic
+					}
+				}
+			}
+		}
+		scope:epidemic = {
+			remove_variable = epidemic_containment_decision_the_vale
+			set_variable = {
+				name = epidemic_containment_decision_the_vale
+				value = flag:epidemic_cannot_be_blocked
+			}
+		}
+		debug_log = "AGOT: Vale uncontained by epidemic"
+		debug_log_scopes = yes
+	}
+	if = {
+		limit = {
+			any_county_in_region = {
+				region = world_westeros_the_north
+				any_county_province = {
+					count >= 1
+					any_province_epidemic = {
+						this ?= scope:epidemic
+					}
+				}
+			}
+		}
+		scope:epidemic = {
+			remove_variable = epidemic_containment_decision_the_north
+			set_variable = {
+				name = epidemic_containment_decision_the_north
+				value = flag:epidemic_cannot_be_blocked
+			}
+		}
+		debug_log = "AGOT: North uncontained by epidemic"
+		debug_log_scopes = yes
+	}
+	if = {
+		limit = {
+			any_county_in_region = {
+				region = world_westeros_the_iron_islands
+				any_county_province = {
+					count >= 1
+					any_province_epidemic = {
+						this ?= scope:epidemic
+					}
+				}
+			}
+		}
+		scope:epidemic = {
+			remove_variable = epidemic_containment_decision_the_iron_islands
+			set_variable = {
+				name = epidemic_containment_decision_the_iron_islands
+				value = flag:epidemic_cannot_be_blocked
+			}
+		}
+		debug_log = "AGOT: Iron Islands uncontained by epidemic"
+		debug_log_scopes = yes
+	}
+}
+
+# Check if the epidemic is done spreading; used in the prosperity event to make sure it is not still actively infecting counties
+agot_epidemic_no_longer_spreading_effect = {
+	if = {
+		limit = {
+			scope:epidemic ?= {
+				outbreak_intensity = apocalyptic
+				NOT = { has_variable = epidemic_receding }
+			}
+		}
+		scope:epidemic = {
+			set_variable = {
+				name = epidemic_receding
+				value = scope:epidemic
+			}
+		}
+	}
+	debug_log = "AGOT: Apocalyptic epidemic began recovery"
+	debug_log_scopes = yes
+}

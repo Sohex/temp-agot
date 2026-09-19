@@ -1,0 +1,2067 @@
+﻿namespace = dragon_taming_events
+
+### Event IDs ###
+## 0100 - 0199 Tame Unbonded Dragon Events ##
+## 0200 - 0299 Tame Bonded Dragon Events ##
+## 5000 - Event to display all dragons in the save
+
+dragon_taming_events.0100 = { # Handler event for tame unbonded dragon, use to send tamer to correct event
+	type = character_event
+	hidden = yes
+	immediate = {
+		random_list = {
+			1 = {
+				trigger_event = { id = dragon_taming_events.0101 }
+			}
+		}
+	}
+}
+
+dragon_taming_events.0101 = { # Tame unbonded dragon event
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_taming_events.0101.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:dragon = { has_character_flag = in_dragonpit }
+				}
+				desc = dragon_taming_events.0101.desc.dragonpit
+			}
+			desc = dragon_taming_events.0101.desc.wilds
+		}
+	}
+
+	theme = dragon
+
+	left_portrait = {
+		character = root
+	}
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {
+		#used for AI chance
+		root = { save_scope_as = dragon_taming_modifier_tamer }
+		scope:dragon = { save_scope_as = dragon_taming_modifier_dragon }
+	}
+
+	option = { # Lets go!
+		name = {
+			text = {
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							knows_language_of_culture = culture:high_valyrian
+						}
+						desc = dragon_taming_events.0101.a.valyrian
+					}
+					desc = dragon_taming_events.0101.a
+				}
+			}
+		}
+		agot_try_tame_dragon_effect = {
+			TAMER = root
+			DRAGON = scope:dragon
+		}
+		if = {
+			limit = {
+				is_landed = no
+			}
+			debug_log = "Unlanded Pulse Fired: AI Trying to Tame Dragon"
+			debug_log_scopes = yes
+		}
+		ai_chance = {
+			base = 0
+			agot_dragon_taming_modifier = yes
+			modifier = {
+				has_trait = arrogant
+				add = 25
+			}
+			modifier = {
+				has_trait = intellect_bad
+				add = 25
+			}
+			modifier = {
+				has_trait = ambitious
+				add = 5
+			}
+			modifier = {
+				OR = {
+					scope:dragon = { has_character_flag = in_dragonpit }
+					dynasty ?= { has_dynasty_perk = dragonrider_dynasty_legacy_3 }
+				}
+				add = 50
+			}
+			# If you have a dragon horn bound you should use it
+			modifier = {
+				any_equipped_character_artifact = {
+					artifact_type = dragon_horn
+				}
+				is_landed = yes
+				OR = {
+					any_courtier = {
+						is_available_ai_adult = yes
+					}
+					any_prisoner = {
+						is_available_prisoner_for_sacrifice = yes
+					}
+				}
+				factor = 0
+			}
+		}
+	}
+
+	option = { # Dragon Horn
+		trigger = {
+			any_equipped_character_artifact = {
+				artifact_type = dragon_horn
+			}
+			is_landed = yes
+			OR = {
+				any_courtier = {
+					is_available_ai_adult = yes
+				}
+				any_prisoner = {
+					is_available_prisoner_for_sacrifice = yes
+				}
+			}
+		}
+		name = dragon_taming_events.0101.dragon_horn
+		flavor = dragon_taming_events.0101.dragon_horn.tt
+		trigger_event = dragon_taming_events.0300
+
+		# If you have a dragon horn bound you should use it
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = { # Actually, nevermind
+		name = dragon_taming_events.0101.b
+		flavor = dragon_taming_events.0101.b.f
+		ai_chance = {
+			base = 0
+			agot_dragon_taming_inverse_modifier = yes
+			# If you have a dragon horn bound you should use it
+			modifier = {
+				any_equipped_character_artifact = {
+					artifact_type = dragon_horn
+				}
+				is_landed = yes
+				OR ={
+					any_courtier = {
+						is_available_ai_adult = yes
+					}
+					any_prisoner = {
+						is_available_prisoner_for_sacrifice = yes
+					}
+				}
+				factor = 0
+			}
+		}
+		hidden_effect = {
+			remove_interaction_cooldown_against = {
+				interaction = tame_dragon_interaction
+				target = scope:dragon
+			}
+			remove_interaction_cooldown = tame_dragon_interaction
+		}
+	}
+}
+
+dragon_taming_events.0200 = { # Handler event for tame bonded dragon, use to send tamer to correct event
+	type = character_event
+	hidden = yes
+	immediate = {
+		random_list = {
+			1 = {
+				trigger_event = { id = dragon_taming_events.0201 }
+			}
+		}
+	}
+}
+
+dragon_taming_events.0201 = { # Tame bonded dragon event
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_taming_events.0201.t
+	desc = {
+		random_valid = {
+			desc = dragon_taming_events.0201.sili
+			desc = dragon_taming_events.0201.aemmly
+			desc = dragon_taming_events.0201.vaeron
+			triggered_desc = {
+				trigger = {
+					knows_language_of_culture = culture:high_valyrian
+				}
+				desc = dragon_taming_events.0201.llama
+			}
+		}
+	}
+
+	theme = dragon
+
+	left_portrait = {
+		character = root
+	}
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	option = { # Lets go!
+		name = dragon_taming_events.0201.a
+		agot_try_tame_dragon_effect = {
+			TAMER = root
+			DRAGON = scope:dragon
+		}
+	}
+
+	option = { # Actually, nevermind
+		name = dragon_taming_events.0201.b
+		ai_chance = { base = 0 } # Ai who get here should do the thing
+	}
+}
+
+dragon_taming_events.0300 = { # Selection event for determining horn blower
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_taming_events.0300.t
+	desc = dragon_taming_events.0300.desc
+
+	theme = dragon
+
+	left_portrait = {
+		character = root
+	}
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		# Limiting to one bound and equipped horn
+		random_equipped_character_artifact = {
+			limit = {
+				artifact_type = dragon_horn
+			}
+			save_scope_as = dragon_horn
+		}
+
+		every_prisoner = {
+			limit = {
+				is_available_prisoner_for_sacrifice = yes
+			}
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+
+		every_courtier = {
+			limit = {
+				is_available_ai_adult = yes
+			}
+
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+
+		# The ai will select the person most likely to blow the horn
+		ordered_in_list = {
+			variable = possible_characters
+			order_by = horn_blowing_difference
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = horn_blower
+		}
+
+		# Sanity check for ai
+		if = { # Do some logic to set up a good ai pick
+			limit = {
+				is_ai = yes
+			}
+
+			if = {
+				limit = {
+					var:si_selected_character = {
+						OR = {
+							has_relation_rival = root
+							has_relation_nemesis = root
+						}
+					}
+				}
+				set_local_variable = {
+					name = count
+					value = 0
+				}
+
+				set_local_variable = {
+					name = max
+					value = -1
+				}
+
+				every_in_list = {
+					variable = possible_characters
+					change_local_variable = {
+						name = max
+						add = 1
+					}
+				}
+
+				while = {
+					limit = {
+						var:si_selected_character = {
+							OR = {
+								has_relation_rival = root
+								has_relation_nemesis = root
+							}
+						}
+						local_var:count < local_var:max
+					}
+					change_local_variable = {
+						name = count
+						add = 1
+					}
+					ordered_in_list = {
+						variable = possible_characters
+						order_by = accept_horn_blowing
+						position = local_var:count
+						root = { set_variable = { name = si_selected_character value = prev } }
+						save_scope_as = horn_blower
+					}
+				}
+				remove_local_variable = count
+				remove_local_variable = max
+				# If they're all nemesis, get screwed I guess
+			}
+			else_if = {
+				limit = {
+					var:si_selected_character = {
+						has_relation_soulmate = root
+					}
+				}
+
+				# Ideally pick someone else
+				set_local_variable = {
+					name = count
+					value = 0
+				}
+
+				every_in_list = {
+					variable = possible_characters
+					change_local_variable = {
+						name = count
+						add = 1
+					}
+				}
+				if = {
+					limit = {
+						local_var:count > 0
+					}
+					# pick anyone else
+					ordered_in_list = {
+						variable = possible_characters
+						order_by = accept_horn_blowing
+						position = 1
+						root = { set_variable = { name = si_selected_character value = prev } }
+						save_scope_as = horn_blower
+					}
+				}
+			}
+			# We weighted down family in this measure already
+		}
+	}
+
+	option = { # Select
+		name = dragon_taming_events.0300.a
+		var:si_selected_character ?= {
+			save_scope_as = horn_blower
+		}
+		clear_variable_list = possible_characters
+
+		random_list = {
+			50 = { # The target blows the horn
+				custom_tooltip = {
+					text = agot_target_will_blow_horn
+
+					trigger_event = dragon_taming_events.0301
+				}
+
+				modifier = {
+					add = var:si_selected_character.accept_horn_blowing
+				}
+
+				modifier = {
+					OR = {
+						var:si_selected_character = { has_relation_nemesis = root }
+						var:si_selected_character = { has_relation_rival = root }
+						var:si_selected_character = { has_relation_soulmate = root }
+						var:si_selected_character = { has_relation_best_friend = root }
+					}
+					factor = 0
+				}
+
+				modifier = {
+					OR = {
+						var:si_selected_character = { has_relation_soulmate = root }
+						var:si_selected_character = { has_relation_best_friend = root }
+					}
+					add = 1
+				}
+			}
+			50 = { # The target refuses to blow the horn
+				custom_tooltip = {
+					text = agot_target_will_not_blow_horn
+					trigger_event = dragon_taming_events.0303
+				}
+
+				modifier = {
+					add = var:si_selected_character.decline_horn_blowing
+				}
+				modifier = {
+					dread > 50
+					factor = 0.5
+				}
+				modifier = {
+					OR = {
+						var:si_selected_character = { has_relation_nemesis = root }
+						var:si_selected_character = { has_relation_rival = root }
+						var:si_selected_character = { has_relation_soulmate = root }
+						var:si_selected_character = { has_relation_best_friend = root }
+					}
+					factor = 0
+				}
+
+				modifier = {
+					OR = {
+						var:si_selected_character = { has_relation_nemesis = root }
+						var:si_selected_character = { has_relation_rival = root }
+					}
+					add = 1
+				}
+			}
+		}
+		remove_variable = si_selected_character
+
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = { # On second thought
+		name = dragon_taming_events.0300.b
+		var:si_selected_character ?= {
+			save_scope_as = horn_blower
+		}
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+
+		if = {
+			limit = {
+				NOT = { has_character_flag = rebinding_dragon }
+			}
+			hidden_effect = {
+				remove_interaction_cooldown_against = {
+					interaction = tame_dragon_interaction
+					target = scope:dragon
+				}
+				remove_interaction_cooldown = tame_dragon_interaction
+			}
+		}
+		else = {
+			# You're really not getting out of this one
+			hidden_effect = {
+				remove_interaction_cooldown_against = {
+					interaction = blow_dragon_horn_interaction
+					target = scope:dragon
+				}
+				remove_interaction_cooldown = blow_dragon_horn_interaction
+			}
+
+			if = {
+				limit = {
+					exists = scope:leaving_dragon
+				}
+
+				agot_untame_dragon = { OWNER = root DRAGON = scope:leaving_dragon }
+				scope:leaving_dragon = {
+					agot_dragon_flees_province = yes
+				}
+				remove_character_flag = rebinding_dragon
+				scope:dragon = {
+					remove_variable = horn_binder
+					remove_variable = binding_strength
+				}
+			}
+			else_if = {
+				limit = {
+					exists = scope:viscious_leaving_dragon
+				}
+
+				death = {
+					death_reason = death_dragon_ate
+					killer = scope:viscious_leaving_dragon
+				}
+				scope:dragon = {
+					remove_variable = horn_binder
+					remove_variable = binding_strength
+				}
+			}
+
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+dragon_taming_events.0301 = { # The Horn is blown and consequences are made clear
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_taming_events.0301.t
+	desc = {
+		desc = dragon_taming_events.0301.desc.intro
+		first_valid = {
+			triggered_desc = { # You try to retame one dragon - succeed
+				trigger = {
+					has_character_flag = rebinding_dragon
+					scope:binder ?= root
+					scope:rebinding_outcome ?= flag:success
+				}
+				desc = dragon_taming_events.0301.desc.success_rebind
+			}
+			triggered_desc = { # You try to tame a new dragon - success
+				trigger = {
+					scope:binder ?= root
+					NOT = { scope:rebinding_outcome ?= flag:failure }
+				}
+				desc = dragon_taming_events.0301.desc.success
+			}
+			triggered_desc = { # You try to retame a dragon - it goes to another
+				trigger = {
+					has_character_flag = rebinding_dragon
+					exists = scope:binder
+					scope:rebinding_outcome ?= flag:success
+				}
+				desc = dragon_taming_events.0301.desc.another_rebind
+			}
+			triggered_desc = { # You try to tame a new dragon - it goes to another
+				trigger = { exists = scope:binder }
+				desc = dragon_taming_events.0301.desc.another
+			}
+			triggered_desc = { # You try to retame a dragon - you fail
+				trigger = {
+					has_character_flag = rebinding_dragon
+					OR = {
+						exists = scope:binder
+						scope:rebinding_outcome ?= flag:failure
+					}
+				}
+				desc = dragon_taming_events.0301.desc.failure_rebind
+			}
+			desc = dragon_taming_events.0301.desc.failure # finally a sane option
+		}
+	}
+
+	theme = dragon
+
+	left_portrait = {
+		character = scope:horn_blower
+		animation = dragonbinder_horn
+	}
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+	}
+
+	immediate = {
+
+		if = {
+			limit = {
+				scope:dragon_horn = {
+					var:binder ?= {
+						is_alive = yes
+					}
+				}
+			}
+
+			scope:dragon_horn = {
+				var:binder = { save_scope_as = binder }
+			}
+		}
+
+		# We already cover the case if someone loses binding on a horn with tamed dragons
+
+		# If a dragon is bound to a horn of root, remove it
+		if = {
+			limit = {
+				scope:binder ?= root
+			}
+			every_in_list = {
+				variable = bound_horns
+				clear_variable_list = tamed_dragons
+			}
+		}
+		# If they succeeded we just add the dragon to this horn
+	}
+
+	option = { # You won
+		trigger = {
+			scope:binder ?= root
+			trigger_if = {
+				limit = {
+					has_character_flag = rebinding_dragon
+				}
+				scope:rebinding_outcome ?= flag:success
+			}
+		}
+		name = dragon_taming_events.0301.a
+
+		if = { # Taming a new dragon
+			limit = {
+				NOT = {
+					has_character_flag = rebinding_dragon
+				}
+			}
+
+			# The horn is now tied to the dragon
+			scope:dragon = {
+				set_variable = {
+					name = horn_binder
+					value = scope:binder
+				}
+				set_variable = {
+					name = binding_strength
+					value = scope:dragon_horn.var:binding_strength
+				}
+			}
+			scope:dragon_horn = {
+				add_to_variable_list = {
+					name = tamed_dragons
+					target = scope:dragon
+				}
+			}
+		}
+		else = { # Retaming an old dragon
+			scope:dragon = {
+				set_variable = {
+					name = binding_strength
+					value = scope:dragon_horn.var:binding_strength
+				}
+				add_character_flag = recently_rebound
+			}
+			scope:dragon_horn = {
+				add_to_variable_list = {
+					name = tamed_dragons
+					target = scope:dragon
+				}
+			}
+			remove_list_variable = {
+				name = imminent_release
+				target = scope:dragon
+			}
+			scope:dragon = {
+				if = {
+					limit = {
+						NOT = { has_variable = rebind_count }
+					}
+					set_variable = {
+						name = rebind_count
+						value = 1
+					}
+				}
+				else = {
+					change_variable = {
+						name = rebind_count
+						add = 1
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = { NOT = { has_trait = dragonrider } }
+			agot_tame_dragon = {
+				TAMER = root
+				DRAGON = scope:dragon
+			}
+		}
+
+		add_character_flag = dragon_by_horn
+	}
+
+	option = { # You blew the horn for someone else
+		trigger = {
+			exists = scope:binder
+			NOR = {
+				scope:binder = root
+				AND = {
+					scope:binder.capital_province ?= { # If the binder is north of the wall, the dragon has to be
+						geographical_region = world_westeros_beyond_the_wall
+					}
+					NOT = {
+						scope:dragon.location ?= {
+							geographical_region = world_westeros_beyond_the_wall
+						}
+					}
+				}
+				AND = {
+					NOT = {
+						scope:binder.capital_province ?= { # If the binder is south of the wall, the dragon has to be
+							geographical_region = world_westeros_beyond_the_wall
+						}
+					}
+					scope:dragon.location ?= {
+						geographical_region = world_westeros_beyond_the_wall
+					}
+				}
+			}
+			scope:rebinding_outcome ?= flag:success
+		}
+		name = dragon_taming_events.0301.b
+
+		# Derive the consequences...
+
+		save_scope_as = fool
+
+		# The fool is no longer a dragonrider
+		if = {
+			limit = {
+				has_character_flag = rebinding_dragon
+				root.var:current_dragon ?= scope:dragon
+				has_trait = dragonrider
+			}
+			scope:dragon = {
+				add_character_flag = recently_rebound
+				if = {
+					limit = {
+						has_variable = in_dragonpit
+					}
+					agot_remove_from_dragonpit_no_event = {
+						DRAGON = scope:dragon
+						DRAGONPIT_COUNTY = scope:dragon.location
+					}
+				}
+			}
+			remove_list_variable = {
+				name = imminent_release
+				target = scope:dragon
+			}
+			agot_untame_dragon = { OWNER = root DRAGON = scope:dragon }
+		}
+
+
+		# Moves the dragon to the horn, sets strength of binding to binder
+		scope:dragon = {
+			set_variable = {
+				name = horn_binder
+				value = scope:binder
+			}
+			set_variable = {
+				name = binding_strength
+				value = scope:dragon_horn.var:binding_strength
+			}
+			scope:dragon = {
+				if = {
+					limit = {
+						NOT = { has_variable = rebind_count }
+					}
+					set_variable = {
+						name = rebind_count
+						value = 1
+					}
+				}
+				else = {
+					change_variable = {
+						name = rebind_count
+						add = 1
+					}
+				}
+			}
+		}
+		scope:dragon_horn = {
+			add_to_variable_list = {
+				name = tamed_dragons
+				target = scope:dragon
+			}
+		}
+
+		# Now give the dragon to the binder
+		agot_set_as_owned_dragon = {
+			OWNER = scope:binder
+			DRAGON = scope:dragon
+		}
+
+		scope:binder = {
+			trigger_event = dragon_taming_events.0302
+		}
+	}
+
+	option = { # Your horn binding attempt must have been a failure
+		trigger = {
+			OR = {
+				NOT = { exists = scope:binder }
+				scope:rebinding_outcome ?= flag:failure
+				AND = {
+					scope:binder.capital_province ?= { # If the binder is north of the wall, the dragon has to be
+						geographical_region = world_westeros_beyond_the_wall
+					}
+					NOT = {
+						scope:dragon.location ?= {
+							geographical_region = world_westeros_beyond_the_wall
+						}
+					}
+				}
+				AND = {
+					NOT = {
+						scope:binder.capital_province ?= { # If the binder is south of the wall, the dragon has to be
+							geographical_region = world_westeros_beyond_the_wall
+						}
+					}
+					scope:dragon.location ?= {
+						geographical_region = world_westeros_beyond_the_wall
+					}
+				}
+			}
+		}
+		name = dragon_taming_events.0301.c
+		flavor = dragon_taming_events.0301.c.tt
+
+		if = {
+			limit = {
+				has_character_flag = rebinding_dragon
+			}
+
+			scope:dragon = {
+				if = {
+					limit = {
+						has_variable = in_dragonpit
+					}
+					agot_remove_from_dragonpit_no_event = {
+						DRAGON = scope:dragon
+						DRAGONPIT_COUNTY = scope:dragon.location
+					}
+				}
+			}
+			if = {
+				limit = {
+					var:current_dragon ?= scope:dragon
+					has_trait = dragonrider
+				}
+				agot_untame_dragon = { OWNER = root DRAGON = scope:dragon }
+			}
+			remove_list_variable = {
+				name = imminent_release
+				target = scope:dragon
+			}
+			scope:dragon = {
+				remove_variable = horn_binder
+				remove_variable = binding_strength
+				remove_variable = rebind_count
+			}
+		}
+
+		random_list = {
+			20 = { # Unscathed
+				custom_tooltip = agot_dragon_slaying_events.0100.tt.unscathed
+			}
+			35 = { # Burns but live - unless this tops your burns
+				custom_tooltip = {
+					text = agot_dragon_slaying_events.0100.tt.burn_major
+					agot_burn_effect = { MIN = 30 MAX = 60 }
+				}
+			}
+			45 = { # Full burn, death
+				custom_tooltip = {
+					text = agot_dragon_slaying_events.0100.tt.burn_death
+					agot_burn_effect = { MIN = 100 MAX = 100 }
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_trait_xp = {
+					trait = burned
+					value >= 100
+				}
+			}
+
+			death = {
+				death_reason = death_dragon_fire
+				killer = scope:dragon
+			}
+		}
+	}
+
+	after = {
+		scope:horn_blower = {
+			agot_burn_effect = { MIN = 100 MAX = 100 }
+			death = { death_reason = death_horn_blow killer = root }
+		}
+	}
+
+}
+
+dragon_taming_events.0302 = { # The dragon has gone to its TRUE owner and tries to be tamed
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_taming_events.0302.t
+	desc = {
+		desc = dragon_taming_events.0302.desc
+		triggered_desc = {
+			trigger = {
+				NOT = { has_trait = dragonrider }
+			}
+			desc = dragon_taming_events.0302.desc.dragon_rider
+		}
+	}
+
+	theme = dragon
+
+	left_portrait = {
+		character = root
+	}
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	lower_center_portrait = {
+		character = scope:fool
+	}
+
+	immediate = {
+		# Do something cool with taming any of the potential dragons
+		if = {
+			limit = {
+				capital_county = { agot_title_is_an_active_dragonpit = yes }
+			}
+			capital_county = { save_scope_as = dragonpit_county }
+		}
+		else_if = {
+			limit = {
+				any_held_title = { agot_title_is_an_active_dragonpit = yes }
+			}
+			random_held_title = {
+				limit = {
+					agot_title_is_an_active_dragonpit = yes
+				}
+				save_scope_as = dragonpit_county
+			}
+		}
+
+		root = {
+			add_to_variable_list = {
+				name = candidate_dragons
+				target = scope:dragon
+			}
+		}
+	}
+
+	option = {
+		trigger = {
+			has_trait = dragonrider
+		}
+
+		name = dragon_taming_events.0302.a
+		flavor = each_dragon_wild_or_pitted.tt
+
+		if = {
+			limit = {
+				exists = scope:dragonpit_county
+			}
+
+			scope:dragon = {
+				agot_send_to_dragonpit_no_event = { DRAGON = scope:dragon DRAGONPIT_COUNTY = scope:dragonpit_county }
+			}
+		}
+		else = {
+			scope:dragon = { # Already removed from dragonpit in last event
+				agot_free_dragon = yes
+			}
+		}
+
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = {
+		trigger = {
+			NOT = { has_trait = dragonrider }
+		}
+		name = dragon_taming_events.0302.b
+		flavor = dragon_taming_events.0302.b.tt
+
+		agot_tame_dragon = {
+			TAMER = root
+			DRAGON = scope:dragon
+		}
+
+		scope:dragon_horn ?= {
+			add_to_variable_list = {
+				name = tamed_dragons
+				target = scope:dragon
+			}
+		}
+		add_character_flag = dragon_by_horn
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = {
+		name = dragon_taming_events.0302.decline
+		flavor = dragon_taming_events.0302.decline.tt_hashfix
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+dragon_taming_events.0303 = { # The horn blower refused to blow the horn
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_taming_events.0303.t
+	desc = {
+		desc = dragon_taming_events.0303.desc
+		triggered_desc = {
+			trigger = {
+				exists = scope:stolen_horn
+			}
+			desc = dragon_taming_events.0303.desc.stolen_horn
+		}
+	}
+
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = fear
+		camera = camera_human_back_to_camera
+	}
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_facing_human
+
+		#Add this so dragon fits within event window
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_ten_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5  }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_nine_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5  }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_eight_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5  }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_seven_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5 }
+		}
+		triggered_outfit = { # VHAGAR
+			trigger = {
+				scope:dragon = { level_six_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.5 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_five_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_1.0 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_four_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.9 }
+		}
+		triggered_outfit = { # MELEYS
+			trigger = {
+				scope:dragon = { level_three_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.8 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_two_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.5 }
+		}
+		triggered_outfit = { # SYRAX
+			trigger = {
+				scope:dragon = { level_one_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.4 }
+		}
+		triggered_outfit = {
+			trigger = {
+				scope:dragon = { level_zero_dragon_size_trigger = yes }
+			}
+			outfit_tags = { dynamic_camera_zoom_0.7 }
+		}
+		#End Dynamic Camera Zoom
+	}
+	lower_center_portrait = {
+		character = scope:horn_blower
+	}
+	lower_right_portrait = {
+		trigger = {
+			exists = scope:dragon_two
+		}
+		character = scope:dragon_two
+		animation = dragon_head
+	}
+
+	immediate = {
+
+		if = {
+			limit = {
+				scope:horn_blower.ai_greed > 50
+			}
+
+			random = {
+				chance = scope:horn_blower.ai_greed
+				scope:dragon_horn = {
+					set_owner = {
+						target = scope:horn_blower
+						history = {
+							type = stolen
+							actor = root
+							recipient = scope:horn_blower
+						}
+					}
+					save_scope_as = stolen_horn
+				}
+			}
+
+		}
+	}
+
+	option = { # RUN!
+		name = {
+			text = dragon_taming_events.0303.a
+		}
+
+		flavor = dragon_taming_events.0303.a.tt
+
+		if = {
+			limit = {
+				has_character_flag = rebinding_dragon
+			}
+			remove_list_variable = {
+				name = imminent_release
+				target = scope:dragon
+			}
+		}
+
+		random_list = {
+			20 = { # Unscathed
+				custom_tooltip = agot_dragon_slaying_events.0100.tt.unscathed
+			}
+			35 = { # Burns but live - unless this tops your burns
+				custom_tooltip = {
+					text = agot_dragon_slaying_events.0100.tt.burn_major
+					agot_burn_effect = { MIN = 30 MAX = 60 }
+				}
+			}
+			45 = { # Full burn, death
+				custom_tooltip = {
+					text = agot_dragon_slaying_events.0100.tt.burn_death
+					agot_burn_effect = { MIN = 100 MAX = 100 }
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_trait_xp = {
+					trait = burned
+					value >= 100
+				}
+			}
+
+			death = {
+				death_reason = death_dragon_fire
+				killer = scope:dragon
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:stolen_horn
+			}
+
+			if = {
+				limit = {
+					exists = scope:stolen_horn
+				}
+
+				progress_towards_rival_effect = {
+					REASON = rival_at_university
+					CHARACTER = scope:horn_blower
+					OPINION = 0
+				}
+				add_opinion = {
+					modifier = agot_stole_horn
+					target = scope:horn_blower
+				}
+			}
+
+		}
+		else = {
+			add_opinion = {
+				modifier = agot_refused_horn_blow
+				target = scope:horn_blower
+			}
+		}
+	}
+
+}
+
+dragon_taming_events.0304 = { # Opener to retaming dragon with horn
+	type = character_event
+	window = agot_dragon_character_event
+	title = dragon_taming_events.0304.t
+	desc = dragon_taming_events.0304.desc
+
+	theme = dragon
+
+	left_portrait = {
+		character = root
+	}
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {
+		random_in_list = { # Dragon is no longer bound to the old horn
+			limit = {
+				is_target_in_variable_list = {
+					name = tamed_dragons
+					target = scope:dragon
+				}
+			}
+			variable = bound_horns
+			remove_list_variable = {
+				name = tamed_dragons
+				target = scope:dragon
+			}
+		}
+		add_character_flag = rebinding_dragon
+	}
+
+	option = {
+		name = dragon_taming_events.0304.c
+		flavor = dragon_taming_events.0304.c.tt
+
+		random_list = {
+			75 = {
+				custom_tooltip = {
+					text = agot_rebind_success
+					save_scope_value_as = {
+						name = rebinding_outcome
+						value = flag:success
+					}
+				}
+				modifier = {
+					scope:dragon.var:rebind_count ?= 1
+					add = -25
+				}
+				modifier = {
+					scope:dragon.var:rebind_count ?= 2
+					add = -50
+				}
+				modifier = {
+					exists = scope:dragon.var:rebind_count
+					scope:dragon.var:rebind_count >= 3
+					add = -65
+				}
+				modifier = {
+					add = {
+						value = scope:dragon.temperament
+						divide = 4
+						min = -10
+						max = 10
+					}
+				}
+				modifier = {
+					add = {
+						value = scope:dragon.draconic_dread
+						divide = -10
+					}
+				}
+			}
+			25 = {
+				custom_tooltip = {
+					text = agot_rebind_failure
+					save_scope_value_as = {
+						name = rebinding_outcome
+						value = flag:failure
+					}
+				}
+				modifier = {
+					scope:dragon.var:rebind_count ?= 1
+					add = 25
+				}
+				modifier = {
+					scope:dragon.var:rebind_count ?= 2
+					add = 50
+				}
+				modifier = {
+					exists = scope:dragon.var:rebind_count
+					scope:dragon.var:rebind_count >= 3
+					add = 65
+				}
+				modifier = {
+					add = {
+						value = scope:dragon.temperament
+						divide = -4
+						min = -10
+						max = 10
+					}
+				}
+				modifier = {
+					add = {
+						value = scope:dragon.draconic_dread
+						divide = 10
+					}
+				}
+			}
+		}
+
+		trigger_event = dragon_taming_events.0300
+	}
+
+	option = { # Change Mind
+		name = dragon_taming_events.0304.d
+		hidden_effect = {
+			remove_interaction_cooldown_against = {
+				interaction = blow_dragon_horn_interaction
+				target = scope:dragon
+			}
+			remove_interaction_cooldown = blow_dragon_horn_interaction
+		}
+		if = { # Can't fool me
+			limit = {
+				exists = scope:leaving_dragon
+			}
+
+			agot_untame_dragon = { OWNER = root DRAGON = scope:leaving_dragon }
+			scope:leaving_dragon = {
+				if = {
+					limit = {
+						NOT = { scope:dragon = { has_character_flag = in_dragonpit } }
+					}
+					scope:dragon = {
+						agot_free_dragon = yes
+						agot_dragon_flees_province = yes
+					}
+				}
+			}
+			remove_character_flag = rebinding_dragon
+			scope:dragon = {
+				remove_variable = horn_binder
+				remove_variable = binding_strength
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:viscious_leaving_dragon
+			}
+
+			death = {
+				death_reason = death_dragon_ate
+				killer = scope:viscious_leaving_dragon
+			}
+			scope:dragon = {
+				remove_variable = horn_binder
+				remove_variable = binding_strength
+			}
+		}
+	}
+}
+
+dragon_taming_events.0305 = { # False Seed
+	type = character_event
+	title = dragon_taming_events.0305.t
+	window = agot_dragon_character_event
+	desc = dragon_taming_events.0305.desc.intro
+	theme = dragon
+
+	left_portrait = {
+		character = root
+	}
+
+	right_portrait = {
+		character = scope:dragon_keeper
+	}
+
+	trigger = {
+		any_courtier = {
+			is_available_ai_adult = yes
+			AND = {
+				OR = {
+					has_trait = ambitious
+					has_trait = brave
+					has_trait = arrogant
+				}
+				NOR = {
+					dynasty ?= scope:dragon_keeper.dynasty
+					any_relation = {
+						type = agot_dragon
+						exists = this
+					}
+					any_character_artifact = {
+						has_variable = cradled_egg
+					}
+					has_trait_with_flag = can_not_bond_dragon
+				}
+			}
+		}
+	}
+
+	immediate = {
+		add_character_flag = {
+			flag = preparing_for_sowing
+			days = 25
+		}
+		random_equipped_character_artifact = {
+			limit = {
+				artifact_type = dragon_horn
+			}
+			save_scope_as = dragon_horn
+		}
+	}
+
+	option = {
+		name = dragon_taming_events.0305.a
+		flavor = dragon_taming_events.0305.a.tt
+		if = { # Because this event is timed I need to make sure it's still valid
+			limit = {
+				has_character_flag = preparing_for_sowing
+			}
+			trigger_event = dragon_taming_events.0306
+		}
+		else = {
+			send_interface_toast = {
+				title = dragon_taming_events.0305.toast.too_slow
+				desc = dragon_taming_events.0305.toast.too_slow_desc
+				right_icon = scope:draon_horn
+				left_icon = scope:dragon_keeper
+			}
+		}
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = {
+		name = dragon_taming_events.0305.b
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+dragon_taming_events.0306 = { # "Dragonseed" Selection
+	type = character_event
+	title = dragon_taming_events.0306.t
+	window = agot_dragon_character_event
+	desc = dragon_taming_events.0306.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+	}
+
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+
+		every_courtier = {
+			limit = {
+				is_available_ai_adult = yes
+				AND = {
+					OR = {
+						has_trait = ambitious
+						has_trait = brave
+						has_trait = arrogant
+					}
+					NOR = {
+						dynasty ?= scope:dragon_keeper.dynasty
+						any_relation = {
+							type = agot_dragon
+							exists = this
+						}
+						any_character_artifact = {
+							has_variable = cradled_egg
+						}
+						has_trait_with_flag = can_not_bond_dragon
+					}
+				}
+			}
+			save_scope_as = courtier_to_add
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = scope:courtier_to_add
+				}
+			}
+		}
+
+		# The ai will select the person most likely to blow the horn
+		ordered_in_list = {
+			variable = possible_characters
+			order_by = horn_blowing_difference
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = horn_blower
+		}
+
+		# Sanity check for ai
+		if = { # Do some logic to set up a good ai pick
+			limit = {
+				is_ai = yes
+			}
+
+			if = {
+				limit = {
+					var:si_selected_character = {
+						OR = {
+							has_relation_rival = root
+							has_relation_nemesis = root
+						}
+					}
+				}
+				set_local_variable = {
+					name = count
+					value = 0
+				}
+
+				set_local_variable = {
+					name = max
+					value = -1
+				}
+
+				every_in_list = {
+					variable = possible_characters
+					change_local_variable = {
+						name = max
+						add = 1
+					}
+				}
+
+				while = {
+					limit = {
+						var:si_selected_character = {
+							OR = {
+								has_relation_rival = root
+								has_relation_nemesis = root
+							}
+						}
+						local_var:count < local_var:max
+					}
+					change_local_variable = {
+						name = count
+						add = 1
+					}
+					ordered_in_list = {
+						variable = possible_characters
+						order_by = accept_horn_blowing
+						position = local_var:count
+						root = { set_variable = { name = si_selected_character value = prev } }
+						save_scope_as = horn_blower
+					}
+				}
+				remove_local_variable = count
+				remove_local_variable = max
+				# If they're all nemesis, get screwed I guess
+			}
+			else_if = {
+				limit = {
+					var:si_selected_character = {
+						has_relation_soulmate = root
+					}
+				}
+
+				# Ideally pick someone else
+				set_local_variable = {
+					name = count
+					value = 0
+				}
+
+				every_in_list = {
+					variable = possible_characters
+					change_local_variable = {
+						name = count
+						add = 1
+					}
+				}
+				if = {
+					limit = {
+						local_var:count > 0
+					}
+					# pick anyone else
+					ordered_in_list = {
+						variable = possible_characters
+						order_by = accept_horn_blowing
+						position = 1
+						root = { set_variable = { name = si_selected_character value = prev } }
+						save_scope_as = horn_blower
+					}
+				}
+			}
+			# We weighted down family in this measure already
+		}
+	}
+
+	option = {
+		name = dragon_taming_events.0306.a
+
+		var:si_selected_character ?= {
+			save_scope_as = horn_blower
+		}
+		clear_variable_list = possible_characters
+
+		random_list = {
+			50 = { # The target blows the horn
+				custom_tooltip = {
+					text = agot_target_will_go
+					if = {
+						limit = { # Multiplayer proofing - expires in 30 days
+							has_character_flag = preparing_for_sowing
+						}
+
+						if = {
+							limit = {
+								exists = scope:horn_blower
+							}
+							scope:dragon_keeper = {
+								set_variable = {
+									name = false_seed
+									value = scope:horn_blower
+								}
+							}
+							scope:dragon_horn = {
+								set_owner = {
+									target = scope:horn_blower
+									generate_history = no
+								}
+							}
+							send_interface_toast = {
+								title = dragon_taming_events.0306.toast.confirm
+								custom_tooltip = dragon_taming_events.0306.toast.confirm_desc
+								right_icon = scope:dragon_horn
+								left_icon = scope:horn_blower
+							}
+						}
+
+					}
+					else = {
+						send_interface_toast = {
+							title = dragon_taming_events.0305.toast.too_slow
+							custom_tooltip = dragon_taming_events.0305.toast.too_slow_desc
+							right_icon = scope:dragon_horn
+							left_icon = scope:dragon_keeper
+						}
+					}
+				}
+
+				modifier = {
+					add = scope:horn_blower.accept_horn_blowing
+				}
+
+				modifier = {
+					OR = {
+						scope:horn_blower = { has_relation_soulmate = root }
+						scope:horn_blower = { has_relation_best_friend = root }
+						scope:horn_blower = { has_relation_nemesis = root }
+						scope:horn_blower = { has_relation_rival = root }
+					}
+					factor = 0
+				}
+
+				modifier = {
+					OR = {
+						scope:horn_blower = { has_relation_soulmate = root }
+						scope:horn_blower = { has_relation_best_friend = root }
+					}
+					add = 1
+				}
+			}
+			50 = { # The target refuses to blow the horn
+				custom_tooltip = {
+					text = agot_target_will_not_go
+					send_interface_toast = {
+						title = dragon_taming_events.0306.toast.refuses
+						custom_tooltip = dragon_taming_events.0306.toast.refuses_desc
+						left_icon = scope:horn_blower
+					}
+				}
+
+				modifier = {
+					OR = {
+						scope:horn_blower = { has_relation_soulmate = root }
+						scope:horn_blower = { has_relation_best_friend = root }
+					}
+					add = scope:horn_blower.decline_horn_blowing
+				}
+				modifier = {
+					dread > 50
+					factor = 0.5
+				}
+				modifier = {
+					OR = {
+						scope:horn_blower = { has_relation_soulmate = root }
+						scope:horn_blower = { has_relation_best_friend = root }
+						scope:horn_blower = { has_relation_nemesis = root }
+						scope:horn_blower = { has_relation_rival = root }
+					}
+
+					factor = 0
+				}
+
+				modifier = {
+					OR = {
+						scope:horn_blower = { has_relation_nemesis = root }
+						scope:horn_blower = { has_relation_rival = root }
+					}
+					add = 1
+				}
+			}
+		}
+		remove_variable = si_selected_character
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = {
+		name = dragon_taming_events.0306.b
+		var:si_selected_character ?= {
+			save_scope_as = horn_blower
+		}
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+dragon_taming_events.0307 = { # General Dragon Selection Event
+	type = character_event
+	title = dragon_taming_events.0307.t
+	desc = dragon_taming_events.0307.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		# Assumes a list of candidates on the prospective
+		every_in_list = {
+			variable = candidate_dragons
+			root = {
+				add_to_variable_list = {
+					name = possible_characters
+					target = prev
+				}
+			}
+		}
+
+		ordered_in_list = {
+			variable = possible_characters
+			order_by = dragon_size
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = dragon
+		}
+
+		if = {
+			limit = {
+				capital_county = { agot_title_is_an_active_dragonpit = yes }
+			}
+			capital_county = { save_scope_as = dragonpit_county }
+		}
+		else_if = {
+			limit = {
+				any_held_title = { agot_title_is_an_active_dragonpit = yes }
+			}
+			random_held_title = {
+				limit = {
+					agot_title_is_an_active_dragonpit = yes
+				}
+				save_scope_as = dragonpit_county
+			}
+		}
+	}
+
+	option = {
+		name = dragon_taming_events.0307.a
+		flavor = other_dragons_wild_or_pitted.tt
+
+		var:si_selected_character ?= {
+			save_scope_as = dragon
+		}
+
+		agot_tame_dragon = {
+			TAMER = root
+			DRAGON = scope:dragon
+		}
+
+		if = {
+			limit = {
+				exists = scope:dragon_horn
+			}
+
+			add_character_flag = dragon_by_horn
+
+			scope:dragon = {
+				set_variable = {
+					name = horn_binder
+					value = root
+				}
+
+				set_variable = {
+					name = binding_strength
+					value = scope:dragon_horn.var:binding_strength
+				}
+			}
+
+			scope:dragon_horn = {
+				add_to_variable_list = {
+					name = tamed_dragons
+					target = scope:dragon
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				exists = scope:dragonpit_county
+			}
+
+			every_in_list = {
+				limit = { NOT = { this = scope:dragon } }
+				variable = candidate_dragons
+				save_scope_as = pitted_dragon
+				agot_send_to_dragonpit_no_event = { DRAGON = scope:pitted_dragon DRAGONPIT_COUNTY = scope:dragonpit_county }
+			}
+		}
+		else = {
+			every_in_list = {
+				limit = { NOT = { this = scope:dragon } }
+				variable = candidate_dragons
+				save_temporary_scope_as = dragon_to_free
+				if = {
+					limit = {
+						has_variable = in_dragonpit
+					}
+					agot_remove_from_dragonpit_no_event = {
+						DRAGON = scope:dragon_to_free
+						DRAGONPIT_COUNTY = scope:dragon_to_free.location
+					}
+				}
+				agot_free_dragon = yes
+			}
+		}
+
+		ai_chance = {
+			base = 1
+		}
+	}
+
+	option = {
+		name = dragon_taming_events.0307.b
+		flavor = each_dragon_wild_or_pitted.tt
+
+		if = {
+			limit = {
+				exists = scope:dragonpit_county
+			}
+
+			every_in_list = {
+				variable = candidate_dragons
+				agot_send_to_dragonpit_no_event = { DRAGON = scope:pitted_dragon DRAGONPIT_COUNTY = scope:dragonpit_county }
+			}
+		}
+		else = {
+			every_in_list = {
+				variable = candidate_dragons
+				save_temporary_scope_as = dragon_to_free
+				if = {
+					limit = {
+						has_variable = in_dragonpit
+					}
+					agot_remove_from_dragonpit_no_event = {
+						DRAGON = scope:dragon_to_free
+						DRAGONPIT_COUNTY = scope:dragon_to_free.location
+					}
+				}
+				agot_free_dragon = yes
+			}
+		}
+
+		ai_chance = {
+			base = 0
+		}
+	}
+
+	after = {
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+		clear_variable_list = candidate_dragons
+	}
+}
+
+#Tame Canon Dragon
+dragon_taming_events.9000 = {
+	hidden = yes
+
+	trigger = {
+		agot_canon_dragons_enabled = yes
+		is_ai = yes
+		agot_is_canon_rider = yes
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				NOT = { has_trait_with_flag = can_not_bond_dragon }
+				any_relation = {
+					type = agot_dragon
+					count = 0
+				}
+				NOT = {
+					any_scheme = {
+						scheme_type = bond_with_dragon_scheme
+						agot_is_canon_rider_dragon_pair = { RIDER = root DRAGON = scheme_target_character }
+					}
+				}
+				any_in_global_list = {
+					variable = living_dragons
+					save_temporary_scope_as = dragon
+					agot_is_canon_rider_dragon_pair = { RIDER = root DRAGON = scope:dragon }
+					any_relation = {
+						type = agot_dragon
+						count = 0
+					}
+					OR = {
+						NOT = { has_character_flag = owned_dragon }
+						agot_can_tame_or_bond_or_etc_with_pitted_dragons = {
+							DRAGON = scope:dragon ACTOR = root
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					any_scheme = {
+						scheme_type = bond_with_dragon_scheme
+					}
+				}
+				random_scheme = {
+					limit = { scheme_type = bond_with_dragon_scheme }
+					end_scheme = yes
+				}
+			}
+			random_in_global_list = {
+				variable = living_dragons
+				limit = {
+					save_temporary_scope_as = dragon
+					agot_is_canon_rider_dragon_pair = { RIDER = root DRAGON = scope:dragon }
+					any_relation = {
+						type = agot_dragon
+						count = 0
+					}
+					OR = {
+						NOT = { has_character_flag = owned_dragon }
+						agot_can_tame_or_bond_or_etc_with_pitted_dragons = {
+							DRAGON = scope:dragon ACTOR = root
+						}
+					}
+				}
+				save_scope_as = dragon
+			}
+			agot_tame_dragon = {
+				TAMER = root
+				DRAGON = scope:dragon
+			}
+		}
+		else = {
+			trigger_event = {
+				id = dragon_taming_events.9000
+				days = { 365 730 }
+			}
+		}
+	}
+}

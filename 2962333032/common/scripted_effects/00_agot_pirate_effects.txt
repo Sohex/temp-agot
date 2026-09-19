@@ -1,0 +1,669 @@
+﻿agot_create_pirate_domicile_effect = {
+	if = {
+		limit = {
+			$PIRATE$ = {
+				is_lowborn = yes
+			}
+		}
+		$PIRATE$ = {
+			set_variable = agot_pirates_stay_lowborn
+		}
+	}
+	create_nomad_title = {
+		name = agot_pirate_ship_domicile_type
+		holder = $PIRATE$
+		government = pirate_government
+		save_scope_as = new_title
+	}
+	scope:new_title = {
+		set_variable = is_pirate_domicile
+	}
+
+	hidden_effect = {
+		#Ship Naming
+		set_global_variable = {
+			name = pirate_ship_new_name
+			value = $PIRATE$
+		}
+		scope:new_title = {
+			reset_title_prefix = yes
+			set_title_prefix = AGOT_PREFIX_THE
+			random_list = {
+				9 = {
+					set_title_name = agot_pirate_ship_name_dynamic
+				}
+				1 = {
+					set_title_name = agot_pirate_ship_name_static
+				}
+			}
+		}
+		remove_global_variable = pirate_ship_new_name
+	}
+
+	$PIRATE$ = {
+		if = {
+			limit = {
+				is_landed = no
+				is_ai = yes
+			}
+			create_story = agot_story_landless_pirate_ai
+		}
+		domicile ?= {
+			if = {
+				limit = { provisions < max_provisions }
+				change_provisions = max_provisions
+			}
+			domicile_location.county ?= {
+				if = {
+					limit = {
+						any_neighboring_county = {
+							holder = {
+								this != $PIRATE$
+								NOT = {
+									has_opinion_modifier = {
+										modifier = agot_newly_made_pirate
+										target = $PIRATE$
+									}
+								}
+							}
+						}
+					}
+					every_neighboring_county = {
+						limit = {
+							holder = {
+								this != $PIRATE$
+								NOT = {
+									has_opinion_modifier = {
+										modifier = agot_newly_made_pirate
+										target = $PIRATE$
+									}
+								}
+							}
+						}
+						holder = {
+							add_opinion = {
+								modifier = agot_newly_made_pirate
+								target = $PIRATE$
+							}
+						}
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				is_landed = no
+			}
+			create_character_memory = {
+				type = agot_became_pirate
+			}
+		}
+		if = {
+			limit = {
+				is_from_ruler_designer = yes
+			}
+			set_variable = one_time_rd_pirate_cheap_fee
+		}
+		if = {
+			limit = {
+				has_variable = pirate_jank_succession_variable
+			}
+			scope:new_title = {
+				set_variable = pirate_deletion
+			}
+		}
+		if = {
+			limit = {
+				has_variable = agot_pirates_stay_lowborn
+				is_lowborn = no
+			}
+			set_to_lowborn = yes
+			remove_variable = agot_pirates_stay_lowborn
+		}
+	}
+}
+
+agot_pirate_ai_find_next_county_effect = {
+	domicile.domicile_location.county = {
+		random_neighboring_county = {
+			limit = {
+				NOT = {
+					scope:story = {
+						is_target_in_variable_list = {
+							name = recent_pirate_dens
+							target = this
+						}
+					}
+				}
+				title_province = {
+					is_coastal = yes
+					has_building_or_higher = pirate_den_01
+				}
+			}
+			save_scope_as = new_pirate_den_county
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:new_pirate_den_county
+		}
+		scope:story = {
+			add_to_variable_list = {
+				name = recent_pirate_dens
+				target = scope:new_pirate_den_county
+				years = 1
+			}
+		}
+		domicile = { # the AI doesn't have to know how to use provisions efficiently, so just add a couple so that they don't suicide
+			if = {
+				limit = { provisions < max_provisions }
+				change_provisions = max_provisions
+			}
+		}
+		start_travel_plan = {
+			destination = scope:new_pirate_den_county.title_province
+			travel_with_domicile = yes
+			return_trip = no
+			on_arrival_destinations = all
+		}
+	}
+}
+
+agot_pirate_becoming_a_laamp_domicile_destruction_workaround_effect = { # Mostly similar to the on_title_gain effect which doesn't fire via the laamp events
+	if = {
+		limit = {
+			any_held_title = {
+				agot_is_pirate_domicile_title_trigger = yes
+			}
+		}
+		every_held_title = {
+			limit = { agot_is_pirate_domicile_title_trigger = yes }
+			save_scope_as = pirate_title
+			prev = { destroy_title = scope:pirate_title }
+		}
+	}
+}
+
+agot_split_pirates_old_realm_effect = {
+	every_held_title = {
+		limit = {
+			root.capital_county != this
+			root.capital_county.duchy != this
+			root.capital_county.kingdom != this
+		}
+
+		save_temporary_scope_as = old_title
+
+		create_character = {
+			template = agot_pirate_character_leader
+			location = scope:old_title.title_province
+			culture = scope:old_title.culture
+			faith = scope:old_title.faith
+			after_creation = {
+				save_temporary_scope_as = titletaker
+				scope:titletaker = {
+					create_title_and_vassal_change = {
+						type = granted
+						save_scope_as = change
+						add_claim_on_loss = no
+					}
+					scope:old_title = {
+						change_title_holder = {
+							holder = scope:titletaker
+							change = scope:change
+						}
+					}
+					becomes_independent = {
+						change = scope:change
+					}
+					resolve_title_and_vassal_change = scope:change
+				}
+			}
+		}
+
+	}
+}
+
+agot_get_potential_pirate_effect = {
+	if = {
+		limit = {
+			any_living_character = {
+				is_landed = no
+				any_held_title = { agot_is_pirate_domicile_title_trigger = yes }
+				is_available_ai_adult = yes
+			}
+		}
+		random_living_character = {
+			limit = {
+				is_landed = no
+				any_held_title = { agot_is_pirate_domicile_title_trigger = yes }
+				is_available_ai_adult = yes
+			}
+			save_scope_as = potential_pirate
+		}
+	}
+	else = {
+		random_living_character = {
+			limit = { agot_potential_pirate = yes }
+			weight = {
+				base = 1
+				modifier = {
+					add = prowess
+				}
+				modifier = {
+					add = martial
+				}
+				modifier = {
+					add = 100
+					has_trait = ambitious
+				}
+				modifier = {
+					add = 50
+					has_trait = brave
+				}
+				modifier = {
+					add = 50
+					has_trait = bastard
+				}
+				modifier = {
+					add = 300
+					has_character_flag = is_Velaryon_5
+				}
+				modifier = {
+					add = 300
+					has_character_flag = is_Greyjoy_13
+				}
+			}
+			save_scope_as = potential_pirate
+		}
+	}
+	if = {
+		limit = {
+			NOT = { exists = scope:potential_pirate }
+		}
+		random_county_in_region = {
+			region = world_stepstones
+			limit = {
+				NOT = {
+					holder = { government_has_flag = government_is_wilderness }
+				}
+			}
+			save_scope_as = stepstones_county
+		}
+		create_character = {
+			location = title:b_the_stash.title_province
+			template = stepstones_warrior_character
+			save_scope_as = potential_pirate
+		}
+	}
+}
+
+pirate_adventurer_start_war_effect = {
+	$PIRATE$ = { save_scope_as = pirate_adventurer }
+	$TARGET$ = { save_scope_as = adventurer_target }
+
+	if = {
+		limit = {
+			any_held_title = { agot_is_pirate_domicile_title_trigger = no }
+		}
+		if = {
+			limit = {
+				agot_dlc_check_for_landless_pirates = yes
+			}
+			agot_create_pirate_domicile_effect = { PIRATE = scope:pirate_adventurer }
+			scope:adventurer_target = {
+				random_title_to_title_neighboring_and_across_water_county = {
+					limit = {
+						title_province = {
+							has_holding_type = pirate_den_holding
+						}
+					}
+					alternative_limit = {
+						NOR = {
+							title_province = {
+								has_holding_type = ruin_holding
+							}
+							holder = scope:adventurer_target
+							holder = {
+								is_allied_to = scope:adventurer_target
+							}
+						}
+					}
+					alternative_limit = {
+						NOR = {
+							title_province = {
+								has_holding_type = ruin_holding
+							}
+							AND = {
+								holder = scope:adventurer_target
+								prev = { is_county_capital = yes }
+							}
+							AND = {
+								holder = {
+									is_allied_to = scope:adventurer_target
+								}
+								prev = { is_county_capital = yes }
+							}
+						}
+					}
+					save_scope_as = nearby_safe_location
+				}
+			}
+			if = {
+				limit = {
+					exists = scope:nearby_safe_location
+				}
+				domicile = {
+					move_domicile = scope:nearby_safe_location
+				}
+			}
+			else = {
+				scope:adventurer_target = {
+					random_county_in_region = {
+						region = world_stepstones
+						limit = {
+							NOR = {
+								AND = {
+									holder = scope:adventurer_target
+									prev = { is_county_capital = yes }
+								}
+								title_province = {
+									has_holding_type = ruin_holding
+								}
+							}
+						}
+						save_scope_as = nearby_safe_location
+					}
+				}
+				domicile = {
+					move_domicile = scope:nearby_safe_location
+				}
+			}
+		}
+		else = {
+			#Give the adventurer a dynamic title to tide them over.
+			create_dynamic_title = {
+				tier = duchy
+				name = PIRATE_ARMY_NEUTRAL_NAME
+			}
+			create_title_and_vassal_change = {
+				type = created
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+			scope:new_title = {
+				set_capital_county = scope:adventurer_target
+				set_landless_title = yes
+				set_destroy_on_gain_same_tier = yes
+				set_no_automatic_claims = yes
+				set_can_be_named_after_dynasty = no
+				change_title_holder = {
+					holder = scope:pirate_adventurer
+					change = scope:change
+				}
+			}
+			resolve_title_and_vassal_change = scope:change
+			scope:new_title = {
+				generate_coa = yes
+				set_variable = {
+					name = temporary_title
+					value = yes
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			scope:adventurer_target.holder = {
+				top_liege ?= {
+					has_realm_law = top_liege_not_redirected_to_border_wars_law
+				}
+			}
+		}
+		#Declare the war.
+		scope:pirate_adventurer = {
+			start_war = {
+				casus_belli = pirate_adventurer_conquest
+				target = scope:adventurer_target.holder
+				target_title = scope:adventurer_target.duchy
+			}
+		}
+	}
+	else = {
+		#Declare the war.
+		scope:pirate_adventurer = {
+			start_war = {
+				casus_belli = pirate_adventurer_conquest
+				target = scope:adventurer_target.holder.top_liege
+				target_title = scope:adventurer_target.duchy
+			}
+		}
+	}
+
+	# Setup event troops.
+	scope:pirate_adventurer = {
+		add_character_modifier = pirate_adventurer_modifier
+		add_trait = adventurer
+		# Work out how many event troops we should give the adventurer for a 60:40 fight.
+		spawn_army = {
+			levies = {
+				add = {
+					#Base of 400.
+					add = scope:adventurer_target.holder.top_liege.max_military_strength
+					#Multiply that by the realm size of the target's top_liege.
+					multiply = 1.5
+					#Account for allies, adding more without just nullifying them.
+					scope:adventurer_target.holder.top_liege = {
+						every_ally = { add = this.max_military_strength }
+					}
+					#Cut it off so things don't get too ridiculous.
+					max = 8000
+					#Make sure all adventurers have a moderately respectable force.
+					min = 1000
+				}
+			}
+			inheritable = no
+			location = scope:adventurer_target.title_province
+			name = pirate_adventurer_event_troops
+		}
+		spawn_army = {
+			men_at_arms = {
+				type = westerosi_sellswords
+				stacks = {
+					value = 1
+					multiply = scope:adventurer_target.holder.top_liege.primary_title.tier
+				}
+			}
+			inheritable = yes
+			location = scope:adventurer_target.title_province
+			name = pirate_adventurer_event_troops
+		}
+		spawn_army = {
+			men_at_arms = {
+				type = stepstone_sailors
+				stacks = {
+					value = 1
+					multiply = scope:adventurer_target.holder.top_liege.primary_title.tier
+				}
+			}
+			inheritable = yes
+			location = scope:adventurer_target.title_province
+			name = pirate_adventurer_event_troops
+		}
+		spawn_army = {
+			men_at_arms = {
+				type = mangonel
+				stacks = 2
+			}
+			inheritable = yes
+			location = scope:adventurer_target.title_province
+			name = pirate_adventurer_event_troops
+		}
+	}
+	# Loan a little gold in case they're in debt/to keep them going.
+	scope:pirate_adventurer = { add_gold = pirate_adventurer_efficacy_loan_value }
+}
+
+clean_pirate_adventurer_effect = {
+	scope:attacker = {
+		every_held_title = {
+			limit = { has_variable = temporary_title }
+			save_scope_as = destroyable_title
+			scope:attacker = { destroy_title = scope:destroyable_title }
+		}
+		remove_character_modifier = pirate_adventurer_modifier
+	}
+}
+
+add_realm_size_appropriate_pirate_adventurer_reprieve_effect = {
+	# Depending on the sub realm size of $VICTIM$, we give them a scaling amount of time not to be hit by SA attacks.
+	## The smallest realms get a long reprieve.
+	if = {
+		limit = { sub_realm_size <= tiny_realm_size }
+		add_character_modifier = {
+			modifier = proven_against_pirates_modifier
+			years = 20
+		}
+	}
+	## Then a decent reprieve.
+	else_if = {
+		limit = { sub_realm_size <= minor_realm_size }
+		add_character_modifier = {
+			modifier = proven_against_pirates_modifier
+			years = 15
+		}
+	}
+	## Then a short reprieve.
+	else_if = {
+		limit = { sub_realm_size <= medium_realm_size }
+		add_character_modifier = {
+			modifier = proven_against_pirates_modifier
+			years = 10
+		}
+	}
+	## Then you're clearly too big and juicy a target for much reprieve at all.
+	else = {
+		add_character_modifier = {
+			modifier = proven_against_pirates_modifier
+			years = 5
+		}
+	}
+}
+
+agot_pirate_convert_whole_realm_to_feudalism_effect = {
+	custom_tooltip = all_pirate_holding_will_change
+	if = {
+		limit = {
+			OR = {
+				agot_is_valid_lp_feudal_government_target = yes
+				any_liege_or_above = { agot_is_valid_lp_feudal_government_target = yes }
+			}
+			NOT = {
+				any_liege_or_above = { has_trait = nightswatch }
+			}
+		}
+		custom_tooltip = pirate_vassals_will_convert_lp
+	}
+	else = {
+		custom_tooltip = pirate_vassals_will_convert
+	}
+
+	hidden_effect = {
+		##Sort out new buildings for liege and all vassals
+		every_vassal_or_below = {
+			limit = { government_has_flag = government_is_pirate_trigger_check }
+			if = {
+				limit = {
+					OR = {
+						agot_is_valid_lp_feudal_government_target = yes
+						any_liege_or_above = { agot_is_valid_lp_feudal_government_target = yes }
+					}
+					NOT = {
+						any_liege_or_above = { has_trait = nightswatch }
+					}
+				}
+				change_government = lp_feudal_government
+			}
+			else = {
+				change_government = feudal_government
+			}
+			every_held_title = {
+				limit = { has_title_law = pirate_succession_law }
+				clear_title_laws = yes
+			}
+		}
+
+		every_realm_province = {
+			limit = {
+				has_holding_type = pirate_den_holding
+				NOT = { is_in_list = feudal_conversion }
+			}
+			add_to_list = feudal_conversion
+
+		}
+		every_vassal_or_below = {
+			every_realm_province = {
+				limit = {
+					has_holding_type = pirate_den_holding
+					NOT = { is_in_list = feudal_conversion }
+				}
+				add_to_list = feudal_conversion
+			}
+		}
+		every_in_list = {
+			list = feudal_conversion
+			set_variable = {
+				name = pirate_to_feudal_building_level
+				value = combined_building_level
+				days = 1
+			}
+			set_holding_type = castle_holding
+			while = {
+				limit = {
+					var:pirate_to_feudal_building_level > 1
+				}
+				generate_building = yes
+				change_variable = {
+					name = pirate_to_feudal_building_level
+					subtract = 1
+				}
+			}
+			if = {
+				limit = {
+					has_building = generic_dragon_pit_01
+				}
+				remove_building = generic_dragon_pit_01
+			}
+			remove_variable = pirate_to_feudal_building_level
+			remove_from_list = feudal_conversion
+		}
+	}
+
+	if = {
+		limit = {
+			OR = {
+				agot_is_valid_lp_feudal_government_target = yes
+				any_liege_or_above = { agot_is_valid_lp_feudal_government_target = yes }
+			}
+			NOT = {
+				any_liege_or_above = { has_trait = nightswatch }
+			}
+		}
+		change_government = lp_feudal_government
+	}
+	else_if = {
+		limit = {
+			NOT = {
+				government_has_flag = government_is_feudal
+			}
+		}
+		change_government = feudal_government
+	}
+	hidden_effect = {
+		every_held_title = {
+			limit = { has_title_law = pirate_succession_law }
+			clear_title_laws = yes
+		}
+	}
+}

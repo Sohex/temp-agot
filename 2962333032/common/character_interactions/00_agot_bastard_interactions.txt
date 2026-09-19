@@ -1,0 +1,333 @@
+﻿legitimize_bastard_liege_interaction = {
+	category = interaction_category_vassal
+	special_interaction = legitimize_bastard
+	icon = legitimized_bastard
+
+	greeting = positive
+	notification_text = ASK_TO_legitimize_bastard_interaction
+
+	desc = legitimize_bastard_liege_interaction_desc
+
+	redirect = {
+		scope:recipient = {
+			save_scope_as = secondary_recipient
+			scope:actor.top_liege = { save_scope_as = recipient }
+		}
+
+	}
+
+	is_shown = {
+		scope:secondary_recipient = {
+			is_human = yes
+		}
+		scope:actor.top_liege.faith = {
+			has_doctrine_parameter = bastards_legitimize
+		}
+		scope:actor.faith = {
+			has_doctrine_parameter = bastards_legitimize
+		}
+		scope:secondary_recipient = {
+			faith = {
+				has_doctrine_parameter = bastards_legitimize
+			}
+			OR = {
+				has_trait = bastard
+				trigger_if = {
+					limit = { scope:actor = { is_ai = no } }
+					has_trait = bastard_founder
+				}
+			}
+			OR = {
+				father = scope:actor
+				mother = scope:actor
+				scope:actor.house.house_head = scope:actor
+			}
+			OR = {
+				house = scope:actor.house
+				AND = {
+					OR = {
+						father.house = scope:actor.house
+						mother.house = scope:actor.house
+					}
+					has_dynasty = no
+				}
+				trigger_if = {
+					limit = {
+						has_trait = bastard_founder
+					}
+					dynasty = scope:actor.dynasty
+				}
+			}
+		}
+		scope:actor = {
+			is_lowborn = no
+			is_concubine = no
+			is_independent_ruler = no
+			is_human = yes
+		}
+		scope:recipient = {
+			is_human = yes
+			NOT = { government_has_flag = government_is_nw }
+		}
+	}
+
+	cost = {
+		prestige = {
+			value = bastard_legitimization_prestige_cost
+		}
+		renown = {
+			value = 0
+			if = {
+				limit = {
+					scope:actor = {
+						is_ai = no
+						is_dynast = yes
+					}
+				}
+				add = medium_dynasty_prestige_value
+			}
+		}
+	}
+
+	ai_accept = {
+		base = -80
+
+		modifier = {
+			trigger = {
+				NOT = { scope:actor = scope:actor.top_liege }
+			}
+			add = {
+				value = scope:actor.prestige_level
+				multiply = 20
+			}
+			desc = PRESTIGOUS_IN_OUR_HOUSE
+		}
+
+		modifier = {
+			trigger = {
+				always = scope:hook
+			}
+			add = 50
+			desc = SCHEME_WEAK_HOOK_USED
+		}
+
+		opinion_modifier = {
+			trigger = {
+				NOT = { scope:actor = scope:actor.top_liege }
+			}
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 1
+		}
+
+		opinion_modifier = {
+			trigger = {
+				NOT = { scope:actor = scope:actor.top_liege }
+			}
+			who = scope:recipient
+			opinion_target = scope:secondary_recipient
+			multiplier = 0.25
+		}
+
+		modifier = {
+			add = intimidated_external_reason_value
+			scope:recipient = {
+				NOT = { target_is_liege_or_above = scope:actor }
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 1
+				}
+			}
+			desc = INTIMIDATED_REASON
+		}
+		modifier = {
+			add = cowed_external_reason_value
+			scope:recipient = {
+				NOT = { target_is_liege_or_above = scope:actor }
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 2
+				}
+			}
+			desc = COWED_REASON
+		}
+	}
+
+	auto_accept = {
+		OR = {
+			scope:actor = { agot_is_independent_ruler = yes }
+			AND = {
+				always = scope:hook
+				scope:actor = { has_strong_hook = scope:recipient }
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			stress_impact = {
+				arrogant = minor_stress_impact_gain
+			}
+
+			legitimize_bastard_interaction_opinions_effect = {
+				BASTARD = scope:secondary_recipient
+				HOUSE_HEAD = scope:actor.top_liege
+				LEGITIMIZER = scope:actor
+			}
+
+			if = {
+				limit = { always = scope:hook }
+				scope:actor = {
+					use_hook = scope:recipient
+				}
+			}
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			send_interface_toast = {
+				title = legitimize_bastard_interaction_decline_notification
+
+				left_icon = scope:actor.top_liege
+				right_icon = scope:secondary_recipient
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			has_trait = bastard
+			add = 100
+		}
+	}
+
+	send_option = {
+		is_shown = {
+			NOT = { scope:actor = scope:recipient }
+		}
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = SCHEME_HOOK
+	}
+	should_use_extra_icon = {
+		scope:actor = { has_usable_hook = scope:recipient }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	send_options_exclusive = no
+}
+
+reveal_royal_bastardry_interaction = {
+	icon = icon_dynasty
+	category = interaction_category_friendly
+	desc = reveal_royal_bastardry_interaction_desc
+	interface_priority = 100
+
+	is_shown = {
+		scope:actor = {
+			is_human = yes
+			OR = {
+				any_known_secret = { # Knows Jon Snow secret
+					secret_type = secret_agot_disputed_heritage
+					secret_target = {
+						real_paternal_held_iron_throne_claim = yes
+						this = scope:recipient
+					}
+				}
+				any_known_secret = { # Knows other claiment secret
+					secret_type = secret_disputed_heritage
+					secret_target = {
+						real_paternal_held_iron_throne_claim = yes
+						this = scope:recipient
+					}
+				}
+				any_known_secret = { # Knows other claiment unmarried secret
+					secret_type = secret_unmarried_illegitimate_child
+					secret_target = {
+						real_paternal_held_iron_throne_claim = yes
+						this = scope:recipient
+					}
+				}
+			}
+			NOT = { has_character_flag = told_true_parentage }
+		}
+		scope:recipient = {
+			is_human = yes
+			NOT = { this = scope:actor } # Only reveal self by decision
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_adult = yes
+			is_at_home = yes
+		}
+		scope:recipient = {
+			is_adult = yes
+		}
+	}
+
+	cost = {
+		# Nothing
+	}
+
+	auto_accept = yes
+
+	on_accept = {
+		scope:actor = {
+			add_character_flag = told_true_parentage
+			random_known_secret = {
+				limit = {
+					secret_type = secret_agot_disputed_heritage
+					secret_target = {
+						real_paternal_held_iron_throne_claim = yes
+						this = scope:recipient
+					}
+				}
+				save_scope_as = heritage_secret
+				secret_target = {
+					save_scope_as = reveal_scope
+				}
+			}
+			random_known_secret = {
+				limit = {
+					secret_type = secret_disputed_heritage
+					secret_target = {
+						real_paternal_held_iron_throne_claim = yes
+						this = scope:recipient
+					}
+				}
+				save_scope_as = heritage_secret
+				secret_target = {
+					save_scope_as = reveal_scope
+				}
+			}
+			random_known_secret = {
+				limit = {
+					secret_type = secret_unmarried_illegitimate_child
+					secret_target = {
+						real_paternal_held_iron_throne_claim = yes
+						this = scope:recipient
+					}
+				}
+				save_scope_as = heritage_secret
+				secret_target = {
+					save_scope_as = reveal_scope
+				}
+			}
+			save_scope_as = revealer
+			trigger_event = agot_events_bastard.0900
+		}
+	}
+
+	on_decline = {
+		# N/A
+	}
+}

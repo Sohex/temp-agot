@@ -1,0 +1,653 @@
+﻿agot_pirate_convert_whole_realm_to_feudalism_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	decision_group_type = major
+	desc = agot_pirate_convert_whole_realm_to_feudalism_decision_desc
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 36
+		duchy = 36
+		kingdom = 36
+		empire = 36
+		hegemony = 36
+	}
+
+	is_shown = {
+		government_has_flag = government_is_pirate_trigger_check
+		trigger_if = {
+			limit = {
+				is_independent_ruler = yes
+			}
+			always = yes
+		}
+		trigger_else = {
+			liege = {
+				OR = {
+					government_has_flag = government_is_lp_feudal
+					government_has_flag = government_is_feudal
+				}
+			}
+		}
+	}
+
+	is_valid = {
+		highest_held_title_tier >= tier_duchy
+		custom_description = {
+			text = faith_is_reformed
+			subject = root
+			faith = { NOT = { has_doctrine_parameter = unreformed } }
+		}
+		prestige_level >= 2
+		capital_province.county = {
+			development_level >= convert_to_feudalism_development_requirement
+		}
+	}
+
+	cost = {
+		prestige = 200
+	}
+
+	effect = {
+		trigger_event = agot_pirate_events.0001
+		save_scope_as = actor
+		agot_pirate_convert_whole_realm_to_feudalism_effect = yes
+		hidden_effect = {
+			every_vassal = {
+				trigger_event = {
+					id = agot_pirate_events.0002
+					days = 3
+				}
+			}
+		}
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = 100
+			NOR = {
+				root.capital_county.duchy = title:d_the_sisters
+				root.capital_county.duchy = title:d_first_stepstones
+				root.capital_county.duchy = title:d_skull_tides
+				root.capital_county.duchy = title:d_the_maidens
+				root.capital_county.duchy = title:d_saans_stones
+			}
+		}
+	}
+}
+
+#Become Landless Pirate as LAAMP
+become_landless_pirate_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/ep3_decision_laamp_neutral_mountain.dds"
+	}
+	sort_order = 82
+	ai_check_interval = 120
+
+	desc = become_landless_pirate_decision_desc
+	selection_tooltip = become_landless_pirate_decision_tooltip
+	decision_group_type = adventurer
+
+	is_shown = {
+		has_ep3_dlc_trigger = yes
+		has_mpo_dlc_trigger = yes
+		is_landless_adventurer = yes
+		has_targaryen_exile_story = no
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_located_in_pirating_region
+			location ?= {
+				geographical_region = world_stepstones # Pirating Regions
+			}
+		}
+		has_realm_law = camp_purpose_brigands
+	}
+
+	is_valid_showing_failures_only = {
+		is_at_war = no
+		is_alive = yes
+		is_available_adult = yes
+	}
+
+	effect = {
+		save_scope_as = adventurer
+		primary_title = { save_scope_as = laamp_title }
+		agot_create_pirate_domicile_effect = { PIRATE = root }
+		custom_tooltip = become_landless_pirate_decision_tt
+		root = {
+			custom_tooltip = {
+				text = destroy_laamp_effect.tt.domicile_liquidated
+				laamp_clear_domicile_buildings_effect = yes
+			}
+			destroy_title = scope:laamp_title
+		}
+		show_as_tooltip = {
+			add_dread = minor_dread_gain
+		}
+		trigger_event = { id = agot_pirate_events.0100 }
+		stress_impact = {
+			craven = minor_stress_impact_gain
+			content = minor_stress_impact_gain
+			lazy = minor_stress_impact_gain
+		}
+	}
+
+	ai_potential = {
+		agot_character_is_valid_to_become_landless_pirate = yes
+	}
+
+	ai_will_do = {
+		base = -25
+		modifier = { add = agot_landless_pirate_chance_score_value }
+	}
+}
+
+#Become Landless Pirate as Landed Pirate
+abandon_pirate_holdings_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/ep3_decision_laamp_neutral_mountain.dds"
+	}
+	sort_order = 82
+	ai_check_interval = 120
+
+	desc = abandon_pirate_holdings_decision_desc
+	selection_tooltip = abandon_pirate_holdings_decision_tooltip
+
+	is_shown = {
+		has_ep3_dlc_trigger = yes
+		has_mpo_dlc_trigger = yes
+		is_landed = yes
+		government_has_flag = government_is_pirate
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = become_landless_adventurer_decision_tier_tt
+			highest_held_title_tier >= tier_county
+			highest_held_title_tier <= tier_duchy
+		}
+		custom_tooltip = {
+			text = become_landless_adventurer_decision_domain_size_tt
+			domain_size <= 3
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		is_at_war = no
+		is_alive = yes
+		is_available_adult = yes
+	}
+
+	effect = {
+		save_scope_as = adventurer
+		if = {
+			limit = {
+				player_heir ?= {
+					NOT = { this = root }
+					is_adult = yes
+				}
+			}
+			player_heir = {
+				save_scope_as = laamp_heir
+				save_scope_as = laamp_inheritor
+				custom_tooltip = become_landless_adventurer_decision_title_scope_tt
+			}
+		}
+		else_if = {
+			limit = { is_independent_ruler = no }
+			liege = {
+				save_scope_as = laamp_liege
+				save_scope_as = laamp_inheritor
+				custom_tooltip = become_landless_adventurer_decision_title_scope_tt
+			}
+		}
+		else = {
+			custom_tooltip = become_landless_adventurer_decision_title_created_tt
+			if = {
+				limit = {
+					NOT = { exists = scope:laamp_inheritor }
+				}
+				hidden_effect_new_object = {
+					create_character = {
+						template = laamp_inheritor_template
+						culture = root.capital_county.culture
+						faith = root.capital_county.faith
+						dynasty = generate
+						location = root.capital_province
+						after_creation = {
+							save_scope_as = laamp_inheritor
+							add_character_flag = new_laamp_inheritor
+						}
+					}
+				}
+			}
+		}
+		show_as_tooltip = {
+			add_dread = minor_dread_gain
+		}
+		trigger_event = { id = agot_pirate_events.0101 }
+		stress_impact = {
+			craven = minor_stress_impact_gain
+			content = minor_stress_impact_gain
+			lazy = minor_stress_impact_gain
+		}
+	}
+
+	ai_potential = {
+		agot_character_is_valid_to_become_landless_pirate = yes
+	}
+
+	ai_will_do = {
+		base = -75
+		modifier = { add = agot_landless_pirate_chance_score_value }
+	}
+}
+
+# Create Duchy+ Titles, etc. domination cb
+agot_pirate_higher_tier_title_decision = {
+	ai_check_interval = 6
+	picture = {
+		reference = "gfx/interface/illustrations/event_scenes/fp1_ocean.dds"
+	}
+	sort_order = 100
+	decision_group_type = major
+
+	cooldown = { years = 10 }
+
+	cost = {
+		prestige = {
+			value = 125
+			switch = {
+				trigger = root.highest_held_title_tier
+				tier_kingdom = {
+					value = 500
+				}
+				tier_duchy = {
+					value = 250
+				}
+				tier_county = {
+					value = 125
+				}
+			}
+			if = {
+				limit = {
+					is_ai = yes
+				}
+				multiply = 0.1
+			}
+		}
+	}
+
+	is_shown = {
+		government_has_flag = government_is_pirate
+		highest_held_title_tier < tier_empire
+	}
+
+	is_valid = {
+		is_at_war = no
+		is_landed = yes
+		agot_is_independent_ruler = yes
+		is_confederation_member = no
+	}
+
+	is_valid_showing_failures_only = {
+		trigger_if = {
+			limit = {
+				highest_held_title_tier = tier_county
+			}
+			prestige_level >= 2
+		}
+		trigger_else_if = {
+			limit = {
+				highest_held_title_tier = tier_duchy
+			}
+			prestige_level >= 3
+		}
+		trigger_else_if = {
+			limit = {
+				highest_held_title_tier = tier_kingdom
+			}
+			prestige_level >= 4
+		}
+		trigger_else = {
+			always = yes
+		}
+	}
+
+	effect = {
+		save_scope_as = root_scope
+		root.primary_title.de_jure_liege ?= { save_scope_as = title_scope }
+		if = {
+			limit = {
+				exists = scope:title_scope.holder
+			}
+			hidden_effect = {
+				scope:title_scope.holder = { save_scope_as = main_defender }
+				root = {
+					if = {
+						limit = {
+							any_truce_target = { this = scope:main_defender }
+						}
+						cancel_truce_both_ways = scope:main_defender
+					}
+				}
+				start_war = {
+					cb = pirate_domination_cb
+					target = scope:main_defender
+					target_title = scope:title_scope
+				}
+			}
+			custom_tooltip = pirate_domination_war_holder_custom_tooltip
+		}
+		else_if = {
+			limit = {
+				scope:title_scope ?= {
+					NOT = { exists = holder }
+					any_de_jure_county_holder = {
+						is_landed = yes
+						is_human = yes
+						NOR = {
+							top_liege ?= root
+							top_suzerain ?= root
+							is_allied_to = root
+						}
+						is_independent_ruler = yes
+					}
+				}
+			}
+			hidden_effect = {
+				scope:title_scope = {
+					every_de_jure_county_holder = {
+						limit = {
+							is_landed = yes
+							is_human = yes
+							NOR = {
+								top_liege ?= root
+								top_suzerain ?= root
+								is_allied_to = root
+							}
+							is_independent_ruler = yes
+						}
+						add_to_list = war_targets
+					}
+					ordered_in_list = {
+						list = war_targets
+						order_by = current_military_strength
+						save_scope_as = main_defender
+					}
+				}
+				root = {
+					if = {
+						limit = {
+							any_truce_target = { this = scope:main_defender }
+						}
+						cancel_truce_both_ways = scope:main_defender
+					}
+				}
+				start_war = {
+					cb = pirate_domination_cb
+					target = scope:main_defender
+					target_title = scope:title_scope
+				}
+				random_character_war = {
+					limit = {
+						primary_attacker = root
+						primary_defender = scope:main_defender
+					}
+					every_in_list = {
+						list = war_targets
+						limit = {
+							NOT = { is_participant_in_war = prev }
+						}
+						prev = {
+							add_defender = prev
+						}
+					}
+				}
+			}
+			custom_tooltip = pirate_domination_war_no_holder_custom_tooltip
+		}
+		else_if = {
+			limit = {
+				exists = scope:title_scope
+			}
+			scope:title_scope ?= {
+				create_title_and_vassal_change = {
+					type = created
+					save_scope_as = change
+				}
+				change_title_holder = {
+					holder = root
+					change = scope:change
+				}
+				resolve_title_and_vassal_change = scope:change
+			}
+		}
+		else = {
+			custom_tooltip = nomad_higher_tier_title_decision_custom_tooltip
+		}
+	}
+
+	ai_potential = {
+		current_military_strength >= 2000
+		root.current_military_strength > dominate_title_current_enemy_strength
+	}
+
+	ai_will_do = {
+		base = 50
+	}
+}
+
+# Become Pirate Govt
+agot_become_landed_pirate_decision = {
+	ai_check_interval = 150
+	picture = {
+		reference = "gfx/interface/illustrations/event_scenes/fp1_ocean.dds"
+	}
+	sort_order = 100
+	is_shown = {
+		is_landed = yes
+		agot_dlc_check_for_landless_pirates = yes
+		NOR = {
+			government_has_flag = government_is_pirate_trigger_check
+			government_has_flag = government_is_nw
+		}
+		OR = {
+			primary_title = {
+				title_capital_county.title_province = {
+					has_holding = yes
+					has_holding_type = pirate_den_holding
+				}
+			}
+			AND = {
+				highest_held_title_tier <= tier_duchy
+				capital_county = {
+					title_province = {
+						has_holding_type = pirate_den_holding
+					}
+				}
+			}
+		}
+	}
+
+	is_valid = {
+		is_at_war = no
+		is_landed = yes
+		is_independent_ruler = yes
+		is_confederation_member = no
+	}
+
+	cost = {
+		prestige = 1000
+	}
+
+	effect = {
+		every_held_title = {
+			limit = {
+				NOT = {
+					root.capital_county ?= this
+				}
+			}
+			add_to_list = old_titles
+		}
+		hidden_effect = {
+			agot_split_pirates_old_realm_effect = yes
+			every_in_list = {
+				list = old_titles
+				limit = {
+					holder != root
+				}
+				holder = {
+					save_temporary_scope_as = new_ruler
+				}
+				start_tributary_interaction_effect = {
+					TRIBUTARY = scope:new_ruler
+					SUZERAIN = root
+				}
+			}
+			if = {
+				limit = {
+					NOT = {
+						any_held_county = {
+							any_county_province = {
+								has_holding_type = pirate_den_holding
+							}
+						}
+					}
+				}
+				every_held_county = {
+					limit = {
+						NOT = {
+							any_county_province = {
+								has_holding_type = pirate_den_holding
+							}
+						}
+					}
+					every_county_province = {
+						limit = {
+							NOT = {
+								has_holding_type = pirate_den_holding
+							}
+						}
+						set_holding_type = pirate_den_holding
+					}
+				}
+			}
+			if = {
+				limit = {
+					any_neighboring_realm_same_rank_owner = {
+						count > 0
+						NOT = {
+							has_opinion_modifier = {
+								modifier = agot_newly_made_pirate
+								target = root
+							}
+						}
+					}
+				}
+				every_neighboring_realm_same_rank_owner = {
+					limit = {
+						NOT = {
+							has_opinion_modifier = {
+								modifier = agot_newly_made_pirate
+								target = root
+							}
+						}
+					}
+					add_opinion = {
+						modifier = agot_newly_made_pirate
+						target = root
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				prestige_level > 0
+			}
+			add_prestige_level = -1
+		}
+		add_dread = medium_dread_gain
+		custom_tooltip = agot_become_landed_pirate_decision_shatter_realm_tt
+		custom_tooltip = agot_become_landed_pirate_decision_gain_tributaries_tt
+		custom_tooltip = agot_become_landed_pirate_decision_holding_reset_tt
+		agot_create_pirate_domicile_effect = { PIRATE = root }
+	}
+
+	ai_potential = {
+		is_landed = yes
+		AND = {
+			highest_held_title_tier <= tier_duchy
+			capital_county = {
+				title_province = {
+					has_holding_type = pirate_den_holding
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 5
+		modifier = {
+			add = 25
+			highest_held_title_tier <= tier_duchy
+			capital_county = {
+				title_province = {
+					has_holding_type = pirate_den_holding
+				}
+			}
+		}
+	}
+}
+
+agot_dump_landless_pirate_raid_loot = {
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+	desc = agot_dump_landless_pirate_raid_loot_desc
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	decision_group_type = major
+	is_shown = {
+		is_ai = no
+		is_landed = no
+		government_has_flag = government_is_pirate
+		has_variable = raid_loot
+	}
+	is_valid_showing_failures_only = {
+		has_raised_armies = no
+	}
+	effect = {
+		send_interface_toast = {
+			type = event_raid_good
+			title = raiding.0011.t
+			right_icon = root
+			add_prestige = {
+				value = var:raid_loot
+				divide = 2
+			}
+			add_gold = var:raid_loot
+		}
+		remove_variable = raid_loot
+	}
+	ai_potential = {
+		always = no
+	}
+	ai_will_do = {
+		base = 0
+	}
+}

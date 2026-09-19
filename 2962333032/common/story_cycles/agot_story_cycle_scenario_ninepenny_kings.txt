@@ -1,0 +1,1231 @@
+﻿story_agot_ninepenny_kings = {
+	# Badger
+
+	#The Iron Throne
+	#Aegon V - Targaryen_122
+	#Jaeherys II - Targaryen_127
+	#Ormund Baratheon - Baratheon_75
+
+	#The Kings
+	#Maelys - Blackfyre_14
+	#Silvertongue - Adarys_1
+	#The Bad Apple - Fossoway_58
+	#Samarro Saan - Saan_1
+	#Old Mother - Old_Mother_1
+
+
+	on_setup = {
+		debug_log = "Ninepenny Kings initialized"
+		##################################
+		#Initialise Events
+
+		# The Ninepenny Kings
+		character:Blackfyre_14 = {
+			trigger_event = agot_ninepenny.0001
+			add_trait = refusing_marriage
+			# house_feud_start_effect = {
+			# 	# Feuding House Head
+			# 	ACTOR = character:Targaryen_122
+			# 	# Target House Head
+			# 	TARGET = title:h_the_iron_throne.holder
+			# 	# Feud Reason
+			# 	REASON = inherited_rivalry
+			# 	# House Member attacker if relevant
+			# 	ATTACKER = character:Blackfyre_14
+			# 	# House Member victim if relevant
+			# 	VICTIM = title:h_the_iron_throne.holder.father
+			# }
+			every_character_artifact = {
+				limit = { has_variable = dragon_egg }
+				set_variable = agot_artifact_cannot_gift
+				set_variable = agot_swiper_no_swiping
+			}
+		}
+
+		#Gather the Kings!
+		add_to_variable_list = {
+			name = band_of_nine
+			target = character:Blackfyre_14 #Maelys
+		}
+		add_to_variable_list = {
+			name = band_of_nine
+			target = character:Saan_1 #Saan
+		}
+		add_to_variable_list = {
+			name = band_of_nine
+			target = character:Adarys_1 #Silvertongue
+		}
+		add_to_variable_list = {
+			name = band_of_nine
+			target = character:Fossoway_58 #The Bad Apple
+		}
+		add_to_variable_list = {
+			name = band_of_nine
+			target = character:Lashare_1 #The Lord of Battles
+		}
+		add_to_variable_list = {
+			name = band_of_nine
+			target = character:Nine_Eyes_1 #Nine-Eyes
+		}
+		add_to_variable_list = {
+			name = band_of_nine
+			target = character:Old_Mother_1 #Old Mother
+		}
+		add_to_variable_list = {
+			name = band_of_nine
+			target = character:Butcher_1 #The Spotted Butcher
+		}
+		add_to_variable_list = {
+			name = band_of_nine
+			target = character:Qhoqua_1 #The Ebon Prince
+		}
+		#Band of 9 Conquest counter
+		set_variable = {
+			name = band_of_nine_conquest
+			value = 0
+		}
+		#Band of Nine Opinions
+		every_in_list = {
+			variable = band_of_nine
+
+			add_to_list = band_of_nine_temp
+		}
+		every_in_list = {
+			variable = band_of_nine
+
+			save_scope_as = nine_member
+
+			scope:nine_member = {
+				every_in_list = {
+					list = band_of_nine_temp
+					if = {
+						limit = {
+							NOT = {
+								this = scope:nine_member
+							}
+						}
+						add_opinion = {
+							target = prev
+							modifier = band_of_nine_opinion
+						}
+					}
+				}
+			}
+		}
+	}
+	on_end = {
+		if = {
+			limit = {
+				character:Blackfyre_14 = {
+					has_trait = refusing_marriage
+				}
+			}
+			character:Blackfyre_14 = {
+				remove_trait = refusing_marriage
+			}
+		}
+		story_owner = {
+			every_character_artifact = {
+				limit = { has_variable = agot_artifact_cannot_gift }
+				remove_variable = agot_artifact_cannot_gift
+			}
+			every_character_artifact = {
+				limit = {
+					has_variable = agot_swiper_no_swiping
+				}
+				remove_variable = agot_swiper_no_swiping
+			}
+		}
+	}
+
+	on_owner_death = {
+		story_owner = {
+			save_scope_as = blackfyre
+
+			every_held_title = {
+				limit = {
+					tier >= tier_duchy
+				}
+				add_to_temporary_list = destroy_titles
+			}
+			every_held_county = {
+				add_to_list = pirate_counties
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					story_owner.primary_title = title:e_blackfyre_rebellion
+				}
+			}
+			end_story = yes
+		}
+		else_if = { #Why would Maelys' Empire Implode
+			limit = {
+				exists = story_owner.player_heir
+				OR = {
+					story_owner.player_heir = { #Blackfyre Baby
+						age < 16
+					}
+					NOT = { #Non-Blackfyre
+						story_owner.player_heir.house = story_owner.house
+					}
+				}
+			}
+			every_in_list = {
+				list = destroy_titles
+				scope:blackfyre = {
+					destroy_title = prev
+				}
+			}
+			story_owner = {
+				destroy_title = title:e_blackfyre_rebellion
+				destroy_title = title:k_the_stepstones
+
+				#Maelys' personally held realm should shatter so Targs don't inherit - Maelys Implosion
+
+				while = {
+					limit = {
+						any_held_title = {
+							is_in_list = pirate_counties
+						}
+					}
+					random_in_list = {
+						list = pirate_counties
+
+						save_scope_as = county_of_origin
+
+						#Make a character to fill the power vacuum
+						create_character = {
+							template = agot_pirate_character_leader
+							location = scope:blackfyre.location
+							culture = scope:county_of_origin.culture
+							faith = scope:county_of_origin.faith
+							save_scope_as = new_county_holder
+						}
+
+						create_title_and_vassal_change = {
+							type = independency
+							save_scope_as = exclave_change
+							add_claim_on_loss = no
+						}
+						change_title_holder = {
+							holder = scope:new_county_holder
+							change = scope:exclave_change
+						}
+						scope:new_county_holder = {
+							becomes_independent = {
+								change = scope:exclave_change
+							}
+						}
+						resolve_title_and_vassal_change = scope:exclave_change
+
+						scope:new_county_holder = {
+							if = { # Just in case they need to create a duchy
+								limit = {
+									gold < 500
+								}
+								add_gold = 500
+							}
+						}
+						remove_from_list = pirate_counties
+						clear_saved_scope = new_county_holder
+					}
+				}
+			}
+		}
+		else = {
+			make_story_owner = story_owner.player_heir
+		}
+	}
+
+
+	# General daily checks
+	effect_group = {
+		days = 1
+
+		#Maelys Dethroned, End Story
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					OR = {
+						is_landed = no
+						AND = {
+							exists = primary_title
+							primary_title.tier < tier_empire
+						}
+					}
+				}
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+
+		#Iron Throne Warned of the Rising Power of the NPK
+		triggered_effect = {
+			trigger = {
+				NOT = {
+					has_variable = throne_warned
+				}
+				# Stops Maelys from getting this event if he has won the IT / his house has won the IT
+				NOR = {
+					title:h_the_iron_throne.holder.house ?= house:house_Blackfyre
+					title:h_the_iron_throne.holder ?= character:Blackfyre_14
+				}
+				has_variable = band_of_nine_conquest
+				var:band_of_nine_conquest = 2
+			}
+			effect = {
+				set_variable = throne_warned
+				title:h_the_iron_throne.holder ?= {
+					trigger_event = agot_ninepenny.0004 # Iron Throne decides on a preemptive strike
+				}
+			}
+		}
+
+		#Maelys takes Iron Throne
+		triggered_effect = {
+			trigger = {
+				NOT = {
+				exists = var:spouses_chosen
+				}
+				story_owner = {
+					has_title = title:h_the_iron_throne
+				}
+			}
+			effect = {
+				set_variable = spouses_chosen
+				story_owner = {
+					trigger_event = agot_ninepenny.0003 #Maelys Reigns SUPREME
+				}
+			}
+		}
+	}
+
+	# War Effects Block
+	effect_group = {
+		days = 1
+
+		trigger = {
+			story_owner = {
+				is_at_war_with = title:h_the_iron_throne.holder
+			}
+		}
+
+		#Maelys - Ormund Baratheon duel
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				NOT = {
+					character:Blackfyre_14 = { has_character_flag = currently_in_duel }
+				}
+				OR = {
+					maelys_ormund_duel_trigger = yes
+					maelys_selmy_duel_trigger = yes
+				}
+			}
+			effect = {
+				if = {
+					limit = {
+						maelys_ormund_duel_trigger = yes
+					}
+					set_variable = maelys_ormund_duel
+					#Maelys Ormund Duel stuff here
+					if = {
+						limit = { #Player Maelys takes priority
+							character:Blackfyre_14 = {
+								is_ai = no
+							}
+						}
+						character:Blackfyre_14 = {
+							trigger_event = agot_ninepenny.0008
+							add_character_flag = currently_in_duel
+						}
+					}
+					else_if = { #Player Ormund
+						limit = {
+							character:Baratheon_75 = {
+								is_ai = no
+							}
+						}
+						character:Baratheon_75 = {
+							trigger_event = agot_ninepenny.0009
+						}
+					}
+					else = { #AI Prowess Comparison
+						random_list = {
+							0 = {
+								modifier = {
+									add = agot_historic_event_chance
+								}
+								character:Blackfyre_14 = {
+									trigger_event = agot_ninepenny.0011
+								}
+							}
+							0 = {
+								#no duel
+								modifier = {
+									add = agot_nonhistoric_event_chance
+								}
+							}
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						maelys_selmy_duel_trigger = yes
+					}
+					set_variable = maelys_selmy_duel
+					#Maelys Selmy Duel stuff here
+					if = {
+						limit = { #Player Maelys takes priority
+							character:Blackfyre_14 = {
+								is_ai = no
+							}
+						}
+						character:Blackfyre_14 = {
+							add_character_flag = currently_in_duel
+							trigger_event = agot_ninepenny.0013
+						}
+					}
+					else_if = { #Player Selmy less likely so seconds
+						limit = {
+							character:Selmy_3 = {
+								is_ai = no
+							}
+						}
+						character:Selmy_3 = {
+							trigger_event = agot_ninepenny.0014
+						}
+					}
+					else = { #AI Prowess Comparison
+						random_list = {
+							0 = {
+								modifier = {
+									add = agot_historic_event_chance
+								}
+								character:Blackfyre_14 = {
+									trigger_event = agot_ninepenny.0016
+								}
+							}
+							0 = {
+								#no duel
+								modifier = {
+									add = agot_nonhistoric_event_chance
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Hoster-Baelish Friendship
+		triggered_effect = {
+			trigger = {
+				NOT = {
+					has_variable = tully_baelish_connection
+				}
+				character:Tully_1 ?= {
+					is_at_same_location = character:Baelish_1
+					is_in_army = yes
+					is_alive = yes
+					NOT = {
+						location = {
+							geographical_region = world_westeros
+						}
+					}
+				}
+				character:Baelish_1 ?= {
+					is_in_army = yes
+					is_alive = yes
+				}
+			}
+			effect = {
+				set_variable = tully_baelish_connection
+				#Give the player the event from their perspective
+				if = {
+					limit = {
+						character:Tully_1 ?= {
+							is_ai = no
+						}
+					}
+					#Tully event
+				}
+				else_if = {
+					limit = {
+						character:Baelish_1 ?= {
+							is_ai = no
+						}
+					}
+					#Baelish event
+				}
+				#Otherwise just make them friends
+				else = {
+					character:Tully_1 = {
+						set_relation_friend = {
+							reason = friend_campaigned_together
+							target = character:Baelish_1
+						}
+					}
+				}
+			}
+		}
+		#Arryn-Stark-Baratheon Friendship?
+		#Blackfish?
+	}
+
+	#Narrative Effect Block
+	effect_group = {
+		days = 10
+
+		#Saan presents Val Scrolls
+		triggered_effect = {
+			trigger = {
+				story_owner = character:Blackfyre_14
+				story_owner = {
+					is_landed = yes
+				}
+				character:Saan_1 ?= {
+					is_alive = yes
+				}
+				NOT = {
+					has_variable = saan_scrolls
+				}
+			}
+			effect = {
+				set_variable = saan_scrolls
+				story_owner = {
+					trigger_event = {
+						id = agot_ninepenny.9998
+						days = 30
+					}
+				}
+			}
+		}
+
+		#Maelys as King is approached by the Kings
+		triggered_effect = {
+			trigger = {
+				story_owner = character:Blackfyre_14
+				story_owner = {
+					is_landed = yes
+					primary_title = title:h_the_iron_throne
+				}
+				NOT = {
+					has_variable = kings_petitioned
+				}
+			}
+			effect = {
+				set_variable = kings_petitioned
+				story_owner = {
+					trigger_event = agot_ninepenny.0029
+				}
+			}
+		}
+
+		#Maelys as King is approached by the Kings
+		triggered_effect = {
+			trigger = {
+				AND = {
+					character:Blackfyre_14 = { has_title = title:h_the_iron_throne }
+					OR = {
+						character:Saan_1 = { is_alive = no }
+						character:Saan_1.primary_title.tier >= tier_kingdom
+					}
+					OR = {
+						character:Adarys_1 = { is_alive = no }
+						character:Adarys_1.primary_title.tier >= tier_kingdom
+					}
+					OR = {
+						character:Fossoway_58 = { is_alive = no }
+						character:Fossoway_58.primary_title.tier >= tier_kingdom
+					}
+					OR = {
+						character:Lashare_1 = { is_alive = no }
+						character:Lashare_1.primary_title.tier >= tier_kingdom
+					}
+					OR = {
+						character:Nine_Eyes_1 = { is_alive = no }
+						character:Nine_Eyes_1.primary_title.tier >= tier_kingdom
+					}
+					OR = {
+						character:Old_Mother_1 = { is_alive = no }
+						character:Old_Mother_1.primary_title.tier >= tier_kingdom
+					}
+					OR = {
+						character:Butcher_1 = { is_alive = no }
+						character:Butcher_1.primary_title.tier >= tier_kingdom
+					}
+					OR = {
+						character:Qhoqua_1 = { is_alive = no }
+						character:Qhoqua_1.primary_title.tier >= tier_kingdom
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_ninepenny.0023
+				}
+			}
+		}
+
+		#Roger Reyne ponders on Robb Reyne
+		triggered_effect = {
+			trigger = { #Check for Blackfyre Rebellion
+				exists = title:e_blackfyre_rebellion.holder
+				title:h_the_iron_throne.holder ?= {
+					is_at_war_with = title:e_blackfyre_rebellion.holder
+				}
+				dynasty:dynn_Reyne.dynast ?= {
+					is_ai = no
+					is_landed = yes
+					primary_title.tier > tier_barony
+					house = dynasty:dynn_Reyne.dynasty_founder.house
+				}
+				NOT = {
+					exists = var:robb_reyne
+				}
+			}
+			effect = {
+				set_variable = robb_reyne
+				dynasty:dynn_Reyne.dynast = {
+					trigger_event = {
+						id = agot_ninepenny.0050
+						days = 7
+					}
+				}
+			}
+		}
+	}
+}
+
+story_agot_summerhall = {
+	# Badger
+
+	#The Iron Throne
+	#Aegon V - Targaryen_122
+	#Jaeherys II - Targaryen_127
+	#Duncan the Small - Targaryen_126
+	#Aerys the Mad King - Targaryen_1
+	#Rhaella - Targaryen_2
+	#Betha Blackwood - Blackwood_87
+
+	on_setup = {
+		debug_log = "Summerhall initialized"
+		##################################
+
+		set_variable = {
+			name = summerhall
+			value = flag:negative
+		}
+
+		#Initialise Events
+
+		story_owner = {
+			every_character_artifact = {
+				limit = { has_variable = dragon_egg }
+				set_variable = agot_artifact_cannot_gift
+				set_variable = agot_swiper_no_swiping
+			}
+
+			save_scope_as = summerhall_leader
+			add_to_list = summerhall_attendees
+			every_spouse = {
+				add_to_list = summerhall_attendees
+			}
+			house = {
+				every_house_member = {
+					limit = {
+						NOT = {
+							has_trait = nightswatch #Aemon stay at the wall
+							this = character:Targaryen_130 #Rhaelle not there
+						}
+					}
+					add_to_list = summerhall_attendees
+				}
+			}
+			if = { #Duncan the Tall
+				limit = {
+					character:Tall_1 = {
+						is_alive = yes
+					}
+				}
+				character:Tall_1 = {
+					add_to_list = summerhall_attendees
+				}
+			}
+			if = { #Maester Corso
+				limit = {
+					character:Maester_Kings_Landing_1 = {
+						is_alive = yes
+					}
+				}
+				character:Maester_Kings_Landing_1 = {
+					add_to_list = summerhall_attendees
+				}
+			}
+			if = { #Jenny of the Oldstones
+				limit = {
+					character:Targaryen_hh_10 = {
+						is_alive = yes
+					}
+				}
+				character:Targaryen_hh_10 = {
+					add_to_list = summerhall_attendees
+				}
+			}
+			# Rhae's family
+			if = { #Tancred Crane
+				limit = {
+					character:Crane_46 = {
+						is_alive = yes
+					}
+				}
+				character:Crane_46 = {
+					add_to_list = summerhall_attendees
+				}
+			}
+			if = { #Jeffory Crane
+				limit = {
+					character:Crane_47 = {
+						is_alive = yes
+					}
+				}
+				character:Crane_47 = {
+					add_to_list = summerhall_attendees
+				}
+			}
+			if = { #Rhalla Crane
+				limit = {
+					character:Crane_48 = {
+						is_alive = yes
+					}
+				}
+				character:Crane_48 = {
+					add_to_list = summerhall_attendees
+				}
+			}
+		}
+
+		every_in_list = {
+			list = summerhall_attendees
+			add_character_flag = {
+				flag = planning_an_activity
+				years = 1
+			}
+			set_variable = {
+				name = booked_for_a_party
+				value = scope:summerhall_leader
+				years = 1
+			}
+			prev = {
+				add_to_variable_list = {
+					name = summerhall_attendees
+					target = prev
+				}
+			}
+		}
+
+		#Westeros
+		character:Targaryen_122 = { #Egg
+			trigger_event = agot_ninepenny.1000
+		}
+
+	}
+
+	on_end = {
+		story_owner = {
+			every_character_artifact = {
+				limit = { has_variable = agot_artifact_cannot_gift }
+				remove_variable = agot_artifact_cannot_gift
+			}
+			every_character_artifact = {
+				limit = { has_variable = agot_swiper_no_swiping }
+				remove_variable = agot_swiper_no_swiping
+			}
+		}
+		every_in_list = {
+			variable = summerhall_attendees
+			if = {
+				limit = { is_alive = yes }
+
+				remove_character_flag = planning_an_activity
+				remove_variable = booked_for_a_party
+				set_location_to_default = yes
+			}
+		}
+	}
+
+	on_owner_death = { 	#My father had planned to celebrate the birth of my grandchild at summerhall. Perhaps I should reassert my comittment to the celebration?
+		if = {
+			limit = {
+				exists = story_owner.player_heir
+			}
+			make_story_owner = story_owner.player_heir
+			# Egg dies early, Jaeherys/Aerys decides whether to proceed with Summerhall
+			if = {
+				limit = {
+					var:summerhall = flag:positive #Only trigger if Egg is going to summerhall
+					NOT = {
+						var:arrived = flag:positive
+					}
+				}
+				story_owner = {
+					trigger_event = {
+						id = agot_ninepenny.1020
+						days = 1
+					}
+				}
+			}
+		}
+	}
+
+	#Daily maintenance checks
+	effect_group = {
+		days = 1
+
+		trigger = {
+			var:summerhall = flag:positive
+		}
+
+		# Rhaella Dies, Cancel Summerhall
+		triggered_effect = {
+			trigger = {
+				character:Targaryen_2 = {
+					is_alive = no
+				}
+				NOT = { var:summerhall_continue_death ?= flag:positive }
+				NOT = { has_variable = summerhall_started }
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_ninepenny.1021
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					is_at_war = yes
+				}
+				NOT = { var:summerhall_continue_war ?= flag:positive }
+				NOT = { has_variable = summerhall_started }
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_ninepenny.1022
+				}
+			}
+		}
+	}
+
+
+	# General checks
+	effect_group = { # Summerhall Preparation Effect Group
+		days = { 30 60 }
+
+		trigger = {
+			var:summerhall = flag:positive
+			story_owner = character:Targaryen_122 #Egg Specific
+		}
+
+		triggered_effect = { # Egg is approached by a Pyromancer who promises him the rebirth of the dragons
+			trigger = {
+				NOT = {
+					has_variable = pyromancer_arrived
+				}
+			}
+			effect = {
+				set_variable = pyromancer_arrived
+				story_owner = {
+					trigger_event = agot_ninepenny.1002
+				}
+			}
+		}
+	}
+
+	effect_group = { # Rhaella Pregnancy Tracker
+		days = 30
+
+		trigger = {
+			character:Targaryen_2 = {
+				is_alive = yes
+				has_variable = agot_fated_pregnancy_months
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				character:Targaryen_2 = {
+					is_alive = yes
+					has_variable = agot_fated_pregnancy_months
+				}
+			}
+			effect = {
+				character:Targaryen_2 = {
+					change_variable = {
+						name = agot_fated_pregnancy_months
+						add = 1
+					}
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				character:Targaryen_2 = {
+					is_alive = yes
+					has_variable = agot_fated_pregnancy_months
+					var:agot_fated_pregnancy_months >= 9
+				}
+				var:summerhall = flag:negative
+			}
+			effect = {
+				character:Targaryen_2 = {
+					trigger_event = agot_ninepenny.1001
+					remove_variable = agot_fated_pregnancy_months
+				}
+				end_story = yes
+			}
+		}
+	}
+
+
+	effect_group = { # Summerhall Tragedy
+		days = 239
+
+		trigger = {
+			var:summerhall = flag:positive
+		}
+
+		triggered_effect = {
+			trigger = {
+				NOT = { has_variable = summerhall_started }
+			}
+			effect = {
+				set_variable = summerhall_started
+
+				every_in_list = {
+					variable = summerhall_attendees
+					add_to_list = summerhall_attendees
+				}
+
+				story_owner = {
+					save_scope_as = summerhall_leader
+
+					add_to_list = summerhall_attendees
+					every_spouse = {
+						add_to_list = summerhall_attendees
+					}
+					house = {
+						every_house_member = {
+							limit = {
+								NOT = {
+									has_trait = nightswatch #Aemon stay at the wall
+									this = character:Targaryen_130 #Rhaelle not there
+								}
+							}
+							add_to_list = summerhall_attendees
+						}
+					}
+					random_owned_story = { #Pyromancer
+						limit = {
+							story_type = story_agot_summerhall
+						}
+
+						save_scope_as = summerhall_story
+
+						var:pyromancer = {
+							add_to_list = summerhall_attendees
+						}
+					}
+
+					#Additional level of randomization
+					trigger_event = agot_ninepenny.9999
+				}
+
+				every_in_list = {
+					list = summerhall_attendees
+					prev = {
+						add_to_variable_list = {
+							name = summerhall_attendees
+							target = this
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+story_agot_reyne_rebellion = {
+	# Badger
+
+	#The Westerlands
+	#Roger Reyne - Reyne_45
+	#Walderan Tarbeck - Tarbeck_27
+
+	#Tytos Lannister - Lannister_129
+	#Tywin Lannister - Lannister_1
+	#Kevan Lannister - Lannister_2
+
+
+	on_setup = {
+		##################################
+		#Initialise Events
+		#Roger Reyne Set-Up
+		character:Reyne_45 = {
+			trigger_event = { id = agot_ninepenny.2000 days = 1 }
+		}
+	}
+
+	on_end = {
+
+	}
+
+	on_owner_death = {
+		if = {
+			limit = {
+				exists = story_owner.player_heir
+			}
+			make_story_owner = story_owner.player_heir
+		}
+	}
+
+
+	effect_group = { #Pre-Rebellion Checks
+		days = 1
+
+		trigger = {
+			always = yes
+		}
+
+
+		triggered_effect = { #Tywin or Kevan inherit, shit kicks off
+			trigger = {
+				NOT = {
+					exists = var:tywin_inherited
+					exists = var:reyne_rebellion
+				}
+				title:e_the_westerlands.holder ?= {
+					NOT = {
+						this = character:Lannister_129 #If one of Tytos' sons comes to power, game over for the Reynes
+					}
+					father ?= character:Lannister_129
+				}
+			}
+			effect = { #Tywin/Kevan make their demands, rebellion kick off time
+				set_variable = tywin_inherited
+				title:e_the_westerlands.holder = {
+					trigger_event = agot_ninepenny.2030
+				}
+			}
+		}
+
+		triggered_effect = { #Check for the Blackfyre Rebellion
+			trigger = {
+				title:h_the_iron_throne.holder ?= {
+					any_character_war = {
+						any_war_participant = {
+							this = title:e_blackfyre_rebellion.holder
+						}
+					}
+				}
+				NOT = {
+					exists = var:blackfyre_rebellion
+				}
+			}
+			effect = {
+				set_variable = blackfyre_rebellion
+			}
+		}
+
+		triggered_effect = { #Check if Tytos has joined the Rebellion
+			trigger = {
+				exists = var:blackfyre_rebellion
+				NOT = {
+					exists = var:tywin_asked
+				}
+				story_owner = {
+					this = character:Lannister_129 #Only Tytos
+				}
+				title:h_the_iron_throne.holder ?= {
+					any_character_war = {
+						using_cb = agot_blackfyre_claim
+					}
+				}
+				NOT = {
+					story_owner = {
+						OR = {
+							any_character_war = {
+								using_cb = agot_blackfyre_claim
+							}
+							any_character_war = { #Dont bother asking if already fighting the reynes
+								using_cb = reyne_rebellion
+							}
+						}
+					}
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = agot_ninepenny.2031
+				}
+				set_variable = tywin_asked
+			}
+		}
+
+		triggered_effect = { #Check for the end of the Blackfyre Rebellion - Rebellion Canon Beginning
+			trigger = {
+				NOT = {
+					title:h_the_iron_throne.holder ?= {
+						any_character_war = {
+							any_war_participant = {
+								this = title:e_blackfyre_rebellion.holder
+							}
+						}
+					}
+					exists = var:tywin_returned
+					exists = var:reyne_rebellion
+				}
+				exists = var:blackfyre_rebellion
+				story_owner = {
+					this = character:Lannister_129 #Only Tytos
+				}
+			}
+			effect = {
+				story_owner = {
+					trigger_event = {
+						id = agot_ninepenny.2032
+						days = 15
+					}
+				}
+				set_variable = tywin_returned
+			}
+		}
+	}
+
+	effect_group = { #Rebellion Narrative Checks
+		days = 1
+
+		trigger = {
+			exists = var:reyne_rebellion
+		}
+
+		#Reign/Rains of Castamere Flavour
+		triggered_effect = {
+			trigger = {
+				exists = var:reyne_rebellion_complete
+				NOT = {
+					exists = var:rains_of_castamere
+				}
+			}
+			effect = {
+				set_variable = rains_of_castamere
+				title:e_the_westerlands.holder = {
+					if = {
+						limit = {
+							dynasty = dynasty:dynn_Reyne
+						}
+						trigger_event = agot_ninepenny.2050
+					}
+					else_if = {
+						limit = {
+							dynasty = dynasty:dynn_Lannister
+						}
+						trigger_event = agot_ninepenny.2051
+					}
+				}
+			}
+		}
+	}
+
+	effect_group = { #Rebellion Siege Checks
+		days = 15
+
+		trigger = {
+			exists = var:reyne_rebellion
+			character:Lannister_1 ?= {
+				is_alive = yes
+			}
+		}
+		#Tarbeck Hall Siege Event
+		triggered_effect = {
+			trigger = {
+				NOT = {
+					exists = var:tarbeck_siege
+				}
+				story_owner = {
+					save_temporary_scope_as = story_owner
+					has_raised_armies = yes
+					any_army = {
+						is_army_in_siege = yes
+						is_army_in_combat = no
+						army_is_moving = no
+						OR = {
+							scope:story_owner = character:Lannister_1 #Either Tywin is in charge...
+							AND = { #Tywin is leading the force...
+								exists = army_commander
+								army_commander = {
+									this = character:Lannister_1
+								}
+							}
+							character:Lannister_1 = { #Or Tywin is present as a knight for the AI
+								exists = knight_army
+								knight_army = prev
+							}
+						}
+						location = title:b_tarbeck_hall.title_province
+					}
+				}
+			}
+			effect = {
+				set_variable = tarbeck_siege
+				title:b_tarbeck_hall.holder = {
+					trigger_event = agot_ninepenny.2013
+				}
+			}
+		}
+
+		#Castamere Siege Event
+		triggered_effect = {
+			trigger = {
+				NOT = {
+					exists = var:castamere_siege
+				}
+				story_owner = {
+					save_temporary_scope_as = story_owner
+					has_raised_armies = yes
+					any_army = {
+						is_army_in_siege = yes
+						is_army_in_combat = no
+						army_is_moving = no
+						OR = {
+							scope:story_owner = character:Lannister_1 #Either Tywin is in charge...
+							AND = { #Tywin is leading the force...
+								exists = army_commander
+								army_commander = {
+									this = character:Lannister_1
+								}
+							}
+							character:Lannister_1 = { #Or Tywin is present as a knight for the AI
+								exists = knight_army
+								knight_army = prev
+							}
+						}
+						location = title:b_castamere.title_province
+					}
+				}
+			}
+			effect = {
+				set_variable = castamere_siege
+				title:b_castamere.holder = {
+					trigger_event = agot_ninepenny.2019
+				}
+			}
+		}
+	}
+}

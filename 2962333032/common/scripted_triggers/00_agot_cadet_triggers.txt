@@ -1,0 +1,377 @@
+﻿# vanilla requirements except 3 modified to 5 for create_cadet_branch_decision
+agot_cadet_base_reqs_trigger = {
+	# If you are Clan, you cannot be in the same realm as your House Head. For simplicity, we'll just force you to be independent.
+	# Must have living children of same house
+	custom_tooltip = {
+		text = create_cadet_branch_decision_living_children
+		any_child = {
+			count >= 1
+			is_alive = yes
+			house ?= root.house
+		}
+	}
+	# No direct descendant is liege or above
+	custom_tooltip = {
+		text = create_cadet_branch_decision_liege_is_descendant
+		any_liege_or_above_is_descendant = no
+	}
+	# If you are Clan, you cannot be in the same realm as your House Head. For simplicity, we'll just force you to be independent.
+	trigger_if = {
+		limit = {
+			government_has_flag = government_is_clan
+		}
+		top_liege = this
+	}
+	# If you are Administrative, we let the player create a new House much easier, as to have easy access to their own Family Title and Estate.
+	trigger_else_if = {
+		limit = { government_allows = administrative }
+		trigger_if = {
+			limit = {
+				is_ai = yes # We don't want the AI to create cadet branches willy nilly, so they have additional restrictions.
+				top_liege = house.house_head.top_liege # But we do want the AI to create a cadet branch ASAP if the house head is in a different realm
+			}
+			NOT = { is_close_or_extended_family_of = house.house_head }
+			custom_description = {
+				text = create_cadet_branch_decision_succession_line
+				house.house_head = {
+					NOT = {
+						any_held_title = {
+							place_in_line_of_succession = {
+								target = root
+								value <=5
+							}
+						}
+					}
+				}
+			}
+		}
+		# No triggers for players.
+	}
+	# For everyone else, you cannot be too close in the line of succession.
+	trigger_else = {
+		custom_description = {
+			text = create_cadet_branch_decision_succession_line
+			house.house_head = {
+				NOT = {
+					any_held_title = {
+						place_in_line_of_succession = {
+							target = root
+							value <= 5
+						}
+					}
+				}
+			}
+		}
+	}
+	# Marriage restrictions
+	trigger_if = {
+		limit = { is_male = yes }
+		trigger_if = {
+			limit = {
+				OR = {
+					is_married = yes
+					faith = { has_doctrine = doctrine_gender_female_dominated }
+				}
+			}
+			patrilinear_marriage = yes
+		}
+	}
+	trigger_else = {
+		trigger_if = {
+			limit = {
+				OR = {
+					is_married = yes
+					faith = { has_doctrine = doctrine_gender_male_dominated }
+				}
+			}
+			matrilinear_marriage = yes
+		}
+	}
+	# Monks need not apply
+	trigger_if = {
+		limit = { has_trait = devoted }
+		NOT = { has_trait = devoted }
+	}
+	trigger_if = {
+		limit = { has_trait = bastard }
+		NOT = { has_trait = bastard }
+	}
+}
+
+# Used for cadet creation decision
+agot_ancestors_ruled_primary_title = {
+	any_ancestor = {
+		count > 2  # Three ancestors had to have ruled before you
+		has_primary_title = root.primary_title # It had to be your primary title
+		primary_title.title_held_years >= 10 # Each had to have ruled for at least ten years.
+		dynasty = root.dynasty # Have to be in your dynasty
+		is_alive = no
+	}
+}
+
+has_house_name_trigger = {
+	OR = {
+
+		#Cultural House Names
+		has_culture = culture:high_valyrian
+		has_culture = culture:westerosi_valyrian
+		dynasty = {
+			has_dynasty_modifier = valyrian_heritage_dynasty_modifier
+		}
+
+		#North
+		dynasty = dynasty:dynn_Mormont
+		dynasty = dynasty:dynn_Ryswell
+		dynasty = dynasty:dynn_Glover
+		dynasty = dynasty:dynn_Reed
+		dynasty = dynasty:dynn_Bolton
+		dynasty = dynasty:dynn_Manderly
+		dynasty = dynasty:dynn_Silverfield
+
+		#Riverlands
+		dynasty = dynasty:dynn_Tully
+		dynasty = dynasty:dynn_Mooton
+		dynasty = dynasty:dynn_Bracken
+
+		#Vale
+		dynasty = dynasty:dynn_Arryn
+		dynasty = dynasty:dynn_Grafton
+		dynasty = dynasty:dynn_Corbray
+		dynasty = dynasty:dynn_Waxley
+		dynasty = dynasty:dynn_Waynwood
+
+		#Reach
+		dynasty = dynasty:dynn_Tyrell
+		dynasty = dynasty:dynn_Tarly
+		dynasty = dynasty:dynn_Beesbury
+		dynasty = dynasty:dynn_Roxton
+
+		#Westerlands
+		dynasty = dynasty:dynn_Lannister
+		dynasty = dynasty:dynn_Crakehall
+		dynasty = dynasty:dynn_Lydden
+		dynasty = dynasty:dynn_Brax
+
+		#Crownlands
+		dynasty = dynasty:dynn_Celtigar
+		dynasty = dynasty:dynn_Massey
+		dynasty = dynasty:dynn_Rykker
+
+		#Stormlands
+		dynasty = dynasty:dynn_Baratheon
+		dynasty = dynasty:dynn_Durrandon
+		dynasty = dynasty:dynn_Connington
+		dynasty = dynasty:dynn_Tarth
+		dynasty = dynasty:dynn_Dondarrion
+		dynasty = dynasty:dynn_Caron
+
+		#Dorne
+		dynasty = dynasty:dynn_Martell
+		dynasty = dynasty:dynn_Jordayne
+		dynasty = dynasty:dynn_Santagar
+		dynasty = dynasty:dynn_Vaith
+		dynasty = dynasty:dynn_Qorgyle
+		dynasty = dynasty:dynn_Yronwood
+		dynasty = dynasty:dynn_Wyl
+
+		#Iron Islands
+		dynasty = dynasty:dynn_Greyjoy
+	}
+}
+
+has_house_sigil_trigger = {
+	OR = {
+
+		#Cultural House Names
+		has_culture = culture:high_valyrian
+		has_culture = culture:westerosi_valyrian
+		dynasty = {
+			has_dynasty_modifier = valyrian_heritage_dynasty_modifier
+		}
+
+		#Crownlands
+		dynasty = dynasty:dynn_Targaryen
+		dynasty = dynasty:dynn_Velaryon
+		dynasty = dynasty:dynn_Celtigar
+		dynasty = dynasty:dynn_Crabb
+		dynasty = dynasty:dynn_Stokeworth
+		dynasty = dynasty:dynn_Bar_Emmon
+		dynasty = dynasty:dynn_Byrch
+		dynasty = dynasty:dynn_Bywater
+		dynasty = dynasty:dynn_Slynt
+		dynasty = dynasty:dynn_Staunton
+		dynasty = dynasty:dynn_Cave
+		dynasty = dynasty:dynn_Thorne
+		dynasty = dynasty:dynn_Sunglass
+
+		#North
+		dynasty = dynasty:dynn_Stark
+		dynasty = dynasty:dynn_Glover
+		dynasty = dynasty:dynn_Umber
+		dynasty = dynasty:dynn_Mormont
+		dynasty = dynasty:dynn_Hornwood
+		dynasty = dynasty:dynn_Reed
+		dynasty = dynasty:dynn_Flint
+		dynasty = dynasty:dynn_Cerwyn
+		dynasty = dynasty:dynn_Dustin
+		dynasty = dynasty:dynn_Tallhart
+		dynasty = dynasty:dynn_Marsh
+		dynasty = dynasty:dynn_Ryswell
+		dynasty = dynasty:dynn_Whitehill
+		dynasty = dynasty:dynn_Harclay
+
+		#Riverlands
+		dynasty = dynasty:dynn_Tully
+		dynasty = dynasty:dynn_Qoherys
+		dynasty = dynasty:dynn_Frey
+		dynasty = dynasty:dynn_Mallister
+		dynasty = dynasty:dynn_Blackwood
+		dynasty = dynasty:dynn_Bracken
+		dynasty = dynasty:dynn_Mooton
+		dynasty = dynasty:dynn_Whent
+		dynasty = dynasty:dynn_Lothston
+		dynasty = dynasty:dynn_Paege
+		dynasty = dynasty:dynn_Cox
+		dynasty = dynasty:dynn_Vance
+		dynasty = dynasty:dynn_Grell
+		dynasty = dynasty:dynn_Roote
+		dynasty = dynasty:dynn_Lychester
+		dynasty = dynasty:dynn_Erenford
+		dynasty = dynasty:dynn_Vypren
+		dynasty = dynasty:dynn_Byrne
+		dynasty = dynasty:dynn_Dannett
+		dynasty = dynasty:dynn_Wayn
+		dynasty = dynasty:dynn_Kytley
+
+		#Reach
+		dynasty = dynasty:dynn_Gardener
+		dynasty = dynasty:dynn_Tyrell
+		dynasty = dynasty:dynn_Hightower
+		dynasty = dynasty:dynn_Redwyne
+		dynasty = dynasty:dynn_Florent
+		dynasty = dynasty:dynn_Rowan
+		dynasty = dynasty:dynn_Serry
+		dynasty = dynasty:dynn_Chester
+		dynasty = dynasty:dynn_Roxton
+		dynasty = dynasty:dynn_Caswell
+		dynasty = dynasty:dynn_Hunt
+		dynasty = dynasty:dynn_Ashford
+		dynasty = dynasty:dynn_Beesbury
+		dynasty = dynasty:dynn_Leygood
+		dynasty = dynasty:dynn_Osgrey
+		dynasty = dynasty:dynn_Bridges
+		dynasty = dynasty:dynn_Willum
+		dynasty = dynasty:dynn_Vyrwel
+		dynasty = dynasty:dynn_Crane
+		dynasty = dynasty:dynn_Hutcheson
+		dynasty = dynasty:dynn_Grimm
+		dynasty = dynasty:dynn_Norridge
+		dynasty = dynasty:dynn_Sloane
+		dynasty = dynasty:dynn_Uffering
+		dynasty = dynasty:dynn_Tarly
+		dynasty = dynasty:dynn_Footly
+
+		#Westerlands
+		dynasty = dynasty:dynn_Lannister
+		dynasty = dynasty:dynn_Reyne
+		dynasty = dynasty:dynn_Crakehall
+		dynasty = dynasty:dynn_Lydden
+		dynasty = dynasty:dynn_Brax
+		dynasty = dynasty:dynn_Sarsfield
+		dynasty = dynasty:dynn_Stackspear
+		dynasty = dynasty:dynn_Lefford
+		dynasty = dynasty:dynn_Clegane
+		dynasty = dynasty:dynn_Doggett
+		dynasty = dynasty:dynn_Peckledon
+		dynasty = dynasty:dynn_Yarwyck
+		dynasty = dynasty:dynn_Swyft
+		dynasty = dynasty:dynn_Serrett
+		dynasty = dynasty:dynn_Jast
+		dynasty = dynasty:dynn_Garner
+		dynasty = dynasty:dynn_Farman
+		dynasty = dynasty:dynn_Falwell
+		dynasty = dynasty:dynn_Estren
+		dynasty = dynasty:dynn_Drox
+		dynasty = dynasty:dynn_Lorch
+		dynasty = dynasty:dynn_Myatt
+
+		#Stormlands
+		dynasty = dynasty:dynn_Baratheon
+		dynasty = dynasty:dynn_Durrandon
+		dynasty = dynasty:dynn_Connington
+		dynasty = dynasty:dynn_Tarth
+		dynasty = dynasty:dynn_Dondarrion
+		dynasty = dynasty:dynn_Lonmouth
+		dynasty = dynasty:dynn_Estermont
+		dynasty = dynasty:dynn_Morrigen
+		dynasty = dynasty:dynn_Swann
+		dynasty = dynasty:dynn_Grandison
+		dynasty = dynasty:dynn_Penrose
+		dynasty = dynasty:dynn_Caron
+		dynasty = dynasty:dynn_Toyne
+		dynasty = dynasty:dynn_Mertyns
+		dynasty = dynasty:dynn_Fell
+		dynasty = dynasty:dynn_Cafferen
+		dynasty = dynasty:dynn_Tudbury
+
+		#Vale
+		dynasty = dynasty:dynn_Arryn
+		dynasty = dynasty:dynn_Borrell
+		dynasty = dynasty:dynn_Corbray
+		dynasty = dynasty:dynn_Moore
+		dynasty = dynasty:dynn_Grafton
+		dynasty = dynasty:dynn_Hunter
+		dynasty = dynasty:dynn_Templeton
+		dynasty = dynasty:dynn_Donniger
+		dynasty = dynasty:dynn_Lynderly
+		dynasty = dynasty:dynn_Egen
+		dynasty = dynasty:dynn_Royce
+		dynasty = dynasty:dynn_Shett
+		dynasty = dynasty:dynn_Belmore
+		dynasty = dynasty:dynn_Marsten
+		dynasty = dynasty:dynn_Waynwood
+
+		#Dorne
+		dynasty = dynasty:dynn_Martell
+		dynasty = dynasty:dynn_Dayne
+		dynasty = dynasty:dynn_Allyrion
+		dynasty = dynasty:dynn_Manwoody
+		dynasty = dynasty:dynn_Gargalen
+		dynasty = dynasty:dynn_Santagar
+		dynasty = dynasty:dynn_Jordayne
+		dynasty = dynasty:dynn_Toland
+		dynasty = dynasty:dynn_Vaith
+		dynasty = dynasty:dynn_Qorgyle
+		dynasty = dynasty:dynn_Yronwood
+		dynasty = dynasty:dynn_Uller
+		dynasty = dynasty:dynn_Fowler
+		dynasty = dynasty:dynn_Blackmont
+		dynasty = dynasty:dynn_Wyl
+
+		#Iron Islands
+		dynasty = dynasty:dynn_Greyjoy
+		dynasty = dynasty:dynn_Goodbrother
+		dynasty = dynasty:dynn_Hoare
+		dynasty = dynasty:dynn_Harlaw
+		dynasty = dynasty:dynn_Drumm
+		dynasty = dynasty:dynn_Botley
+		dynasty = dynasty:dynn_Codd
+		dynasty = dynasty:dynn_Weaver
+		dynasty = dynasty:dynn_Stonehouse
+		dynasty = dynasty:dynn_Kenning
+		dynasty = dynasty:dynn_Farwynd
+		dynasty = dynasty:dynn_Shepherd
+		dynasty = dynasty:dynn_Ironmaker
+
+	}
+}
+
+has_valyrian_house_name_trigger = {
+	OR = {
+		has_culture = culture:high_valyrian
+		has_culture = culture:westerosi_valyrian
+		dynasty = {
+			has_dynasty_modifier = valyrian_heritage_dynasty_modifier
+		}
+	}
+}

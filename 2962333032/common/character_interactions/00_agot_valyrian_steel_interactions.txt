@@ -1,0 +1,440 @@
+﻿offer_dawn_interaction = {
+	category = interaction_category_friendly
+	common_interaction = yes
+	icon = icon_valyrian_steel
+	desc = offer_dawn_interaction_desc
+
+	ai_frequency = 0
+
+	cooldown = { years = 1 }
+
+	is_shown = {
+		NOT = { scope:actor = scope:recipient }
+		scope:actor = {
+			is_adult = yes
+			is_ai = no
+			this = dynasty:dynn_Dayne.dynast
+			any_character_artifact = {
+				has_artifact_modifier = vs_dawn_modifier
+			}
+		}
+		scope:recipient = {
+			dynasty = dynasty:dynn_Dayne
+			age > 11
+		}
+	}
+
+	auto_accept = no
+
+	ai_accept = {
+		base = 0 # Try to make it 0 for most interactions
+
+		modifier = {
+			add = 500
+			worthy_sword_of_the_morning_trigger = yes
+			desc = worthy_of_dawn
+		}
+		modifier = {
+			add = 50
+			has_trait = arrogant
+		}
+		modifier = {
+			add = 25
+			has_trait = ambitious
+		}
+		modifier = {
+			add = {
+				value = ai_greed
+			}
+			ai_greed > 0
+			desc = dawn_greedy
+		}
+		modifier = {
+			add = -50
+			has_trait = craven
+		}
+		modifier = {
+			add = -100
+			worthy_sword_of_the_morning_trigger = no
+			desc = unworthy_of_dawn
+		}
+		modifier = {
+			add = -50
+			worthy_sword_of_the_morning_trigger = no
+			has_trait = humble
+		}
+		modifier = {
+			add = -50
+			worthy_sword_of_the_morning_trigger = no
+			has_trait = craven
+		}
+		modifier = {
+			add = -50
+			worthy_sword_of_the_morning_trigger = no
+			has_trait = content
+		}
+		modifier = {
+			add = -50
+			worthy_sword_of_the_morning_trigger = no
+			has_trait = honest
+		}
+		modifier = {
+			add = -50
+			worthy_sword_of_the_morning_trigger = no
+			has_trait = just
+		}
+	}
+
+	on_accept = {
+		scope:recipient = {
+			if = {
+				limit = { worthy_sword_of_the_morning_trigger = yes }
+
+				give_nickname = nick_agot_the_sword_of_the_morning
+
+				add_character_flag = is_sword_of_morning
+
+				add_prestige = massive_prestige_value
+				add_prestige_level = 1
+			}
+
+			scope:actor = {
+				save_scope_as = my_relation
+				random_character_artifact = {
+					limit = { has_artifact_modifier = vs_dawn_modifier }
+					save_scope_as = dawn
+				}
+			}
+
+			scope:dawn = {
+				set_owner = scope:recipient
+			}
+
+			hidden_effect = {
+				add_character_flag = claimed_dawn
+				scope:dawn = {
+					equip_artifact_to_owner_replace = yes
+				}
+			}
+		}
+	}
+
+	on_decline = {
+		hidden_effect = {
+			scope:recipient = { save_scope_as = refused_sword }
+			dynasty:dynn_Dayne.dynast = {
+				send_interface_toast = {
+					title = dawn_refused_title
+					custom_tooltip = dawn_refused_desc
+					left_icon = scope:recipient
+				}
+			}
+		}
+	}
+
+}
+
+take_claimed_vs_sword_interaction = {
+	category = interaction_category_hostile
+	interface_priority = 100
+	desc = take_claimed_vs_sword_interaction_desc
+	icon = icon_valyrian_steel
+
+	ai_targets = {
+		ai_recipients = prisoners
+	}
+	ai_frequency = 60
+
+	is_shown = {
+		NOT = {
+			scope:recipient = scope:actor
+		}
+
+		custom_description = {
+			text = "demand_artifact_interaction_valid_tt_1"
+			scope:recipient = {
+				any_character_artifact = {
+					can_be_claimed_by = scope:actor
+					agot_artifact_can_take = yes
+					exists = var:valyrian_steel
+					var:valyrian_steel = yes
+				}
+			}
+		}
+
+		scope:actor = { is_human = yes }
+		scope:recipient = { is_human = yes }
+	}
+
+	is_highlighted = {
+		always = yes
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			NOT = {
+				is_at_war_with = scope:recipient
+			}
+			is_imprisoned = no
+		}
+
+		scope:recipient = {
+			agot_is_available_for_anything = yes
+			is_imprisoned_by = scope:actor
+		}
+	}
+
+	on_accept = {
+		scope:recipient = {
+			every_character_artifact = {
+				limit = {
+					can_be_claimed_by = scope:actor
+					agot_artifact_can_take = yes
+					exists = var:valyrian_steel
+					var:valyrian_steel = yes
+				}
+				save_scope_as = demanded_artifact
+			}
+			send_interface_toast = {
+				type = event_toast_effect_neutral
+				title = demand_artifact_interaction_notification
+				left_icon = scope:recipient
+				right_icon = scope:demanded_artifact
+				scope:demanded_artifact = {
+					set_owner = {
+						target = scope:actor
+						history = {
+							location = scope:recipient.location
+							actor = scope:recipient
+							recipient = scope:actor
+							type = stolen
+						}
+					}
+				}
+
+				scope:recipient = {
+					if = {
+						limit = {
+							NOT = { has_personal_artifact_claim = scope:demanded_artifact }
+						}
+						add_personal_artifact_claim = scope:demanded_artifact
+					}
+					house = {
+						if = {
+							limit = {
+								NOT = { has_house_artifact_claim = scope:demanded_artifact }
+							}
+							add_house_artifact_claim = scope:demanded_artifact
+						}
+					}
+					add_opinion = {
+						target = scope:actor
+						modifier = insult_opinion
+						opinion = -10
+					}
+				}
+				if = {
+					limit = {
+						scope:recipient = {
+							can_set_relation_potential_rival_trigger = { CHARACTER = scope:actor }
+						}
+					}
+					scope:recipient = {
+						set_relation_potential_rival = scope:actor
+					}
+				}
+			}
+		}
+
+		hidden_effect = {
+			scope:actor = {
+				send_interface_toast = {
+					type = event_toast_effect_neutral
+					title = demand_artifact_interaction_notification
+					left_icon = scope:recipient
+					right_icon = scope:demanded_artifact
+					show_as_tooltip = {
+						scope:demanded_artifact = {
+							set_owner = {
+								target = scope:actor
+								history = {
+									location = scope:recipient.location
+									actor = scope:recipient
+									recipient = scope:actor
+									type = stolen
+								}
+							}
+						}
+						scope:recipient = {
+							if = {
+								limit = {
+									NOT = { has_personal_artifact_claim = scope:demanded_artifact }
+								}
+								add_personal_artifact_claim = scope:demanded_artifact
+							}
+							house = {
+								if = {
+									limit = {
+										NOT = { has_house_artifact_claim = scope:demanded_artifact }
+									}
+									add_house_artifact_claim = scope:demanded_artifact
+								}
+							}
+							add_opinion = {
+								target = scope:actor
+								modifier = insult_opinion
+								opinion = -10
+							}
+						}
+						if = {
+							limit = {
+								scope:recipient = {
+									can_set_relation_potential_rival_trigger = { CHARACTER = scope:actor }
+								}
+							}
+							scope:recipient = {
+								set_relation_potential_rival = scope:actor
+							}
+						}
+					}
+				}
+			}
+		}
+
+		add_clan_unity_interaction_effect = {
+			CHARACTER = scope:actor
+			TARGET = scope:recipient
+			VALUE = minor_unity_loss
+			DESC = clan_unity_demanded_artifact.desc
+			REVERSE_NON_HOUSE_TARGET = no
+		}
+
+		if = {
+			limit = {
+				exists = global_var:agot_artifact_keeper
+				scope:recipient = global_var:agot_artifact_keeper
+			}
+			scope:actor = {
+				trigger_event = agot_events_artifacts_sell.0005
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	ai_potential = {
+		is_adult = yes
+		is_at_war = no
+		has_outstanding_artifact_claims = yes
+	}
+
+	ai_will_do = {
+		base = 100
+
+		modifier = {
+			add = 50
+			has_relation_rival = scope:recipient
+		}
+		modifier = {
+			add = 80
+			has_relation_nemesis = scope:recipient
+		}
+		modifier = {
+			add = -50
+			target_is_liege_or_above = scope:recipient
+		}
+		# Recipient is flaunting their artifacts and needs to be taken down a peg - from hold_court.3080
+		modifier = {
+			scope:recipient = {
+				OR = {
+					has_character_modifier = petition_event_artifact_exhibition_for_prestige
+					has_character_modifier = petition_event_artifact_exhibition_for_gold
+				}
+			}
+			add = 35
+		}
+		modifier = { # An Intimidated character is very unlikely to raise their hand
+			add = -25
+			scope:actor = {
+				has_dread_level_towards = {
+					target = scope:recipient
+					level = 1
+				}
+			}
+		}
+
+		# Unity modifiers
+		evaluate_action_decreasing_house_unity = {
+			VALUE = 100
+		}
+
+		modifier = { # A Cowed character will never take this interaction
+			factor = 0
+			scope:actor = {
+				has_dread_level_towards = {
+					target = scope:recipient
+					level = 2
+				}
+			}
+		}
+		modifier = { # The AI doesn't demand from players they like
+			factor = 0
+			scope:recipient = {
+				is_ai = no
+			}
+			scope:actor = {
+				OR = {
+					has_relation_friend = scope:recipient
+					has_relation_lover = scope:recipient
+					opinion = {
+						target = scope:recipient
+						value >= high_positive_opinion
+					}
+				}
+			}
+		}
+		modifier = { # Only the House Head will demand house claimed artifacts from existing House members
+			factor = 0
+			exists = scope:actor.house.house_head
+			exists = scope:recipient.house
+			scope:actor.house.house_head = scope:actor
+			scope:actor.house = scope:recipient.house
+
+			NOT = {
+				any_personal_claimed_artifact = {
+					this = scope:target
+				}
+			}
+		}
+		modifier = {
+			scope:actor = {
+				opinion = {
+					target = scope:recipient
+					value >= medium_positive_opinion
+				}
+				ai_greed <= high_positive_ai_value
+			}
+			factor = 0
+		}
+		modifier = {
+			scope:recipient = {
+				OR = {
+					has_relation_friend = scope:actor
+					has_relation_lover = scope:actor
+				}
+			}
+			factor = 0
+		}
+		modifier = {
+			scope:actor = {
+				has_royal_court = no
+			}
+			scope:target = {
+				OR = {
+					artifact_slot_type = pedestal
+				}
+			}
+			factor = 0
+		}
+	}
+}

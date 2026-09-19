@@ -1,0 +1,216 @@
+﻿# The Harrenhal Aftermath
+agot_scenario_rr_ha_initialization_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	decision_group_type = major
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+	desc = agot_scenario_rr_ha_initialization_decision_desc
+
+	is_shown = {
+		this = character:Targaryen_3
+
+		NOT = { # Can only do it once.
+			is_target_in_global_variable_list = {
+				name = unavailable_unique_decisions
+				target = flag:agot_scenario_rr_ha_initialized_flag
+			}
+		}
+
+		game_start_date >= 8277.10.1 # Defiance of Duskendale
+		exists = title:h_the_iron_throne.holder
+		title:h_the_iron_throne.holder = character:Targaryen_1
+
+		is_ai = no
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_scenario_rr_ha_initialization_decision_requirement
+			exists = title:h_the_iron_throne.holder
+			title:h_the_iron_throne.holder = character:Targaryen_1
+			is_ai = no
+		}
+	}
+
+	effect = {
+		character:Targaryen_3 = { save_scope_as = ha_initiator }
+		hidden_effect = {
+			add_to_global_variable_list = {
+				name = unavailable_unique_decisions
+				target = flag:agot_scenario_rr_ha_initialized_flag
+			}
+		}
+		custom_tooltip = agot_scenario_rr_ha_initialization_decision_tooltip
+		# TODO this sends events to powerful houses of the loyalist side and also to the LP on the enemy side and to neutral ones
+
+		# Sends letters for a great war council
+		# The powerful houses on Aerys side may decide to support Rhaegar in a possible war
+		title:h_the_iron_throne.holder ?= {
+			every_vassal_or_below = {
+				limit = {
+					primary_title.tier >= tier_duchy
+					NOT = { this = root }
+				}
+				trigger_event = { id = agot_scenario_rr_ha.0010 days = { 2 6 } }
+			}
+		}
+
+		# To Rebels he proposes a peace, to take Lyanna for his wife and to scheme against the King # TODO
+		scope:ha_initiator = { trigger_event = { id = agot_scenario_rr_ha.0011 days = { 20 30 } } }
+	}
+
+
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}
+
+# Tell the king about the plot to abduct him
+agot_scenario_rr_ha_tell_the_king_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	decision_group_type = major
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+	desc = agot_scenario_rr_ha_tell_the_king_decision_desc
+
+	is_shown = {
+		has_character_flag = agot_ha_knows_about_plot
+		character:Targaryen_1 = {
+			is_alive = yes
+			has_title = title:h_the_iron_throne
+		}
+		character:Targaryen_3 = {
+			is_alive = yes
+		}
+	}
+
+	is_valid = {
+		has_character_flag = agot_ha_knows_about_plot
+	}
+
+	effect = {
+		custom_tooltip = agot_scenario_rr_ha_tell_the_king_decision_tooltip
+		character:Targaryen_1 = { trigger_event = { id = agot_scenario_rr_ha.0021 days = { 4 8 } } }
+	}
+
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}
+
+### Targaryen exiles
+agot_end_targexile_story_decision = {
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_herbs.dds"
+	}
+
+	desc = agot_end_targexile_story_decision_desc
+
+	selection_tooltip = agot_end_targexile_story_decision_tooltip
+
+	is_shown = {
+		has_targaryen_exile_story = yes
+	}
+
+	is_valid_showing_failures_only = {
+		is_at_war = no
+	}
+	effect = {
+		custom_tooltip = agot_end_targexile_story_end_effect_tt
+		hidden_effect = {
+			random_owned_story = {
+				limit = {
+					story_type = story_agot_targaryen_exile_invasion
+				}
+				end_story = yes
+			}
+		}
+	}
+
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+### Faegon
+agot_faegon_reclaim_identity = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	decision_group_type = major
+	desc = agot_faegon_reclaim_identity_desc
+	selection_tooltip = reveal_identity_decision_tooltip
+	is_shown = {
+		has_variable = faegon_can_reclaim_identity
+	}
+	is_valid = {
+		is_landed_or_landless_administrative = yes
+		trigger_if = {
+			limit = {
+				capital_province = {
+					geographical_region = world_westeros_seven_kingdoms
+				}
+			}
+			highest_held_title_tier = tier_hegemony
+		}
+		trigger_else = {
+			prestige_level >= 4
+		}
+	}
+	effect = {
+		custom_tooltip = agot_faegon_reclaim_identity_effect_tt
+		hidden_effect = {
+			faegon_has_taken_throne_or_become_king_effect = yes
+		}
+	}
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 36
+		duchy = 36
+		kingdom = 36
+		empire = 36
+		hegemony = 36
+	}
+	ai_potential = {
+		always = yes
+	}
+	ai_will_do = {
+		base = 100
+	}
+}

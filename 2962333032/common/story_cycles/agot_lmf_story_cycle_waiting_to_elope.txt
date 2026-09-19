@@ -1,0 +1,626 @@
+﻿lmf_waiting_to_elope_story_cycle = {
+
+	on_setup = {
+		set_variable = { name = elope_target value = root.story_owner.var:waiting_to_elope }
+	}
+
+	on_owner_death = {
+		end_story = yes
+	}
+
+	on_end = {
+		story_owner = {
+			if = {
+				limit = {
+					is_alive = yes
+					has_variable = waiting_to_elope
+				}
+				remove_variable = waiting_to_elope
+			}
+		}
+		var:elope_target ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					has_variable = waiting_to_elope
+				}
+				remove_variable = waiting_to_elope
+			}
+		}
+	}
+
+	# checking status changes
+	effect_group = {
+		days = 90
+		triggered_effect = {
+			trigger = {
+				OR = {
+					NOT = { exists = var:elope_target }
+					var:elope_target ?= { is_alive = no }
+					story_owner = {
+						OR = {
+							is_consort_of = root.var:elope_target
+							NOT = { has_relation_lover = root.var:elope_target }
+							NOT = { has_variable = waiting_to_elope }
+							NOT = { var:waiting_to_elope = root.var:elope_target }
+						}
+					}
+				}
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+	}
+
+	# advance the countdown for the promised party
+	effect_group = {
+		days = 365
+		first_valid = {
+			triggered_effect = {
+				trigger = {
+					exists = story_owner.var:waiting_to_elope
+					exists = var:elope_promised
+					exists = var:elope_target
+					var:elope_promised > 0
+					var:elope_target = {
+						is_alive = yes
+						has_relation_lover = root.story_owner
+						can_elope_character_trigger = { CHARACTER = root.story_owner }
+						NOR = {
+							is_consort_of = root.story_owner
+							any_scheme = {
+								scheme_type = elope
+								scheme_target_character = root.story_owner
+							}
+						}
+					}
+				}
+				effect = {
+					change_variable = { name = elope_promised add = -1 }
+					if = {
+						limit = {
+							OR = {
+								story_owner = { has_trait = patient }
+								story_owner.ai_compassion >= high_positive_ai_value
+							}
+						}
+						change_variable = { name = elope_promised add = 0.5 }
+					}
+					if = {
+						limit = {
+							OR = {
+								story_owner = { has_trait = impatient }
+								story_owner.ai_vengefulness >= high_positive_ai_value
+							}
+						}
+						change_variable = { name = elope_promised add = -0.5 }
+					}
+				}
+			}
+			triggered_effect = {
+				trigger = {
+					exists = story_owner.var:waiting_to_elope
+					exists = var:elope_promised
+					exists = var:elope_target
+					var:elope_promised <= 0
+					var:elope_target = {
+						is_alive = yes
+						has_relation_lover = root.story_owner
+						can_elope_character_trigger = { CHARACTER = root.story_owner }
+						NOR = {
+							is_consort_of = root.story_owner
+							any_scheme = {
+								scheme_type = elope
+								scheme_target_character = root.story_owner
+							}
+						}
+					}
+				}
+				effect = {
+					story_owner = { save_scope_as = target }
+					var:elope_target = { trigger_event = agot_court_outcome.2010 }
+				}
+			}
+		}
+	}
+
+	# regular checking to see if marriage or elopement should happen
+	effect_group = {
+		days = { 90 180 }
+		first_valid = {
+			# I am a ruler and my wife (who I can divorce) is not my soulmate
+			triggered_effect = {
+				trigger = {
+					exists = story_owner.var:waiting_to_elope
+					exists = var:elope_target
+					story_owner = {
+						is_ruler = yes
+						is_married = yes
+						faith = { has_doctrine = doctrine_monogamy }
+						NOT = { has_character_flag = divorced_for_soulmate }
+						primary_spouse = {
+							NOR = {
+								this = root.var:elope_target
+								has_relation_soulmate = root.story_owner
+								is_concubine = yes
+							}
+						}
+					}
+					var:elope_target = {
+						is_alive = yes
+						has_relation_lover = root.story_owner
+						is_concubine = no
+						is_married = no
+						could_marry_character_trigger = { CHARACTER = root.story_owner }
+						NOT = { would_need_elopement_to_marry_target = { TARGET = root.story_owner } }
+					}
+					story_owner = {
+						# I need to seek my religious head's approval
+						trigger_if = {
+							limit = {
+								faith = {
+									has_doctrine = doctrine_spiritual_head
+									has_doctrine = doctrine_divorce_approval
+								}
+								exists = root.story_owner.faith.religious_head
+							}
+							is_character_interaction_potentially_accepted = {
+								recipient = root.story_owner.faith.religious_head
+								interaction = divorce_character_rel_head_interaction
+								secondary_recipient = root.story_owner.primary_spouse
+							}
+						}
+						# I need to seek my house head's approval
+						trigger_else_if = {
+							limit = {
+								faith = { has_doctrine = doctrine_divorce_approval }
+								is_house_head = no
+								exists = house.house_head
+								NAND = {
+									exists = faith.religious_head
+									faith = { has_doctrine = doctrine_spiritual_head }
+								}
+							}
+							is_character_interaction_potentially_accepted = {
+								recipient = root.story_owner.house.house_head
+								interaction = divorce_character_house_head_interaction
+								secondary_recipient = root.story_owner.primary_spouse
+							}
+						}
+						# I don't need approval from either of them
+						trigger_else_if = {
+							limit = {
+								faith = {
+									NAND = {
+										has_doctrine = doctrine_divorce_approval
+										has_doctrine = doctrine_spiritual_head
+										exists = religious_head
+									}
+									NAND = {
+										has_doctrine = doctrine_divorce_approval
+										exists = root.story_owner.house
+										exists = root.story_owner.house.house_head
+										root.story_owner = { is_house_head = no }
+									}
+								}
+							}
+							is_character_interaction_valid = {
+								recipient = root.story_owner.primary_spouse
+								interaction = divorce_character_interaction
+							}
+						}
+						trigger_else = {
+							always = no
+						}
+					}
+				}
+				effect = {
+					story_owner = {
+						add_character_flag = { flag = divorced_for_soulmate years = 10 }
+					}
+					if = {
+						limit = {
+							story_owner.faith = {
+								has_doctrine = doctrine_spiritual_head
+								has_doctrine = doctrine_divorce_approval
+							}
+							exists = root.story_owner.faith.religious_head
+						}
+						story_owner = {
+							run_interaction = {
+								interaction = divorce_character_rel_head_interaction
+								actor = root.story_owner
+								recipient = root.story_owner.faith.religious_head
+								secondary_recipient = root.story_owner.primary_spouse
+								send_threshold = maybe
+							}
+						}
+					}
+					else_if = {
+						limit = {
+							story_owner.faith = { has_doctrine = doctrine_divorce_approval }
+							story_owner = { is_house_head = no }
+							exists = story_owner.house.house_head
+							NAND = {
+								exists = story_owner.faith.religious_head
+								story_owner.faith = { has_doctrine = doctrine_spiritual_head }
+							}
+						}
+						story_owner = {
+							run_interaction = {
+								interaction = divorce_character_house_head_interaction
+								actor = root.story_owner
+								recipient = root.story_owner.house.house_head
+								secondary_recipient = root.story_owner.primary_spouse
+								send_threshold = maybe
+							}
+						}
+					}
+					else = {
+						story_owner = {
+							run_interaction = {
+								interaction = divorce_character_interaction
+								actor = root.story_owner
+								recipient = root.story_owner.primary_spouse
+								execute_threshold = accept
+							}
+						}
+					}
+				}
+			}
+			# I am a ruler and my lover is available to marry
+			triggered_effect = {
+				trigger = {
+					exists = story_owner.var:waiting_to_elope
+					exists = var:elope_target
+					story_owner = {
+						is_ruler = yes
+						is_available_ai = yes
+						is_healthy = yes
+						has_short_disease_trigger = no
+						bp2_valid_for_standard_interactions_trigger = yes
+						NOT = { has_character_flag = made_recent_proposal_check }
+					}
+					var:elope_target = {
+						is_alive = yes
+						has_relation_lover = root.story_owner
+						is_available_ai = yes
+						is_healthy = yes
+						is_concubine = no
+						has_short_disease_trigger = no
+						bp2_valid_for_standard_interactions_trigger = yes
+						can_marry_character_trigger = { CHARACTER = root.story_owner }
+						NOT = { would_need_elopement_to_marry_target = { TARGET = root.story_owner } }
+						trigger_if = {
+							limit = { is_ruler = yes }
+							NOR = {
+								is_at_war_with = root.story_owner
+								any_liege_or_above = { is_at_war_with = root.story_owner }
+							}
+						}
+						trigger_if = {
+							limit = {
+								is_ruler = yes
+								root.story_owner = { is_ruler = yes }
+							}
+							highest_held_title_tier >= root.story_owner.highest_held_title_tier
+						}
+						trigger_if = {
+							limit = {
+								is_courtier = yes
+								exists = liege
+								NOT = { liege = root.story_owner }
+							}
+							NOR = {
+								# can't have their liege as their lover
+								has_relation_lover = liege
+								# liege has already refused permission to marry
+								has_opinion_modifier = { target = liege modifier = refused_marriage_permission_opinion }
+								# their liege and my liege won't talk
+								liege = { is_at_war_with = root.story_owner }
+								# no taking away inspirations underway
+								AND = {
+									exists = inspiration
+									has_completed_inspiration = no
+								}
+							}
+						}
+					}
+				}
+				effect = {
+					# do we need a matrilineal marriage?
+					if = {
+						limit = {
+							story_owner = { is_female = yes }
+							var:elope_target = { is_lowborn = yes }
+						}
+						save_scope_value_as = { name = matrilineal value = yes }
+					}
+					else_if = {
+						limit = {
+							story_owner = {
+								is_female = yes
+								has_personality_submissive_trigger = no
+								trigger_if = {
+									limit = { has_game_rule = matrilineal_marriages_never }
+									OR = {
+										has_realm_law = female_only_law
+										has_realm_law = female_preference_law
+										faith = { has_doctrine_parameter = female_dominated_law }
+									}
+								}
+								trigger_if = {
+									limit = { has_game_rule = matrilineal_marriages_female_and_equal }
+									OR = {
+										has_realm_law = female_only_law
+										has_realm_law = female_preference_law
+										faith = { has_doctrine_parameter = female_dominated_law }
+										has_realm_law = equal_law
+									}
+								}
+							}
+						}
+						save_scope_value_as = { name = matrilineal value = yes }
+					}
+					else = {
+						save_scope_value_as = { name = matrilineal value = no }
+					}
+
+					# marry immediately if no liege involved
+					if = {
+						limit = {
+							var:elope_target = {
+								OR = {
+									is_ruler = yes
+									NOT = { exists = liege }
+									liege = root.story_owner
+								}
+							}
+						}
+						if = {
+							limit = { scope:matrilineal = yes }
+							story_owner = { marry_matrilineal = root.var:elope_target }
+						}
+						else = {
+							story_owner = { marry = root.var:elope_target }
+						}
+					}
+					# otherwise send proposal
+					else = {
+						save_scope_value_as = { name = hook value = no }
+						save_scope_value_as = { name = grand_wedding_promise value = no }
+						save_scope_value_as = { name = influence_send_option value = no }
+						save_scope_value_as = { name = herd_send_option value = no }
+						var:elope_target = {
+							save_temporary_scope_as = secondary_recipient
+							matchmaker = { save_temporary_scope_as = recipient }
+						}
+						story_owner = {
+							add_character_flag = { flag = made_recent_proposal_check years = 5 }
+							save_scope_as = actor
+							save_scope_as = secondary_actor
+							run_interaction = {
+								interaction = marry_off_interaction
+								actor = scope:actor
+								recipient = scope:recipient
+								secondary_actor = scope:secondary_actor
+								secondary_recipient = scope:secondary_recipient
+								send_threshold = decline
+							}
+						}
+					}
+				}
+			}
+			# I am not a ruler and my non-ruler lover is available to marry
+			triggered_effect = {
+				trigger = {
+					exists = story_owner.var:waiting_to_elope
+					exists = var:elope_target
+					story_owner = {
+						is_ruler = no
+						is_available_ai = yes
+						is_healthy = yes
+						is_concubine = no
+						has_short_disease_trigger = no
+						bp2_valid_for_standard_interactions_trigger = yes
+						trigger_if = {
+							limit = { is_courtier = yes }
+							NOR = {
+								has_character_flag = made_recent_proposal_check
+								# can't have their liege as their lover
+								has_relation_lover = liege
+								# liege is a player who's recently been asked
+								liege = { has_character_flag = player_received_recent_proposal }
+								# liege has already refused permission to marry
+								has_opinion_modifier = { target = liege modifier = refused_marriage_permission_opinion }
+								# their liege and my liege won't talk
+								AND = {
+									exists = root.var:elope_target.liege
+									liege = { is_at_war_with = root.var:elope_target.liege }
+								}
+								# no taking away inspirations underway
+								AND = {
+									exists = inspiration
+									has_completed_inspiration = no
+								}
+							}
+						}
+					}
+					var:elope_target = {
+						is_alive = yes
+						has_relation_lover = root.story_owner
+						is_available_ai = yes
+						is_healthy = yes
+						is_ruler = no
+						is_concubine = no
+						has_short_disease_trigger = no
+						bp2_valid_for_standard_interactions_trigger = yes
+						can_marry_character_trigger = { CHARACTER = root.story_owner }
+						NOT = { would_need_elopement_to_marry_target = { TARGET = root.story_owner } }
+						trigger_if = {
+							limit = { is_courtier = yes }
+							NOR = {
+								has_character_flag = made_recent_proposal_check
+								# can't have their liege as their lover
+								has_relation_lover = liege
+								# liege is a player who's recently been asked
+								liege = { has_character_flag = player_received_recent_proposal }
+								# liege has already refused permission to marry
+								has_opinion_modifier = { target = liege modifier = refused_marriage_permission_opinion }
+								# their liege and my liege won't talk
+								AND = {
+									exists = root.story_owner.liege
+									liege = { is_at_war_with = root.story_owner.liege }
+								}
+								# no taking away inspirations underway
+								AND = {
+									exists = inspiration
+									has_completed_inspiration = no
+								}
+							}
+						}
+					}
+				}
+				effect = {
+					# First check if they need permission to marry
+					var:elope_target = { save_scope_as = target }
+					story_owner = {
+						save_scope_as = owner
+						find_proposer_and_lieges_effect = yes
+						if = {
+							limit = {
+								needs_permission_to_marry_trigger = { CHARACTER1 = scope:owner CHARACTER2 = scope:target }
+							}
+							if = {
+								limit = {
+									exists = scope:proposer_liege
+									exists = scope:proposer_target_liege
+									scope:proposer_target_liege = scope:proposer_liege
+								}
+								scope:proposer_liege = { trigger_event = agot_court_outcome.2000 }
+							}
+							else_if = {
+								limit = {
+									exists = scope:proposer_liege
+									exists = scope:proposer_target_liege
+								}
+								scope:proposer_liege = { trigger_event = agot_court_outcome.2000 }
+							}
+							else_if = {
+								limit = { exists = scope:proposer_liege }
+								scope:proposer_liege = { trigger_event = agot_court_outcome.2000 }
+							}
+							else = {
+								scope:proposer_target_liege = { trigger_event = agot_court_outcome.2002 }
+							}
+						}
+						# Otherwise they can marry immediately
+						else = {
+							court_scheme_marriage_effect = yes
+							add_marry_for_love_flag_effect = { PARTNER1 = scope:owner PARTNER2 = scope:target }
+							if = {
+								limit = {
+									should_marry_matrilineally_trigger = { PROPOSER = scope:owner TARGET = scope:target }
+								}
+								marry_matrilineal = scope:target
+							}
+							else = {
+								marry = scope:target
+							}
+						}
+					}
+				}
+			}
+			# I will start the elope scheme
+			triggered_effect = {
+				trigger = {
+					exists = story_owner.var:waiting_to_elope
+					exists = var:elope_target
+					story_owner = {
+						is_physically_able_ai_adult = yes
+						is_travelling = no
+						has_short_disease_trigger = no
+						has_relation_lover = root.var:elope_target
+						NOR = {
+							has_trait = eunuch
+							has_trait = celibate
+							has_trait = infirm
+							is_involved_in_any_romantic_scheme = yes
+						}
+						trigger_if = {
+							limit = { is_ruler = yes }
+							NOR = {
+								has_government = theocracy_government
+								has_government = holy_order_government
+							}
+						}
+						# women only initiate elopement in non-male dominated faiths if a ruler or very bold (and vice versa)
+						trigger_if = {
+							limit = { is_female = yes }
+							OR = {
+								is_ruler = yes
+								faith = { has_doctrine = doctrine_gender_female_dominated }
+								faith = { has_doctrine = doctrine_gender_equal }
+								ai_boldness >= high_positive_ai_value
+							}
+						}
+						trigger_else = {
+							OR = {
+								is_ruler = yes
+								faith = { has_doctrine = doctrine_gender_male_dominated }
+								faith = { has_doctrine = doctrine_gender_equal }
+								ai_boldness >= high_positive_ai_value
+							}
+						}
+						can_start_scheme = {
+							type = elope
+							target_character = root.var:elope_target
+						}
+					}
+					var:elope_target = {
+						is_courtier = yes
+						is_physically_able = yes
+						is_travelling = no
+						NOR = {
+							has_trait = eunuch
+							has_trait = celibate
+							has_trait = infirm
+							is_courtier_of = root.story_owner
+							is_consort_of = root.story_owner
+							is_involved_in_any_romantic_scheme = yes
+						}
+						can_elope_character_trigger = { CHARACTER = root.story_owner }
+						would_need_elopement_to_marry_target = { TARGET = root.story_owner }
+					}
+				}
+				effect = {
+					story_owner = {
+						begin_scheme_basic_effect = {
+							SCHEME_TYPE = elope
+							TARGET_TYPE = target_character
+							TARGET_SCOPE = root.var:elope_target
+						}
+						random_scheme = {
+							limit = {
+								scheme_type = elope
+								scheme_target_character = root.var:elope_target
+							}
+							if = {
+								limit = {
+									root.story_owner = {
+										is_landed_or_landless_administrative = no
+										is_landless_adventurer = no
+									}
+								}
+								add_scheme_modifier = {
+									type = determined_elopement_modifier
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,489 @@
+﻿# No lists or indexes, only chaos. Keep scrolling down and thou shalt find them.
+
+#############################################
+# Hostility Ending					    	#
+# by Joe Parkin								#
+#############################################
+
+struggle_btw_ending_hostility_decision = {
+	decision_group_type = major
+	title = struggle_btw_ending_hostility_decision
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/fp2_decision_struggle_hostility.dds"
+	}
+	extra_picture = "gfx/interface/illustrations/struggle_decision_buttons/fp2_decision_hostility.dds"
+	desc = struggle_btw_ending_hostility_decision_desc
+	selection_tooltip = struggle_btw_ending_hostility_decision_tooltip
+	confirm_click_sound = "event:/DLC/FP2/SFX/UI/fp2_struggle_ending_decision_confirm"
+	is_invisible = yes
+	sort_order = 80
+
+	is_valid = {
+		custom_tooltip = {
+			text = I_AM_INDEPENDENT_RULER_TRIGGER
+			agot_is_independent_ruler = yes
+		}
+
+		exists = struggle:btw_struggle
+
+		OR = {
+			custom_tooltip = {
+				text = struggle_btw_ending_hostility_decision_correct_phase_tt
+				any_character_struggle = {
+					involvement = involved
+					is_struggle_type = btw_struggle
+					is_struggle_phase = struggle_btw_phase_hostility
+				}
+			}
+			## Completely control BTW for 5 years
+			AND = {
+				completely_controls_region = world_westeros_beyond_the_wall
+				primary_title = {
+					tier >= tier_kingdom
+					title_held_years >= 5
+				}
+				region_is_colonized_and_controlled_by = { RULER = root TITLE = title:e_beyond_the_wall }
+			}
+		}
+
+		custom_tooltip = {
+			text = struggle_ending_decision_correct_involvement_tt
+			any_character_struggle = {
+				involvement = involved
+				is_struggle_type = btw_struggle
+			}
+		}
+
+		# Hold and completely control two de jure kingdoms of Beyond the Wall
+		OR = {
+			custom_tooltip = { #
+				text = struggle_btw_ending_hostility_decision_kingdom_tt
+				any_held_title = {
+					tier = tier_kingdom
+					de_jure_liege = title:e_beyond_the_wall
+					root = { completely_controls = prev }
+					save_temporary_scope_as = wildling_kingdom
+					root = { region_is_colonized = { TITLE = scope:wildling_kingdom } }
+					count > 1
+				}
+			}
+			# custom_tooltip = { #AGOT TODO - Used but not set
+			# 	text = struggle_btw_ending_hostility_decision_united_wildling_tribe_tt
+			# 	AND = {
+			# 		exists = global_var:unite_the_wildling_tribes_decision_title
+			# 		primary_title = global_var:unite_the_wildling_tribes_decision_title
+			# 	}
+			# }
+		}
+
+		# percent = bugs the decision if we add back unite the wildlings later
+		custom_tooltip = {
+			text = struggle_btw_ending_hostility_decision_county_tt
+			capital_county.de_jure_liege.de_jure_liege = {
+				any_de_jure_county = {
+					count = all
+					culture = root.culture
+					not_settlement_or_wilderness = yes
+				}
+			}
+		}
+
+		# No other realm controls more than 20% of the Beyond the Wallregion
+		custom_tooltip = {
+			text = struggle_btw_ending_hostility_decision_region_tt
+			NOT = {
+				struggle:btw_struggle = {
+					any_involved_ruler = {
+						NOT = { this = root }
+						agot_is_independent_ruler = yes
+						exists = primary_title
+						primary_title = { is_mercenary_company = no }
+						save_temporary_scope_as = btw_realm
+						any_county_in_region = {
+							region = world_westeros_beyond_the_wall
+							percent > fp2_struggle_hostility_region_percent_decimal_value
+							holder.top_liege = scope:btw_realm
+							not_settlement_or_wilderness = yes
+						}
+					}
+				}
+			}
+		}
+
+		# Completely control at least 3 of the important Beyond the Wall duchies
+		calc_true_if = {
+			amount >= 3
+			region_is_colonized_and_controlled_by = { RULER = root TITLE = title:d_thenn }
+			region_is_colonized_and_controlled_by = { RULER = root TITLE = title:d_storrolds_point }
+			region_is_colonized_and_controlled_by = { RULER = root TITLE = title:d_great_ice_river }
+			region_is_colonized_and_controlled_by = { RULER = root TITLE = title:d_oldheart_woodlands }
+			region_is_colonized_and_controlled_by = { RULER = root TITLE = title:d_milkwater }
+			region_is_colonized_and_controlled_by = { RULER = root TITLE = title:d_bleakwater }
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { has_ach_dlc_trigger = yes }
+			add_character_flag = ach_ended_struggle
+		}
+		##### Major Effects #####
+		show_as_tooltip = {
+			dynasty = { add_dynasty_prestige = 10000 }
+			fp2_struggle_hostility_ender_effect = yes
+		}
+		# Beyond the Wall is available!
+		custom_tooltip = fp2_struggle_can_create_empire_of_btw_tt
+		custom_description_no_bullet = { text = fp2_struggle_house_tt }
+		# Keep the Struggle Clash for your House
+		custom_tooltip = fp2_struggle_can_keep_using_struggle_clash_tt
+		# Boost to culture and faith conversion
+		custom_tooltip = fp2_struggle_hostility_conversion_tt
+		# Damage opinion with other culture/faiths
+		custom_tooltip = fp2_struggle_hostility_opinion_tt
+		custom_tooltip = fp2_struggle_hostility_opinion_negative_tt
+		# Choose Holy War boost, Culture War boost, or both
+		custom_description_no_bullet = { text = fp2_struggle_hostility_list_tt }
+		#custom_tooltip = fp2_struggle_hostility_holy_cb_joint_tt
+		#custom_tooltip = fp2_struggle_hostility_culture_cb_tt
+
+
+
+		show_as_tooltip = {
+			stress_impact = {
+				humble = medium_stress_impact_gain
+				cynical = medium_stress_impact_gain
+			}
+		}
+
+		# Trigger a player facing event as a coda
+		trigger_event = fp2_struggle.0900
+	}
+
+	cost = {}
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+
+	ai_potential = { always = yes }
+
+	ai_will_do = { base = 100 }
+}
+
+#############################################
+# Compromise Ending					    	#
+# by Joe Parkin								#
+#############################################
+
+struggle_btw_ending_compromise_decision = {
+	decision_group_type = major
+	title = struggle_btw_ending_compromise_decision
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/fp2_decision_struggle_compromise.dds"
+	}
+	extra_picture = "gfx/interface/illustrations/struggle_decision_buttons/fp2_decision_compromise.dds"
+	desc = struggle_btw_ending_compromise_decision_desc
+	selection_tooltip = struggle_btw_ending_compromise_decision_tooltip
+	confirm_click_sound = "event:/DLC/FP2/SFX/UI/fp2_struggle_ending_decision_confirm"
+	is_invisible = yes
+
+	sort_order = 80
+
+	is_valid = {
+		custom_tooltip = {
+			text = I_AM_INDEPENDENT_RULER_TRIGGER
+			agot_is_independent_ruler = yes
+		}
+
+		custom_tooltip = {
+			text = struggle_btw_ending_compromise_decision_correct_phase_tt
+			any_character_struggle = {
+				is_struggle_type = btw_struggle
+				is_struggle_phase = struggle_btw_phase_compromise
+			}
+		}
+
+		custom_tooltip = {
+			text = struggle_ending_decision_correct_involvement_tt
+			any_character_struggle = {
+				involvement = involved
+				is_struggle_type = btw_struggle
+			}
+		}
+
+		AND = {
+			# Exalted among Men or higher
+			prestige_level >= very_high_prestige_level
+			# Hold and completely control a de jure kingdom of Beyond the Wall
+			custom_tooltip = {
+				text = struggle_btw_ending_compromise_decision_kingdom_tt
+				fp2_struggle_ending_hold_de_jure_kingdom_trigger = yes
+			}
+		}
+
+		# Control less than 50% of the Beyond the Wall region
+		custom_tooltip = {
+			text = struggle_btw_ending_compromise_decision_region_tt
+			fp2_struggle_ending_percent_btw_trigger = yes
+		}
+
+		# No one else controls more than 50% of the Beyond the Wall region
+		custom_tooltip = {
+			text = struggle_btw_ending_compromise_decision_other_region_tt
+			fp2_struggle_ending_other_percent_btw_trigger = yes
+		}
+
+		# No Independent Involved rulers are at war with each other
+		custom_tooltip = {
+			text = struggle_btw_ending_compromise_truce_tt
+			NOT = {
+				struggle:btw_struggle = {
+					any_involved_ruler = {
+						agot_is_independent_ruler = yes
+						primary_title = { is_mercenary_company = no }
+						is_landless_adventurer = no
+						any_primary_war_enemy = {
+							agot_is_independent_ruler = yes
+							any_character_struggle = {
+								involvement = involved
+								is_struggle_type = btw_struggle
+							}
+							primary_title = { is_mercenary_company = no }
+							is_landless_adventurer = no
+						}
+					}
+				}
+			}
+		}
+
+		OR = {
+			# Every other involved independent ruler beyond the wall has at least 60 opinion of you or is strong hooked
+			custom_tooltip = {
+				text = struggle_btw_ending_compromise_decision_opinion_tt
+				struggle:btw_struggle = {
+					NOT = {
+						any_involved_ruler = {
+							NOT = { this = root }
+							agot_is_independent_ruler = yes
+							primary_title = { is_holy_order = no }
+							primary_title = { is_mercenary_company = no }
+							is_landless_adventurer = no
+							save_temporary_scope_as = this_character
+							NOR = {
+								root = { has_strong_hook = scope:this_character }
+								opinion = {
+									target = root
+									value >= struggle_btw_ending_compromise_decision_opinion_value
+								}
+							}
+						}
+					}
+				}
+			}
+			# No other independent ruler beyond the wall is a king or above
+			custom_tooltip = {
+				text = struggle_btw_ending_compromise_decision_independent_tt
+				struggle:btw_struggle = {
+					NOT = {
+						any_involved_ruler = {
+							NOT = { this = root }
+							agot_is_independent_ruler = yes
+							primary_title = { is_mercenary_company = no }
+							is_landless_adventurer = no
+							primary_title.tier >= tier_kingdom
+						}
+					}
+				}
+			}
+			# More than 25% of the Beyond the Wall regionis controlled by Interloper or Uninvolved rulers
+			custom_tooltip = {
+				text = struggle_btw_ending_compromise_decision_interloper_tt
+				any_county_in_region = {
+					region = world_westeros_beyond_the_wall
+					percent > fp2_struggle_compromise_uninvolved_percent_decimal_value
+					holder.top_liege = { fp2_character_interloper_in_struggle_trigger = yes }
+					not_settlement_or_wilderness = yes
+				}
+			}
+		}
+
+		# Completely control any of the important Beyond the Wall duchies
+		calc_true_if = {
+			amount >= 1
+			region_is_colonized = { TITLE = title:d_thenn }
+			region_is_colonized = { TITLE = title:d_storrolds_point }
+			region_is_colonized = { TITLE = title:d_great_ice_river }
+			region_is_colonized = { TITLE = title:d_oldheart_woodlands }
+			region_is_colonized = { TITLE = title:d_milkwater }
+			region_is_colonized = { TITLE = title:d_bleakwater }
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { has_ach_dlc_trigger = yes }
+			add_character_flag = ach_ended_struggle
+		}
+		##### Major Effects #####
+		# Personal effects for ruler
+		show_as_tooltip = { fp2_struggle_compromise_ender_effect = yes }
+		# Independent/Split De Jure Duchies will become De Jure Kingdoms
+		# if = {
+		# 	limit = {
+		# 		title:e_beyond_the_wall = {
+		# 			any_in_de_jure_hierarchy = { fp2_struggle_ending_compromise_independent_duchy_trigger = yes }
+		# 		}
+		# 	}
+		# 	custom_tooltip = fp2_struggle_compromise_create_new_kingdoms_tt
+		# }
+		# Other Tooltips!
+		fp2_struggle_compromise_tooltip_effect = yes
+
+		##### Minor Effects #####
+		# Self-sufficiency/defensive modifiers for each independent realm
+		show_as_tooltip = { fp2_struggle_compromise_modifier_rewards_effect = yes }
+
+		show_as_tooltip = {
+			stress_impact = {
+				arrogant = medium_stress_impact_gain
+			}
+		}
+
+		# Trigger a player facing event as a coda
+		trigger_event = fp2_struggle.0901
+	}
+
+	cost = {}
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+
+	ai_potential = { always = yes }
+
+	ai_will_do = { base = 100 }
+}
+
+#############################################
+# Conciliation Ending					    #
+# by Joe Parkin								#
+#############################################
+
+struggle_btw_ending_conciliation_decision = {
+	decision_group_type = major
+	title = struggle_btw_ending_conciliation_decision
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/fp2_decision_struggle_conciliation.dds"
+	}
+	extra_picture = "gfx/interface/illustrations/struggle_decision_buttons/fp2_decision_conciliation.dds"
+	desc = struggle_btw_ending_conciliation_decision_desc
+	selection_tooltip = struggle_btw_ending_conciliation_decision_tooltip
+	confirm_click_sound = "event:/DLC/FP2/SFX/UI/fp2_struggle_ending_decision_confirm"
+	is_invisible = yes
+
+	sort_order = 80
+
+	is_valid = {
+		custom_tooltip = {
+			text = I_AM_INDEPENDENT_RULER_TRIGGER
+			agot_is_independent_ruler = yes
+		}
+
+		custom_tooltip = {
+			text = struggle_btw_ending_conciliation_decision_correct_phase_tt
+			any_character_struggle = {
+				is_struggle_type = btw_struggle
+				is_struggle_phase = struggle_btw_phase_conciliation
+			}
+		}
+
+		custom_tooltip = {
+			text = struggle_ending_decision_correct_involvement_tt
+			any_character_struggle = {
+				involvement = involved
+				is_struggle_type = btw_struggle
+			}
+		}
+
+		prestige_level >= very_high_prestige_level # Exalted among Men or higher
+
+		# Hold and completely control a de jure kingdom of Beyond the Wall
+		custom_tooltip = {
+			text = struggle_btw_ending_compromise_decision_kingdom_tt
+			fp2_struggle_ending_hold_de_jure_kingdom_trigger = yes
+		}
+
+		# Every other independent involved ruler beyond the wall is allied to you
+		custom_tooltip = {
+			text = struggle_btw_ending_conciliation_decision_alliance_tt
+			struggle:btw_struggle = {
+				NOT = {
+					any_involved_ruler = {
+						agot_is_independent_ruler = yes
+						is_landless_adventurer = no
+						primary_title = { is_mercenary_company = no }
+						primary_title = { is_holy_order = no }
+						NOR = {
+							this = root
+							is_allied_to = root
+						}
+					}
+				}
+			}
+		}
+
+		# Control less than 50% of the Beyond the Wall region
+		custom_tooltip = {
+			text = struggle_btw_ending_compromise_decision_region_tt
+			fp2_struggle_ending_percent_btw_trigger = yes
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { has_ach_dlc_trigger = yes }
+			add_character_flag = ach_ended_struggle
+		}
+		##### Major Effects #####
+		show_as_tooltip = {
+			fp2_struggle_conciliation_ender_effect = yes
+			fp2_struggle_conciliation_tooltip_effect = yes
+			fp2_struggle_conciliation_modifier_rewards_effect = yes
+		}
+
+		show_as_tooltip = {
+			stress_impact = {
+				arrogant = medium_stress_impact_gain
+			}
+		}
+
+		# Trigger a player facing event as a coda
+		trigger_event = fp2_struggle.0902
+	}
+
+	cost = {}
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 120
+		kingdom = 120
+		empire = 120
+		hegemony = 120
+	}
+
+	ai_potential = { always = yes }
+
+	ai_will_do = { base = 100 }
+}

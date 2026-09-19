@@ -1,0 +1,78 @@
+﻿###############################
+########## Dragon Tree Events #
+###############################
+namespace = agot_dragon_tree
+
+agot_dragon_tree.0001 = {
+	type = character_event
+	title = agot_dragon_tree.0001.t
+	desc = agot_dragon_tree.0001.desc
+
+	theme = dynasty
+	override_background = { reference = study }
+
+	left_portrait = {
+		character = scope:advisor
+		animation = throne_room_writer
+	}
+
+	right_portrait = {
+		character = root
+		animation = ecstasy
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+			has_global_variable_list = known_dragon_trees
+		}
+		gui = "agot_dragon_tree_selection"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = { has_global_variable_list = known_dragon_trees }
+			every_in_global_list = {
+				variable = known_dragon_trees
+				var:dragon_tree_founder ?= {
+					root = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+			}
+			ordered_in_list = {
+				variable = possible_characters
+				order_by = age
+				root = { set_variable = { name = si_selected_character value = prev } }
+			}
+		}
+
+		if = {
+			limit = { employs_court_position = maester_court_position }
+			random_court_position_holder = {
+				type = maester_court_position
+				save_scope_as = advisor
+			}
+		}
+		else_if = {
+			limit = { any_councillor = { exists = yes } }
+			random_councillor = { save_scope_as = advisor }
+		}
+	}
+
+	option = {
+		name = global_events_settings.dismiss
+	}
+	option = {
+		name = global_events_settings.main_screen
+		trigger_event = global_events_settings.0001
+	}
+	after = {
+		remove_variable = si_selected_character
+		clear_variable_list = possible_characters
+	}
+}

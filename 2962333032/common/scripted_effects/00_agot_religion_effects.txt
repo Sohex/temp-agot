@@ -1,0 +1,179 @@
+﻿agot_upgrade_blasphemous_sacrifice_effect = {
+	if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_10_modifier }
+		remove_character_modifier = blasphemous_sacrifice_10_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_10_modifier
+			years = 1
+		}
+	}
+	else_if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_9_modifier }
+		remove_character_modifier = blasphemous_sacrifice_9_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_10_modifier
+			years = 1
+		}
+	}
+	else_if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_8_modifier }
+		remove_character_modifier = blasphemous_sacrifice_8_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_9_modifier
+			years = 1
+		}
+	}
+	else_if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_7_modifier }
+		remove_character_modifier = blasphemous_sacrifice_7_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_8_modifier
+			years = 1
+		}
+	}
+	else_if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_6_modifier }
+		remove_character_modifier = blasphemous_sacrifice_6_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_7_modifier
+			years = 1
+		}
+	}
+	else_if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_5_modifier }
+		remove_character_modifier = blasphemous_sacrifice_5_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_6_modifier
+			years = 1
+		}
+	}
+	else_if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_4_modifier }
+		remove_character_modifier = blasphemous_sacrifice_4_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_5_modifier
+			years = 1
+		}
+	}
+	else_if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_3_modifier }
+		remove_character_modifier = blasphemous_sacrifice_3_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_4_modifier
+			years = 1
+		}
+	}
+	else_if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_2_modifier }
+		remove_character_modifier = blasphemous_sacrifice_2_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_3_modifier
+			years = 1
+		}
+	}
+	else_if = {
+		limit = { has_character_modifier = blasphemous_sacrifice_1_modifier }
+		remove_character_modifier = blasphemous_sacrifice_1_modifier
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_2_modifier
+			years = 1
+		}
+	}
+	else = {
+		add_character_modifier = {
+			modifier = blasphemous_sacrifice_1_modifier
+			years = 1
+		}
+	}
+}
+
+agot_grab_spouses_and_family_to_convert_effect = {
+	save_scope_as = converter
+	add_to_list = spouses_and_family_to_convert
+	add_character_flag = spouse_or_family_to_convert
+	# Spouses convert
+	every_spouse = {
+		limit = {
+			OR = {
+				is_courtier_of = scope:actor
+				is_courtier_of = scope:recipient
+				is_vassal_of = scope:actor
+				is_vassal_of = scope:recipient
+			}
+			NOT = { has_character_flag = spouse_or_family_to_convert }
+		}
+		add_to_list = spouses_and_family_to_convert
+		add_character_flag = spouse_or_family_to_convert
+	}
+	# Family in converter's court also convert
+	if = {
+		limit = {
+			is_ruler = yes
+		}
+		every_close_or_extended_family_member = {
+			custom = all_family_members_at_court
+			limit = {
+				exists = employer
+				employer = scope:converter
+				faith = scope:converter.faith
+				is_ai = yes
+				NOT = { has_character_flag = spouse_or_family_to_convert }
+			}
+			add_to_list = spouses_and_family_to_convert
+			add_character_flag = spouse_or_family_to_convert
+		}
+	}
+	every_in_list = {
+		list = spouses_and_family_to_convert
+		remove_character_flag = spouse_or_family_to_convert
+	}
+}
+
+agot_found_religion_convert_family_effect = {
+	save_scope_as = recipient
+	agot_grab_spouses_and_family_to_convert_effect = yes
+	every_in_list = {
+		list = spouses_and_family_to_convert
+		# Don't say that people can convert when you know they can't
+		set_character_faith = scope:new_faith
+	}
+}
+
+agot_automatic_faith_conversion = {
+	agot_unknown_faith_conversion = yes
+}
+
+agot_unknown_faith_conversion = {
+	if = {
+		limit = {
+			faith = faith:fg_unknown
+			NOT = { agot_is_dummy_character = yes }
+		}
+		if = {
+			limit = {
+				exists = capital_county
+				NOT = { capital_county.faith = faith:fg_unknown }
+			}
+			set_character_faith = capital_county.faith
+		}
+		else_if = {
+			limit = {
+				exists = liege_or_court_owner
+				NOT = { liege_or_court_owner.faith = faith:fg_unknown }
+			}
+			set_character_faith = liege_or_court_owner.faith
+		}
+		else = {
+			random_ruler = {
+				limit = {
+					NOT = { agot_is_dummy_character = yes }
+				}
+				prev = { set_character_faith = prev.faith }
+			}
+		}
+		add_character_flag = {
+			flag = converted_unknown_faith
+			days = 1
+		}
+	}
+}

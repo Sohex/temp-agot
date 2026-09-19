@@ -1,0 +1,411 @@
+﻿namespace = agot_artifact_events
+
+agot_artifact_events.0001 = {
+	scope = artifact
+	hidden = yes
+
+	trigger = {
+		has_variable = artifact_succession_title
+		has_variable = historical_throne
+		NOT = { var:artifact_succession_title.holder = scope:owner }
+	}
+	immediate = {
+		set_owner = var:artifact_succession_title.holder
+	}
+}
+
+scripted_effect grant_throne_to_county_holder = {
+	random_artifact = {
+		limit = { has_artifact_modifier = $MODIFIER$ }
+		save_scope_as = throne
+	}
+	scope:throne ?= { set_owner = root }
+}
+
+scripted_trigger holds_throne_county = {
+	has_title = $TITLE$
+	NOT = { any_character_artifact = { has_artifact_modifier = $THRONE_MODIFIER$ } }
+}
+
+agot_artifact_events.0002 = {
+	hidden = yes
+	theme = court
+
+	immediate = {
+		if = {
+			limit = { holds_throne_county = { TITLE = title:c_kings_landing THRONE_MODIFIER = iron_throne_modifier } }
+			if = {
+				limit = { any_artifact = { has_artifact_modifier = iron_throne_modifier } }
+				grant_throne_to_county_holder = { MODIFIER = iron_throne_modifier }
+			}
+			else = { agot_create_artifact_iron_throne_effect = { OWNER = this } }
+		}
+		else_if = {
+			limit = { holds_throne_county = { TITLE = title:c_pyke THRONE_MODIFIER = seastone_chair_modifier } }
+			if = {
+				limit = { any_artifact = { has_artifact_modifier = seastone_chair_modifier } }
+				grant_throne_to_county_holder = { MODIFIER = seastone_chair_modifier }
+			}
+			else = { agot_create_artifact_seastone_chair_effect = { OWNER = this } }
+		}
+		else_if = {
+			limit = { holds_throne_county = { TITLE = title:c_casterly_rock THRONE_MODIFIER = gilded_throne_modifier } }
+			if = {
+				limit = { any_artifact = { has_artifact_modifier = gilded_throne_modifier } }
+				grant_throne_to_county_holder = { MODIFIER = gilded_throne_modifier }
+			}
+			else = { agot_create_artifact_gilded_throne_effect = { OWNER = this } }
+		}
+		else_if = {
+			limit = {
+				has_title = title:c_highgarden
+				NOT = {
+					any_character_artifact = {
+						OR = {
+							has_artifact_modifier = ruined_oakenseat_modifier
+							has_artifact_modifier = restored_oakenseat_modifier
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					any_artifact = {
+						OR = {
+							has_artifact_modifier = ruined_oakenseat_modifier
+							has_artifact_modifier = restored_oakenseat_modifier
+						}
+					}
+				}
+				random_artifact = {
+					limit = {
+						OR = {
+							has_artifact_modifier = ruined_oakenseat_modifier
+							has_artifact_modifier = restored_oakenseat_modifier
+						}
+					}
+					save_scope_as = throne
+				}
+				scope:throne = { set_owner = root }
+			}
+			else = {
+				if = {
+					limit = {
+						title:c_highgarden = { has_variable = restored_oakenseat }
+					}
+					agot_create_artifact_restored_oakenseat_effect = { OWNER = this }
+				}
+				else = { agot_create_artifact_ruined_oakenseat_effect = { OWNER = this } }
+			}
+		}
+		else_if = {
+			limit = { holds_throne_county = { TITLE = title:b_winterfell THRONE_MODIFIER = high_seat_of_winter_modifier } }
+			if = {
+				limit = { any_artifact = { has_artifact_modifier = high_seat_of_winter_modifier } }
+				grant_throne_to_county_holder = { MODIFIER = high_seat_of_winter_modifier }
+			}
+			else = { agot_create_artifact_high_seat_of_winter_effect = { OWNER = this } }
+		}
+		else_if = {
+			limit = { holds_throne_county = { TITLE = title:c_the_eyrie THRONE_MODIFIER = weirwood_throne_modifier } }
+			if = {
+				limit = { any_artifact = { has_artifact_modifier = weirwood_throne_modifier } }
+				grant_throne_to_county_holder = { MODIFIER = weirwood_throne_modifier }
+			}
+			else = { agot_create_artifact_weirwood_throne_effect = { OWNER = this } }
+		}
+		else_if = {
+			limit = {
+				holds_throne_county = { TITLE = title:c_dragonstone THRONE_MODIFIER = painted_table_modifier }
+				game_start_date > 7996.1.1
+			}
+			if = {
+				limit = { any_artifact = { has_artifact_modifier = painted_table_modifier } }
+				grant_throne_to_county_holder = { MODIFIER = painted_table_modifier }
+			}
+			else = { agot_create_artifact_painted_table_effect = { OWNER = this } }
+		}
+	}
+}
+
+agot_artifact_events.0010 = {
+	type = character_event
+	title = agot_artifact_events.0010.t
+	desc = agot_artifact_events.0010.desc
+	override_background = {
+		reference = dungeon
+	}
+	theme = realm
+
+	right_portrait = {
+		character = root
+		animation = chancellor
+	}
+
+	lower_center_portrait = scope:recipient
+
+	immediate = {
+		scope:recipient = { save_scope_as = prisoner }
+	}
+
+	option = {
+		name = agot_artifact_events.0010.a
+		trigger = {
+			scope:prisoner = {
+				any_character_artifact = {
+					NOR = {
+						has_variable = not_stolen
+						has_variable = stolen_artifact
+					}
+					NOR = {
+						artifact_slot_type = throne
+						artifact_type = throne_special
+					}
+					agot_artifact_can_take = yes
+					exists = this
+				}
+			}
+		}
+		custom_tooltip = agot_artifact_events.0010.a_tt
+		scope:prisoner = {
+			every_character_artifact = {
+				limit = {
+					NOR = {
+						has_variable = not_stolen
+						has_variable = stolen_artifact
+					}
+					NOR = {
+						artifact_slot_type = throne
+						artifact_type = throne_special
+					}
+					agot_artifact_can_take = yes
+					exists = this
+				}
+				save_scope_as = artifact_to_inform
+				custom_tooltip = agot_artifact_events.0010.a_tt_artifact
+			}
+		}
+		trigger_event = agot_artifact_events.0011
+	}
+
+	option = { # Reassess
+		name = agot_artifact_events.0010.b
+		trigger = { scope:prisoner = { any_character_artifact = { has_variable = stolen_artifact } } }
+		scope:prisoner = {
+			every_character_artifact = {
+				limit = { has_variable = stolen_artifact }
+				remove_variable = stolen_artifact
+			}
+			every_character_artifact = {
+				limit = {
+					NOR = {
+						artifact_slot_type = throne
+						artifact_type = throne_special
+					}
+					exists = this
+				}
+				save_scope_as = artifact_to_inform
+				custom_tooltip = agot_artifact_events.0010.a_tt_artifact
+			}
+		}
+		trigger_event = agot_artifact_events.0011
+	}
+
+	option = { # Do nothing
+		trigger = { scope:prisoner = { any_character_artifact = { has_variable = stolen_artifact } } }
+		name = agot_artifact_events.0010.c
+		scope:prisoner = {
+			every_character_artifact = {
+				limit = { has_variable = stolen_artifact }
+				save_scope_as = artifact_to_show
+				custom_tooltip = agot_artifact_events.0010.c_tt
+			}
+		}
+	}
+}
+
+agot_artifact_events.0011 = {
+	type = character_event
+	title = agot_artifact_events.0011.t
+	desc = agot_artifact_events.0011.desc
+	override_background = {
+		reference = dungeon
+	}
+	theme = realm
+
+	right_portrait = {
+		character = root
+		animation = chancellor
+	}
+
+	left_portrait = {
+		character = scope:prisoner
+		animation = prisondungeon
+	}
+
+	artifact = {
+		target = scope:artifact_to_steal
+		position = lower_center_portrait
+	}
+
+	trigger = {
+		scope:recipient = {
+			any_character_artifact = {
+				NOR = {
+					has_variable = not_stolen
+					has_variable = stolen_artifact
+				}
+				NOR = {
+					artifact_slot_type = throne
+					artifact_type = throne_special
+				}
+				exists = this
+			}
+		}
+	}
+
+	on_trigger_fail = {
+		every_in_list = {
+			list = not_stolen_list
+			remove_variable = not_stolen
+			remove_from_list = not_stolen_list
+		}
+	}
+
+	immediate = {
+		scope:recipient = {
+			every_character_artifact = {
+				limit = {
+					OR = {
+						artifact_slot_type = throne
+						artifact_type = throne_special
+					}
+					NOT = { has_variable = not_stolen }
+				}
+				set_variable = not_stolen
+				add_to_list = not_stolen_list
+			}
+			house.house_head ?= { save_scope_as = house_head }
+			random_character_artifact = {
+				limit = {
+					NOR = {
+						has_variable = not_stolen
+						has_variable = stolen_artifact
+					}
+				}
+				save_scope_as = artifact_to_steal
+			}
+		}
+		if = {
+			limit = { scope:prisoner.house.house_head ?= scope:prisoner }
+			scope:prisoner.primary_heir = { save_scope_as = house_head }
+		}
+		else = {
+			scope:prisoner.house.house_head ?= { save_scope_as = house_head }
+		}
+	}
+
+	option = { # Steal Artifact
+		name = agot_artifact_events.0011.a
+
+		scope:artifact_to_steal ?= {
+			set_variable = stolen_artifact
+		}
+
+		scope:artifact_to_steal = {
+			switch = {
+				trigger = rarity
+				illustrious = { custom_tooltip = agot_artifact_events.0011.a_illustrious }
+				famed = { custom_tooltip = agot_artifact_events.0011.a_famed }
+				masterwork = { custom_tooltip = agot_artifact_events.0011.a_masterwork }
+				common = { custom_tooltip = agot_artifact_events.0011.a_common }
+			}
+		}
+
+		if = {
+			limit = {
+				scope:prisoner = { is_lowborn = no }
+				NOT = { scope:prisoner.house = root.house }
+				scope:artifact_to_steal = { has_variable = valyrian_steel }
+			}
+			custom_tooltip = agot_artifact_events.0011.a_valyrian_tt_no_house
+		}
+		trigger_event = agot_artifact_events.0011
+	}
+
+	option = { # Let them keep it
+		name = agot_artifact_events.0011.b
+		custom_tooltip = agot_artifact_events.0011.b_tt
+		scope:artifact_to_steal ?= {
+			set_variable = not_stolen
+			add_to_list = not_stolen_list
+		}
+		trigger_event = agot_artifact_events.0011
+	}
+
+	option = { # End Here
+		name = agot_artifact_events.0011.c
+		every_in_list = {
+			list = not_stolen_list
+			remove_variable = not_stolen
+			remove_from_list = not_stolen_list
+		}
+	}
+}
+
+agot_artifact_events.0012 = {
+	hidden = yes
+	scope = artifact
+	immediate = {
+		if = {
+			limit = { has_variable = stolen_artifact }
+			remove_variable = stolen_artifact
+		}
+	}
+}
+
+agot_artifact_events.0020 = {
+	hidden = yes
+	scope = artifact
+	immediate = {
+		if = {
+			limit = {
+				has_artifact_modifier = vs_longthorn_modifier
+				NOT = { scope:owner.dynasty ?= dynasty:dynn_Gardener }
+			}
+			remove_artifact_modifier = vs_longthorn_modifier
+			add_artifact_modifier = vs_longthorn_generic_modifier
+			if = {
+				limit = { has_game_rule = agot_silly_mode }
+				set_artifact_name = vs_longprickle_name
+				set_artifact_description = vs_longprickle_description
+			}
+		}
+		else_if = {
+			limit = {
+				has_artifact_modifier = vs_longthorn_generic_modifier
+				scope:owner.dynasty ?= dynasty:dynn_Gardener
+			}
+			remove_artifact_modifier = vs_longthorn_generic_modifier
+			add_artifact_modifier = vs_longthorn_modifier
+			if = {
+				limit = { has_game_rule = agot_silly_mode }
+				set_artifact_name = vs_longthorn_name
+				set_artifact_description = vs_longthorn_description
+			}
+		}
+	}
+}
+
+agot_artifact_events.0030 = {
+	hidden = yes
+	scope = artifact
+	trigger = {
+		has_game_rule = agot_silly_mode
+		scope:owner = character:Lannister_1
+		has_variable = valyrian_steel
+	}
+	immediate = {
+		destroy_artifact = root
+	}
+}

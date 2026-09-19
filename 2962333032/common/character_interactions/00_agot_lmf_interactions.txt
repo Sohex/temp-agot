@@ -1,0 +1,3464 @@
+﻿
+# Demand inheritance interaction useable by rulers
+demand_inheritance_interaction = {
+	icon = icon_dynasty
+	category = interaction_category_hostile
+	desc = demand_inheritance_interaction_desc
+	use_diplomatic_range = yes
+
+	common_interaction = yes
+	interface_priority = 60
+
+	is_shown = {
+		scope:actor = {
+			has_trait = disinherited
+			is_adult = yes
+			has_dynasty = yes
+			dynasty = scope:recipient.dynasty
+			faith = scope:recipient.faith
+			is_dynast = no
+			NOR = {
+				has_character_flag = made_disinherit_demand
+				has_character_flag = historical_disinheritance
+			}
+		}
+		scope:recipient = {
+			is_dynast = yes
+			is_landed = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor.dynasty ={
+			dynasty_prestige >= minor_dynasty_prestige_value
+		}
+		scope:actor = {
+			is_available = yes
+			trigger_if = {
+				limit = {
+					NOR = {
+						is_child_of = scope:recipient
+						is_grandchild_of = scope:recipient
+						is_great_grandchild_of = scope:recipient
+					}
+				}
+				custom_description = {
+					top_liege = scope:recipient.top_liege
+					text = "same_realm_as"
+				}
+			}
+		}
+		scope:recipient = {
+			is_available_adult = yes
+			custom_description = {
+				text = recently_received_demand
+				object = scope:recipient
+				NOT = { has_character_flag = recently_received_disinherit_demand }
+			}
+		}
+	}
+
+	on_accept = {
+		scope:recipient = {
+			trigger_event = lmf_interaction.0001
+		}
+	}
+
+	auto_accept = yes
+
+	ai_potential = {
+		is_adult = yes
+		has_trait = disinherited
+	}
+
+	ai_targets = {
+		ai_recipients = dynasty
+	}
+
+	ai_frequency = 60 #Five years
+
+	ai_will_do = {
+		base = 10
+
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 0.5
+		}
+		ai_value_modifier = {
+			who = scope:actor
+			ai_boldness = 1
+			ai_greed = 0.5
+		}
+		modifier = { #Ambitious character will want their rightful inheritance
+			add = 25
+			scope:actor = { has_trait = ambitious }
+		}
+		modifier = { #Content characters will accept their lot in life
+			add = -25
+			scope:actor = { has_trait = content }
+		}
+		modifier = { #Arrogant characters are slightly more likely to demand their inheritance
+			add = 15
+			scope:actor = { has_trait = arrogant }
+		}
+		modifier = { #Humble characters slightly less likely to ask
+			add = -15
+			scope:actor = { has_trait = humble }
+		}
+		modifier = { #Shy character slightly less likely to ask due to ya know, shyness
+			add = -5
+			scope:actor = { has_trait = shy }
+		}
+		modifier = { #Cowardly character slightly less likely to ask due to ya know, being a coward
+			add = -5
+			scope:actor = { has_trait = craven }
+		}
+		modifier = { #Denounced characters were hard locked before, now just very unlikely to do it but not impossible.
+			add = -100
+			scope:actor = { has_trait = denounced }
+		}
+		modifier = {
+			add = -20
+			scope:actor = {
+				NOT = {
+					has_opinion_modifier = {
+						modifier = disinherited_opinion
+						target = scope:recipient
+					}
+				}
+			}
+		}
+		modifier = {
+			scope:actor = {
+				OR = {
+					has_relation_rival = scope:recipient
+					has_relation_nemesis = scope:recipient
+					has_trait = inbred
+					has_trait = intellect_bad_3
+					has_trait = bastard
+					# AGOT LMF DISABLED
+					# has_trait = denounced
+				}
+			}
+			factor = 0
+		}
+	}
+}
+
+# Confronting family members about lovers
+confront_about_lover_interaction = {
+	category = interaction_category_hostile
+	use_diplomatic_range = no
+	icon = lover
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:recipient = {
+						any_relation = {
+							type = lover
+							is_lover_known_to_character = { CHARACTER = scope:actor LOVER = scope:recipient }
+							count > 1
+						}
+					}
+				}
+				desc = confront_about_lover_interaction_many_desc
+			}
+			triggered_desc = {
+				trigger = {
+					scope:recipient = {
+						can_marry_trigger = yes
+						any_relation = {
+							type = lover
+							is_lover_known_to_character = { CHARACTER = scope:actor LOVER = scope:recipient }
+							can_marry_character_trigger = { CHARACTER = scope:recipient }
+							OR = {
+								is_playable_character = yes
+								is_courtier = no
+								is_courtier_of = scope:actor
+								is_imprisoned_by = scope:actor
+								scope:actor = { has_hook = prev }
+								AND = {
+									is_courtier = yes
+									exists = liege
+									liege = { is_ai = yes }
+									NOT = { is_close_or_extended_family_of = liege }
+								}
+							}
+						}
+					}
+				}
+				desc = confront_about_lover_interaction_marry_desc
+			}
+			desc = confront_about_lover_interaction_desc
+		}
+	}
+
+	common_interaction = yes
+	interface_priority = 50
+
+	is_shown = {
+		scope:actor = {
+			is_playable_character = yes
+		}
+		scope:recipient = {
+			num_of_relation_lover > 0
+			OR = {
+				is_close_or_extended_family_of = scope:actor
+				is_great_grandchild_of = scope:actor
+			}
+			OR = {
+				is_close_family_of = scope:actor
+				AND = {
+					has_dynasty = yes
+					dynasty = scope:actor.dynasty
+				}
+			}
+			character_knows_about_lover = { CHARACTER = scope:actor }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_adult = yes
+			is_available = yes
+			custom_description = {
+				text = recently_made_lover_demand
+				subject = scope:actor
+				object = scope:recipient
+				NOT = {
+					has_opinion_modifier = {
+						target = scope:recipient
+						modifier = refused_my_lover_demand_opinion
+					}
+				}
+			}
+		}
+		scope:recipient = {
+			target_is_liege_or_above = scope:actor
+			is_available_quick = {
+				ai = yes
+				incapable = no
+			}
+			has_contagious_deadly_disease_trigger = no
+			trigger_if = {
+				limit = { is_imprisoned = yes }
+				is_imprisoned_by = scope:actor
+			}
+			trigger_if = {
+				limit = { is_playable_character = yes }
+				NOT = { is_at_war_with = scope:actor }
+			}
+			custom_description = {
+				text = recently_received_lover_demand
+				object = scope:recipient
+				NOT = { has_character_flag = recent_lover_demand }
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			stress_impact = {
+				craven = minor_stress_impact_gain
+				compassionate = minor_stress_impact_gain
+				lustful = minor_stress_impact_gain
+			}
+			reverse_add_opinion = {
+				target = scope:recipient
+				modifier = made_lover_demand_opinion
+			}
+		}
+		if = {
+			limit = {
+				scope:recipient = {
+					any_relation = {
+						type = lover
+						is_lover_known_to_character = { CHARACTER = scope:actor LOVER = scope:recipient }
+						count > 1
+					}
+				}
+			}
+			custom_tooltip = confront_about_lover_multi_tt
+			scope:actor = { trigger_event = lmf_interaction.1200 }
+		}
+		else = {
+			scope:recipient = {
+				random_relation = {
+					type = lover
+					limit = { is_lover_known_to_character = { CHARACTER = scope:actor LOVER = scope:recipient } }
+					save_scope_as = family_lover
+				}
+			}
+			custom_tooltip = confront_about_lover_one_tt
+			scope:actor = { trigger_event = lmf_interaction.1201 }
+		}
+	}
+
+	auto_accept = yes
+
+	ai_potential = {
+		is_adult = yes
+		any_close_family_member = {
+			num_of_relation_lover > 0
+			target_is_liege_or_above = root
+			character_knows_about_lover = { CHARACTER = root }
+		}
+	}
+
+	ai_targets = {
+		ai_recipients = family
+	}
+
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+
+	ai_frequency_by_tier = {
+		barony = 100
+		county = 72
+		duchy = 36
+		kingdom = 36
+		empire = 36
+		hegemony = 36
+	}
+
+	ai_will_do = {
+		base = 10
+		ai_value_modifier = {
+			who = scope:actor
+			ai_honor = 0.5
+			min = -20
+		}
+		opinion_modifier = {
+			trigger = {
+				scope:recipient = {
+					opinion = { target = scope:actor value < 0 }
+				}
+			}
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 0.5
+		}
+		modifier = {
+			add = 20
+			scope:recipient = {
+				any_heir_title = { holder = scope:actor }
+			}
+		}
+		modifier = {
+			add = 20
+			scope:recipient = { is_primary_heir_of = scope:actor }
+		}
+		modifier = {
+			add = 20
+			scope:actor = { ai_honor > 0 }
+			scope:recipient = {
+				is_married = yes
+				NOT = {
+					any_secret = {
+						type = secret_lover
+						is_known_by = scope:actor
+					}
+				}
+			}
+		}
+		modifier = {
+			add = 50
+			scope:recipient = {
+				any_relation = {
+					type = lover
+					is_lover_known_to_character = { CHARACTER = scope:actor LOVER = scope:recipient }
+					has_relation_rival = scope:actor
+				}
+			}
+		}
+		modifier = {
+			add = 90
+			scope:recipient = {
+				any_relation = {
+					type = lover
+					is_lover_known_to_character = { CHARACTER = scope:actor LOVER = scope:recipient }
+					has_relation_rival = scope:actor
+				}
+			}
+		}
+		modifier = {
+			add = 140
+			scope:recipient = {
+				any_relation = {
+					type = lover
+					is_lover_known_to_character = { CHARACTER = scope:actor LOVER = scope:recipient }
+					has_relation_lover = scope:actor
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			scope:actor = { has_relation_rival = scope:recipient }
+		}
+		modifier = {
+			factor = 0
+			scope:actor = {
+				OR = {
+					has_trait = lustful
+					has_trait = compassionate
+					has_trait = craven
+					likely_to_take_lover_trigger = yes
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			scope:recipient = {
+				is_married = yes
+				OR = {
+					has_trait = adulterer
+					scope:actor = { has_trait = adulterer }
+					scope:actor = { has_trait = fornicator }
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			scope:recipient = {
+				is_married = no
+				OR = {
+					has_trait = fornicator
+					scope:actor = { has_trait = adulterer }
+					scope:actor = { has_trait = fornicator }
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			scope:recipient = {
+				NOT = { is_close_family_of = scope:actor }
+			}
+		}
+	}
+}
+
+# AI house head legitimize bastard
+ai_legitimize_bastard_interaction = {
+	category = interaction_category_diplomacy
+	special_interaction = legitimize_bastard
+	icon = legitimized_bastard
+
+	greeting = positive
+	notification_text = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor = {
+						government_has_flag = government_is_feudal
+						agot_is_independent_ruler = no
+					}
+				}
+				desc = ASK_TO_ai_legitimize_bastard_interaction_liege
+			}
+			desc = ASK_TO_legitimize_bastard_interaction
+		}
+	}
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor = {
+						government_has_flag = government_is_feudal
+						agot_is_independent_ruler = no
+					}
+				}
+				desc = legitimize_bastard_liege_interaction_desc
+			}
+			triggered_desc = {
+				trigger = { scope:actor.house.house_head = scope:actor }
+				desc = legitimize_bastard_interaction_desc_house_head
+			}
+			desc = legitimize_bastard_interaction_desc_not_house_head
+		}
+	}
+
+	redirect = {
+		scope:recipient = {
+			save_scope_as = secondary_recipient
+			if = {
+				limit = {
+					scope:actor = {
+						government_has_flag = government_is_feudal
+						agot_is_independent_ruler = no
+					}
+				}
+				scope:actor.top_liege = { save_scope_as = recipient }
+			}
+			else_if = {
+				limit = {
+					exists = scope:actor.house.house_head
+					NOT = { scope:actor.house.house_head = scope:actor }
+				}
+				scope:actor.house.house_head = { save_scope_as = recipient }
+			}
+		}
+	}
+
+	is_shown = {
+		scope:actor = {
+			is_ai = yes
+			is_playable_character = yes
+			exists = house
+			highest_held_title_tier > tier_barony
+			faith = { has_doctrine_parameter = bastards_legitimize }
+			trigger_if = {
+				limit = {
+					government_has_flag = government_is_feudal
+					agot_is_independent_ruler = no
+				}
+				top_liege = {
+					faith = { has_doctrine_parameter = bastards_legitimize }
+				}
+			}
+			trigger_else = {
+				house.house_head ?= {
+					faith = { has_doctrine_parameter = bastards_legitimize }
+					prestige > bastard_legitimization_prestige_cost
+				}
+			}
+			prestige > bastard_legitimization_prestige_cost
+			NOR = {
+				government_has_flag = government_is_nw
+				has_character_flag = made_recent_legitimization_request
+				has_opinion_modifier = {
+					target = scope:recipient
+					modifier = refused_my_legitimization_request
+				}
+			}
+		}
+		scope:secondary_recipient = {
+			is_human = yes
+			has_trait = bastard
+			faith = { has_doctrine_parameter = bastards_legitimize }
+			# is either the actor's child or the actor is the head of his house
+			OR = {
+				father = scope:actor
+				mother = scope:actor
+				scope:actor.house.house_head = scope:actor
+			}
+			OR = {
+				# the child is either part of the actor's house
+				house ?= scope:actor.house
+				AND = {
+					# or is either part of the house of his mother or father
+					OR = {
+						father.house ?= scope:actor.house
+						mother.house ?= scope:actor.house
+					}
+					OR = {
+						# and is either lowborn
+						has_dynasty = no
+						# or is from the inconsequential house of their parent
+						any_parent = {
+							even_if_dead = yes
+							is_playable_character = no
+							exists = house
+							house = {
+								this = scope:secondary_recipient.house
+								OR = {
+									NOT = { exists = house_head }
+									NOT = { any_house_member = { is_playable_character = yes } }
+								}
+							}
+							# who is either dead or the actor's spouse
+							OR = {
+								is_alive = no
+								is_spouse_of = scope:actor
+							}
+						}
+					}
+				}
+			}
+		}
+		scope:recipient = {
+			is_human = yes
+			is_concubine = no
+			is_playable_character = yes
+			NOT = { has_character_flag = received_recent_legitimization_request }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+	}
+
+	cost = {
+		prestige = {
+			value = bastard_legitimization_prestige_cost
+		}
+	}
+
+	ai_accept = {
+		base = -50
+
+		modifier = {
+			trigger = {
+				NOT = { scope:actor = scope:recipient }
+				scope:recipient.house = scope:actor.house
+			}
+			add = {
+				value = scope:actor.prestige_level
+				multiply = 20
+			}
+			desc = PRESTIGOUS_IN_OUR_HOUSE
+		}
+
+		modifier = {
+			trigger = {
+				always = scope:hook
+			}
+			add = 100
+			desc = SCHEME_WEAK_HOOK_USED
+		}
+
+		opinion_modifier = {
+			trigger = {
+				NOT = { scope:actor = scope:recipient }
+			}
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 1
+		}
+
+		opinion_modifier = {
+			trigger = {
+				NOT = { scope:actor = scope:recipient }
+			}
+			who = scope:recipient
+			opinion_target = scope:secondary_recipient
+			multiplier = 0.25
+		}
+
+		modifier = {
+			add = intimidated_reason_value
+			scope:recipient = {
+				target_is_liege_or_above = scope:actor
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 1
+				}
+			}
+			desc = INTIMIDATED_REASON
+		}
+		modifier = {
+			add = cowed_reason_value
+			scope:recipient = {
+				target_is_liege_or_above = scope:actor
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 2
+				}
+			}
+			desc = COWED_REASON
+		}
+
+		modifier = {
+			add = intimidated_external_reason_value
+			scope:recipient = {
+				NOT = { target_is_liege_or_above = scope:actor }
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 1
+				}
+			}
+			desc = INTIMIDATED_REASON
+		}
+		modifier = {
+			add = cowed_external_reason_value
+			scope:recipient = {
+				NOT = { target_is_liege_or_above = scope:actor }
+				has_dread_level_towards = {
+					target = scope:actor
+					level = 2
+				}
+			}
+			desc = COWED_REASON
+		}
+
+		# Unity modifiers
+		evaluate_action_decreasing_house_unity = {
+			VALUE = 100
+		}
+	}
+
+	auto_accept = {
+		OR = {
+			AND = {
+				scope:actor = {
+					OR = {
+						NOT = { government_has_flag = government_is_feudal }
+						agot_is_independent_ruler = yes
+					}
+				}
+				scope:actor = scope:actor.house.house_head
+			}
+			AND = {
+				always = scope:hook
+				scope:actor = { has_strong_hook = scope:recipient }
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			stress_impact = {
+				arrogant = minor_stress_impact_gain
+			}
+
+			if = {
+				limit = {
+					government_has_flag = government_is_feudal
+					agot_is_independent_ruler = no
+				}
+				legitimize_bastard_interaction_opinions_effect = {
+					BASTARD = scope:secondary_recipient
+					HOUSE_HEAD = scope:actor.top_liege
+					LEGITIMIZER = scope:actor
+				}
+			}
+			else = {
+				legitimize_bastard_interaction_opinions_effect = {
+					BASTARD = scope:secondary_recipient
+					HOUSE_HEAD = scope:actor.house.house_head
+					LEGITIMIZER = scope:actor
+				}
+			}
+
+			if = {
+				limit = { always = scope:hook }
+				scope:actor = {
+					use_hook = scope:recipient
+				}
+			}
+		}
+
+		# in the case where the child is not of the actor's house
+		# that means he meets the criteria of "parent is spouse of actor or dead
+		# and of an inconsequential house" and thus is joining
+		# the actor's house
+		scope:secondary_recipient = {
+			if = {
+				limit = {
+					exists = house
+					NOT = { house = scope:actor.house }
+				}
+				set_house = scope:actor.house
+			}
+			if = {
+				limit = {
+					is_playable_character = no
+					is_imprisoned = no
+					is_incapable = no
+					NOT = { is_courtier_of = scope:actor }
+					OR = {
+						is_courtier = no
+						would_leave_liege_trigger = { NEW_LIEGE = scope:actor CURRENT_LIEGE = scope:secondary_recipient.liege }
+					}
+				}
+				# when legitimized, they'll come to the actor's court if not already
+				# and bring family with them, if feasible
+				every_traveling_family_member = {
+					limit = {
+						OR = {
+							this = scope:secondary_recipient
+							AND = {
+								is_child_of = scope:secondary_recipient
+								is_adult = no
+							}
+							AND = {
+								primary_spouse ?= scope:secondary_recipient
+								OR = {
+									is_courtier = no
+									would_leave_liege_trigger = { NEW_LIEGE = scope:actor CURRENT_LIEGE = scope:secondary_recipient.primary_spouse.liege }
+								}
+							}
+						}
+					}
+					scope:actor = { add_courtier = prev }
+				}
+			}
+		}
+
+		scope:recipient = {
+			if = {
+				limit = {
+					NOT = { this = scope:actor }
+				}
+				add_character_flag = {
+					flag = received_recent_legitimization_request
+					years = 5
+				}
+			}
+		}
+
+		# If we're a clan this interaction affects unity
+		add_clan_unity_interaction_effect = {
+			CHARACTER = scope:actor
+			TARGET = scope:recipient
+			VALUE = miniscule_unity_loss
+			DESC = clan_unity_bastardry.desc
+			REVERSE_NON_HOUSE_TARGET = no
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			add_character_flag = {
+				flag = made_recent_legitimization_request
+				years = 5
+			}
+			add_opinion = {
+				target = scope:recipient
+				modifier = refused_my_legitimization_request
+			}
+		}
+		scope:recipient = {
+			add_character_flag = {
+				flag = received_recent_legitimization_request
+				years = 5
+			}
+		}
+
+		# If we're a clan this interaction affects unity
+		add_clan_unity_interaction_effect = {
+			CHARACTER = scope:actor
+			TARGET = scope:recipient
+			VALUE = miniscule_unity_gain
+			DESC = clan_unity_bastardry_refusal.desc
+			REVERSE_NON_HOUSE_TARGET = no
+		}
+	}
+
+	ai_potential = {
+		is_ai = yes
+		is_playable_character = yes
+		any_close_family_member = { has_trait = bastard }
+	}
+
+	ai_targets = {
+		ai_recipients = dynasty
+		ai_recipients = children
+	}
+
+	ai_frequency = 60
+
+	send_option = {
+		is_shown = {
+			NOT = { scope:actor = scope:recipient }
+		}
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = SCHEME_HOOK
+	}
+
+	send_options_exclusive = no
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 100
+			# the bastard is my preferred gender and either my child
+			# or my grandchild by a child of my preferred gender
+			scope:secondary_recipient = {
+				is_preferred_gender_of_ruler_realm_law = { RULER = scope:actor }
+				OR = {
+					is_child_of = scope:actor
+					AND = {
+						is_grandchild_of = scope:actor
+						any_parent = {
+							even_if_dead = yes
+							house ?= scope:actor.house
+							is_preferred_gender_of_ruler_realm_law = { RULER = scope:actor }
+						}
+					}
+				}
+				# does not have an older bastard sibling
+				NOT = {
+					any_sibling = {
+						has_trait = bastard
+						age > scope:secondary_recipient.age
+						OR = {
+							is_child_of = scope:actor
+							AND = {
+								is_grandchild_of = scope:actor
+								any_parent = {
+									even_if_dead = yes
+									house ?= scope:actor.house
+									is_preferred_gender_of_ruler_realm_law = { RULER = scope:actor }
+								}
+							}
+						}
+					}
+				}
+			}
+			scope:actor = {
+				# I am either getting old or unlikely to have more children
+				OR = {
+					is_old_age_or_not_have_children = yes
+					fertility <= 0.2
+				}
+				NOR = {
+					# I don't have a wife who'se likely to have more children with me
+					any_spouse = {
+						is_female = yes
+						fertility >= 0.2
+						scope:actor.fertility >= 0.2
+					}
+					# I don't have a descendant of the preferred gender who's my heir and of my house
+					player_heir ?= {
+						house ?= scope:actor.house
+						is_preferred_gender_of_ruler_realm_law = { RULER = scope:actor }
+						OR = {
+							is_child_of = scope:actor
+							is_grandchild_of = scope:actor
+							is_great_grandchild_of = scope:actor
+						}
+					}
+				}
+			}
+		}
+
+		modifier = {
+			add = 100
+			# the bastard is my child with no older bastard siblings
+			scope:secondary_recipient = {
+				is_child_of = scope:actor
+				NOT = {
+					any_sibling = {
+						has_trait = bastard
+						mother = scope:secondary_recipient.mother
+						father ?= scope:secondary_recipient.father
+						age > scope:secondary_recipient.age
+					}
+				}
+			}
+			scope:actor = {
+				# I am highly compassionate
+				ai_compassion >= very_high_positive_ai_value
+				NOR = {
+					has_trait = arrogant
+					has_trait = zealous
+				}
+				# I already have an heir who is older or the right gender
+				exists = player_heir
+				player_heir = {
+					house ?= scope:actor.house
+					is_preferred_gender_of_ruler_realm_law = { RULER = scope:actor }
+					OR = {
+						is_child_of = scope:actor
+						is_grandchild_of = scope:actor
+						is_great_grandchild_of = scope:actor
+					}
+					OR = {
+						age > scope:secondary_recipient.age
+						scope:secondary_recipient = {
+							NOT = { is_preferred_gender_of_ruler_realm_law = { RULER = scope:actor } }
+						}
+					}
+				}
+			}
+			# But not if it would piss off my spouse
+			NAND = {
+				scope:actor = {
+					exists = primary_spouse
+					NOT = { might_cheat_on_partner_trigger = { PARTNER = scope:actor.primary_spouse } }
+				}
+				scope:secondary_recipient = {
+					is_child_of = scope:actor
+					NOT = { is_child_of = scope:actor.primary_spouse }
+				}
+			}
+		}
+
+		modifier = {
+			add = 100
+			# I've married the bastard's parent and the bastard has no older bastard siblings
+			scope:actor = {
+				exists = primary_spouse
+				is_parent_of = scope:secondary_recipient
+				primary_spouse = { is_parent_of = scope:secondary_recipient }
+				NOT = {
+					any_child = {
+						has_trait = bastard
+						mother = scope:actor.primary_spouse
+						father = scope:actor
+						age > scope:secondary_recipient.age
+					}
+				}
+			}
+		}
+
+		modifier = {
+			# I'm not compassionate
+			scope:actor = {
+				ai_compassion <= low_negative_ai_value
+				# and the bastard is my child and of the right gender
+				is_parent_of = scope:secondary_recipient
+				scope:secondary_recipient = { is_preferred_gender_of_ruler_realm_law = { RULER = scope:actor } }
+				# and my current heir is also my child but younger than the bastard
+				exists = player_heir
+				save_temporary_scope_as = heir_liege
+				player_heir = {
+					house ?= scope:actor.house
+					is_preferred_gender_of_ruler_realm_law = { RULER = scope:actor }
+					is_child_of = scope:actor
+					age < scope:secondary_recipient.age
+					OR = {
+						# and either a much inferior candidate for heir
+						AND = {
+							is_adult = yes
+							heir_suitability_value_plus_20 < scope:secondary_recipient.heir_suitability_value
+						}
+						# has awful traits while the bastard does not
+						AND = {
+							OR = {
+								has_trait = inbred
+								has_trait = intellect_bad_3
+								has_trait = incapable
+							}
+							scope:secondary_recipient = {
+								NOR = {
+									has_trait = inbred
+									has_trait = intellect_bad_3
+									has_trait = incapable
+								}
+							}
+						}
+						# is malformed while the bastard is not and is also superior
+						AND = {
+							is_malformed_trigger = yes
+							heir_suitability_value < scope:secondary_recipient.heir_suitability_value
+							scope:secondary_recipient = { is_malformed_trigger = no }
+						}
+					}
+				}
+			}
+		}
+
+		modifier = {
+			factor = 0
+			scope:hook = no
+			scope:recipient = {
+				is_ai = yes
+				OR = {
+					has_relation_rival = scope:actor
+					has_relation_rival = scope:secondary_recipient
+					opinion = { target = scope:actor value <= -20 }
+					opinion = { target = scope:secondary_recipient value <= -50 }
+				}
+			}
+		}
+
+		modifier = {
+			factor = 0
+			scope:actor = {
+				OR = {
+					has_government = mercenary_government
+					has_government = republic_government
+					has_government = theocracy_government
+					has_government = holy_order_government
+				}
+			}
+		}
+	}
+}
+
+# Introducing two characters to potentially marry with their approval
+introduce_to_marry_interaction = {
+	icon = icon_introduction
+	category = interaction_category_diplomacy
+	common_interaction = yes
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:secondary_actor
+					scope:secondary_actor = {
+						this = scope:actor
+						introduction_interaction_can_be_picked_trigger = no
+					}
+				}
+				desc = introduce_to_marry_interaction_none_desc
+			}
+			triggered_desc = {
+				trigger = { exists = scope:secondary_recipient }
+				desc = introduce_to_marry_interaction_recipient_desc
+			}
+			desc = introduce_to_marry_interaction_desc
+		}
+	}
+
+	send_name = make_introduction_send
+	needs_recipient_to_open = no
+	interface = marriage
+	#special_interaction = arrange_marriage_interaction
+
+	redirect = {
+		# If the define MARRIAGE_OWNER_IS_MATCHMAKER is set to yes, the actor must end up as the "matchmaker" link for courtiers
+		if = {
+			limit = {
+				exists = scope:secondary_actor
+			}
+			scope:recipient = {
+				save_scope_as = secondary_recipient
+				if = {
+					limit = {
+						NOT = { matchmaker = scope:actor }
+						is_non_courtier_marriage_candidate = { RULER = scope:actor }
+					}
+					scope:actor = {
+						save_scope_as = recipient
+					}
+				}
+				else = {
+					matchmaker = {
+						save_scope_as = recipient
+					}
+				}
+			}
+		}
+		else = {
+			scope:recipient = {
+				#save_scope_as = secondary_actor
+				if = {
+					limit = {
+						exists = matchmaker
+						matchmaker = scope:actor
+					}
+					save_scope_as = secondary_actor
+					clear_saved_scope = recipient
+				}
+				else_if = {
+					limit = {
+						is_non_courtier_marriage_candidate = { RULER = scope:actor }
+					}
+					save_scope_as = secondary_actor
+					clear_saved_scope = recipient
+				}
+				else_if = {
+					limit = {
+						exists = matchmaker
+						NOT = { scope:recipient = matchmaker }
+					}
+					save_scope_as = secondary_recipient
+					matchmaker = { save_scope_as = recipient }
+				}
+				else = {
+					save_scope_as = secondary_recipient
+				}
+			}
+		}
+	}
+
+	populate_actor_list = {
+		scope:actor = {
+			add_to_list = potential_characters
+			every_courtier = {
+				limit = { is_concubine = no }
+				add_to_list = potential_characters
+			}
+			every_courtier_away = {
+				limit = { is_concubine = no }
+				add_to_list = potential_characters
+			}
+			every_child = {
+				even_if_dead = yes
+				if = {
+					limit = {
+						is_alive = yes
+						NOT = { is_in_list = potential_characters }
+						is_concubine = no
+					}
+					add_to_list = potential_characters
+				}
+				every_child = {
+					even_if_dead = yes
+					if = {
+						limit = {
+							is_alive = yes
+							NOT = { is_in_list = potential_characters }
+							is_concubine = no
+						}
+						add_to_list = potential_characters
+					}
+					every_child = {
+						if = {
+							limit = {
+								is_alive = yes
+								NOT = { is_in_list = potential_characters }
+								is_concubine = no
+							}
+							add_to_list = potential_characters
+						}
+					}
+				}
+			}
+		}
+
+		every_in_list = {
+			list = potential_characters
+			if = {
+				limit = { exists = scope:secondary_recipient }
+				if = {
+					limit = {
+						age >= 12
+						is_available = yes
+						is_healthy = yes
+						has_short_disease_trigger = no
+						bp2_valid_for_standard_interactions_trigger = yes
+						OR = {
+							this = scope:actor
+							is_non_courtier_marriage_candidate = { RULER = scope:actor }
+							is_courtier_of = scope:actor
+						}
+						is_within_introduction_range = { PROPOSER = scope:actor }
+
+						save_temporary_scope_as = candidate
+
+						trigger_if = {
+							limit = { scope:secondary_recipient = { is_ai = yes } } #players can choose who they want
+							is_pleased_by_suitor_trigger = { CHARACTER = scope:secondary_recipient SUITOR = scope:candidate THRESHOLD = -21 }
+						}
+
+						scope:actor = {
+							is_character_interaction_potentially_accepted = {
+								interaction = introduce_to_marry_interaction
+								recipient = scope:secondary_recipient.matchmaker
+								secondary_actor = scope:candidate
+								secondary_recipient = scope:secondary_recipient
+							}
+						}
+					}
+					save_scope_as = secondary_actor
+					random = {
+						chance = 20
+						marriage_ai_accept_modifier = yes
+						evaluate_action_increasing_house_unity = { VALUE = 100 }
+						modifier = { factor = 100 }
+						add_to_list = characters
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					age >= 12
+					is_available = yes
+					has_short_disease_trigger = no
+					bp2_valid_for_standard_interactions_trigger = yes
+					OR = {
+						this = scope:actor
+						is_non_courtier_marriage_candidate = { RULER = scope:actor }
+						is_courtier_of = scope:actor
+					}
+					is_within_introduction_range = { PROPOSER = scope:actor }
+				}
+				add_to_list = characters
+			}
+		}
+	}
+
+	populate_recipient_list = {
+		scope:secondary_actor = {
+			every_opposite_sex_spouse_candidate = {
+				limit = {
+					NAND = {
+						is_landless_ruler = yes
+						faith.religious_head = this
+						NOT = { scope:secondary_actor.faith = faith }
+					}
+					age >= 12
+					is_available = yes
+					is_healthy = yes
+					has_short_disease_trigger = no
+					bp2_valid_for_standard_interactions_trigger = yes
+					is_within_introduction_range = { PROPOSER = scope:actor }
+					save_temporary_scope_as = candidate
+
+					trigger_if = {
+						limit = {
+							scope:secondary_actor = { is_ai = yes } #players can choose who they want
+						}
+						is_pleased_by_suitor_trigger = { CHARACTER = scope:secondary_actor SUITOR = scope:candidate THRESHOLD = -21 }
+					}
+				}
+				add_to_list = potential_characters
+			}
+			every_in_list = {
+				list = potential_characters
+				save_scope_as = secondary_recipient
+				if = {
+					limit = { exists = matchmaker }
+					matchmaker = { save_scope_as = recipient }
+				}
+				else = { save_scope_as = recipient }
+
+				if = {
+					limit = { is_courtier_of = scope:actor }
+					add_to_list = characters
+				}
+				else = {
+					random = {
+						chance = 20
+						marriage_ai_accept_modifier = yes
+						evaluate_action_increasing_house_unity = { VALUE = 100 }
+						modifier = { factor = 100 }
+						add_to_list = characters
+					}
+				}
+			}
+		}
+	}
+
+	interface_priority = 60
+
+	# actor, recipient ... characters arranging the marriage
+	# secondary_actor, secondary_recipient ... characters that should marry
+
+	is_shown = {
+		NOT = { has_game_rule = lmf_no_introductions }
+		scope:actor = {
+			is_landed_or_landless_administrative = yes
+			highest_held_title_tier > tier_barony
+			exists = capital_province
+			NOR = {
+				has_government = mercenary_government
+				has_government = republic_government
+				has_government = theocracy_government
+				has_government = holy_order_government
+			}
+		}
+		# Block further marriage proposals for people who have a pending grand wedding
+		NOR = {
+			scope:secondary_actor ?= { has_been_promised_grand_wedding = yes }
+			scope:secondary_recipient ?= { has_been_promised_grand_wedding = yes }
+		}
+		#If you're interacting with someone who isn't their own matchmaker, only show the interaction if they can get married. (If someone isn't their own matchmaker, they will be set as secondary_recipient by code and their matchmaker becomes recipient)
+		trigger_if = {
+			limit = { exists = scope:secondary_recipient }
+			scope:secondary_recipient = {
+				introduction_interaction_can_be_picked_trigger = yes
+				is_concubine = no
+			}
+		}
+		trigger_if = {
+			limit = { exists = scope:secondary_actor }
+			scope:secondary_actor = {
+				OR = {
+					this = scope:actor
+					AND = {
+						introduction_interaction_can_be_picked_trigger = yes
+						is_concubine = no
+					}
+				}
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		trigger_if = {
+			limit = {
+				NAND = {
+					exists = scope:secondary_actor
+					exists = scope:secondary_recipient
+				}
+			}
+			#There is an available marriage
+			trigger_if = {
+				limit = { exists = scope:secondary_recipient }
+				scope:secondary_recipient = {
+					age >= 12
+					can_marry_trigger = yes
+					is_concubine = no
+					custom_description = {
+						text = is_too_far_to_travel
+						subject = scope:actor
+						object = scope:secondary_recipient
+						is_within_introduction_range = { PROPOSER = scope:actor }
+					}
+				}
+				custom_description = {
+					text = has_available_introduction
+					subject = scope:actor
+					object = scope:secondary_recipient
+					scope:secondary_recipient = {
+						any_opposite_sex_spouse_candidate = {
+							NAND = {
+								is_landless_ruler = yes
+								faith.religious_head = this
+								NOT = { scope:secondary_recipient.faith = faith }
+							}
+
+							age >= 12
+							OR = {
+								this = scope:actor
+								is_non_courtier_marriage_candidate = { RULER = scope:actor }
+								is_courtier_of = scope:actor
+							}
+
+							save_temporary_scope_as = candidate
+
+							scope:secondary_recipient = {
+								save_temporary_opinion_value_as = {
+									name = match_opinion
+									target = scope:candidate
+								}
+								save_temporary_scope_as = match
+							}
+
+							introduction_candidate_interest_value > -21
+
+							scope:actor = {
+								is_character_interaction_potentially_accepted = {
+									interaction = introduce_to_marry_interaction
+									recipient = scope:secondary_recipient.matchmaker
+									secondary_actor = scope:candidate
+									secondary_recipient = scope:secondary_recipient
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		scope:actor = {
+			is_adult = yes
+			is_available = yes
+			is_at_war = no
+			custom_description = {
+				text = is_available_for_introduction
+				NOT = { has_variable = is_in_marriage_introduction }
+			}
+		}
+
+		trigger_if = { #(must be here because secondary_recipient can be set at the start)
+			limit = {
+				exists = scope:secondary_recipient
+				NOT = { scope:secondary_recipient = scope:recipient }
+			}
+			scope:secondary_recipient = {
+				age >= 12
+				is_available_ai = yes
+				bp2_valid_for_standard_interactions_trigger = yes
+				custom_description = {
+					text = has_debilitating_illness
+					subject = scope:secondary_recipient
+					has_short_disease_trigger = no
+				}
+				custom_description = {
+					text = had_recent_introduction
+					NOT = { has_character_flag = had_recent_introduction }
+				}
+			}
+		}
+		trigger_if = { #(must be here because secondary_recipient can be set at the start)
+			limit = {
+				exists = scope:secondary_actor
+				NOT = { scope:secondary_actor = scope:actor }
+			}
+			scope:secondary_actor = {
+				age >= 12
+				is_available_ai = yes
+				bp2_valid_for_standard_interactions_trigger = yes
+				custom_description = {
+					text = has_debilitating_illness
+					subject = scope:secondary_actor
+					has_short_disease_trigger = no
+				}
+				custom_description = {
+					text = had_recent_introduction
+					NOT = { has_character_flag = had_recent_introduction }
+				}
+			}
+		}
+
+		# Account for regents being bolshy.
+		marriage_interaction_non_loyal_diarchs_refuse_secondary_marriage_trigger = { TARGET = secondary_actor }
+		marriage_interaction_non_loyal_diarchs_refuse_secondary_marriage_trigger = { TARGET = secondary_recipient }
+	}
+
+	# whether a character can be picked for the interaction, interface only (e.g. picking the first character in the marriage interaction)
+	# in character scope, actor and recipient event targets can be used, but not the secondary characters (because none exist yet)
+	can_be_picked = {
+		OR = {
+			introduction_interaction_can_be_picked_trigger = yes
+			AND = {
+				exists = scope:secondary_actor
+				exists = scope:secondary_recipient
+			}
+		}
+	}
+
+	#Is evaluated only after secondary_recipient and secondary_actor are both chosen
+	has_valid_target_showing_failures_only = {
+		scope:recipient = {
+			is_imprisoned = no
+			is_incapable = no
+			custom_description = {
+				text = is_available_for_introduction
+				NOT = { has_variable = is_in_marriage_introduction }
+			}
+		}
+		introduction_interaction_valid_target_trigger = yes  #Checks marriage status, betrothed, gender, consanguinity, faith hostility etc.
+	}
+
+	on_send = {
+		if = {
+			limit = { scope:grand_wedding_promise = yes }
+			scope:actor = {
+				set_variable = {
+					name = grand_wedding_promise_pending
+					months = 18
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		if = {
+			limit = {
+				scope:secondary_recipient = { resides_in_court_of_actor = yes }
+			}
+			custom_tooltip = begin_introduction_same_court.tt
+			scope:actor = { trigger_event = lmf_interaction.1322 } # Bounce event for a secondary recipient which is part of the actor's court
+		}
+		else = {
+			custom_tooltip = begin_introduction_invite_secrec.tt
+			scope:actor = { trigger_event = lmf_interaction.1301 } # Secondary Actor reacts to your choice of suitor
+			scope:recipient = { trigger_event = lmf_interaction.1302 } # Secondary Recipient reacts to coming visit
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			trigger_event = lmf_interaction.1300
+			if = {
+				limit = { has_variable = grand_wedding_promise_pending }
+				remove_variable = grand_wedding_promise_pending
+			}
+		}
+
+		# If we're a clan this interaction affects unity
+		add_clan_unity_interaction_effect = {
+			CHARACTER = scope:actor
+			TARGET = scope:recipient
+			VALUE = medium_unity_loss
+			DESC = clan_unity_marry_off_decline.desc
+			REVERSE_NON_HOUSE_TARGET = no
+		}
+
+	}
+
+	auto_accept = {
+		marriage_interaction_auto_accept_trigger = yes #Strong hook conditions
+	}
+
+	ai_accept = {
+		base = 0 # Should be 0 for all interactions
+
+		marriage_ai_accept_modifier = yes
+		modifier = { add = 20 }
+		# Unity modifiers
+		evaluate_action_increasing_house_unity = {
+			VALUE = 100
+		}
+	}
+
+	send_option = {
+		flag = grand_wedding_promise
+		localization = GRAND_WEDDING_PROMISE
+
+		is_shown = {
+			scope:actor = { #Can organize a Grand Wedding
+				highest_held_title_tier > tier_barony
+				is_landed_or_landless_administrative = yes
+				trigger_if = {
+					limit = { is_ai = yes }
+					is_at_war = no
+				}
+				# DLC locked
+				has_dlc_feature = tours_and_tournaments
+				has_dlc_feature = advanced_activities
+			}
+		}
+
+		current_description = {
+			desc = "GRAND_WEDDING_PROMISE_INFO"
+		}
+
+		is_valid = {
+			scope:actor = {
+				gold >= real_wedding_cost_actor_scope
+				trigger_if = {
+					limit = { is_ai = yes }
+					is_available = yes
+				}
+				custom_tooltip = {
+					text = grand_wedding_already_promised_tt
+					NOR = {
+						AND = {
+							has_variable = promised_grand_wedding_marriage_countdown
+							var:promised_grand_wedding_marriage_countdown = { is_alive = yes }
+						}
+						has_variable = grand_wedding_promise_pending
+					}
+				}
+			}
+			custom_tooltip = {
+				text = grand_wedding_only_dominant_side
+				trigger_if = {
+					limit = {
+						scope:secondary_actor ?= {
+							is_female = yes
+						}
+					}
+					OR = {
+						scope:secondary_actor ?= { matrilinear_betrothal = yes }
+						scope:matrilineal = yes
+					}
+				}
+				trigger_else = {
+					NOR = {
+						scope:secondary_actor ?= { matrilinear_betrothal = yes }
+						scope:matrilineal = yes
+					}
+				}
+			}
+			custom_tooltip = {
+				text = grand_wedding_only_family
+				scope:secondary_actor ?= {
+					OR = {
+						is_close_or_extended_family_of = scope:actor
+						this = scope:actor
+					}
+				}
+			}
+			scope:secondary_actor = {
+				OR = {
+					is_courtier_of = scope:actor
+					this = scope:actor
+				}
+			}
+		}
+	}
+
+	send_option = {
+		flag = matrilineal
+		localization = "MATRILINEAL_OFFER"
+		starts_enabled = {
+			scope:actor = {
+				OR = {
+					faith = {
+						has_doctrine = doctrine_gender_female_dominated
+					}
+					# LMF: added AI option for cultures with equal or female inheritance to use matrilineal
+					AND = {
+						is_ai = yes
+						scope:secondary_actor ?= { is_female = yes }
+						culture = {
+							OR = {
+								has_cultural_tradition = tradition_equal_inheritance
+								has_cultural_tradition = tradition_female_only_inheritance
+							}
+						}
+						OR = {
+							is_landed = yes
+							any_heir_title = {}
+						}
+						NOR = {
+							has_game_rule = matrilineal_marriages_never
+							has_game_rule = matrilineal_marriages_female_and_equal
+						}
+					}
+					# LMF: added AI option for female rulers to use matrilineal for their own wedding
+					AND = {
+						is_landed = yes
+						exists = scope:secondary_actor
+						scope:actor = scope:secondary_actor
+						is_female = yes
+						is_ai = yes
+						NOR = {
+							has_trait = humble
+							has_trait = zealous
+							has_game_rule = matrilineal_marriages_never
+							has_game_rule = matrilineal_marriages_female_and_equal
+						}
+					}
+					# LMF: added AI option for dukes+ to use matrilineal for their female heirs
+					AND = {
+						is_landed = yes
+						primary_title.tier >= tier_duchy
+						is_ai = yes
+						scope:secondary_actor ?= {
+							is_female = yes
+							is_primary_heir_of = scope:actor
+						}
+						NOR = {
+							has_trait = humble
+							has_trait = zealous
+							has_game_rule = matrilineal_marriages_never
+							has_game_rule = matrilineal_marriages_female_and_equal
+						}
+					}
+					# LMF: added AI option for bold dukes+ to use matrilineal once they have enough alliances
+					AND = {
+						is_landed = yes
+						primary_title.tier >= tier_duchy
+						is_ai = yes
+						scope:secondary_actor ?= {
+							is_female = yes
+							is_close_family_of = scope:actor
+							dynasty ?= scope:actor.dynasty
+						}
+						ai_boldness >= medium_positive_boldness
+						any_ally = {
+							NOR = {
+								target_is_vassal_or_below = scope:actor
+								target_is_liege_or_above = scope:actor
+							}
+							count >= 4
+						}
+						NOR = {
+							has_trait = humble
+							has_trait = zealous
+							has_game_rule = matrilineal_marriages_never
+							has_game_rule = matrilineal_marriages_female_and_equal
+						}
+					}
+					AND = {
+						scope:secondary_actor ?= { is_female = yes }
+						faith = { has_doctrine = doctrine_gender_equal }
+					}
+					AND = {
+						exists = scope:secondary_actor
+						scope:actor = scope:secondary_actor
+						is_female = yes
+						is_ai = no
+					}
+				}
+			}
+		}
+	}
+
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = MARRIAGE_HOOK
+	}
+	#This option cannot be linked with the hook icon, because recipient isn't known in the right-click menu
+
+	send_option = { # EP3 Influence
+		is_shown = { # Actor must have a government that uses influence
+			scope:actor = {
+				government_has_flag = government_has_influence
+			}
+		}
+		is_valid = {
+			# Actor has enough influence
+			scope:actor = { influence >= medium_influence_value }
+			# Both characters are within the same top realm
+			custom_tooltip = {
+				text = not_same_realm_tt
+				scope:recipient.top_liege = scope:actor.top_liege
+			}
+		}
+		flag = influence_send_option
+		localization = TRADE_INFLUENCE_FOR_BETTER_AI_ACCEPTANCE
+	}
+
+	send_option = { # MPO Herd
+		is_shown = { # Actor must have a government that uses Herd
+			scope:actor = {
+				government_has_flag = government_is_nomadic
+				is_ai = no
+			}
+			# Recipient must care about Herd
+			scope:recipient = {
+				government_has_flag = government_is_nomadic
+			}
+		}
+		is_valid = {
+			# Actor has enough Herd
+			scope:actor = { domicile.herd >= domicile.medium_herd_value }
+		}
+		flag = herd_send_option
+		localization = TRADE_HERD_FOR_BETTER_AI_ACCEPTANCE
+	}
+
+	send_options_exclusive = no
+
+	show_effects_in_notification = yes
+	greeting = positive
+
+	notification_text = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:secondary_actor = {
+						is_adult = yes
+					}
+					scope:secondary_recipient = {
+						is_adult = yes
+					}
+					NOR = {
+						scope:secondary_actor = { has_been_promised_grand_wedding = yes }
+						scope:secondary_recipient = { has_been_promised_grand_wedding = yes }
+					}
+				}
+				desc = {
+					first_valid = {
+						triggered_desc = {
+							trigger = {
+								scope:matrilineal = yes
+								scope:secondary_actor = scope:actor
+								scope:secondary_recipient = scope:recipient
+							}
+							desc = intro_marriage_notification_both_personal_matri
+						}
+						triggered_desc = {
+							trigger = {
+								scope:matrilineal = yes
+								scope:secondary_actor = scope:actor
+							}
+							desc = intro_marriage_notification_actor_personal_matri
+						}
+						triggered_desc = {
+							trigger = {
+								scope:matrilineal = yes
+								scope:secondary_recipient = scope:recipient
+							}
+							desc = intro_marriage_notification_recipient_personal_matri
+						}
+						triggered_desc = {
+							trigger = {
+								scope:matrilineal = yes
+							}
+							desc = intro_marriage_notification_matri
+						}
+						triggered_desc = {
+							trigger = {
+								scope:secondary_actor = scope:actor
+								scope:secondary_recipient = scope:recipient
+							}
+							desc = intro_marriage_notification_both_personal
+						}
+						triggered_desc = {
+							trigger = {
+								scope:secondary_actor = scope:actor
+							}
+							desc = intro_marriage_notification_actor_personal
+						}
+						triggered_desc = {
+							trigger = {
+								scope:secondary_recipient = scope:recipient
+							}
+							desc = intro_marriage_notification_recipient_personal
+						}
+						desc = intro_marriage_notification
+					}
+				}
+			}
+			desc = {
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							scope:matrilineal = yes
+							scope:secondary_actor = scope:actor
+							scope:secondary_recipient = scope:recipient
+						}
+						desc = intro_betrothal_notofication_both_personal_matri
+					}
+					triggered_desc = {
+						trigger = {
+							scope:matrilineal = yes
+							scope:secondary_actor = scope:actor
+						}
+						desc = intro_betrothal_notification_actor_personal_matri
+					}
+					triggered_desc = {
+						trigger = {
+							scope:matrilineal = yes
+							scope:secondary_recipient = scope:recipient
+						}
+						desc = intro_betrothal_notification_recipient_personal_matri
+					}
+					triggered_desc = {
+						trigger = {
+							scope:matrilineal = yes
+						}
+						desc = intro_betrothal_notification_matri
+					}
+					triggered_desc = {
+						trigger = {
+							scope:secondary_actor = scope:actor
+							scope:secondary_recipient = scope:recipient
+						}
+						desc = intro_betrothal_both_personal
+					}
+					triggered_desc = {
+						trigger = {
+							scope:secondary_actor = scope:actor
+						}
+						desc = intro_betrothal_notification_actor_personal
+					}
+					triggered_desc = {
+						trigger = {
+							scope:secondary_recipient = scope:recipient
+						}
+						desc = intro_betrothal_notification_recipient_personal
+					}
+					desc = intro_betrothal_notification
+				}
+			}
+		}
+	}
+}
+
+# This is a "fake" version of the introduction interaction, triggered only in the event used by the AI to invite a player's family member to an introduction
+introduce_to_marry_interaction_ai = {
+	icon = icon_introduction
+	category = interaction_category_diplomacy
+	common_interaction = yes
+
+	desc = introduce_to_marry_interaction_desc
+
+	send_name = make_introduction_send
+	needs_recipient_to_open = no
+	interface = marriage
+	special_interaction = arrange_marriage_interaction
+
+	redirect = {
+		if = {
+			limit = {
+				exists = scope:secondary_actor
+			}
+			scope:recipient = {
+				save_scope_as = secondary_recipient
+				matchmaker = {
+					save_scope_as = recipient
+				}
+			}
+		}
+		else = {
+			scope:recipient = {
+				#save_scope_as = secondary_actor
+				if = {
+					limit = {
+						exists = matchmaker
+						matchmaker = scope:actor
+					}
+					save_scope_as = secondary_actor
+					clear_saved_scope = recipient
+				}
+				else_if = {
+					limit = {
+						exists = matchmaker
+						NOT = { scope:recipient = matchmaker }
+					}
+					save_scope_as = secondary_recipient
+					matchmaker = { save_scope_as = recipient }
+				}
+				else = {
+					save_scope_as = secondary_recipient
+				}
+			}
+		}
+	}
+
+	populate_actor_list = {
+		scope:secondary_actor = { add_to_list = characters }
+	}
+
+	populate_recipient_list = {
+		scope:secondary_recipient = { add_to_list = characters }
+	}
+
+	interface_priority = 60
+
+	# actor, recipient ... characters arranging the marriage
+	# secondary_actor, secondary_recipient ... characters that should marry
+
+	is_shown = {
+		NOT = { has_game_rule = lmf_no_introductions }
+		scope:actor = {
+			is_ai = yes
+			has_variable = use_introduction
+			NOT = { has_variable = is_in_marriage_introduction }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		always = yes
+	}
+
+	# whether a character can be picked for the interaction, interface only (e.g. picking the first character in the marriage interaction)
+	# in character scope, actor and recipient event targets can be used, but not the secondary characters (because none exist yet)
+	can_be_picked = {
+		exists = scope:secondary_actor
+		exists = scope:secondary_recipient
+	}
+
+	#Is evaluated only after secondary_recipient and secondary_actor are both chosen
+	has_valid_target_showing_failures_only = {
+		always = yes
+	}
+
+	on_accept = {
+		# technically unnecessary, since the accept button in the interface will instead run a scripted_gui effect (to prevent automatic marriage)
+		custom_tooltip = begin_introduction_invite_secrec.tt
+		scope:actor = { trigger_event = lmf_interaction.1301 } # Secondary Actor reacts to your choice of suitor
+		scope:recipient = { trigger_event = lmf_interaction.1302 } # Secondary Recipient reacts to coming visit
+	}
+
+	on_decline = {
+		# left empty, since both buttons in the interaction_marriage_notification_window GUI "decline" to close the window and instead run scripted_gui effects
+	}
+
+	auto_accept = {
+		always = no
+	}
+
+	ai_accept = {
+		base = 0 # Should be 0 for all interactions
+
+		marriage_ai_accept_modifier = yes
+		modifier = { add = 20 }
+		# Unity modifiers
+		evaluate_action_increasing_house_unity = {
+			VALUE = 100
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 100
+			has_variable = use_introduction
+		}
+	}
+
+	send_option = {
+		is_valid = {
+			always = no
+		}
+		flag = grand_wedding_promise
+		localization = GRAND_WEDDING_PROMISE
+
+		current_description = {
+			desc = "GRAND_WEDDING_PROMISE_INFO"
+		}
+	}
+
+	send_option = {
+		is_valid = {
+			always = no
+		}
+		flag = matrilineal
+		localization = "MATRILINEAL_OFFER"
+	}
+
+	send_option = {
+		is_valid = {
+			always = no
+		}
+		flag = hook
+		localization = MARRIAGE_HOOK
+	}
+	#This option cannot be linked with the hook icon, because recipient isn't known in the right-click menu
+
+	send_option = { # EP3 Influence
+		is_valid = {
+			always = no
+		}
+		flag = influence_send_option
+		localization = TRADE_INFLUENCE_FOR_BETTER_AI_ACCEPTANCE
+	}
+
+	send_option = { # MPO Herd
+		is_shown = { # Actor must have a government that uses Herd
+			scope:actor = {
+				government_has_flag = government_is_nomadic
+				is_ai = no
+			}
+			# Recipient must care about Herd
+			scope:recipient = {
+				government_has_flag = government_is_nomadic
+			}
+		}
+		is_valid = {
+			# Actor has enough Herd
+			scope:actor = { domicile.herd >= domicile.medium_herd_value }
+		}
+		flag = herd_send_option
+		localization = TRADE_HERD_FOR_BETTER_AI_ACCEPTANCE
+	}
+
+	send_options_exclusive = no
+
+	show_effects_in_notification = yes
+	greeting = positive
+
+	notification_text = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:secondary_actor = {
+						is_adult = yes
+					}
+					scope:secondary_recipient = {
+						is_adult = yes
+					}
+					NOR = {
+						scope:secondary_actor = { has_been_promised_grand_wedding = yes }
+						scope:secondary_recipient = { has_been_promised_grand_wedding = yes }
+					}
+				}
+				desc = {
+					first_valid = {
+						triggered_desc = {
+							trigger = {
+								scope:matrilineal = yes
+								scope:secondary_actor = scope:actor
+								scope:secondary_recipient = scope:recipient
+							}
+							desc = intro_marriage_notification_both_personal_matri
+						}
+						triggered_desc = {
+							trigger = {
+								scope:matrilineal = yes
+								scope:secondary_actor = scope:actor
+							}
+							desc = intro_marriage_notification_actor_personal_matri
+						}
+						triggered_desc = {
+							trigger = {
+								scope:matrilineal = yes
+								scope:secondary_recipient = scope:recipient
+							}
+							desc = intro_marriage_notification_recipient_personal_matri
+						}
+						triggered_desc = {
+							trigger = {
+								scope:matrilineal = yes
+							}
+							desc = intro_marriage_notification_matri
+						}
+						triggered_desc = {
+							trigger = {
+								scope:secondary_actor = scope:actor
+								scope:secondary_recipient = scope:recipient
+							}
+							desc = intro_marriage_notification_both_personal
+						}
+						triggered_desc = {
+							trigger = {
+								scope:secondary_actor = scope:actor
+							}
+							desc = intro_marriage_notification_actor_personal
+						}
+						triggered_desc = {
+							trigger = {
+								scope:secondary_recipient = scope:recipient
+							}
+							desc = intro_marriage_notification_recipient_personal
+						}
+						desc = intro_marriage_notification
+					}
+				}
+			}
+			desc = {
+				first_valid = {
+					triggered_desc = {
+						trigger = {
+							scope:matrilineal = yes
+							scope:secondary_actor = scope:actor
+							scope:secondary_recipient = scope:recipient
+						}
+						desc = intro_betrothal_notofication_both_personal_matri
+					}
+					triggered_desc = {
+						trigger = {
+							scope:matrilineal = yes
+							scope:secondary_actor = scope:actor
+						}
+						desc = intro_betrothal_notification_actor_personal_matri
+					}
+					triggered_desc = {
+						trigger = {
+							scope:matrilineal = yes
+							scope:secondary_recipient = scope:recipient
+						}
+						desc = intro_betrothal_notification_recipient_personal_matri
+					}
+					triggered_desc = {
+						trigger = {
+							scope:matrilineal = yes
+						}
+						desc = intro_betrothal_notification_matri
+					}
+					triggered_desc = {
+						trigger = {
+							scope:secondary_actor = scope:actor
+							scope:secondary_recipient = scope:recipient
+						}
+						desc = intro_betrothal_both_personal
+					}
+					triggered_desc = {
+						trigger = {
+							scope:secondary_actor = scope:actor
+						}
+						desc = intro_betrothal_notification_actor_personal
+					}
+					triggered_desc = {
+						trigger = {
+							scope:secondary_recipient = scope:recipient
+						}
+						desc = intro_betrothal_notification_recipient_personal
+					}
+					desc = intro_betrothal_notification
+				}
+			}
+		}
+	}
+}
+
+# Removing a courtier's Will Not Wed trait
+insist_on_marriage_interaction = {
+	icon = icon_marriage
+	category = interaction_category_hostile
+	common_interaction = no
+
+	desc = insist_on_marriage_interaction_desc
+
+	is_shown = {
+		scope:recipient = {
+			has_trait = refusing_marriage
+			any_owned_story = { story_type = lmf_will_not_wed_story_cycle }
+			OR = {
+				is_courtier_of = scope:actor
+				is_non_courtier_marriage_candidate = { RULER = scope:actor }
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_physically_able_adult = yes
+		}
+		scope:recipient = {
+			NOT = { has_hook = scope:actor }
+			custom_description = {
+				text = is_available_for_introduction
+				NOT = { has_variable = is_in_marriage_introduction }
+			}
+		}
+	}
+
+	on_accept = {
+		scope:recipient = {
+			remove_trait_force_tooltip = refusing_marriage
+			hidden_effect = {
+				random_owned_story = {
+					limit = { story_type = lmf_will_not_wed_story_cycle }
+					end_story = yes
+				}
+			}
+			if = {
+				limit = {
+					can_set_relation_rival_trigger = { CHARACTER = scope:actor }
+				}
+				set_relation_rival = {
+					reason = overrode_marriage_wishes
+					target = scope:actor
+				}
+			}
+			add_opinion = {
+				target = scope:actor
+				modifier = hate_opinion
+				opinion = -50
+			}
+			add_character_flag = cannot_get_refusing_marriage_trait
+		}
+		custom_tooltip = lmf_recipient_may_rebel_tt
+		hidden_effect = {
+			random = {
+				chance = 50
+				ai_value_modifier = {
+					who = scope:recipient
+					ai_boldness = 0.5
+					ai_rationality = -0.5
+				}
+				modifier = {
+					factor = 0.5
+					scope:actor = { exists = player_heir }
+					scope:recipient = { is_player_heir_of = scope:actor }
+				}
+				max = 100
+				min = 0
+				scope:actor = { save_scope_as = rebel_liege }
+				scope:recipient = {
+					save_scope_as = rebel
+					trigger_event = {
+						id = lmf_interaction.1330
+						days = 1
+					}
+				}
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	ai_potential = {
+		is_adult = yes
+		is_playable_character = yes
+	}
+
+	ai_targets = {
+		ai_recipients = family
+	}
+
+	#AGOT Modified; LMF, raised to make it less common
+	# ai_frequency = 36
+	ai_frequency = 60
+
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = 10
+			scope:recipient = { age >= 20 }
+		}
+		modifier = {
+			add = 20
+			scope:recipient = { age >= 22 }
+		}
+		modifier = {
+			add = 20
+			scope:recipient = { age >= 24 }
+		}
+		ai_value_modifier = {
+			who = scope:actor
+			ai_compassion = -0.5
+			max = 25
+		}
+		modifier = {
+			add = -10
+			scope:actor = { has_trait = callous }
+		}
+		modifier = {
+			add = -10
+			scope:actor = { has_trait = lazy }
+		}
+	}
+}
+
+# Inviting lovers and spouses to visit you
+invite_to_visit_interaction = {
+	icon = {
+		trigger = {
+			scope:actor = {
+				has_relation_lover = scope:recipient
+				NOT = { is_consort_of = scope:recipient }
+				is_married = yes
+			}
+		}
+		reference = icon_adultery
+	}
+	icon = icon_invite_spouse
+	category = interaction_category_friendly
+	common_interaction = yes
+
+	desc = invite_to_visit_interaction_desc
+
+	interface_priority = 10
+	ai_maybe = yes
+	ai_min_reply_days = 3
+	ai_max_reply_days = 7
+	can_send_despite_rejection = yes
+	popup_on_receive = yes
+	pause_on_receive = yes
+
+	is_highlighted = {
+		scope:recipient.fertility > 0.1
+		scope:actor.fertility > 0.1
+		scope:actor = {
+			is_spouse_of = scope:recipient
+			trigger_if = {
+				limit = { is_male = yes }
+				patrilinear_marriage = yes
+			}
+			trigger_else = {
+				matrilinear_marriage = yes
+			}
+			NOT = { has_inheritable_children = { TOTAL = 2 PREFER = no } }
+		}
+	}
+
+	greeting = positive
+	notification_text = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:actor = { has_relation_soulmate = scope:recipient }
+				}
+				desc = INVITE_SOULMATE_TO_VISIT
+			}
+			triggered_desc = {
+				trigger = {
+					scope:actor = { has_relation_lover = scope:recipient }
+				}
+				desc = INVITE_LOVER_TO_VISIT
+			}
+			desc = INVITE_SPOUSE_TO_VISIT
+		}
+	}
+	pre_answer_maybe_key = ANSWER_MIGHT_SUCCEED
+	pre_answer_no_key = ANSWER_CANT_SUCCEED
+	pre_answer_yes_key = ANSWER_WILL_SUCCEED
+	pre_answer_maybe_breakdown_key = ANSWER_SUM_CHANCE
+
+	is_shown = {
+		has_game_rule = agot_realistic_pregnancy_chance
+		scope:actor = {
+			is_playable_character = yes
+			exists = capital_province
+			NOR = {
+				any_owned_story = { type = lmf_visit_invitation_story_cycle }
+				has_variable = visited_by_target
+			}
+		}
+		scope:recipient = {
+			exists = location
+			OR = {
+				is_spouse_of = scope:actor
+				has_relation_lover = scope:actor
+			}
+			NOR = {
+				is_courtier_of = scope:actor
+				is_pool_guest_of = scope:actor
+				location = scope:actor.capital_province
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		custom_description = {
+			text = had_recent_visit_3_years
+			subject = scope:recipient
+			NOR = {
+				scope:actor = { has_opinion_modifier = { modifier = refused_to_visit_opinion target = scope:recipient } }
+				scope:actor = { has_opinion_modifier = { modifier = agreed_to_visit_opinion target = scope:recipient } }
+				scope:recipient = { has_opinion_modifier = { modifier = refused_to_visit_opinion target = scope:actor } }
+				scope:recipient = { has_opinion_modifier = { modifier = agreed_to_visit_opinion target = scope:actor } }
+			}
+		}
+		scope:actor = {
+			is_at_war = no
+			is_available = yes
+			trigger_if = {
+				limit = { has_contagious_deadly_disease_trigger = no }
+				custom_description = {
+					text = has_debilitating_illness
+					subject = scope:actor
+					has_short_disease_trigger = no
+				}
+			}
+			NOR = {
+				has_trait = infirm
+				has_trait = wounded_2
+				has_trait = wounded_3
+				has_trait = pregnant
+				has_trait = celibate
+			}
+		}
+		scope:recipient = {
+			trigger_if = {
+				limit = { is_playable_character = yes }
+				is_at_war = no
+			}
+			is_available = yes
+			trigger_if = {
+				limit = { has_contagious_deadly_disease_trigger = no }
+				custom_description = {
+					text = has_debilitating_illness
+					subject = scope:recipient
+					has_short_disease_trigger = no
+				}
+			}
+			NOR = {
+				has_trait = infirm
+				has_trait = wounded_2
+				has_trait = wounded_3
+				has_trait = pregnant
+				has_trait = celibate
+			}
+		}
+	}
+
+	send_option = {
+		is_shown = {
+			exists = scope:recipient
+		}
+		is_valid = {
+			scope:actor = {
+				gold >= {
+					value = bribe_value
+					multiply = 0.5
+				}
+			}
+		}
+		starts_enabled = {
+			trigger_if = {
+				limit = {
+					scope:actor = { is_ai = yes }
+				}
+				scope:actor = {
+					short_term_gold >= bribe_value
+					NOT = {
+						is_character_interaction_potentially_accepted = {
+							recipient = scope:recipient
+							interaction = invite_to_visit_interaction
+							required_response = yes
+						}
+					}
+				}
+			}
+			trigger_else = {
+				always = no
+			}
+		}
+		flag = cover_travel_expenses
+		localization = HIRE_A_TRAVEL_GUIDE
+	}
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = SCHEME_HOOK
+	}
+	should_use_extra_icon = {
+		scope:actor = { has_usable_hook = scope:recipient }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	send_options_exclusive = no
+
+	on_accept = {
+		if = {
+			limit = { always = scope:cover_travel_expenses }
+			scope:actor = {
+				pay_short_term_gold = {
+					gold = {
+						value = bribe_value
+						multiply = 0.5
+					}
+					target = scope:recipient
+				}
+				stress_impact = {
+					greedy = minor_stress_impact_gain
+				}
+			}
+		}
+		scope:actor = {
+			add_opinion = {
+				target = scope:recipient
+				modifier = agreed_to_visit_opinion
+			}
+			trigger_event = lmf_interaction.1501
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			add_opinion = {
+				target = scope:recipient
+				modifier = refused_to_visit_opinion
+			}
+			trigger_event = lmf_interaction.1500
+		}
+	}
+
+	ai_potential = {
+		is_playable_character = yes
+		OR = {
+			is_married = yes
+			num_of_relation_lover > 0
+		}
+	}
+
+	ai_targets = {
+		ai_recipients = spouses
+		ai_recipients = scripted_relations
+	}
+
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 36
+		duchy = 36
+		kingdom = 24
+		empire = 24
+		hegemony = 24
+	}
+
+	ai_accept = {
+		base = 20
+		modifier = {
+			add = 200
+			custom_description = {
+				text = "spending_hook"
+				subject = scope:actor
+				object = scope:recipient
+				scope:hook = yes
+			}
+		}
+		modifier = {
+			add = {
+				value = 20
+				if = {
+					limit = {
+						scope:recipient = { has_trait = paranoid }
+					}
+					multiply = 1.5
+				}
+				if = {
+					limit = {
+						scope:recipient = { has_trait = greedy }
+					}
+					multiply = 1.5
+				}
+				if = {
+					limit = {
+						scope:recipient = { has_trait = trusting }
+					}
+					multiply = 0.5
+				}
+				if = {
+					limit = {
+						scope:recipient = { has_trait = generous }
+					}
+					multiply = 0.5
+				}
+			}
+			scope:cover_travel_expenses = yes
+			desc = AI_HIRE_VISIT_GUIDE
+		}
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 0.5
+			desc = AI_OPINION_REASON
+		}
+		ai_value_modifier = {
+			who = scope:recipient
+			ai_sociability = 0.5
+			ai_energy = 0.5
+			min = -25
+			max = 25
+		}
+		modifier = {
+			add = 50
+			scope:recipient = {
+				has_relation_lover = scope:actor
+				NOT = { has_relation_soulmate = scope:actor }
+			}
+			desc = AI_YOUR_LOVER
+		}
+		modifier = {
+			add = 100
+			scope:recipient = { has_relation_soulmate = scope:actor }
+			desc = AI_YOUR_SOULMATE
+		}
+		modifier = {
+			add = -50
+			scope:recipient = { has_relation_rival = scope:actor }
+			desc = AI_YOUR_RIVAL
+		}
+		modifier = {
+			add = -25
+			scope:recipient = { hurt_by_marriage_betrayal_trigger = { CHARACTER = scope:actor } }
+			desc = YOU_BETRAYED_ME
+		}
+		modifier = {
+			add = 25
+			scope:recipient = { likely_to_take_lover_trigger = yes }
+			desc = TAKE_THE_VOWS_LUSTFUL
+		}
+		modifier = {
+			add = -10
+			scope:recipient = { has_trait = chaste }
+			desc = TAKE_THE_VOWS_CHASTE
+		}
+		modifier = {
+			add = -20
+			scope:actor = { is_married = yes }
+			scope:recipient = {
+				NOT = { is_spouse_of = scope:actor }
+				has_trait = paranoid
+			}
+			desc = INTERACTION_PARANOID
+		}
+		modifier = {
+			add = 50
+			scope:recipient = {
+				is_spouse_of = scope:actor
+				is_playable_character = yes
+				trigger_if = {
+					limit = { is_male = yes }
+					patrilinear_marriage = yes
+				}
+				trigger_else = {
+					matrilinear_marriage = yes
+				}
+				NOT = { has_inheritable_children = { TOTAL = 1 PREFER = yes } }
+			}
+			desc = THEY_CHILD_HEIR_NEEDED
+		}
+		modifier = {
+			add = 50
+			scope:recipient.fertility > 0.1
+			scope:actor.fertility > 0.1
+			scope:actor = {
+				is_spouse_of = scope:recipient
+				is_playable_character = yes
+				trigger_if = {
+					limit = { is_male = yes }
+					patrilinear_marriage = yes
+				}
+				trigger_else = {
+					matrilinear_marriage = yes
+				}
+				NOT = { has_inheritable_children = { TOTAL = 1 PREFER = yes } }
+			}
+			desc = YOU_CHILD_HEIR_NEEDED
+		}
+		modifier = {
+			add = 20
+			scope:recipient.fertility > 0.1
+			scope:actor.fertility > 0.1
+			scope:recipient = {
+				is_spouse_of = scope:actor
+				any_child = {
+					NOT = { has_trait = bastard }
+					count > 1
+				}
+				any_child = {
+					NOT = { has_trait = bastard }
+					count < 3
+				}
+			}
+			desc = NEED_MORE_CHILDREN
+		}
+		modifier = {
+			add = 50
+			scope:recipient.fertility > 0.1
+			scope:actor.fertility > 0.1
+			scope:recipient = {
+				is_spouse_of = scope:actor
+				any_child = {
+					NOT = { has_trait = bastard }
+					count < 1
+				}
+			}
+			desc = NEED_MORE_CHILDREN
+		}
+		modifier = {
+			add = 50
+			scope:recipient.fertility > 0.1
+			scope:actor.fertility > 0.1
+			scope:recipient = {
+				is_spouse_of = scope:actor
+				opinion = { target = scope:actor value >= 20 }
+				NOT = {
+					any_child = { is_child_of = scope:actor }
+				}
+			}
+			desc = WANTS_CHILD_WITH_YOU
+		}
+		modifier = {
+			add = -20
+			scope:recipient = {
+				is_spouse_of = scope:actor
+				NOT = { has_relation_lover = scope:actor }
+			}
+			OR = {
+				scope:recipient.fertility <= 0.1
+				scope:actor.fertility <= 0.1
+			}
+			desc = CANT_HAVE_MORE_CHILDREN
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+		opinion_modifier = {
+			who = scope:actor
+			opinion_target = scope:recipient
+			multiplier = 0.5
+		}
+		ai_value_modifier = {
+			who = scope:actor
+			ai_sociability = 0.5
+			ai_energy = 0.5
+			min = -25
+			max = 25
+		}
+		modifier = {
+			add = 20
+			scope:actor = {
+				has_relation_lover = scope:recipient
+				stress > normal_baseline_stress
+			}
+		}
+		modifier = {
+			add = -25
+			scope:actor = { hurt_by_marriage_betrayal_trigger = { CHARACTER = scope:recipient } }
+		}
+		modifier = {
+			add = 25
+			scope:actor = { likely_to_take_lover_trigger = yes }
+		}
+		modifier = {
+			add = -10
+			scope:actor = { has_trait = chaste }
+		}
+		modifier = {
+			add = -20
+			scope:recipient = { is_married = yes }
+			scope:actor = {
+				NOT = { is_spouse_of = scope:recipient }
+				has_trait = paranoid
+			}
+		}
+		modifier = {
+			add = 50
+			scope:actor = {
+				is_spouse_of = scope:recipient
+				is_playable_character = yes
+				trigger_if = {
+					limit = { is_male = yes }
+					patrilinear_marriage = yes
+				}
+				trigger_else = {
+					matrilinear_marriage = yes
+				}
+				NOT = { has_inheritable_children = { TOTAL = 1 PREFER = no } }
+			}
+		}
+		modifier = {
+			add = 20
+			scope:recipient = {
+				is_spouse_of = scope:actor
+				any_child = {
+					NOT = { has_trait = bastard }
+					count < 3
+				}
+			}
+		}
+		modifier = {
+			add = -50
+			scope:actor = {
+				NOT = { has_relation_lover = scope:recipient }
+				has_inheritable_children = { TOTAL = 3 PREFER = no }
+			}
+		}
+		modifier = {
+			add = -50
+			scope:recipient = {
+				is_spouse_of = scope:actor
+				NOT = { has_relation_lover = scope:actor }
+			}
+			OR = {
+				scope:recipient.fertility <= 0.1
+				scope:actor.fertility <= 0.1
+			}
+		}
+	}
+}
+
+# Bringing spouses to court when possible
+invite_spouse_to_court_interaction = {
+	category = interaction_category_vassal
+	icon = guest
+
+	desc = invite_to_court_interaction_desc
+
+	is_shown = {
+		has_game_rule = agot_realistic_pregnancy_chance
+		scope:recipient = {
+			is_spouse_of = scope:actor
+			NOR = {
+				is_courtier_of = scope:actor
+				is_foreign_court_guest = yes
+				AND = {
+					exists = host
+					host = scope:actor
+				}
+				is_ruler = yes
+				has_relation_rival = scope:actor
+			}
+		}
+
+		# restrictions
+		scope:actor = {
+			is_physically_able_ai = yes
+			NOR = {
+				has_trait = nightswatch
+				has_trait = maester
+				has_imprisonment_reason = scope:recipient
+			}
+		}
+		scope:recipient = {
+			is_available_ai = yes
+			NOR = {
+				has_trait = silent_sister
+				has_trait = maester
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		custom_tooltip = {
+			scope:recipient = {
+				OR = {
+					NOT = { exists = liege }
+					NOT = { has_variable = invite_to_court_cooldown }
+				}
+			}
+			text = INVITE_TO_COURT_COOLDOWN
+		}
+		can_recruit_character_to_court_trigger = {
+			RECRUITER = scope:actor
+			RECRUITEE = scope:recipient
+		}
+		custom_tooltip = {
+			scope:recipient = {
+				NAND = {
+					has_variable = nomad_defector_var
+					var:nomad_defector_var = {
+						this = scope:actor
+					}
+				}
+			}
+			text = nomad_defected_invite_desc
+		}
+	}
+
+	on_accept = {
+		hidden_effect = {
+			scope:recipient = {
+				set_variable = {
+					name = invite_to_court_cooldown
+					years = 5
+				}
+			}
+
+			if = {
+				limit = {
+					exists = scope:recipient.liege
+				}
+				scope:recipient.liege = {
+					send_interface_message = {
+						type = event_generic_neutral
+						title = msg_courtier_left_court_interaction_title
+
+						right_icon = scope:recipient
+
+						show_as_tooltip = {
+							remove_courtier_or_guest = scope:recipient
+						}
+					}
+				}
+			}
+		}
+
+		scope:actor = {
+			send_interface_message = {
+				type = event_generic_neutral
+				title = invite_to_court_interaction_notification
+				right_icon = scope:recipient
+
+				scope:recipient = {
+					every_traveling_family_member = {
+						scope:actor = { add_courtier = prev }
+						hidden_effect = {
+							return_to_court = yes
+						}
+					}
+				}
+
+				if = {
+					limit = { always = scope:hook }
+					scope:actor = {
+						use_hook = scope:recipient
+					}
+				}
+			}
+		}
+
+
+		if = {
+			limit = { always = scope:cover_travel_expenses }
+			scope:actor = {
+				pay_short_term_gold = {
+					gold = {
+						value = bribe_value
+						multiply = 0.5
+					}
+					target = scope:recipient
+				}
+				stress_impact = {
+					greedy = minor_stress_impact_gain
+				}
+			}
+		}
+	}
+
+	ai_potential = {
+		is_playable_character = yes
+		is_married = yes
+	}
+
+	ai_targets = {
+		ai_recipients = spouses
+	}
+
+	ai_frequency = 36
+
+	ai_will_do = {
+		base = 100
+		modifier = {
+			factor = 0
+			OR = {
+				scope:actor.fertility < 0.10
+				scope:recipient.fertility < 0.10
+				scope:actor = {
+					has_inheritable_children = { TOTAL = 3 PREFER = yes }
+				}
+			}
+		}
+	}
+
+	ai_accept = {
+		base = 100
+
+		#Opinions
+		opinion_modifier = {
+			trigger = {
+				exists = liege
+				is_courtier_of = liege
+			}
+			opinion_target = liege
+			multiplier = -0.5
+			step = 5
+			max = 25
+		}
+		opinion_modifier = {
+			opinion_target = scope:actor
+			multiplier = 1.0
+			step = 5
+			max = 50
+		}
+
+		# Stooge modifier
+		modifier = {
+			scope:recipient = { has_variable = non_recruitable_var }
+			scope:recipient.var:non_recruitable_var = scope:actor
+			add = -200
+			desc = AI_STOOGE
+		}
+
+		#Current roles
+		modifier = {
+			is_knight = yes
+			add = -20
+			desc = AI_MY_LIEGES_KNIGHT
+		}
+		modifier = {
+			is_commanding_army = yes
+			add = -30
+			desc = AI_MY_LIEGES_COMMANDER
+		}
+		modifier = {
+			is_councillor = yes
+			add = -40
+			desc = AI_ON_THE_COUNCIL
+		}
+
+		modifier = {
+			trigger = { scope:recipient = { has_court_position = court_physician_court_position } }
+			add = -20
+			desc = AI_COURT_PHYSICIAN
+		}
+
+		#Relations & relatives (with actor)
+		modifier = {
+			has_relation_lover = scope:actor
+			add = 100
+			desc = AI_YOUR_LOVER
+		}
+
+		modifier = {
+			has_relation_friend = scope:actor
+			add = 75
+			desc = AI_YOUR_FRIEND
+		}
+
+		#Relations & relatives (with host)
+		modifier = {
+			exists = liege
+			has_relation_lover = liege
+			add = -100
+			desc = AI_THEIR_LOVER
+		}
+
+		modifier = {
+			exists = liege
+			has_relation_friend = liege
+			add = -25
+			desc = AI_THEIR_FRIEND
+		}
+
+		modifier = {
+			exists = liege
+			is_child_of = liege
+			add = -160
+			desc = AI_THEIR_CHILD
+		}
+
+		modifier = {
+			exists = liege
+			NOT = { is_child_of = liege }
+			is_close_family_of = liege
+			add = -75
+			desc = AI_THEIR_RELATIVE
+		}
+
+		modifier = {
+			add = -50
+			desc = AI_INSPIRED
+			exists = inspiration
+			inspiration = {
+				NOT = {
+					exists = inspiration_sponsor
+				}
+			}
+		}
+
+		modifier = {
+			add = -500
+			desc = AI_SPONSORED_INSPIRATION
+			exists = inspiration
+			inspiration = {
+				exists = inspiration_sponsor
+			}
+		}
+
+		modifier = {
+			add = -500
+			desc = AI_WANDERLUST
+			is_child_of = scope:actor
+			has_character_modifier = lust_for_adventure
+		}
+	}
+}
+
+# Allow a family member a love match
+allow_love_match_interaction = {
+	icon = icon_introduction
+	category = interaction_category_diplomacy
+	desc = allow_love_match_interaction_desc
+	common_interaction = yes
+
+	interface_priority = 59
+
+	is_shown = {
+		NOT = { has_game_rule = lmf_no_introductions }
+		scope:actor = {
+			is_ai = no
+			is_landed_or_landless_administrative = yes
+			exists = capital_province
+			NOR = {
+				has_government = mercenary_government
+				has_government = republic_government
+				has_government = theocracy_government
+				has_government = holy_order_government
+			}
+		}
+		scope:recipient = {
+			age >= 12
+			is_ruler = no
+			is_betrothed = no
+			is_married = no
+			is_hostage = no
+			can_marry_common_trigger = yes
+			matchmaker ?= scope:actor
+			host ?= scope:actor
+			OR = {
+				is_non_courtier_marriage_candidate = { RULER = scope:actor }
+				AND = {
+					is_courtier_of = scope:actor
+					OR = {
+						is_close_or_extended_family_of = scope:actor
+						is_great_grandchild_of = scope:actor
+					}
+				}
+			}
+			NOR = {
+				has_trait = refusing_marriage
+				agot_has_religious_order_trait = yes
+				has_trait = septon
+				has_trait = maester
+				has_trait = kingsguard
+				has_trait = nightswatch
+				has_trait = is_missing
+				has_character_flag = cannot_get_refusing_marriage_trait
+				this = scope:actor
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			is_available_adult = yes
+			is_at_war = no
+			custom_description = {
+				text = is_available_for_introduction
+				NOT = { has_variable = is_in_marriage_introduction }
+			}
+		}
+		scope:recipient = {
+			is_available_ai_adult = yes
+			trigger_if = {
+				limit = { is_female = yes }
+				age < marriage_female_fertility_cutoff_age_value
+			}
+			trigger_if = {
+				limit = {
+					is_male = yes
+					age >= 50
+				}
+				health >= fine_health
+				NOT = { has_trait = infirm }
+			}
+			has_short_disease_trigger = no
+			bp2_valid_for_standard_interactions_trigger = yes
+			custom_description = {
+				text = is_available_for_introduction
+				NOT = { has_variable = is_in_marriage_introduction }
+			}
+			custom_description = {
+				text = had_recent_introduction
+				NOT = { has_character_flag = had_recent_introduction }
+			}
+		}
+	}
+
+	on_accept = {
+		custom_tooltip = allow_love_match_interaction_tt
+		scope:recipient = {
+			show_as_tooltip = {
+				add_trait_force_tooltip = refusing_marriage
+			}
+		}
+		scope:actor = {
+			improve_relationship_effect = {
+				TARGET = scope:recipient
+				REASON = allowed_to_marry_at_will
+			}
+		}
+		hidden_effect = {
+			scope:recipient = {
+				save_scope_as = heir
+				# already has lover they wish to marry
+				if = {
+					limit = {
+						num_of_relation_lover = 1
+						any_relation = {
+							type = lover
+							is_physically_able_ai_adult = yes
+							NOR = {
+								is_close_or_extended_family_of = scope:recipient
+								has_relation_rival = scope:actor
+								has_relation_lover = scope:actor
+								scope:actor = { has_imprisonment_reason = prev }
+								is_consort_of = scope:actor
+								betrothed ?= scope:actor
+								is_concubine = yes
+								is_diarch = yes
+								would_need_elopement_to_marry_target = { TARGET = scope:recipient }
+							}
+							might_agree_to_marriage = yes
+							can_be_introduced_character_trigger = { CHARACTER = scope:recipient }
+						}
+					}
+					random_relation = {
+						type = lover
+						save_scope_as = heir_lover
+					}
+					# check to see if they're both available
+					if = {
+						limit = {
+							scope:heir_lover = {
+								is_available = yes
+								bp2_valid_for_standard_interactions_trigger = yes
+								NOR = {
+									is_at_war_with = scope:actor
+									liege ?= { is_at_war_with = scope:actor }
+									AND = {
+										exists = inspiration
+										has_completed_inspiration = no
+									}
+								}
+							}
+						}
+						add_character_flag = { flag = cannot_get_refusing_marriage_trait days = 10 }
+						scope:actor = { trigger_event = lmf_heir.2050 }
+					}
+					# otherwise, add trait and fire bounce/stalling events
+					else = {
+						hidden_effect = {
+							add_trait = refusing_marriage
+							add_character_flag = directed_to_marry
+							create_story = { type = lmf_will_not_wed_story_cycle }
+						}
+						save_scope_as = owner
+						scope:heir_lover = { save_scope_as = target }
+						trigger_event = { id = lmf_heir.1520 days = 100 }
+						scope:actor = { trigger_event = lmf_heir.2054 }
+					}
+				}
+				# already has a lover who they CAN'T marry
+				else_if = {
+					limit = {
+						num_of_relation_lover = 1
+						any_relation = {
+							type = lover
+							is_physically_able_ai_adult = yes
+							NOR = {
+								is_close_or_extended_family_of = scope:recipient
+								has_relation_rival = scope:actor
+								has_relation_lover = scope:actor
+								scope:actor = { has_imprisonment_reason = prev }
+								is_consort_of = scope:actor
+								betrothed ?= scope:actor
+								is_concubine = yes
+								is_diarch = yes
+							}
+							OR = {
+								AND = {
+									can_be_introduced_character_trigger = { CHARACTER = scope:recipient }
+									would_need_elopement_to_marry_target = { TARGET = scope:recipient }
+								}
+								AND = {
+									NOT = {
+										can_be_introduced_character_trigger = { CHARACTER = scope:recipient }
+									}
+									OR = {
+										has_trait = devoted
+										has_trait = order_member
+										has_trait = septon
+										has_trait = silent_sister
+										is_married = yes
+										is_betrothed = yes
+										AND = {
+											allowed_to_marry_same_sex_trigger = no
+											sex_same_as = scope:recipient
+										}
+									}
+								}
+							}
+						}
+					}
+					random_relation = {
+						type = lover
+						save_scope_as = heir_lover
+					}
+					# check to see if they're both available
+					if = {
+						limit = {
+							scope:heir_lover = {
+								is_available = yes
+								bp2_valid_for_standard_interactions_trigger = yes
+								NOR = {
+									is_at_war_with = scope:actor
+									liege ?= { is_at_war_with = scope:actor }
+									AND = {
+										exists = inspiration
+										has_completed_inspiration = no
+									}
+								}
+							}
+						}
+						scope:actor = { trigger_event = lmf_heir.2051 }
+					}
+					# otherwise, add trait and fire bounce/stalling events
+					else = {
+						hidden_effect = {
+							add_trait = refusing_marriage
+							add_character_flag = directed_to_marry
+							create_story = { type = lmf_will_not_wed_story_cycle }
+						}
+						trigger_event = { id = lmf_heir.1521 days = 100 }
+						scope:actor = { trigger_event = lmf_heir.2054 }
+					}
+				}
+				# failing that, go to default event
+				else = {
+					hidden_effect = {
+						add_trait = refusing_marriage
+						add_character_flag = directed_to_marry
+						create_story = { type = lmf_will_not_wed_story_cycle }
+					}
+					find_suitable_introduction_candidates = yes
+					if = {
+						limit = { exists = scope:suitor_1 }
+						save_scope_as = secondary_actor
+						scope:actor = { trigger_event = lmf_heir.2052 }
+					}
+					else = {
+						scope:actor = { trigger_event = lmf_heir.2054 }
+					}
+				}
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+

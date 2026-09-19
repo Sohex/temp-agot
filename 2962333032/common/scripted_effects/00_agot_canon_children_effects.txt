@@ -1,0 +1,1306 @@
+﻿# STORY SETUP EFFECTS
+
+agot_canon_children_setup_father_effect = {
+	$FATHER$ = {
+		save_scope_as = canon_father
+	}
+}
+
+agot_canon_children_setup_mother_effect = {
+	$FATHER$ = { save_scope_as = canon_father }
+
+	if = { # Mother has historical ID
+		limit = {
+			character:$MOTHER_ID$ ?= {
+				exists = yes
+				is_alive = yes
+			}
+		}
+		character:$MOTHER_ID$ = { save_scope_as = canon_mother }
+	}
+	else = { # Mother is canon child
+		agot_canon_children_get_canon_child_scope_effect = {
+			ID = $MOTHER_ID$
+			SCOPE = canon_mother
+		}
+	}
+
+	scope:canon_mother ?= { # Setup mother
+		if = {
+			limit = { is_pregnant = yes }
+			end_pregnancy = yes
+		}
+
+		#Need for story cycle initialization if father is initialized first
+		if = {
+			limit = {
+				NOT = { has_character_flag = is_$MOTHER_ID$ }
+			}
+			add_character_flag = is_$MOTHER_ID$
+		}
+
+		add_character_flag = agot_immune_to_birth_complications
+
+		scope:canon_father = {
+			add_to_variable_list = {
+				name = canon_mothers
+				target = scope:canon_mother
+			}
+		}
+	}
+}
+
+agot_add_mother_to_canon_father_story = {
+	save_scope_as = canon_mother
+
+	if = { # Father has historical ID
+		limit = {
+			character:$FATHER_ID$ ?= {
+				exists = yes
+				is_alive = yes
+			}
+		}
+		character:$FATHER_ID$ = { save_scope_as = canon_father }
+	}
+	else = { # Mother is canon child
+		agot_canon_children_get_canon_child_scope_effect = {
+			ID = $FATHER_ID$
+			SCOPE = canon_father
+		}
+	}
+
+	scope:canon_father ?= { # Setup mother
+		if = {
+			limit = {
+				NOT = {
+					any_in_list = {
+						variable = canon_mothers
+						this = scope:canon_mother
+					}
+				}
+			}
+			add_to_variable_list = {
+				name = canon_mothers
+				target = scope:canon_mother
+			}
+		}
+	}
+}
+
+agot_canon_children_on_owner_death_effect = {
+	end_story = yes
+}
+
+agot_canon_children_get_canon_child_scope_effect = {
+	random_in_global_list = {
+		variable = agot_born_canon_children_scopes
+		limit = {
+			has_character_flag = is_$ID$
+		}
+		save_scope_as = $SCOPE$
+	}
+}
+
+agot_canon_children_get_canon_mother_scope_effect = {
+	random_in_list = {
+		variable = canon_mothers
+		limit = { has_character_flag = is_$ID$ }
+		save_scope_as = $SCOPE$
+	}
+}
+
+agot_canon_children_get_character_scope_effect = {
+	if = {
+		limit = {
+			$TARGET$ ?= {
+				exists = yes
+				is_alive = yes
+			}
+		}
+		$TARGET$ = { save_scope_as = $SCOPE$ }
+	}
+	else = {
+		agot_canon_children_get_canon_child_scope_effect = {
+			ID = $ID$
+			SCOPE = $SCOPE$
+		}
+	}
+}
+
+
+# PREGNANCY EFFECTS
+
+agot_canon_children_start_pregnancy_twins_effect = {
+	agot_canon_children_start_pregnancy_shared_effect = {
+		CHILD_ID = $TWIN_ONE_ID$
+		BIRTH_FLAG = $BIRTH_FLAG$
+	}
+
+	#Cannot have multiple out of wedlock
+	add_character_flag = agot_delayed_birth_event
+
+	add_to_global_variable_list = {
+		name = agot_triggered_canon_children
+		target = flag:$TWIN_TWO_ID$
+	}
+
+	if = {
+		limit = {
+			is_target_in_global_variable_list = {
+				name = agot_triggered_canon_children
+				target = flag:$TWIN_TWO_ID$
+			}
+		}
+		#Error prevention for twins that aren't the final child
+	}
+
+	set_local_variable = {
+		name = pregnancy_child_one_is_female
+		value = no
+	}
+	random = {
+		chance = 0
+		modifier = {
+			add = {
+				value = 0
+				if = {
+					limit = {
+						sex_same_as = character:Dummy_$TWIN_ONE_ID$
+						character:Dummy_$TWIN_ONE_ID$ = { is_female = yes }
+					}
+					add = agot_canon_children_female_female_chance
+				}
+				else = {
+					add = agot_canon_children_male_female_chance
+				}
+			}
+		}
+		set_local_variable = {
+			name = pregnancy_child_one_is_female
+			value = yes
+		}
+	}
+
+	set_local_variable = {
+		name = pregnancy_child_two_is_female
+		value = no
+	}
+	random = {
+		chance = 0
+		modifier = {
+			add = {
+				value = 0
+				if = {
+					limit = {
+						sex_same_as = character:Dummy_$TWIN_TWO_ID$
+						character:Dummy_$TWIN_TWO_ID$ = { is_female = yes }
+					}
+					add = agot_canon_children_female_female_chance
+				}
+				else = {
+					add = agot_canon_children_male_female_chance
+				}
+			}
+		}
+		set_local_variable = {
+			name = pregnancy_child_two_is_female
+			value = yes
+		}
+	}
+
+	if = {
+		limit = {
+			OR = {
+				AND = {
+					always = local_var:pregnancy_child_one_is_female
+					always = local_var:pregnancy_child_two_is_female
+				}
+				AND = {
+					NOT = { always = local_var:pregnancy_child_one_is_female }
+					NOT = { always = local_var:pregnancy_child_two_is_female }
+				}
+			}
+		}
+
+		make_pregnant_no_checks = {
+			father = scope:canon_father
+			number_of_children = 2
+		}
+		event_pregnancy_effect = yes
+
+		if = {
+			limit = { always = local_var:pregnancy_child_one_is_female }
+			trigger_event = {
+				id = agot_canon_children_events.0001
+				days = 278
+			}
+		}
+		else = {
+			trigger_event = {
+				id = agot_canon_children_events.0002
+				days = 278
+			}
+		}
+	}
+	else = {
+		make_pregnant_no_checks = {
+			father = scope:canon_father
+			number_of_children = 20
+		}
+		event_pregnancy_effect = yes
+
+		if = {
+			limit = { always = local_var:pregnancy_child_one_is_female }
+			add_character_flag = needs_twin_one_female
+		}
+		else = {
+			add_character_flag = needs_twin_one_male
+		}
+		if = {
+			limit = { always = local_var:pregnancy_child_two_is_female }
+			add_character_flag = needs_twin_two_female
+		}
+		else = {
+			add_character_flag = needs_twin_two_male
+		}
+	}
+}
+
+agot_canon_children_start_pregnancy_effect = {
+	agot_canon_children_start_pregnancy_shared_effect = {
+		CHILD_ID = $CHILD_ID$
+		BIRTH_FLAG = $BIRTH_FLAG$
+	}
+
+	# Trigger pregnancy
+	make_pregnant_no_checks = {
+		father = scope:canon_father
+		number_of_children = 1
+	}
+	event_pregnancy_effect = yes
+
+	# Set pregnancy gender
+	set_local_variable = {
+		name = pregnancy_is_female
+		value = no
+	}
+	random = {
+		chance = 0
+		modifier = {
+			add = {
+				value = 0
+				if = {
+					limit = {
+						sex_same_as = character:Dummy_$CHILD_ID$
+						character:Dummy_$CHILD_ID$ = { is_female = yes }
+					}
+					add = agot_canon_children_female_female_chance
+				}
+				else = {
+					add = agot_canon_children_male_female_chance
+				}
+			}
+		}
+		set_local_variable = {
+			name = pregnancy_is_female
+			value = yes
+		}
+	}
+	if = {
+		limit = { always = local_var:pregnancy_is_female }
+		trigger_event = {
+			id = agot_canon_children_events.0001
+			days = 278
+		}
+		if = {
+			limit = {
+				OR = {
+					has_character_flag = agot_birth_child_will_be_stillborn
+					has_character_flag = agot_birth_mother_and_child_die
+				}
+			}
+			add_character_flag = {
+				flag = stillborn_girl
+				months = 9
+			}
+		}
+	}
+	else = {
+		trigger_event = {
+			id = agot_canon_children_events.0002
+			days = 278
+		}
+		if = {
+			limit = {
+				OR = {
+					has_character_flag = agot_birth_child_will_be_stillborn
+					has_character_flag = agot_birth_mother_and_child_die
+				}
+			}
+			add_character_flag = {
+				flag = stillborn_boy
+				months = 9
+			}
+		}
+	}
+}
+
+agot_canon_children_start_pregnancy_shared_effect = {
+	add_character_flag = {
+		flag = agot_is_pregnant
+		months = agot_canon_children_pregnancy_duration_months
+	}
+
+	if = {
+		limit = { has_game_rule = agot_canon_children_birth_outcomes_accurate }
+		add_character_flag = {
+			flag = $BIRTH_FLAG$
+			months = agot_canon_children_pregnancy_duration_months
+		}
+	}
+	else_if = {
+		limit = { has_game_rule = agot_canon_children_birth_outcomes_everyone_lives }
+		add_character_flag = {
+			flag = birth_will_go_smoothly
+			months = agot_canon_children_pregnancy_duration_months
+		}
+	}
+
+	set_variable = {
+		name = agot_pregnancy_child
+		value = flag:is_$CHILD_ID$
+		months = agot_canon_children_pregnancy_duration_months
+	}
+
+	add_to_global_variable_list = {
+		name = agot_triggered_canon_children
+		target = flag:$CHILD_ID$
+	}
+
+	# Handle Bastardy
+	if = {
+		limit = {
+			OR = {
+				NOT = { exists = primary_spouse }
+				NOT = { primary_spouse = root.story_owner }
+			}
+			character:Dummy_$CHILD_ID$ = {
+				OR = {
+					has_trait = canon_bastard_known_father_public
+					has_trait = canon_bastard_known_father_private
+					has_trait = canon_bastard_unknown_father
+				}
+			}
+		}
+		if = {
+			limit = {
+				character:Dummy_$CHILD_ID$ = { has_trait = canon_bastard_known_father_public }
+			}
+			add_character_flag = {
+				flag = agot_will_make_bastard_public
+				months = agot_canon_children_pregnancy_duration_months
+			}
+		}
+		else_if = {
+			limit = {
+				character:Dummy_$CHILD_ID$ = { has_trait = canon_bastard_known_father_private }
+			}
+			add_character_flag = {
+				flag = planning_to_confess_to_real_father
+				months = agot_canon_children_pregnancy_duration_months
+			}
+		}
+		else_if = {
+			limit = {
+				character:Dummy_$CHILD_ID$ = { has_trait = canon_bastard_unknown_father }
+			}
+			add_character_flag = {
+				flag = agot_will_keep_bastard_secret
+				months = agot_canon_children_pregnancy_duration_months
+			}
+		}
+
+		primary_spouse ?= {
+			add_character_flag = {
+				flag = agot_father_will_not_suspect_pregnancy
+				months = agot_canon_children_pregnancy_duration_months
+			}
+		}
+		root.story_owner = {
+			add_character_flag = {
+				flag = agot_father_will_not_suspect_pregnancy
+				months = agot_canon_children_pregnancy_duration_months
+			}
+		}
+	}
+}
+
+agot_canon_children_life_cycle_effect = {
+	root.story_owner = { save_scope_as = canon_father }
+	$MOTHER$ = { save_scope_as = canon_mother }
+	# Start/extend natural pregnancy blocker as long as conditions are met
+	if = {
+		limit = {
+			any_spouse = {
+				this = scope:canon_father
+			}
+			OR = {
+				has_game_rule = agot_canon_children_enabled_strict
+				NOT = {
+					agot_canon_children_had_child_trigger = {
+						ID = $FINAL_CHILD_ID$
+						MOTHER = scope:canon_mother
+					}
+				}
+			}
+		}
+
+		scope:canon_mother = {
+			add_character_flag = {
+				flag = canon_children_prevent_pregnancy
+				months = agot_canon_children_pregnancy_modifier_duration
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			OR = {
+				has_game_rule = agot_canon_children_enabled_strict
+				NOT = {
+					agot_canon_children_had_child_trigger = {
+						ID = $FINAL_CHILD_ID$
+						MOTHER = scope:canon_mother
+					}
+				}
+			}
+		}
+		scope:canon_mother = {
+			add_to_variable_list = {
+				name = blocked_canon_fathers
+				target = scope:canon_father
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			any_in_list = {
+				variable = blocked_canon_fathers
+				this = scope:canon_father
+			}
+		}
+		scope:canon_mother = {
+			remove_list_variable = {
+				name = blocked_canon_fathers
+				target = scope:canon_father
+			}
+		}
+	}
+}
+
+# GUARDIAN EFFECTS
+
+agot_canon_children_get_guardian_scope_effect = {
+	if = {
+		limit = {
+			any_relation = {
+				type = guardian
+				always = yes
+			}
+		}
+		random_relation = {
+			type = guardian
+			save_scope_as = guardian
+		}
+	}
+}
+
+agot_canon_children_get_any_guardian_scope_effect = {
+	if = {
+		limit = {
+			any_relation = {
+				type = guardian
+				always = yes
+			}
+		}
+		random_relation = {
+			type = guardian
+			save_scope_as = guardian
+		}
+	}
+	else_if = {
+		limit = { any_parent = { is_alive = yes } }
+		random_parent = { save_scope_as = guardian }
+	}
+	else_if = {
+		limit = {
+			exists = host
+		}
+		host = { random_courtier = { save_scope_as = guardian } }
+	}
+}
+
+agot_canon_children_schedule_guardian_effect = {
+	if = {
+		limit = {
+			# Only set canon guardian if the child's liege is close family
+			scope:child.liege ?= { is_close_family_of = scope:child }
+		}
+
+		scope:child = {
+			save_scope_as = ward
+
+			if = {
+				limit = {
+					trigger_if = {
+						limit = { exists = employer }
+						employer = this
+					}
+				}
+				save_scope_as = ward_liege
+			}
+			else = {
+				this.liege = { save_scope_as = ward_liege }
+			}
+
+
+			if = {
+				limit = { is_male = yes }
+				$GUARDIAN_MALE$ = { save_scope_as = guardian }
+			}
+			else = {
+				$GUARDIAN_FEMALE$ = { save_scope_as = guardian }
+			}
+
+			scope:guardian = {
+				if = {
+					limit = {
+						trigger_if = {
+							limit = { exists = employer }
+							employer = this
+						}
+					}
+					save_scope_as = guardian_liege
+				}
+				else = {
+					this.liege = { save_scope_as = guardian_liege  }
+				}
+
+				if = {
+					limit = {
+						NOT = {
+							agot_canon_children_can_become_guardian = {
+								WARD = scope:ward
+								WARD_LIEGE = scope:ward_liege
+								GUARDIAN_LIEGE = scope:guardian_liege
+							}
+						}
+						agot_canon_children_should_use_liege_as_guardian_for_heir_trigger = no
+					}
+
+					clear_saved_scope = guardian
+				}
+			}
+		}
+
+		if = {
+			limit = { exists = scope:guardian }
+
+			scope:ward = {
+				set_variable = {
+					name = canon_guardian
+					value = scope:guardian
+				}
+			}
+			scope:ward_liege = {
+				# Assign the actor as guardian if child is primary heir
+				if = {
+					limit = { always = $USE_LIEGE_FOR_HEIR$ }
+					save_scope_value_as = { name = use_liege_for_heir value = yes }
+				}
+
+				# Convert faith/culture
+				save_scope_value_as = { name = convert_culture value = $CONVERT_CULTURE$ }
+				save_scope_value_as = { name = convert_faith value = $CONVERT_FAITH$ }
+
+				trigger_event = {
+					on_action = agot_canon_children_assign_canon_guardian
+					years = agot_canon_children_guardian_year
+				}
+			}
+		}
+	}
+}
+
+agot_canon_children_set_guardian_effect = {
+	scope:guardian_liege = {
+		save_scope_as = actor
+		$GUARDIAN$ = { save_scope_as = guardian }
+
+		send_interface_message = {
+			type = event_generic_neutral
+			title = educate_child_interaction_notification
+			left_icon = scope:guardian
+			right_icon = scope:ward
+			educate_child_interaction_effect = yes
+			show_as_tooltip = {
+				scope:ward = {
+					if = {
+						limit = { exists = var:ward_travelling_to_guardian }
+						custom_tooltip = ward_departs_tt
+					}
+					else_if = {
+						limit = { exists = scope:guardian.var:guardian_travelling_to_ward }
+						scope:guardian = { custom_tooltip = guardian_departs_tt }
+					}
+					else = {
+						set_relation_guardian = scope:guardian
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_canon_children_stark_guardian_effect = {
+	# TODO: Pick new septa/maester if the holders of these titles changed
+	agot_canon_children_schedule_guardian_effect = {
+		GUARDIAN_FEMALE = character:Tully_hh_4 # Septa Mordane
+		GUARDIAN_MALE = character:Stark_hh_1 # Maester Luwin
+		USE_LIEGE_FOR_HEIR = yes
+		CONVERT_CULTURE = no
+		CONVERT_FAITH = no
+	}
+}
+
+agot_canon_children_baratheon_1_guardian_effect = {
+	agot_canon_children_schedule_guardian_effect = {
+		GUARDIAN_FEMALE = scope:mother # Cersei
+		GUARDIAN_MALE = scope:mother # Cersei
+		USE_LIEGE_FOR_HEIR = no
+		CONVERT_CULTURE = no
+		CONVERT_FAITH = no
+	}
+}
+
+
+# TRAIT EFFECTS
+
+agot_canon_children_schedule_trait_effect = {
+	if = {
+		limit = {
+			agot_canon_children_enabled_trigger = yes
+			agot_canon_children_traits_enabled_trigger = yes
+		}
+
+		set_local_variable = {
+			name = target_trait
+			value = $TRAIT$
+		}
+
+		save_scope_value_as = {
+			name = trait_age
+			value = $AGE$
+		}
+
+		if = {
+			limit = {
+				agot_canon_children_years_until_trait_assignment < 1
+				NOT = { local_var:target_trait = flag:null }
+			}
+			switch = {
+				trigger = local_var:target_trait
+
+				# Childhood personality
+				flag:curious = { add_trait = curious }
+				flag:rowdy = { add_trait = rowdy }
+				flag:bossy = { add_trait = bossy }
+				flag:charming = { add_trait = charming }
+				flag:pensive = { add_trait = pensive }
+
+				# Personality traits
+				flag:brave = { add_trait = brave }
+				flag:craven = { add_trait = craven }
+				flag:calm = { add_trait = calm }
+				flag:wrathful = { add_trait = wrathful }
+				flag:chaste = { add_trait = chaste }
+				flag:lustful = { add_trait = lustful }
+				flag:content = { add_trait = content }
+				flag:ambitious = { add_trait = ambitious }
+				flag:diligent = { add_trait = diligent }
+				flag:lazy = { add_trait = lazy }
+				flag:forgiving = { add_trait = forgiving }
+				flag:vengeful = { add_trait = vengeful }
+				flag:generous = { add_trait = generous }
+				flag:greedy = { add_trait = greedy }
+				flag:gregarious = { add_trait = gregarious }
+				flag:shy = { add_trait = shy }
+				flag:honest = { add_trait = honest }
+				flag:deceitful = { add_trait = deceitful }
+				flag:humble = { add_trait = humble }
+				flag:arrogant = { add_trait = arrogant }
+				flag:just = { add_trait = just }
+				flag:arbitrary = { add_trait = arbitrary }
+				flag:patient = { add_trait = patient }
+				flag:impatient = { add_trait = impatient }
+				flag:temperate = { add_trait = temperate }
+				flag:gluttonous = { add_trait = gluttonous }
+				flag:trusting = { add_trait = trusting }
+				flag:paranoid = { add_trait = paranoid }
+				flag:zealous = { add_trait = zealous }
+				flag:cynical = { add_trait = cynical }
+				flag:compassionate = { add_trait = compassionate }
+				flag:callous = { add_trait = callous }
+				flag:sadistic = { add_trait = sadistic }
+				flag:fickle = { add_trait = fickle }
+				flag:stubborn = { add_trait = stubborn }
+				flag:eccentric = { add_trait = eccentric }
+
+				# AGOT Added
+				flag:authoritative = { add_trait = authoritative }
+				flag:rude = { add_trait = rude }
+				flag:inquisitive = { add_trait = inquisitive }
+			}
+		}
+		else = {
+			if = {
+				limit = { $AGE$ = childhood_personality_age }
+				add_character_flag = agot_has_childhood_personality_trait
+			}
+			else = {
+				if = {
+					limit = { NOT = { has_variable = agot_planned_traits } }
+
+					set_variable = {
+						name = agot_planned_traits
+						value = 0
+					}
+				}
+
+				change_variable = {
+					name = agot_planned_traits
+					add = 1
+				}
+			}
+
+			switch = {
+				trigger = local_var:target_trait
+
+				# Childhood personality
+				flag:curious = { trigger_event = { id = agot_child_personality_events.1000 years = agot_canon_children_years_until_trait_assignment } }
+				flag:rowdy = { trigger_event = { id = agot_child_personality_events.1001 years = agot_canon_children_years_until_trait_assignment } }
+				flag:bossy = { trigger_event = { id = agot_child_personality_events.1002 years = agot_canon_children_years_until_trait_assignment } }
+				flag:charming = { trigger_event = { id = agot_child_personality_events.1003 years = agot_canon_children_years_until_trait_assignment } }
+				flag:pensive = { trigger_event = { id = agot_child_personality_events.1004 years = agot_canon_children_years_until_trait_assignment } }
+
+				# Personality traits
+				flag:brave = { trigger_event = { id = agot_child_personality_events.0001 years = agot_canon_children_years_until_trait_assignment } }
+				flag:craven = { trigger_event = { id = agot_child_personality_events.0002 years = agot_canon_children_years_until_trait_assignment } }
+				flag:calm = { trigger_event = { id = agot_child_personality_events.0003 years = agot_canon_children_years_until_trait_assignment } }
+				flag:wrathful = { trigger_event = { id = agot_child_personality_events.0004 years = agot_canon_children_years_until_trait_assignment } }
+				flag:chaste = { trigger_event = { id = agot_child_personality_events.0005 years = agot_canon_children_years_until_trait_assignment } }
+				flag:lustful = { trigger_event = { id = agot_child_personality_events.0006 years = agot_canon_children_years_until_trait_assignment } }
+				flag:content = { trigger_event = { id = agot_child_personality_events.0007 years = agot_canon_children_years_until_trait_assignment } }
+				flag:ambitious = { trigger_event = { id = agot_child_personality_events.0008 years = agot_canon_children_years_until_trait_assignment } }
+				flag:diligent = { trigger_event = { id = agot_child_personality_events.0009 years = agot_canon_children_years_until_trait_assignment } }
+				flag:lazy = { trigger_event = { id = agot_child_personality_events.0010 years = agot_canon_children_years_until_trait_assignment } }
+				flag:forgiving = { trigger_event = { id = agot_child_personality_events.0011 years = agot_canon_children_years_until_trait_assignment } }
+				flag:vengeful = { trigger_event = { id = agot_child_personality_events.0012 years = agot_canon_children_years_until_trait_assignment } }
+				flag:generous = { trigger_event = { id = agot_child_personality_events.0013 years = agot_canon_children_years_until_trait_assignment } }
+				flag:greedy = { trigger_event = { id = agot_child_personality_events.0014 years = agot_canon_children_years_until_trait_assignment } }
+				flag:gregarious = { trigger_event = { id = agot_child_personality_events.0015 years = agot_canon_children_years_until_trait_assignment } }
+				flag:shy = { trigger_event = { id = agot_child_personality_events.0016 years = agot_canon_children_years_until_trait_assignment } }
+				flag:honest = { trigger_event = { id = agot_child_personality_events.0017 years = agot_canon_children_years_until_trait_assignment } }
+				flag:deceitful = { trigger_event = { id = agot_child_personality_events.0018 years = agot_canon_children_years_until_trait_assignment } }
+				flag:humble = { trigger_event = { id = agot_child_personality_events.0019 years = agot_canon_children_years_until_trait_assignment } }
+				flag:arrogant = { trigger_event = { id = agot_child_personality_events.0020 years = agot_canon_children_years_until_trait_assignment } }
+				flag:just = { trigger_event = { id = agot_child_personality_events.0021 years = agot_canon_children_years_until_trait_assignment } }
+				flag:arbitrary = { trigger_event = { id = agot_child_personality_events.0022 years = agot_canon_children_years_until_trait_assignment } }
+				flag:patient = { trigger_event = { id = agot_child_personality_events.0023 years = agot_canon_children_years_until_trait_assignment } }
+				flag:impatient = { trigger_event = { id = agot_child_personality_events.0024 years = agot_canon_children_years_until_trait_assignment } }
+				flag:temperate = { trigger_event = { id = agot_child_personality_events.0025 years = agot_canon_children_years_until_trait_assignment } }
+				flag:gluttonous = { trigger_event = { id = agot_child_personality_events.0026 years = agot_canon_children_years_until_trait_assignment } }
+				flag:trusting = { trigger_event = { id = agot_child_personality_events.0027 years = agot_canon_children_years_until_trait_assignment } }
+				flag:paranoid = { trigger_event = { id = agot_child_personality_events.0028 years = agot_canon_children_years_until_trait_assignment } }
+				flag:zealous = { trigger_event = { id = agot_child_personality_events.0029 years = agot_canon_children_years_until_trait_assignment } }
+				flag:cynical = { trigger_event = { id = agot_child_personality_events.0030 years = agot_canon_children_years_until_trait_assignment } }
+				flag:compassionate = { trigger_event = { id = agot_child_personality_events.0031 years = agot_canon_children_years_until_trait_assignment } }
+				flag:callous = { trigger_event = { id = agot_child_personality_events.0032 years = agot_canon_children_years_until_trait_assignment } }
+				flag:sadistic = { trigger_event = { id = agot_child_personality_events.0033 years = agot_canon_children_years_until_trait_assignment } }
+				flag:fickle = { trigger_event = { id = agot_child_personality_events.0034 years = agot_canon_children_years_until_trait_assignment } }
+				flag:stubborn = { trigger_event = { id = agot_child_personality_events.0035 years = agot_canon_children_years_until_trait_assignment } }
+				flag:eccentric = { trigger_event = { id = agot_child_personality_events.0036 years = agot_canon_children_years_until_trait_assignment } }
+
+				#AGOT Added
+				flag:authoritative = { trigger_event = { id = agot_child_personality_events.0037 years = agot_canon_children_years_until_trait_assignment } }
+				flag:rude = { trigger_event = { id = agot_child_personality_events.0038 years = agot_canon_children_years_until_trait_assignment } }
+				flag:inquisitive = { trigger_event = { id = agot_child_personality_events.0039 years = agot_canon_children_years_until_trait_assignment } }
+
+				#Three trait chars
+				flag:null = { }
+			}
+		}
+	}
+}
+
+agot_canon_children_add_trait_effect = {
+	agot_canon_children_get_guardian_scope_effect = yes
+
+	if = {
+		limit = { always = $IS_CHILDHOOD_TRAIT$ }
+		change_variable = {
+			name = agot_planned_traits
+			subtract = 1
+		}
+	}
+	else = {
+		if = {
+			limit = { has_variable = agot_has_childhood_personality_trait }
+			remove_character_flag = agot_has_childhood_personality_trait
+		}
+	}
+
+	if = {
+		limit = {
+			is_ai = yes
+			trigger_if = {
+				limit = {
+					$TRAIT$ = { has_trait_category = personality }
+					exists = scope:guardian
+				}
+				scope:guardian = { is_ai = yes }
+			}
+			trigger_if = {
+				limit = {
+					$TRAIT$ = { has_trait_category = childhood }
+					exists = scope:father
+				}
+				scope:father = { is_ai = yes }
+			}
+		}
+		add_trait = $TRAIT$
+	}
+	else = {
+		trigger_event = {
+			on_action = $ON_ACTION$
+		}
+	}
+}
+
+agot_canon_children_schedule_education_effect = {
+	if = {
+		limit = {
+			agot_canon_children_enabled_trigger = yes
+			has_game_rule = agot_canon_children_traits_and_edu
+		}
+
+		set_local_variable = {
+			name = target_education
+			value = $EDUCATION$
+		}
+
+		switch = {
+			trigger = local_var:target_education
+
+			flag:education_diplomacy_1 = { add_character_flag = agot_canon_children_education_education_diplomacy_1 }
+			flag:education_diplomacy_2 = { add_character_flag = agot_canon_children_education_education_diplomacy_2 }
+			flag:education_diplomacy_3 = { add_character_flag = agot_canon_children_education_education_diplomacy_3 }
+			flag:education_diplomacy_4 = { add_character_flag = agot_canon_children_education_education_diplomacy_4 }
+			flag:education_diplomacy_5 = { add_character_flag = agot_canon_children_education_education_diplomacy_5 }
+
+			flag:education_intrigue_1 = { add_character_flag = agot_canon_children_education_education_intrigue_1 }
+			flag:education_intrigue_2 = { add_character_flag = agot_canon_children_education_education_intrigue_2 }
+			flag:education_intrigue_3 = { add_character_flag = agot_canon_children_education_education_intrigue_3 }
+			flag:education_intrigue_4 = { add_character_flag = agot_canon_children_education_education_intrigue_4 }
+			flag:education_intrigue_5 = { add_character_flag = agot_canon_children_education_education_intrigue_5 }
+
+			flag:education_stewardship_1 = { add_character_flag = agot_canon_children_education_education_stewardship_1 }
+			flag:education_stewardship_2 = { add_character_flag = agot_canon_children_education_education_stewardship_2 }
+			flag:education_stewardship_3 = { add_character_flag = agot_canon_children_education_education_stewardship_3 }
+			flag:education_stewardship_4 = { add_character_flag = agot_canon_children_education_education_stewardship_4 }
+			flag:education_stewardship_5 = { add_character_flag = agot_canon_children_education_education_stewardship_5 }
+
+			flag:education_learning_1 = { add_character_flag = agot_canon_children_education_education_learning_1 }
+			flag:education_learning_2 = { add_character_flag = agot_canon_children_education_education_learning_2 }
+			flag:education_learning_3 = { add_character_flag = agot_canon_children_education_education_learning_3 }
+			flag:education_learning_4 = { add_character_flag = agot_canon_children_education_education_learning_4 }
+			flag:education_learning_5 = { add_character_flag = agot_canon_children_education_education_learning_5 }
+
+			flag:education_martial_1 = { add_character_flag = agot_canon_children_education_education_martial_1 }
+			flag:education_martial_2 = { add_character_flag = agot_canon_children_education_education_martial_2 }
+			flag:education_martial_3 = { add_character_flag = agot_canon_children_education_education_martial_3 }
+			flag:education_martial_4 = { add_character_flag = agot_canon_children_education_education_martial_4 }
+			flag:education_martial_5 = { add_character_flag = agot_canon_children_education_education_martial_5 }
+		}
+
+		if = {
+			limit = {
+				age > 5
+			}
+			set_default_education = yes
+		}
+	}
+}
+
+agot_canon_children_schedule_prowess_education_effect = {
+	if = {
+		limit = {
+			agot_canon_children_enabled_trigger = yes
+			has_game_rule = agot_canon_children_traits_and_edu
+		}
+
+		set_local_variable = {
+			name = target_education
+			value = $EDUCATION$
+		}
+
+		switch = {
+			trigger = local_var:target_education
+
+			flag:education_martial_prowess_1 = { add_character_flag = agot_canon_children_education_education_martial_prowess_1 }
+			flag:education_martial_prowess_2 = { add_character_flag = agot_canon_children_education_education_martial_prowess_2 }
+			flag:education_martial_prowess_3 = { add_character_flag = agot_canon_children_education_education_martial_prowess_3 }
+			flag:education_martial_prowess_4 = { add_character_flag = agot_canon_children_education_education_martial_prowess_4 }
+			flag:education_martial_prowess_5 = { add_character_flag = agot_canon_children_education_education_martial_prowess_5 }
+		}
+	}
+}
+
+agot_canon_children_schedule_republic_education_effect = {
+	if = {
+		limit = {
+			agot_canon_children_enabled_trigger = yes
+			has_game_rule = agot_canon_children_traits_and_edu
+		}
+
+		set_local_variable = {
+			name = target_education
+			value = $EDUCATION$
+		}
+
+		switch = {
+			trigger = local_var:target_education
+
+			flag:education_republican_knowledge_1 = { add_character_flag = agot_canon_children_education_education_republican_knowledge_1 }
+			flag:education_republican_knowledge_2 = { add_character_flag = agot_canon_children_education_education_republican_knowledge_2 }
+			flag:education_republican_knowledge_3 = { add_character_flag = agot_canon_children_education_education_republican_knowledge_3 }
+			flag:education_republican_knowledge_4 = { add_character_flag = agot_canon_children_education_education_republican_knowledge_4 }
+			flag:education_republican_knowledge_5 = { add_character_flag = agot_canon_children_education_education_republican_knowledge_5 }
+		}
+	}
+}
+
+agot_canon_children_generic_birth_effect = {
+	#Identification
+	add_to_global_variable_list = { # For retrieving scopes (scopes become unavailable on death)
+		name = agot_born_canon_children_scopes
+		target = this
+	}
+
+	#Name
+	if = {
+		limit = {
+			sex_same_as = character:Dummy_$ID$
+		}
+		change_first_name = { template_character = character:Dummy_$ID$ }
+	}
+
+	#Genetics
+	agot_canon_children_clear_genetic_traits_effect = yes
+
+	#Appearance
+	copy_inheritable_appearance_from = character:Dummy_$ID$
+	make_trait_inactive = scripted_appearance
+	add_character_flag = has_scripted_appearance
+
+	#Culture
+	if = {
+		limit = {
+			scope:mother = {
+				is_married = yes
+				patrilinear_marriage = yes
+			}
+		}
+		set_culture_same_as = scope:father
+	}
+	else = {
+		set_culture_same_as = scope:mother
+	}
+
+	#Location
+	set_location = scope:mother.location
+}
+
+agot_canon_children_backup_girl_twin = {
+	create_character = {
+		age = 0
+		random_traits = no
+		mother = scope:child.mother
+		real_father = scope:child.real_father
+		location = scope:child.mother.location
+		gender = female
+		faith = scope:child.faith
+		culture = scope:child.culture
+		dynasty = none
+		save_scope_as = new_baby
+	}
+	if = {
+		limit = { exists = scope:child.father }
+		scope:new_baby = { set_father = scope:child.father }
+	}
+	if = {
+		limit = { exists = scope:child.dynasty }
+		scope:new_baby = { set_house = scope:child.house }
+	}
+	if = {
+		limit = {
+			exists = scope:mother.liege_or_court_owner
+		}
+		scope:mother.liege_or_court_owner = { add_courtier = scope:new_baby }
+	}
+	scope:new_baby = { copy_traits = scope:child }
+}
+
+agot_canon_children_backup_boy_twin = {
+	create_character = {
+		age = 0
+		random_traits = no
+		mother = scope:child.mother
+		real_father = scope:child.real_father
+		location = scope:child.mother.location
+		gender = male
+		faith = scope:child.faith
+		culture = scope:child.culture
+		dynasty = none
+		save_scope_as = new_baby
+	}
+	if = {
+		limit = { exists = scope:child.father }
+		scope:new_baby = { set_father = scope:child.father }
+	}
+	if = {
+		limit = { exists = scope:child.dynasty }
+		scope:new_baby = { set_house = scope:child.house }
+	}
+	if = {
+		limit = {
+			exists = scope:mother.liege_or_court_owner
+		}
+		scope:mother.liege_or_court_owner = { add_courtier = scope:new_baby }
+	}
+	scope:new_baby = { copy_traits = scope:child }
+}
+
+agot_canon_children_twin_birth_effect = {
+	#Different Gender Success
+	if = {
+		limit = {
+			scope:mother = {
+				has_variable = twin_one
+				has_variable = twin_two
+			}
+		}
+
+		scope:mother.var:twin_one = {
+			save_scope_as = selected_twin_one
+		}
+
+		scope:mother.var:twin_two = {
+			save_scope_as = selected_twin_two
+		}
+
+		scope:mother = {
+			remove_variable = twin_one
+			remove_variable = twin_two
+		}
+	}
+	#Different Gender Failure
+	else_if = {
+		limit = {
+			scope:mother = {
+				OR = {
+					has_character_flag = needs_twin_one_female
+					has_character_flag = needs_twin_one_male
+					has_character_flag = needs_twin_two_female
+					has_character_flag = needs_twin_two_male
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:mother = { has_variable = twin_one }
+			}
+			scope:mother.var:twin_one = {
+				save_scope_as = selected_twin_one
+				agot_canon_children_$ID$_birth_effect = yes
+			}
+			scope:mother = { remove_variable = twin_one }
+		}
+		else = {
+			agot_canon_children_clear_genetic_traits_effect = yes
+			if = {
+				limit = {
+					scope:mother = { has_character_flag = needs_twin_one_female }
+				}
+				agot_canon_children_backup_girl_twin = yes
+			}
+			else = {
+				agot_canon_children_backup_boy_twin = yes
+			}
+			scope:new_baby = { save_scope_as = selected_twin_one }
+		}
+
+		if = {
+			limit = {
+				scope:mother = { has_character_flag = needs_twin_two_female }
+			}
+			agot_canon_children_backup_girl_twin = yes
+		}
+		else = {
+			agot_canon_children_backup_boy_twin = yes
+		}
+		scope:new_baby = { save_scope_as = selected_twin_two }
+
+		scope:mother = {
+			remove_variable = twin_one
+			remove_character_flag = needs_twin_one_female
+			remove_character_flag = needs_twin_one_male
+			remove_character_flag = needs_twin_two_female
+			remove_character_flag = needs_twin_two_male
+		}
+	}
+	#Same Gender Success
+	else_if = {
+		limit = {
+			any_sibling = { is_twin_of = prev }
+		}
+		save_scope_as = selected_twin_one
+
+		random_sibling = {
+			limit = {
+				is_twin_of = prev
+			}
+			save_scope_as = selected_twin_two
+			agot_canon_children_$TWIN_ID$_birth_effect = yes
+		}
+	}
+	#Same Gender Failure
+	else = {
+		save_scope_as = selected_twin_one
+		agot_canon_children_clear_genetic_traits_effect = yes
+
+		if = {
+			limit = { is_female = yes }
+			agot_canon_children_backup_girl_twin = yes
+		}
+		else = {
+			agot_canon_children_backup_boy_twin = yes
+		}
+		scope:new_baby = { save_scope_as = selected_twin_two }
+	}
+
+	#Yeet the extra babies
+	every_sibling = {
+		limit = {
+			is_twin_of = prev
+			NOR = {
+				this = scope:selected_twin_one
+				this = scope:selected_twin_two
+			}
+		}
+		agot_peasantize_and_orphan = yes
+		death = { death_reason = death_vanished }
+	}
+	if = {
+		limit = {
+			NOR = {
+				this = scope:selected_twin_one
+				this = scope:selected_twin_two
+			}
+		}
+		agot_peasantize_and_orphan = yes
+		death = { death_reason = death_vanished }
+	}
+
+	#Assign Baby Inits
+	scope:selected_twin_one = {
+		agot_canon_children_$ID$_birth_effect = yes
+		if = {
+			limit = {
+				NOT = { has_trait = twin }
+			}
+			add_trait = twin
+		}
+		save_scope_as = child
+	}
+	scope:selected_twin_two = {
+		agot_canon_children_$TWIN_ID$_birth_effect = yes
+		if = {
+			limit = {
+				NOT = { has_trait = twin }
+			}
+			add_trait = twin
+		}
+		save_scope_as = child_2
+	}
+
+	#Trigger Birth
+	scope:mother = {
+		trigger_event = agot_birth_events.9000
+	}
+}
+
+agot_canon_children_clear_genetic_traits_effect = {
+	remove_trait = beauty_bad_1
+	remove_trait = beauty_bad_2
+	remove_trait = beauty_bad_3
+	remove_trait = beauty_good_1
+	remove_trait = beauty_good_2
+	remove_trait = beauty_good_3
+	remove_trait = intellect_bad_1
+	remove_trait = intellect_bad_2
+	remove_trait = intellect_bad_3
+	remove_trait = intellect_good_1
+	remove_trait = intellect_good_2
+	remove_trait = intellect_good_3
+	remove_trait = physique_bad_1
+	remove_trait = physique_bad_2
+	remove_trait = physique_bad_3
+	remove_trait = physique_good_1
+	remove_trait = physique_good_2
+	remove_trait = physique_good_3
+	remove_trait = lunatic_genetic
+	remove_trait = possessed_genetic
+	remove_trait = depressed_genetic
+	remove_trait = fecund
+	remove_trait = clubfooted
+	remove_trait = hunchbacked
+	remove_trait = lisping
+	remove_trait = stuttering
+	remove_trait = dwarf
+	remove_trait = giant
+	remove_trait = inbred
+	remove_trait = pure_blooded
+	remove_trait = spindly
+	remove_trait = scaly
+	remove_trait = albino
+	remove_trait = wheezing
+	remove_trait = bleeder
+	remove_trait = infertile
+	remove_trait = weak
+	remove_trait = wheezing
+	remove_trait = bleeder
+	remove_trait = great_pox
+	remove_trait = early_great_pox
+	remove_trait = lovers_pox
+	remove_trait = ill
+	#AGOT trait
+	remove_trait = the_mark
+	remove_trait = heterochromia_eyes
+}
+
+agot_canon_children_give_bastard_nickname_effect = {
+	if = {
+		limit = { has_trait = bastard }
+		make_trait_inactive = $SURNAME$
+	}
+}

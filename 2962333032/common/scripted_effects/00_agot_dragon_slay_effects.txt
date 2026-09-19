@@ -1,0 +1,717 @@
+﻿agot_configure_start_dragon_slay_effect = {
+	# DOCUMENTATION
+
+	## scope:initiator
+	## scope:human
+	## scope:dragon
+	## scope:locale = flag:XYZ
+		### Currently in use
+			### Background Logic
+			# flag:cave_exterior
+			# flag:cave_interior
+			# flag:wilderness_scope
+			# flag:terrain_scope
+			# flag:battlefield
+			# flag:throne_room
+			# flag:army_camp
+			# flag:agot_icecave
+		### Cool Ideas
+			# flag:agot_frozen_forest
+			# flag:agot_ruins_forest
+			# flag:agot_river
+			# flag:agot_dragonpit
+			# flag:agot_beach
+			# flag:agot_bp1_hills
+			# flag:agot_the_wall
+	# INVALIDATION_EVENT for invalidation incase set up is wrong
+
+	# Sort parties.
+	$INITIATOR$ = { save_scope_as = initiator }
+	$HUMAN$ = { save_scope_as = human }
+	$DRAGON$ = { save_scope_as = dragon }
+
+	save_scope_value_as = {
+		name = invalidation_event
+		value = event_id:$INVALIDATION_EVENT$
+	}
+
+	save_scope_value_as = {
+		name = locale
+		value = flag:$LOCALE$
+	}
+
+	# Invalidation check: Is the dragon actually a human <-< or vice versa
+	if = {
+		limit = {
+			OR = {
+				scope:dragon = {
+					is_human = yes
+				}
+				scope:human = {
+					is_human = no
+				}
+			}
+		}
+
+		scope:initiator = {
+			trigger_event = { saved_event_id = scope:invalidation_event }
+		}
+	}
+	# Invalidation check: Are the human and dragon scopes the same?
+	if = {
+		limit = {
+			NOT = { scope:human = scope:dragon }
+		}
+
+		scope:human = {
+			set_signature_weapon_effect = yes
+		}
+		## Note where the fight is taking place, if we're using a specific location.
+		if = {
+			limit = { scope:locale = flag:terrain_scope }
+			scope:dragon.location = { save_scope_as = background_terrain_scope }
+		}
+		else_if = {
+			limit = {
+				scope:locale = flag:wilderness_scope
+			}
+			scope:dragon.location = { save_scope_as = background_wilderness_scope }
+		}
+
+		save_scope_value_as = {
+			name = proximity
+			value = $PROXIMITY$
+		}
+		# Proximity Should be 0, 1, or 2
+		if = {
+			limit = {
+				NOR = {
+					scope:proximity = 0
+					scope:proximity = 1
+					scope:proximity = 2
+				}
+			}
+			save_scope_value_as = {
+				name = proximity
+				value = 2
+			}
+		}
+
+		# Set locale logic
+		if = {
+			limit = {
+				NOR = {
+					#scope:locale = flag:agot_dragonpit
+					scope:locale = flag:cave_interior
+					scope:locale = flag:agot_icecave
+					scope:locale = flag:throne_room
+				}
+			}
+			scope:dragon = {
+				add_character_flag = can_fly
+			}
+		}
+
+		if = {
+			limit = {
+				OR = {
+					#scope:locale = flag:agot_dragonpit
+					scope:locale = flag:cave_interior
+					scope:locale = flag:agot_icecave
+				}
+			}
+			scope:dragon = {
+				add_character_flag = can_shake
+			}
+		}
+
+
+		# Send appropriate event to human
+		switch = {
+			trigger = scope:proximity
+			2 = { scope:human = { trigger_event = agot_dragon_slaying_events.0100 } }
+			1 = { scope:human = { trigger_event = agot_dragon_slaying_events.0100 } }
+			0 = { scope:human = { trigger_event = agot_dragon_slaying_events.0101 } }
+		}
+	}
+	# Otherwise, invalidate the duel immediately.
+	else = {
+		scope:initiator = {
+			trigger_event = { saved_event_id = scope:invalidation_event }
+		}
+	}
+}
+
+agot_dragon_combat_clean_temp_weapon_effect = {
+	$HUMAN$ = {
+		if = { #check for variables set up in set_temporary_signature_weapon
+			limit = {
+				is_alive = yes
+				OR = {
+					has_variable = og_signature_weapon
+					has_variable = temporary_signature_weapon
+				}
+			}
+			if = { #remove the signature_weapon variable if the character didn't have anything before
+				limit = {
+					var:og_signature_weapon = flag:no_signature_weapon_yet
+				}
+				remove_variable = signature_weapon
+			}
+			else = { #restore the original signature_weapon
+				set_variable = {
+					name = signature_weapon
+					value = var:og_signature_weapon
+				}
+			}
+			#remove all variables set up in set_temporary_signature_weapon
+			remove_variable = temporary_signature_weapon
+			remove_variable = og_signature_weapon
+		}
+	}
+}
+
+agot_ds_burn_effect = {
+	agot_burn_effect = { MIN = $MIN$ MAX = $MAX$ }
+
+	# Want to keep track that the player was burned in this combat
+	if = {
+		limit = {
+			scope:burn_xp > 0
+			has_character_flag = in_dragon_combat
+			NOT = { has_character_flag = ds_burned }
+		}
+		add_character_flag = ds_burned
+	}
+
+	if = {
+		limit = {
+			has_trait_xp = {
+				trait = burned
+				value >= 100
+			}
+		}
+		add_character_flag = ds_death
+	}
+}
+
+agot_burn_effect = {
+	show_as_tooltip = {
+		add_trait = burned
+	}
+	hidden_effect = {
+		if = {
+			limit = {
+				NOT = { has_trait = burned}
+			}
+			add_trait = burned
+		}
+
+		save_scope_value_as = {
+			name = burn_xp
+			value = {
+				integer_range = {
+					min = $MIN$
+					max = $MAX$
+				}
+			}
+		}
+
+		add_trait_xp = {
+			trait = burned
+			value = scope:burn_xp
+		}
+	}
+}
+
+agot_dragon_combat_inflict_wounds_effect = {
+	if = {
+		limit = {
+			OR = {
+				AND = {
+					$RANK$ = 3
+					has_trait_rank = {
+						trait = wounded
+						rank >= 1
+					}
+				}
+				AND = {
+					$RANK$ = 2
+					has_trait_rank = {
+						trait = wounded
+						rank >= 2
+					}
+				}
+				AND = {
+					$RANK$ = 1
+					has_trait_rank = {
+						trait = wounded
+						rank = 3
+					}
+				}
+			}
+		}
+
+		add_character_flag = ds_death
+	}
+	else = {
+		agot_increase_wounds_no_death_effect = { REASON = duel RANK = $RANK$ }
+		# Want to keep track that the player was wounded
+		if = {
+			limit = {
+				has_character_flag = in_dragon_combat
+				NOT = { has_character_flag = ds_wounded }
+			}
+			add_character_flag = ds_wounded
+		}
+	}
+}
+
+# I am actually just going to make a new health effect to get around the issues with vanilla
+agot_increase_wounds_effect = {
+	if = { # Not necessary for my work but in case anyone wants it
+		limit = {
+			OR = {
+				AND = {
+					$RANK$ = 3
+					has_trait_rank = {
+						trait = wounded
+						rank >= 1
+					}
+				}
+				AND = {
+					$RANK$ = 2
+					has_trait_rank = {
+						trait = wounded
+						rank >= 2
+					}
+				}
+				AND = {
+					$RANK$ = 1
+					has_trait_rank = {
+						trait = wounded
+						rank = 3
+					}
+				}
+			}
+		}
+		death = {
+			death_reason = death_$REASON$
+		}
+	}
+	else = {
+		agot_increase_wounds_no_death_effect = { REASON = $REASON$ RANK = $RANK$ }
+	}
+}
+
+agot_increase_wounds_no_death_effect = {
+
+	send_interface_toast = {
+		title = agot_dragon_slay_wounded
+		left_icon = root
+
+		change_trait_rank = {
+			trait = wounded
+			rank = $RANK$
+			max = 3
+		}
+	}
+
+	# I am doing away with the events until the end of the sequence for survivors
+	# Otherwise we get two physician events at once
+
+	# agot_resolve_wounds_events_effect { REASON = duel}
+
+	# To stop the game from complaining about unused character flags since we only specifically check
+	# the treatment reason for risk of further or infection
+	if = {
+		limit = {
+			exists = flag:$REASON$
+		}
+	}
+}
+
+agot_resolve_wounds_events_effect = {
+	save_temporary_scope_value_as = {
+		name = treatment_type
+		value = flag:$REASON$
+	}
+
+	if = { #Wounds from treatments give no infection and no additional treatment
+		limit = { NOT = { scope:treatment_type = flag:treatment } }
+
+		#CHANCE OF INFECTION
+		hidden_effect = {
+			random = {
+				chance = 10
+				trigger_event = {
+					id = health.0201
+					days = { 30 60 }
+				}
+			}
+		}
+
+		#HANDLE TREATMENT
+		if = { #To send notification message or trigger the right event
+			limit = {
+				has_trait_rank = {
+					trait = wounded
+					rank = 1
+				}
+				court_physician_available_trigger = yes
+			}
+			save_scope_as = sick_character
+			safe_wound_treatment_effect = yes #Wounded 1 only gives a "result of treatment" notification" if you have a physician, i.e. you get no events about it.
+		}
+		else_if = {
+			limit = {
+				has_trait_rank = {
+					trait = wounded
+					rank = 2
+				}
+				has_recent_wound_treatment_trigger = no
+			}
+			#A "real" event if you're not receiving treatment
+			#Nothing happens if you're already being treated for wounds
+			trigger_event = {
+				id = health.0102
+				days = { 2 3 }
+			}
+		}
+		else_if = {
+			limit = {
+				has_trait_rank = {
+					trait = wounded
+					rank = 3
+				}
+				has_recent_wound_treatment_trigger = no
+			}
+			#A "real" event if you're not receiving treatment
+			#Nothing happens if you're already being treated for wounds
+			trigger_event = {
+				id = health.0104
+				days = { 2 3 }
+			}
+
+			#Epilepsy risk
+			epilepsy_brain_trauma_risk_effect = { CHANCE = 5 }
+		}
+	}
+}
+
+# Calculates the "rated" prowess the dragon should have based on training - call on dragon
+agot_ds_get_dragon_skill_effect = {
+	if = {
+		limit = {
+			scope:dragon.ds_combat_effectiveness < level_two_dragon_size
+		}
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 1
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:dragon.ds_combat_effectiveness < level_three_dragon_size
+		}
+
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 2
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:dragon.ds_combat_effectiveness < level_four_dragon_size
+		}
+
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 3
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:dragon.ds_combat_effectiveness < level_five_dragon_size
+		}
+
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 4
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:dragon.ds_combat_effectiveness < level_six_dragon_size
+		}
+
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 5
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:dragon.ds_combat_effectiveness < level_seven_dragon_size
+		}
+
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 6
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:dragon.ds_combat_effectiveness < level_eight_dragon_size
+		}
+
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 7
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:dragon.ds_combat_effectiveness < level_nine_dragon_size
+		}
+
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 8
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:dragon.ds_combat_effectiveness < level_ten_dragon_size
+		}
+
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 9
+			}
+		}
+	}
+	else = {
+		scope:dragon = {
+			set_variable = {
+				name = dragon_skill
+				value = 10
+			}
+		}
+	}
+}
+
+agot_ds_get_human_skill_effect = {
+	if = {
+		limit = {
+			scope:human.ds_human_combat_effectiveness < ds_human_combat_rating_2
+		}
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 1
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:human.ds_human_combat_effectiveness < ds_human_combat_rating_3
+		}
+
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 2
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:human.ds_human_combat_effectiveness < ds_human_combat_rating_4
+		}
+
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 3
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:human.ds_human_combat_effectiveness < ds_human_combat_rating_5
+		}
+
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 4
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:human.ds_human_combat_effectiveness < ds_human_combat_rating_6
+		}
+
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 5
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:human.ds_human_combat_effectiveness < ds_human_combat_rating_7
+		}
+
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 6
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:human.ds_human_combat_effectiveness < ds_human_combat_rating_8
+		}
+
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 7
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:human.ds_human_combat_effectiveness < ds_human_combat_rating_9
+		}
+
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 8
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:human.ds_human_combat_effectiveness < ds_human_combat_rating_10
+		}
+
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 9
+			}
+		}
+	}
+	else = {
+		scope:human = {
+			set_variable = {
+				name = human_skill
+				value = 10
+			}
+		}
+	}
+}
+
+agot_ds_compare_skills_effect = {
+	$DRAGON$ = { save_scope_as = dragon }
+	$HUMAN$ = { save_scope_as = human }
+
+	agot_ds_get_dragon_skill_effect = yes
+	agot_ds_get_human_skill_effect = yes
+
+
+	#If this value is negative, we will know the human is more skilled
+	set_variable = {
+		name = ds_combat_difference
+		value = {
+			value = scope:dragon.var:dragon_skill
+			subtract = scope:human.var:human_skill
+		}
+	}
+}
+
+# Clean up effects
+agot_ds_clean_up_effect = {
+	scope:human = {
+		if = {
+			limit = {
+				is_alive = yes
+			}
+			agot_dragon_combat_clean_temp_weapon_effect = { HUMAN = scope:human }
+			agot_ds_remove_human_flags_effect = yes
+			agot_ds_remove_human_flags_effect = yes
+		}
+	}
+
+	scope:dragon = {
+		if = {
+			limit = {
+				is_alive = yes
+			}
+			agot_ds_remove_dragon_variables_effect = yes
+			agot_ds_remove_dragon_flags_effect = yes
+		}
+	}
+}
+
+agot_ds_remove_human_flags_effect = {
+	remove_character_flag = ds_win
+	remove_character_flag = ds_loss
+	remove_character_flag = ds_seal
+	remove_character_flag = ds_seal_starved
+	remove_character_flag = ds_seal_elsewhere
+	remove_character_flag = ds_seal_fire
+	remove_character_flag = ds_seal_away
+	remove_character_flag = ds_feed
+	remove_character_flag = ds_feed_success
+	remove_character_flag = ds_poison
+	remove_character_flag = ds_burned
+	remove_character_flag = ds_wounded
+	remove_character_flag = ds_maimed
+	remove_character_flag = ds_crippled
+	remove_character_flag = ds_ouchie
+	remove_character_flag = in_dragon_combat
+	remove_character_flag = single_combat_duel_armor
+}
+
+agot_ds_remove_human_variables_effect = {
+	remove_variable = ds_combat_difference
+	remove_variable = human_skill
+}
+
+agot_ds_remove_dragon_flags_effect = {
+	remove_character_flag = can_fly
+	remove_character_flag = can_shake
+	remove_character_flag = guarded_attack
+	remove_character_flag = sneak_attack
+	remove_character_flag = in_dragon_combat
+}
+
+agot_ds_remove_dragon_variables_effect = {
+	remove_variable = dragon_last_move
+	remove_variable = dragon_skill
+}

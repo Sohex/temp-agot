@@ -1,0 +1,1366 @@
+﻿### SPOILER ALERT ### DO NOT READ THIS FILE IF UNFAMILIAR WITH SEVERAL THEORIES REGARDING ROBERT'S REBELLION
+
+story_agot_scenario_rr = {
+	# by TitanRogue
+
+	on_setup = {
+		debug_log = "RR Scenario initialized"
+		##################################
+		set_variable = {
+			name	= agot_rr_scenario_status
+			value	= flag:hot_phase
+		}
+		set_variable = {
+			name	= agot_rr_robert_rhaegar_duel
+			value	= flag:negative
+		}
+		set_variable = {
+			name	= agot_rr_tywin_status
+			value	= flag:pending
+		}
+		set_variable = {
+			name	= agot_rr_dragonstone_matter
+			value	= flag:pending
+		}
+		set_variable = {
+			name	= agot_rr_toj_status
+			value	= flag:initialized
+		}
+		set_variable = {
+			name	= agot_rr_preg_status_lyanna
+			value	= flag:initialized
+		}
+		set_variable = {
+			name	= agot_rr_months_of_pregnancy_lyanna
+			value	= 0
+		}
+		set_variable = { # The war lasted "close to a year"; she gave birth at the end of the war -> pregnancy should start ca. 4 months after war started
+			name	= agot_rr_lyanna_pregnancy_blocker
+			days	= { 60 120 }
+		}
+		set_variable = {
+			name	= agot_rr_lyanna_birth_outcome
+			value	= flag:none
+		}
+		set_variable = {
+			name	= agot_rr_preg_status_rhaella
+			value	= flag:initialized
+		}
+		set_variable = {
+			name	= agot_rr_months_of_pregnancy_rhaella
+			value	= 0
+		}
+		set_variable = {
+			name	= agot_rr_cersei_marriage
+			value	= flag:pending
+		}
+		set_variable = {
+			name	= mw_linked_war_status
+			value	= flag:ongoing
+		}
+
+
+		####
+
+
+		#Initialise Events
+
+		# Opportunists
+		character:Whent_4 = {
+			trigger_event = agot_events_rr_minor.0114
+		}
+
+		character:Greyjoy_1 = {
+			trigger_event = agot_events_rr_minor.0115
+		}
+
+		# Gulltown | Spawn armies
+		character:Stark_3 = {
+			trigger_event = agot_events_rr_minor.0108
+		}
+		character:Baratheon_2 = {
+			trigger_event = agot_events_rr_minor.0109
+		}
+		character:Arryn_3 = {
+			trigger_event = agot_events_rr_minor.0110
+		}
+
+		# Make Cersei and Lyanna infertile for the war's duration
+		character:Lannister_6 = {
+			add_trait = refusing_marriage
+			add_character_modifier = agot_rr_cersei_infertility
+		}
+		character:Stark_5 = {
+			add_trait = refusing_marriage
+			add_character_modifier = agot_rr_lyanna_infertility
+		}
+
+		#Tywin Reflection Event
+		character:Lannister_1 = {
+			trigger_event = agot_events_rr_minor.0124
+		}
+
+		#IT starts with no MAA for some reason
+		character:Targaryen_1 = {
+			create_maa_regiment = {
+				type = trebuchet
+				check_can_recruit = no
+				size = 4
+			}
+			create_maa_regiment = {
+				type = armored_footmen
+				check_can_recruit = no
+				size = 4
+			}
+			create_maa_regiment = {
+				type = bowmen
+				check_can_recruit = no
+				size = 4
+			}
+		}
+
+		#Canon Children Blockers
+		if = {
+			limit = { agot_canon_children_enabled_trigger = yes }
+			character:Stark_5 = {
+				add_character_flag = agot_story_cycle_blocking_canon_children
+			}
+			character:Targaryen_2 = {
+				add_character_flag = agot_story_cycle_blocking_canon_children
+			}
+		}
+	}
+	on_end = {
+		character:Stark_5 = {
+			if = {
+				limit = { is_alive = yes }
+				remove_character_flag = agot_story_cycle_blocking_canon_children
+			}
+		}
+		character:Targaryen_2 = {
+			if = {
+				limit = { is_alive = yes }
+				remove_character_flag = agot_story_cycle_blocking_canon_children
+			}
+		}
+	}
+	on_owner_death = { # the story should always be owned by the
+		story_owner = {
+			if = { # if an heir inherits c_storms_end give it to him
+				limit = {
+					any_heir = {
+						any_heir_title = {
+							exists = this
+							this = title:c_storms_end
+						}
+					}
+				}
+
+				random_heir = {
+					limit = {
+						any_heir_title = {
+							exists = this
+							this = title:c_storms_end
+						}
+					}
+					root = { make_story_owner = prev }
+				}
+			}
+			else_if = { # else primary heir; change ownership in daily effects then
+				limit = {
+					exists = primary_heir
+					primary_heir = { is_alive = yes }
+				}
+
+				root = { make_story_owner = prev.primary_heir }
+			}
+		}
+	}
+
+	# General daily checks
+	effect_group = {
+		days = 1
+
+		# Make c_storms_end holder owner if he isn't
+		triggered_effect = {
+			trigger = {
+				NOT = { story_owner = title:c_storms_end.holder }
+			}
+
+			effect = {
+				make_story_owner = title:c_storms_end.holder
+			}
+		}
+
+		### Daily checks for pregnancies ###
+
+		# General information
+		# flag:initialized --> system has been activated
+		# flag:started	-->	pregnancy has started
+		# flag:finished	-->	pregnancy has finished; minimum pregnancy duration (269 days) has been reached, may give birth
+		# flag:overdue	-->	pregnancy has finished but is temporarely blocked from giving birth
+
+		### Combined Lyanna and Rhaella pregnancy management ###
+		# Start pregnancies for Lyanna and Rhaella in random mode (game rule)
+		triggered_effect = {
+			trigger = {
+				OR = {
+					AND = {
+						exists = var:agot_rr_toj_status # We should not interfere anymore if the chain started, might create bugs elsewise
+						NOR = { # don't do pregnancy if ToJ has started or is concluded
+							var:agot_rr_toj_status = flag:started
+							var:agot_rr_toj_status = flag:finished
+						}
+						var:agot_rr_preg_status_lyanna = flag:initialized
+						trigger_if = { # triggered 60 to 120 days after game start
+							limit = { agot_has_historical_events_trigger = yes }
+							NOT = { has_variable = agot_rr_lyanna_pregnancy_blocker }
+						}
+					}
+					var:agot_rr_preg_status_rhaella = flag:initialized
+				}
+			}
+
+			effect = {
+				if = { # start Lyanna's pregnancy
+					limit = {
+						exists = var:agot_rr_preg_status_lyanna
+						var:agot_rr_preg_status_lyanna = flag:initialized
+						exists = var:agot_rr_toj_status # We should not interfere anymore if the chain started, might create bugs elsewise
+						NOR = { # don't do pregnancy if ToJ has started or is concluded
+							var:agot_rr_toj_status = flag:started
+							var:agot_rr_toj_status = flag:finished
+						}
+						trigger_if = { # triggered 60 to 120 days after game start
+							limit = {
+								agot_has_historical_events_trigger = yes
+							}
+							NOT = { has_variable = agot_rr_lyanna_pregnancy_blocker }
+						}
+					}
+
+					random = {
+						chance = 100
+
+						modifier = { # --> 1% chance of pregnancy start each day, if in random mode
+							OR = {
+								#has_game_rule = agot_story_sandbox
+								has_game_rule = agot_story_random_events_random_outcomes
+							}
+							add = -99
+						}
+
+						# Effect #
+						set_variable = {
+							name	= agot_rr_preg_status_lyanna
+							value	= flag:started
+						}
+						character:Stark_5 = {
+							set_variable = {
+								name	= agot_rr_months_of_pregnancy_lyanna
+								value	= 0
+							}
+						}
+						set_variable = {
+							name	= agot_rr_pregnancy_month_timer_lyanna
+							days	= 31
+						}
+						##########
+					}
+				}
+				if = { # start Rhaella's pregnancy
+					limit = {
+						exists = var:agot_rr_preg_status_rhaella
+						var:agot_rr_preg_status_rhaella = flag:initialized
+					}
+
+					random = { # start Rhaella's pregnancy
+						chance = 100
+
+						modifier = { # --> 1% chance of pregnancy start each day, if in random mode
+								has_game_rule = agot_story_random_events_random_outcomes
+							add = -99
+						}
+
+						# Effect #
+						if = {
+							limit = {
+								character:Targaryen_2 = {
+									has_character_flag = rhaella_sent_to_dragonstone
+									is_pregnant = no
+								}
+							}
+							set_variable = {
+								name = agot_rr_preg_status_rhaella
+								value = flag:started
+							}
+							character:Targaryen_2 = { add_trait = pregnant }
+							character:Targaryen_2 = {
+								set_variable = {
+									name	= agot_rr_months_of_pregnancy_rhaella
+									value	= 0
+								}
+							}
+							set_variable = {
+								name	= agot_rr_pregnancy_month_timer_rhaella
+								days	= 31
+							}
+						}
+						##########
+					}
+				}
+			}
+		}
+
+		# Change agot_rr_months_of_pregnancy_lyanna and agot_rr_months_of_pregnancy_rhaella
+		triggered_effect = {
+			trigger = {
+				OR = {
+					AND = {
+						exists = var:agot_rr_months_of_pregnancy_lyanna
+						var:agot_rr_months_of_pregnancy_lyanna < 10
+						NOT = { has_variable = agot_rr_pregnancy_month_timer_lyanna }
+					}
+					AND = {
+						exists = var:agot_rr_months_of_pregnancy_rhaella
+						var:agot_rr_months_of_pregnancy_rhaella < 10
+						NOT = { has_variable = agot_rr_pregnancy_month_timer_rhaella }
+					}
+				}
+			}
+
+			effect = {
+				if = {
+					limit = { NOT = { has_variable = agot_rr_pregnancy_month_timer_lyanna } }
+
+					if = {
+						limit = {
+							character:Stark_5 = {
+								is_alive = yes
+								has_variable = agot_rr_months_of_pregnancy_lyanna
+							}
+							var:agot_rr_months_of_pregnancy_lyanna < 9
+						}
+
+						change_variable = {
+							name	= agot_rr_months_of_pregnancy_lyanna
+							add		= 1
+						}
+						character:Stark_5 = {
+							change_variable = {
+								name	= agot_rr_months_of_pregnancy_lyanna
+								add		= 1
+							}
+						}
+
+						set_variable = {
+							name	= agot_rr_pregnancy_month_timer_lyanna
+							days	= 31
+						}
+					}
+					else_if = {
+						limit = {
+							character:Stark_5 = {
+								is_alive = yes
+								has_variable = agot_rr_months_of_pregnancy_lyanna
+							}
+						}
+						character:Stark_5 = { remove_variable = agot_rr_months_of_pregnancy_lyanna }
+					}
+				}
+				if = {
+					limit = { NOT = { has_variable = agot_rr_pregnancy_month_timer_rhaella } }
+
+					if = {
+						limit = {
+								character:Targaryen_2 = {
+									is_alive = yes
+									has_variable = agot_rr_months_of_pregnancy_rhaella
+								}
+								var:agot_rr_months_of_pregnancy_rhaella < 9
+							}
+
+						if = {
+							limit = { var:agot_rr_months_of_pregnancy_rhaella < 9 }
+
+							change_variable = {
+								name	= agot_rr_months_of_pregnancy_rhaella
+								add		= 1
+							}
+							character:Targaryen_2 = {
+								change_variable = {
+									name	= agot_rr_months_of_pregnancy_rhaella
+									add		= 1
+								}
+							}
+
+							set_variable = {
+								name	= agot_rr_pregnancy_month_timer_rhaella
+								days	= 31
+							}
+						}
+						else_if = {
+							limit = {
+								character:Targaryen_2 = {
+									is_alive = yes
+									has_variable = agot_rr_months_of_pregnancy_rhaella
+								}
+							}
+							character:Targaryen_2 = { remove_variable = agot_rr_months_of_pregnancy_rhaella }
+						}
+					}
+				}
+			}
+		}
+
+		### Lyanna's pregnancy ###
+		# After 9 months/269 days of pregnancy the child may be born
+		triggered_effect = {
+			trigger = {
+				exists = var:agot_rr_toj_status # We should not interfere anymore if the chain started, might create bugs elsewise
+				NOR = { # don't do pregnancy if ToJ has started or is concluded
+					var:agot_rr_toj_status = flag:started
+					var:agot_rr_toj_status = flag:finished
+				}
+				OR = {
+					var:agot_rr_preg_status_lyanna = flag:started
+					var:agot_rr_preg_status_lyanna = flag:overdue
+				}
+				exists = var:agot_rr_months_of_pregnancy_lyanna
+				var:agot_rr_months_of_pregnancy_lyanna = 9
+				NOT = { has_variable = agot_rr_lyanna_pregnancy_blocker }
+				character:Stark_5 = { is_alive = yes }
+			}
+
+			effect = {
+				if = { # only if ToJ event chain has not fired yet --> the war is still on
+					limit = { # this ignores ToJ events so it should only be triggered on random; semi and historical force ToJ chain and postpone birth
+						OR = {
+							has_game_rule = agot_story_sandbox
+							has_game_rule = agot_story_random_events_random_outcomes
+							var:agot_rr_preg_status_lyanna = flag:overdue
+						}
+						NOT = { var:agot_rr_scenario_status = flag:resolving_phase }
+						NOT = {
+							character:Stark_5 = {
+								is_alive = yes
+								has_character_flag = waiting_for_rhaegar
+							}
+						}
+					}
+					#title:d_dragonstone = { set_variable = { name = toj_rr_0017 value = yes } }
+
+					# fetch birth outcome
+					agot_scenario_rr_get_birth_outcome = yes
+
+					# Setup Scopes
+					var:agot_rr_preg_status_lyanna = { save_scope_as = agot_lyanna_preg_status }
+					var:agot_rr_lyanna_birth_outcome = { save_scope_as = agot_lyanna_preg_outcome }
+
+					if = {
+						limit = {
+							character:Targaryen_3 = {
+								is_alive = yes
+								NOT = { has_character_flag = rhaegar_left_for_toj }
+							}
+						}
+						character:Targaryen_3 = { trigger_event = { id = agot_scenario_rr_toj.0017 days = 1 } }
+					}
+					else = {
+						agot_kingsguard_plot_fetch_kingsguard_scope = yes
+						scope:scoped_kingsguard = { trigger_event = agot_scenario_rr_toj.0200 }
+					}
+
+					character:Stark_5 = {
+						add_character_flag = {
+							flag = waiting_for_rhaegar
+							days = 35
+						}
+					}
+
+					agot_rr_remove_lyanna_infertility = yes
+				}
+				else = { # semi and historical: set overdue; blocks birth till war is resolved; we try to force ToJ chain but consider Rhaegar's death as fallback
+					set_variable = {
+						name	= agot_rr_preg_status_lyanna
+						value	= flag:overdue
+					}
+					set_variable = agot_rr_lyanna_pregnancy_blocker # blocks birth
+				}
+			}
+		}
+
+		# Backup if Rhaegar dies: force birth
+		triggered_effect = {
+			trigger = {
+				var:agot_rr_preg_status_lyanna = flag:overdue
+				has_variable = agot_rr_lyanna_pregnancy_blocker
+				NOT = { character:Targaryen_3 = { is_alive = yes } }
+			}
+
+			effect = {
+				set_variable = {
+					name	= agot_rr_preg_status_lyanna
+					value	= flag:finished
+				}
+				remove_variable = agot_rr_lyanna_pregnancy_blocker
+			}
+		}
+
+		# If Lyanna is still pregnant and free, add pregnant trait for visuals
+		triggered_effect = {
+			trigger = {
+				var:agot_rr_preg_status_lyanna = flag:started # baby must be eligible to be born
+				character:Stark_5 = {
+					is_alive = yes
+					is_imprisoned = no
+					NOT = { has_character_flag = yearly_1010_abducted }
+				}
+			}
+			effect = {
+				character:Stark_5 = { add_trait = pregnant }
+			}
+		}
+
+		# Lyanna is still pregnant when ToJ concludes
+		triggered_effect = {
+			trigger = {
+				var:agot_rr_preg_status_lyanna = flag:started # pregnancy started
+				exists = var:agot_rr_toj_status
+				var:agot_rr_toj_status = flag:finished # ToJ event chain is finished
+				exists = var:agot_rr_months_of_pregnancy_lyanna
+				var:agot_rr_months_of_pregnancy_lyanna > 8
+				NOT = { has_variable = agot_rr_lyanna_pregnancy_blocker } # Trigger only if the baby may be born
+				character:Stark_5 = {
+					is_alive = yes
+					NOT = { has_character_flag = waiting_for_rhaegar }
+				}
+			}
+
+			effect = {
+				set_variable = {
+					name	= agot_rr_preg_status_lyanna
+					value	= flag:finished
+				}
+
+				# Setup Scopes
+				var:agot_rr_preg_status_lyanna = { save_scope_as = agot_lyanna_preg_status }
+				var:agot_rr_lyanna_birth_outcome = { save_scope_as = agot_lyanna_preg_outcome }
+
+				if = {
+					limit = { exists = character:Stark_5.liege_or_court_owner }
+
+					character:Stark_5.liege_or_court_owner = { trigger_event = agot_scenario_rr_toj.0100 }
+				}
+				else = {
+					character:Stark_5 = { trigger_event = agot_scenario_rr_toj.0100 }
+				}
+				agot_rr_remove_lyanna_infertility = yes
+			}
+		}
+		##########################
+
+
+		### Rhaella's pregnancy ###
+		# Start pregnancy | Historical
+		triggered_effect = {
+			trigger = {
+				var:agot_rr_preg_status_rhaella = flag:initialized
+				agot_has_historical_events_trigger = yes
+			}
+			effect = {
+				if = {
+					limit = {
+						character:Targaryen_2 = {
+							has_character_flag = rhaella_sent_to_dragonstone
+							is_pregnant = no
+						}
+					}
+					set_variable = {
+						name = agot_rr_preg_status_rhaella
+						value = flag:started
+					}
+					character:Targaryen_2 = { add_trait = pregnant }
+					character:Targaryen_2 = {
+						set_variable = {
+							name	= agot_rr_months_of_pregnancy_rhaella
+							value	= 0
+						}
+					}
+					set_variable = {
+						name	= agot_rr_pregnancy_month_timer_rhaella
+						days	= 31
+					}
+				}
+			}
+		}
+
+		# Set pregnancy status to "finish" and end pregnancy
+		triggered_effect = {
+			trigger = {
+				var:agot_rr_preg_status_rhaella = flag:started
+				var:agot_rr_months_of_pregnancy_rhaella = 9
+			}
+			effect = {
+				set_variable = {
+					name = agot_rr_preg_status_rhaella
+					value = flag:finished
+				}
+				if = {
+					limit = {
+						character:Targaryen_2 = { is_landed = yes }
+					}
+					character:Targaryen_2 = { trigger_event = agot_events_rr_minor.0005 }
+				}
+				else_if = {
+					limit = {
+						exists = character:Targaryen_2.employer
+					}
+					character:Targaryen_2.employer = { trigger_event = agot_events_rr_minor.0005 }
+				}
+				else = {
+					character:Targaryen_2 = { trigger_event = agot_events_rr_minor.0005 }
+				}
+			}
+		}
+		##########################
+	}
+
+	##############################################
+	### Tower of Joy | Pregnancy Manager Start ###
+	##############################################
+
+	############################################
+	### Tower of Joy | Pregnancy Manager End ###
+	############################################
+
+
+	### HOT PHASE ###
+	# Daily checks for: Rhaegar and Robert fight; Harrenhal aftermath; False Banner; Rhaella's pregnancy
+	effect_group = {
+		days = 1
+
+		trigger = {
+			var:agot_rr_scenario_status = flag:hot_phase
+		}
+
+		# Daily checks for: The war's end --> switch to RESOLVING PHASE
+		triggered_effect = {
+			trigger = {
+				NOT = { var:mw_linked_war_status = flag:ongoing } # Check for war being over
+			}
+			effect = {
+				set_variable = {
+					name	= agot_rr_scenario_status
+					value	= flag:resolving_phase
+				}
+			}
+		}
+
+		#Rhaegar and Robert meet in battle
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				var:agot_rr_robert_rhaegar_duel = flag:negative
+				character:Baratheon_2 = {
+					is_at_same_location = character:Targaryen_3
+					is_in_army = yes
+					is_alive = yes
+					NOT = { is_current_dragonrider_warfare = yes }
+				}
+				character:Targaryen_3 = {
+					is_in_army = yes
+					is_alive = yes
+					NOT = { is_current_dragonrider_warfare = yes }
+				}
+			}
+			effect = {
+				set_variable = {
+					name = agot_rr_robert_rhaegar_duel
+					value = flag:positive
+				}
+				if = {
+					limit = {
+						character:Targaryen_3 = { is_commanding_army = yes }
+					}
+					character:Targaryen_3.location = { save_scope_as = duel_location }
+				}
+				else = {
+					character:Baratheon_2.location = { save_scope_as = duel_location }
+				}
+				if = {
+					limit = {
+						OR = { #Players get the big event
+							character:Baratheon_2 = { is_ai = no }
+							character:Targaryen_3 = { is_ai = no }
+						}
+					}
+					random_list = {
+						50 = {
+							character:Baratheon_2 = {
+								save_scope_as = duel_attacker
+								character:Targaryen_3 = { save_scope_as = duel_defender }
+								trigger_event = agot_events_rr_minor.0001
+							}
+						}
+						50 = {
+							character:Targaryen_3 = {
+								save_scope_as = duel_attacker
+								character:Baratheon_2 = { save_scope_as = duel_defender }
+								trigger_event = agot_events_rr_minor.0001
+							}
+						}
+					}
+				}
+				else = { #AI one so Bobby kills Rhaegar often enough
+					random_list = {
+						0 = {
+							modifier = {
+								add = agot_historic_event_chance
+							}
+							character:Baratheon_2 = {
+								trigger_event = agot_events_rr_minor.0125
+							}
+
+							character:Targaryen_3 = { location = { save_scope_as = location } }
+							character:Targaryen_1 = {
+								add_character_flag = had_send_to_dragonstone_event
+								trigger_event = { id = agot_events_rr_minor.0002 days = 3 }
+							}
+						}
+						0 = {
+							#no duel
+							modifier = {
+								add = agot_nonhistoric_event_chance
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#AGOT TODO What is this block about?
+		triggered_effect = {
+			trigger = {
+				character:Targaryen_3 = { is_alive = no }
+				character:Targaryen_1 = {
+					is_alive = yes
+					NOT = { has_character_flag = had_send_to_dragonstone_event }
+				}
+			}
+			effect = {
+				character:Targaryen_1 = {
+					add_character_flag = had_send_to_dragonstone_event
+					trigger_event = { id = agot_events_rr_minor.0002 days = 3 }
+				}
+			}
+		}
+
+		# Stormlander Lords Join Bobby B
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				OR = {
+					title:d_kingswood.holder ?= {
+						is_at_same_location = character:Baratheon_2
+						is_at_war_with = character:Baratheon_2
+						is_in_army = yes
+						is_ai = yes
+					}
+					title:d_kingswood.holder.primary_heir ?= { #SilverAxe
+						is_at_same_location = character:Baratheon_2
+						liege = { is_at_war_with = character:Baratheon_2 }
+						is_in_army = yes
+						is_ai = yes
+					}
+				}
+				character:Baratheon_2 = {
+					is_in_army = yes
+					is_alive = yes
+					NOR = {
+						has_character_flag = treated_with_kingswood
+						has_character_flag = treating_with_lord #MP thing to stop multiple procs
+					}
+				}
+			}
+			effect = {
+				character:Baratheon_2 = {
+					add_character_flag = treated_with_kingswood
+					random_list = {
+						0 = {
+							modifier = {
+								add = agot_historic_outcome_2
+							}
+							if = {
+								limit = {
+									title:d_kingswood.holder = {
+										is_at_same_location = character:Baratheon_2
+										is_at_war_with = character:Baratheon_2
+										is_in_army = yes
+										is_ai = yes
+									}
+								}
+								title:d_kingswood.holder = {
+									save_scope_as = stormlander_lord
+								}
+								add_character_flag = treating_with_lord
+								trigger_event = agot_events_rr_minor.0116
+							}
+							else_if = {
+								limit = {
+									title:d_kingswood.holder.primary_heir = { #Silveraxe
+										is_at_same_location = character:Baratheon_2
+										liege = { is_at_war_with = character:Baratheon_2 }
+										is_in_army = yes
+										is_ai = yes
+									}
+								}
+								title:d_kingswood.holder.primary_heir = {
+									save_scope_as = stormlander_lord
+								}
+								add_character_flag = treating_with_lord
+								trigger_event = agot_events_rr_minor.0116
+							}
+						}
+						0 = {
+							modifier = {
+								add = agot_nonhistoric_outcome_2
+							}
+						}
+					}
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				title:d_grandview.holder ?= {
+					is_at_same_location = character:Baratheon_2
+					is_at_war_with = character:Baratheon_2
+					is_in_army = yes
+					is_ai = yes
+				}
+				character:Baratheon_2 = {
+					is_in_army = yes
+					is_alive = yes
+					NOR = {
+						has_character_flag = treated_with_grandview
+						has_character_flag = treating_with_lord #MP thing to stop multiple procs
+					}
+				}
+			}
+			effect = {
+				character:Baratheon_2 = {
+					add_character_flag = treated_with_grandview
+					random_list = {
+						0 = {
+							modifier = {
+								add = agot_historic_outcome_2
+							}
+							add_character_flag = treating_with_lord
+							title:d_grandview.holder = { save_scope_as = stormlander_lord }
+							trigger_event = agot_events_rr_minor.0116
+						}
+						0 = {
+							modifier = {
+								add = agot_nonhistoric_outcome_2
+							}
+						}
+					}
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				title:d_whentway.holder ?= {
+					is_at_same_location = character:Baratheon_2
+					is_at_war_with = character:Baratheon_2
+					is_in_army = yes
+					is_ai = yes
+				}
+				character:Baratheon_2 = {
+					is_in_army = yes
+					is_alive = yes
+					NOR = {
+						has_character_flag = treated_with_whentway
+						has_character_flag = treating_with_lord #MP thing to stop multiple procs
+					}
+				}
+			}
+			effect = {
+				character:Baratheon_2 = {
+					add_character_flag = treated_with_whentway
+					random_list = {
+						0 = {
+							modifier = {
+								add = agot_historic_outcome_2
+							}
+							add_character_flag = treating_with_lord
+							title:d_whentway.holder = { save_scope_as = stormlander_lord }
+							trigger_event = agot_events_rr_minor.0116
+						}
+						0 = {
+							modifier = {
+								add = agot_nonhistoric_outcome_2
+							}
+						}
+					}
+				}
+			}
+		}
+
+		# Tywin decides to start plot or join Loyalists | AI only
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				exists = var:agot_rr_linked_war
+				var:agot_rr_tywin_status = flag:pending
+				NOR = { # Added to avoid the "variable is set but never used" error
+					var:agot_rr_tywin_status = flag:chose_loyalists
+					var:agot_rr_tywin_status = flag:chose_rebels
+				}
+				character:Lannister_1 = {
+					is_alive = yes
+				}
+			}
+			effect = {
+				if = { # Show debug information
+					limit = { has_game_rule = agot_debug_on }
+
+					remove_variable = attacker_score
+					remove_variable = defender_score
+					set_variable = { name = attacker_score value = agot_get_attacker_war_score_value days = 1 }
+					set_variable = { name = defender_score value = agot_get_defender_war_score_value days = 1 }
+				}
+				random_list = {
+					0 = { # Tywin joins crown
+						trigger = {
+							var:agot_rr_linked_war.defender_war_score > 50
+							character:Lannister_1 = {
+								is_ai = yes  #Player can do on their own
+							}
+							NOT = { has_game_rule = agot_story_historical_events_historical_outcomes }
+						}
+
+						modifier = {
+							exists = var:agot_rr_linked_war
+							add = agot_get_defender_war_score_value
+						}
+
+						set_variable = {
+							name	= agot_rr_tywin_status
+							value	= flag:chose_loyalists
+						}
+
+						random_ruler = { # fetch scopes mw_rebel_story, mw_crown_story
+							limit = {
+								any_owned_story = {
+									story_type = story_agot_mw_rebel
+									var:mw_linked_scenario_story ?= root
+								}
+							}
+							random_owned_story = {
+								limit = {
+									story_type = story_agot_mw_rebel
+									var:mw_linked_scenario_story ?= root
+								}
+
+								save_scope_as = mw_rebel_story
+								var:mw_crown_story_var ?= { save_scope_as = mw_crown_story }
+							}
+						}
+
+						character:Lannister_1 ?= {
+							agot_mw_join_loyalists_effect = { RULER = character:Lannister_1 CROWN = scope:mw_crown_story.story_owner }
+						}
+					}
+					0 = { # Tywin joins rebels --> starts plot
+						trigger = { var:agot_rr_linked_war.attacker_war_score > 50 } # Get the event once Aerys starts losing
+
+						modifier = {
+							exists = var:agot_rr_linked_war
+							add = agot_get_attacker_war_score_value
+						}
+
+						if = {
+							limit = { character:Targaryen_1 = { is_alive = yes } }
+
+							set_variable = {
+								name	= agot_rr_tywin_status
+								value	= flag:chose_rebels
+							}
+
+							character:Lannister_1 = {
+								trigger_event = agot_events_rr_minor.0100
+							}
+						}
+
+						else_if = {
+							limit = { character:Lannister_1 = { is_ai = yes } }
+
+							agot_mw_join_rebels_effect = { RULER = character:Lannister_1 REBEL_LEADER = title:e_the_stormlands.holder }
+
+							set_variable = {
+								name	= agot_rr_tywin_status
+								value	= flag:chose_rebels
+							}
+						}
+					}
+					100 = { # nothing happens
+						modifier = {
+							exists = var:agot_rr_linked_war
+							var:agot_rr_linked_war.attacker_war_score < 0
+							add = agot_get_attacker_war_score_value
+						}
+						modifier = {
+							exists = var:agot_rr_linked_war
+							var:agot_rr_linked_war.defender_war_score < 0
+							add = agot_get_defender_war_score_value
+						}
+					}
+				}
+			}
+		}
+	}
+
+	### RESOLVING PHASE ###
+	# Daily checks for: ToJ; Dragonstone;
+	effect_group = {
+		days = 1
+
+		trigger = {
+			var:agot_rr_scenario_status = flag:resolving_phase
+		}
+
+		# Start ToJ event chain
+		triggered_effect = {
+			trigger = {
+				exists = var:agot_rr_toj_status
+				var:agot_rr_toj_status = flag:initialized
+				NOT = { var:agot_rr_toj_status = flag:started } # Added to avoid the "variable is set but never used" error
+				character:Stark_5 = { is_alive = yes }
+				#NOT = {
+				#	title:d_dragonstone = { has_variable = toj_rr_0017 }
+				#}
+				OR = {
+					character:Stark_3 = { is_alive = yes }
+					character:Stark_4 = { is_alive = yes }
+					title:h_the_iron_throne = {
+						any_in_de_jure_hierarchy = {
+							tier = tier_county
+							holder = {
+								house = dynasty:dynn_Stark.dynasty_founder.house
+								is_adult = yes
+								NOT = { this = character:Stark_5 }
+							}
+						}
+					}
+
+					character:Targaryen_3 = { is_alive = yes }
+					character:Connington_4 = { is_alive = yes }
+					character:Mooton_3 = { is_alive = yes }
+					character:Lonmouth_2 = { is_alive = yes }
+
+					character:Hightower_3 = { is_alive = yes }
+					character:Whent_5 = { is_alive = yes }
+					character:Dayne_5 = { is_alive = yes }
+				}
+			}
+
+			effect = {
+				set_variable = {
+					name	= agot_rr_toj_status
+					value	= flag:started
+				}
+
+				if = {
+					limit = { var:agot_rr_lyanna_birth_outcome = flag:none }
+					agot_scenario_rr_get_birth_outcome = yes
+				}
+
+				# Setup Scopes
+				var:agot_rr_preg_status_lyanna = { save_scope_as = agot_lyanna_preg_status }
+				var:agot_rr_lyanna_birth_outcome = { save_scope_as = agot_lyanna_preg_outcome }
+
+				if = { # if the rebels won
+					limit = {
+						NOT = { var:mw_linked_war_status = flag:crown_won }
+						OR = {
+							character:Stark_3 = { is_alive = yes }
+							character:Stark_4 = { is_alive = yes }
+							title:h_the_iron_throne = {
+								any_in_de_jure_hierarchy = {
+									tier = tier_county
+									holder = {
+										house = dynasty:dynn_Stark.dynasty_founder.house
+										is_adult = yes
+										NOT = { this = character:Stark_5 }
+									}
+								}
+							}
+						}
+					}
+
+					### Get companion leader ###
+
+					if = { # If Ned still lives...
+						limit = { character:Stark_3 = { is_alive = yes } }
+						character:Stark_3 = { save_scope_as = agot_toj_chain_leader }
+					}
+					else_if = { # Else check for Benjen...
+						limit = { character:Stark_4 = { is_alive = yes } }
+						character:Stark_4 = { save_scope_as = agot_toj_chain_leader }
+					}
+					else_if = { # Check for any ruler in the Seven Kingdoms who is of house Stark
+						limit = {
+							title:h_the_iron_throne = {
+								any_in_de_jure_hierarchy = {
+									tier = tier_county
+									holder = {
+										house = dynasty:dynn_Stark.dynasty_founder.house
+										is_adult = yes
+										NOT = { this = character:Stark_5 }
+									}
+								}
+							}
+						}
+						title:h_the_iron_throne = {
+							random_in_de_jure_hierarchy = {
+								limit = {
+									tier = tier_county
+									holder = {
+										house = dynasty:dynn_Stark.dynasty_founder.house
+										is_adult = yes
+										NOT = { this = character:Stark_5 }
+									}
+								}
+								holder = { save_scope_as = agot_toj_chain_leader }
+							}
+						}
+					}
+
+					# Fire chains
+					if = {
+						limit = {
+							exists = scope:agot_toj_chain_leader
+							scope:agot_toj_chain_leader = { NOT = { has_character_flag = mw_toj_marriage_to_lyanna } }
+						}
+
+						scope:agot_toj_chain_leader = { trigger_event = { id = agot_scenario_rr_toj.0001 days = 10 } }
+					}
+				}
+				else_if = { # if the loyalists won
+					limit = {
+						var:mw_linked_war_status = flag:crown_won
+						OR = {
+							character:Targaryen_3 = { is_alive = yes }
+							character:Connington_4 = { is_alive = yes }
+							character:Mooton_3 = { is_alive = yes }
+							character:Lonmouth_2 = { is_alive = yes }
+						}
+					}
+
+					# Setup Scopes
+					var:agot_rr_preg_status_lyanna = { save_scope_as = agot_lyanna_preg_status }
+					var:agot_rr_lyanna_birth_outcome = { save_scope_as = agot_lyanna_preg_outcome }
+
+					if = { # If Rhaegar still lives...
+						limit = { character:Targaryen_3 = { is_alive = yes } }
+						character:Targaryen_3 = { save_scope_as = agot_toj_chain_leader }
+					}
+					else_if = { # Else check for Jon Connington
+						limit = { character:Connington_4 = { is_alive = yes } }
+						character:Connington_4 = { save_scope_as = agot_toj_chain_leader }
+					}
+					else_if = { # Else check for Myles Mooton
+						limit = { character:Mooton_3 = { is_alive = yes } }
+						character:Mooton_3 = { save_scope_as = agot_toj_chain_leader }
+					}
+					else_if = { # Else check for Richard Lonmouth
+						limit = { character:Lonmouth_2 = { is_alive = yes } }
+						character:Lonmouth_2 = { save_scope_as = agot_toj_chain_leader }
+					}
+
+					if = {
+						limit = {
+							exists = scope:agot_toj_chain_leader
+							scope:agot_toj_chain_leader = { NOT = { has_character_flag = mw_toj_marriage_to_lyanna } }
+						}
+
+						scope:agot_toj_chain_leader = { trigger_event = agot_scenario_rr_toj.0008 }
+					}
+				}
+				else_if = { # Kingsguard at ToJ may start own plot
+					limit = {
+						OR = {
+							character:Hightower_3 = { is_alive = yes }
+							character:Whent_5 = { is_alive = yes }
+							character:Dayne_5 = { is_alive = yes }
+						}
+					}
+
+					if = { # Check for Gerold Hightower....
+						limit = { character:Hightower_3 = { is_alive = yes } }
+						character:Hightower_3 = { save_scope_as = agot_toj_kingsguard_leader }
+					}
+					else_if = { # Else check for Oswell Whent...
+						limit = { character:Whent_5 = { is_alive = yes } }
+						character:Whent_5 = { save_scope_as = agot_toj_kingsguard_leader }
+					}
+					else_if = { # Else check for Arthur Dayne...
+						limit = { character:Dayne_5 = { is_alive = yes } }
+						character:Dayne_5 = { save_scope_as = agot_toj_kingsguard_leader }
+					}
+
+					scope:agot_toj_kingsguard_leader = { trigger_event = agot_scenario_rr_toj.0200 }
+				}
+				else = { # Fallback if no one was valid to start the chain; TODO rework fallback
+					set_variable = {
+						name	= agot_rr_toj_status
+						value	= flag:finished
+					}
+
+					character:Stark_5 = { #if no one else is alive she escapes to Essos :P
+						death = {
+							death_reason = death_disappearance
+						}
+					}
+				}
+			}
+		}
+
+		# Resolve Dragonstone matter;
+		triggered_effect = {
+			trigger = {
+				var:agot_rr_dragonstone_matter = flag:pending
+				NOT = { var:agot_rr_dragonstone_matter = flag:fired } # Added to avoid the "variable is set but never used" error
+			}
+			effect = {
+				set_variable = {
+					name	= agot_rr_dragonstone_matter
+					value	= flag:fired
+				}
+
+				if = { # Rebels won
+					limit = { var:mw_linked_war_status = flag:rebels_won }
+
+					title:c_dragonstone.holder = { trigger_event = agot_events_rr_minor.0004 }
+				}
+			}
+		}
+
+		# Check Cersei - Robert marriage
+		triggered_effect = {
+			trigger = {
+				var:agot_rr_cersei_marriage = flag:pending
+				NOT = { var:agot_rr_cersei_marriage = flag:fired }
+				trigger_if = {
+					limit = { var:mw_linked_war_status = flag:rebels_won } # Robert needs to decide about Lyanna first
+
+					var:agot_rr_toj_status = flag:finished
+				}
+			}
+
+			effect = {
+				set_variable = {
+					name	= agot_rr_cersei_marriage
+					value	= flag:fired
+				}
+				title:e_the_westerlands.holder = { trigger_event = { id = agot_events_rr_minor.0111 days = { 5 10 } } }
+			}
+		}
+
+
+		# # Check whether story can be deleted
+		triggered_effect = {
+			trigger = {
+				var:agot_rr_toj_status = flag:finished
+				var:agot_rr_cersei_marriage = flag:fired
+				var:agot_rr_dragonstone_matter = flag:fired
+				OR = { # don't end the story if we still need to manage pregnancies
+					var:agot_rr_preg_status_lyanna = flag:initialized
+					var:agot_rr_preg_status_lyanna = flag:finished
+				}
+				OR = { # don't end the story if we still need to manage pregnancies
+					var:agot_rr_preg_status_rhaella = flag:initialized
+					var:agot_rr_preg_status_rhaella = flag:finished
+				}
+			}
+			effect = {
+				### Cleaning ###
+				agot_rr_remove_cersei_infertility = yes
+				agot_rr_remove_lyanna_infertility = yes
+				agot_rr_remove_yearly_1010_abductor_flag = yes
+				agot_scenario_rr_toj_release_lyanna_from_prison = yes
+				################
+				set_variable = {
+					name	= agot_rr_scenario_status
+					value	= flag:final_phase
+				}
+			}
+		}
+		triggered_effect = {
+			trigger = {
+			}
+			effect = {
+			}
+		}
+	}
+	# Fallback; Kill the story after 300 days of resolving phase anyway
+	effect_group = {
+		days = 1
+		# War is over; Robert chooses king (currently event is unused)
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_debug_on } # In debug we want to preserve this story cycle so we can fix bugs :)
+				var:agot_rr_scenario_status = flag:resolving_phase
+			}
+			effect = {
+				if = {
+					limit = {
+						NOT = { exists = var:agot_rr_scenario_days_in_resolving }
+					}
+					set_variable = {
+						name	= agot_rr_scenario_days_in_resolving
+						value	= 1
+					}
+				}
+				else = {
+					change_variable = {
+						name	= agot_rr_scenario_days_in_resolving
+						add		= 1
+					}
+				}
+
+				if = {
+					limit = {
+						var:agot_rr_scenario_days_in_resolving > 300
+					}
+					set_variable = {
+						name	= agot_rr_scenario_status
+						value	= flag:final_phase
+					}
+				}
+			}
+		}
+	}
+
+	### FINAL PHASE ###
+	# Daily checks for: End the story
+	effect_group = {
+		days = 1
+		# End the story
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_debug_on } # In debug we want to preserve this story cycle so we can fix bugs :)
+				var:agot_rr_scenario_status = flag:final_phase
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+	}
+}

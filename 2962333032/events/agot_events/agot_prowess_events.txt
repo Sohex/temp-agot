@@ -1,0 +1,371 @@
+﻿namespace = agot_prowess
+
+scripted_trigger agot_missing_prowess = {
+	NOT = { has_trait = education_martial_prowess }
+	is_capable_adult = yes
+	is_human = yes # sad wun wun noises
+	OR = {
+		AND = {
+			has_education_martial_trigger = yes
+			agot_martial_prowess_education_trigger = yes
+		}
+		AND = {
+			NOT = { has_trait = craven } # Hodor stop getting fighter traits
+			prowess >= 7
+			agot_prowess_education_trigger = yes
+		}
+	}
+}
+
+agot_prowess.0001 = {
+	hidden = yes
+
+	trigger = {
+		agot_missing_prowess = yes
+		is_human = yes #AGOT TODO.. WW
+	}
+
+	immediate = {
+		random_list = {
+			10 = {
+				modifier = {
+					factor = 10
+					OR = {
+						has_trait = craven
+						has_trait = lazy
+						has_trait = intellect_bad
+					}
+				}
+				modifier = {
+					factor = 0.1
+					OR = {
+						has_trait = brave
+						has_trait = ambitious
+						has_trait = diligent
+						has_trait = intellect_good
+						has_trait = physique_good
+						has_trait = giant
+					}
+				}
+				add_trait = education_martial_prowess_1
+			 }
+			70 = {
+				modifier = {
+					factor = 5
+					OR = {
+						has_trait = content
+						has_trait = stubborn
+						has_trait = humble
+					}
+				}
+				add_trait = education_martial_prowess_2
+			}
+			15 = {
+				modifier = {
+					factor = 5
+					OR = {
+						has_trait = ambitious
+						has_trait = brave
+						has_trait = vengeful
+						has_trait = diligent
+						has_trait = strong
+						has_trait = physique_good
+						has_trait = intellect_good
+					}
+				}
+				add_trait = education_martial_prowess_3
+			}
+			5 = {
+				modifier = {
+					factor = 2
+					OR = {
+						has_trait = ambitious
+						has_trait = brave
+						has_trait = vengeful
+						has_trait = diligent
+						has_trait = strong
+						has_trait = physique_good
+						has_trait = intellect_good
+					}
+				}
+				modifier = {
+					factor = 0
+					prowess < 12
+				}
+				add_trait = education_martial_prowess_4
+			}
+		}
+	}
+}
+
+
+
+# Train Child to Fight
+#AGOT BADGER
+
+agot_prowess.0002 = {
+	hidden = yes
+	orphan = yes
+
+	trigger = {
+		exists = cp:councillor_marshal
+		cp:councillor_marshal = {
+			martial >= mediocre_skill_rating
+		}
+		any_courtier = {
+			is_physically_able = yes
+			is_human = yes
+			AND = {
+				age >= 6
+				age < 16
+			}
+			OR = {
+				can_be_knight_trigger = { ARMY_OWNER = liege }
+				AND = {
+					culture = { has_cultural_parameter = has_access_to_shieldmaidens }
+					has_martial_education_affinity_childhood_trait_trigger = yes
+				}
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		compare_modifier = {
+			target = cp:councillor_marshal
+			value = martial
+			multiplier = 0.2
+			offset = inverted_mediocre_skill_rating
+		}
+	}
+
+	immediate = {
+		cp:councillor_marshal = {
+			save_scope_as = active_councillor
+		}
+		every_courtier = {
+			limit = {
+				is_physically_able = yes
+				is_human = yes
+				AND = {
+					age >= 6
+					age < 16
+				}
+				NOT = { this = root.cp:councillor_marshal }
+				OR = {
+					can_be_knight_trigger = { ARMY_OWNER = liege }
+					AND = {
+						culture = { has_cultural_parameter = has_access_to_shieldmaidens }
+						has_martial_education_affinity_childhood_trait_trigger = yes
+					}
+				}
+			}
+			add_to_temporary_list = possible_child
+		}
+		random_in_list = {
+			list = possible_child
+			weight = {
+				base = 5
+				modifier = {
+					factor = 5
+					OR = {
+						has_trait = ambitious
+						has_trait = rowdy
+						has_trait = bossy
+						has_trait = strong
+						has_trait = physique_good
+						has_trait = intellect_good
+						has_trait = giant
+					}
+				}
+				modifier = {
+					factor = 3
+					OR = {
+						has_trait = education_martial_prowess_1 # less level 1s
+						has_trait = diligent
+						has_trait = sadistic
+						has_trait = brave
+						has_trait = wrathful
+						has_trait = lifestyle_blademaster
+					}
+				}
+				modifier = {
+					factor = 0.5
+					OR = {
+						has_trait = intellect_bad
+						has_trait = education_martial_prowess_2
+					}
+				}
+				modifier = {
+					factor = 0.3
+					has_trait = physique_bad
+					has_trait = pensive #no interest in fight
+				}
+				modifier = {
+					factor = 0.2
+					has_trait = dwarf
+				}
+				modifier = {
+					factor = 0.2
+					has_trait = craven
+					has_trait = lazy
+				}
+				modifier = { #soft cap
+					factor = 0.1
+					has_trait = education_martial_prowess_3
+				}
+				modifier = {
+					factor = 0
+					has_trait = education_martial_prowess_4
+				}
+				modifier = {
+					factor = 0
+					has_trait = education_martial_prowess_5
+				}
+			}
+			save_scope_as = trained
+		}
+
+		random_list = {
+			30 = { #Balance
+				modifier = {
+					add = 60
+					OR = {
+						has_trait = education_martial_prowess_2
+						has_trait = craven
+						has_trait = dwarf
+					}
+				}
+			}
+			70 = { # Child ups their skill at arms
+				send_interface_message = {
+					type = msg_marshal_task_good
+					title = agot_prowess.0002.notification.a
+					desc = {
+						triggered_desc = {
+							trigger = {
+								scope:active_councillor = { martial <= average_skill_level }
+							}
+							desc = task_martial_good_unskilled_notification_tooltip
+						}
+						triggered_desc = {
+							trigger = {
+								scope:active_councillor = { martial > average_skill_level }
+							}
+							desc = task_martial_good_skilled_notification_tooltip
+						}
+					}
+					tooltip = task_train_commanders_notification_tooltip
+
+					left_icon = scope:trained
+					right_icon = scope:active_councillor
+
+					scope:trained = {
+						agot_prowess_rank_up_effect = yes
+					}
+				}
+			}
+			20 = { #blademaster
+				trigger = {
+					scope:trained = {
+						OR = {
+							has_trait = education_martial_prowess_3
+							has_trait = education_martial_prowess_4
+							has_trait = education_martial_prowess_5
+						}
+						NOR = {
+							AND = {
+								has_trait = lifestyle_blademaster
+								has_trait_xp = {
+									trait = lifestyle_blademaster
+									value >= trait_third_level
+								}
+							}
+							has_trait = education_martial_prowess_1
+							has_trait = education_martial_prowess_2
+						}
+					}
+				}
+				send_interface_message = {
+					type = msg_marshal_task_good
+					title = agot_prowess.02.notification.b
+					desc = {
+						triggered_desc = {
+							trigger = {
+								scope:active_councillor = { martial <= average_skill_level }
+							}
+							desc = task_martial_good_unskilled_notification_tooltip
+						}
+						triggered_desc = {
+							trigger = {
+								scope:active_councillor = { martial > average_skill_level }
+							}
+							desc = task_martial_good_skilled_notification_tooltip
+						}
+					}
+					tooltip = task_train_commanders_notification_tooltip
+
+					left_icon = scope:trained
+					right_icon = scope:active_councillor
+
+					scope:trained = {
+						blademaster_lifestyle_rank_up_effect = yes
+					}
+				}
+			}
+			#10 = { # HUNTER lifestyle, more likely for northerners, less for FOT7 since knights look down on archery
+			#}
+			#10 = {} Axe Wife
+		}
+	}
+}
+
+agot_prowess.0003 = {
+	type = character_event
+
+	title = agot_prowess.0003.t
+	desc = agot_prowess.0003.desc
+	trigger = {
+		is_ai = no
+		prowess >= 25
+		OR = {
+			has_trait = education_martial_prowess_1
+			has_trait = education_martial_prowess_2
+			NOR = {
+				has_trait = education_martial_prowess_3
+				has_trait = education_martial_prowess_4
+				has_trait = education_martial_prowess_5
+			}
+		}
+		can_be_knight_trigger = { ARMY_OWNER = root }
+	}
+
+	theme = martial_chivalry_focus
+
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+
+	right_portrait = {
+		character = scope:marshal
+		animation = marshal
+	}
+
+
+	immediate = {
+		if = {
+			limit = { exists = cp:councillor_marshal}
+			cp:councillor_marshal = { save_scope_as = marshal}
+		}
+		else = {
+			random_knight = { save_scope_as = marshal }
+		}
+	}
+
+	option = {
+		name = agot_prowess.0003.a
+
+		agot_prowess_rank_up_effect = yes
+	}
+}

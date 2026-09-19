@@ -1,0 +1,62 @@
+﻿# Shown when an important decision/interaction is available.
+
+#INTERACTIONS
+action_invite_spouse_ruler = {
+	priority = 200
+	check_create_action = {
+		if = {
+			limit = {
+				has_game_rule = agot_realistic_pregnancy_chance
+				# player is married and can have children
+				is_married = yes
+				fertility > 0.1
+				primary_spouse.fertility > 0.1
+				exists = capital_province
+				primary_spouse = {
+					is_ruler = yes
+					sex_opposite_of = root
+				}
+				trigger_if = {
+					limit = { is_female = yes }
+					is_pregnant = no
+					NOT = { has_character_flag = lmf_no_children }
+				}
+				trigger_else = {
+					primary_spouse = {
+						is_pregnant = no
+						NOT = { has_character_flag = lmf_no_children }
+					}
+				}
+				OR = {
+					NOT = {
+						has_inheritable_children = { TOTAL = 1 PREFER = no }
+					}
+					primary_spouse = {
+						NOT = {
+							any_child = {
+								is_child_of = root
+							}
+						}
+					}
+				}
+				is_character_interaction_valid = {
+					recipient = root.primary_spouse
+					interaction = invite_to_visit_interaction
+				}
+			}
+			try_create_important_action = {
+				important_action_type = action_invite_spouse_ruler
+				actor = root
+				recipient = root.primary_spouse
+			}
+		}
+	}
+
+	effect = {
+		open_interaction_window = {
+			interaction = invite_to_visit_interaction
+			actor = scope:actor
+			recipient = scope:recipient
+		}
+	}
+}

@@ -1,0 +1,519 @@
+﻿seek_healing_from_red_priest_interaction = {
+	icon = healing_flames
+	category = interaction_category_religion
+	common_interaction = yes
+	interface_priority = 200
+	desc = seek_healing_from_red_priest_interaction_desc
+
+	ai_targets = {
+		ai_recipients = courtiers
+		ai_recipients = councillors
+		ai_recipients = liege
+	}
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+	ai_frequency = 60
+
+	is_shown = {
+		NOT = { scope:recipient = scope:actor }
+
+		scope:actor = {
+			is_human = yes
+			NOT = { has_character_flag = red_priest_heal_cooldown }
+			NOT = { has_character_flag = blocked_from_red_priest_healing }
+			OR = {
+				has_trait = wounded_1
+				has_trait = wounded_2
+				has_trait = wounded_3
+				has_trait = ill
+				has_trait = great_pox
+				has_trait = early_great_pox
+				has_trait = lovers_pox
+				has_trait = leper
+				has_trait = maimed
+				has_trait = infirm
+				has_trait = gout_ridden
+				has_trait = consumption
+				has_trait = cancer
+				has_trait = typhus
+				has_trait = bubonic_plague
+				has_trait = smallpox
+				has_trait = measles
+				has_trait = dysentery
+				has_trait = ergotism
+				has_trait = wheezing
+				has_trait = greyscale
+				has_trait = spring_sickness
+				has_trait = shivers
+				has_trait = crippled
+			}
+		}
+
+		scope:recipient = {
+			is_human = yes
+			has_trait = red_priest
+			faith = { has_doctrine_parameter = can_heal_via_flames }
+			OR = {
+				is_courtier_of = scope:actor
+				is_councillor_of = scope:actor
+				scope:actor = { is_courtier_of = prev }
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = { trigger_event = agot_rhllor.0001 }
+	}
+
+	ai_potential = {
+		is_adult = yes
+	}
+
+	auto_accept = yes
+
+	ai_will_do = {
+		base = 5
+
+		modifier = {
+			add = 30
+			scope:actor.faith.religion = religion:the_rhllor_religion
+		}
+		modifier = {
+			add = 30
+			AND = {
+				NOT = { scope:actor.faith.religion = religion:the_rhllor_religion }
+				scope:actor.ai_zeal < 0
+			}
+
+		}
+		modifier = {
+			add = 30
+			AND = {
+				NOT = { scope:actor.faith.religion = religion:the_rhllor_religion }
+				scope:actor.piety_level <= 1
+			}
+		}
+	}
+}
+
+offer_red_priest_healing_to_liege_interaction = {
+	icon = healing_flames
+	category = interaction_category_religion
+	common_interaction = yes
+	interface_priority = 200
+	desc = offer_red_priest_healing_to_liege_interaction_desc
+
+	ai_targets = {
+		ai_recipients = courtiers
+		ai_recipients = councillors
+		ai_recipients = liege
+	}
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+	ai_frequency = 60
+
+	is_shown = {
+		NOT = { scope:recipient = scope:actor }
+
+		scope:recipient = {
+			is_human = yes
+			NOT = { has_character_flag = red_priest_heal_cooldown }
+			NOT = { has_character_flag = blocked_from_red_priest_healing }
+			OR = {
+				has_trait = wounded_1
+				has_trait = wounded_2
+				has_trait = wounded_3
+				has_trait = ill
+				has_trait = great_pox
+				has_trait = early_great_pox
+				has_trait = lovers_pox
+				has_trait = leper
+				has_trait = maimed
+				has_trait = infirm
+				has_trait = gout_ridden
+				has_trait = consumption
+				has_trait = cancer
+				has_trait = typhus
+				has_trait = bubonic_plague
+				has_trait = smallpox
+				has_trait = measles
+				has_trait = dysentery
+				has_trait = ergotism
+				has_trait = wheezing
+				has_trait = greyscale
+				has_trait = spring_sickness
+				has_trait = shivers
+				has_trait = crippled
+			}
+		}
+
+		scope:actor = {
+			NOT = { is_playable_character = yes }
+			is_ai = yes
+			is_human = yes
+			has_trait = red_priest
+			faith = { has_doctrine_parameter = can_heal_via_flames }
+			is_courtier_of = scope:recipient
+		}
+	}
+
+	on_accept = {
+		if = {
+			limit = { scope:recipient.faith.religion = religion:the_rhllor_religion }
+			scope:recipient = { trigger_event = agot_rhllor.0008 }
+		}
+		else = { scope:recipient = { trigger_event = agot_rhllor.0009 } }
+	}
+
+	ai_potential = {
+		is_adult = yes
+	}
+
+	auto_accept = yes
+
+	ai_will_do = {
+		base = 10
+
+		modifier = {
+			add = 30
+			scope:recipient.faith.religion = religion:the_rhllor_religion
+		}
+		modifier = {
+			add = 30
+			AND = {
+				NOT = { scope:recipient.faith.religion = religion:the_rhllor_religion }
+				scope:actor.ai_zeal < 0
+			}
+		}
+		modifier = {
+			add = 30
+			AND = {
+				NOT = { scope:recipient.faith.religion = religion:the_rhllor_religion }
+				scope:recipient.piety_level <= 1
+			}
+		}
+	}
+}
+
+agot_sacrifice_child_to_others = {
+	category = interaction_category_religion
+	desc = agot_sacrifice_child_to_others_desc
+	interface_priority = 40
+	auto_accept = yes
+	icon = "gfx/interface/icons/faith/coldgods.dds"
+
+	is_shown = {
+		scope:actor.faith = {
+			has_doctrine_parameter = can_sacrifice_children_to_others
+		}
+		scope:recipient = {
+			NOT = { this = scope:actor }
+			liege = scope:actor
+			OR = {
+				is_child_of = scope:actor
+				is_grandchild_of = scope:actor
+				is_great_grandchild_of = scope:actor
+			}
+		}
+	}
+
+	cooldown = { years = 2 }
+
+	cost = { prestige = 250 }
+
+	is_valid_showing_failures_only = {
+		scope:recipient.age <= 2
+		scope:actor = { has_trait = cynical }
+	}
+
+	on_accept = {
+		scope:recipient = {
+			show_as_tooltip = {
+				death = {
+					death_reason = death_sacrificed_to_others
+					killer = scope:actor
+				}
+			}
+		}
+		scope:actor = {
+			show_as_tooltip = {
+				add_trait = murderer
+				add_kinslayer_trait_or_nothing_effect = { VICTIM = scope:recipient }
+				add_piety = major_piety_gain
+			}
+			trigger_event = agot_religion_events.0900
+		}
+	}
+
+	ai_potential = {
+		always = yes
+	}
+	ai_targets = {
+		ai_recipients = children
+		ai_recipients = courtiers
+	}
+	ai_frequency = 36
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 30
+			scope:actor = {
+				any_child = {
+					count > 1
+				}
+			}
+		}
+		modifier = {
+			add = -50
+			scope:recipient = {
+				is_heir_of = scope:actor
+			}
+		}
+	}
+}
+agot_send_food_to_dragon_religious = {
+	category = interaction_category_religion
+	desc = agot_send_food_to_dragon_religious_desc
+	interface_priority = 40
+	auto_accept = yes
+	icon = icon_scheme_dragon
+
+	is_shown = {
+		scope:actor.faith = { has_doctrine_parameter = can_send_food_to_dragons }
+		scope:recipient = {
+			NOT = { this = scope:actor }
+			has_trait = dragon
+			NOT = {
+				has_variable = current_rider
+			}
+		}
+	}
+
+	cost = {
+		gold = 500
+	}
+
+	cooldown = { years = 2 }
+
+	is_valid_showing_failures_only = {
+		custom_description = {
+			text = agot_send_food_to_dragon_religious_dragon_belongs_to_someone
+			NOT = {
+				scope:recipient = { has_variable = current_rider }
+			}
+		}
+		scope:actor.age >= 14
+	}
+
+	on_accept = {
+		scope:actor = {
+			custom_tooltip = agot_send_food_to_dragon_religious_tt
+			trigger_event = agot_religion_events.0800
+		}
+	}
+
+	ai_potential = {
+		always = yes
+	}
+	ai_targets = {
+		ai_recipients = courtiers
+		ai_recipients = guests
+	}
+	ai_frequency = 36
+
+	ai_will_do = {
+		base = 0
+		modifier = {
+			add = 30
+			scope:actor = {
+				OR = {
+					has_trait = zealous
+					has_trait = fire_obsessed
+					has_character_modifier = agot_child_interested_in_dragons
+				}
+			}
+		}
+	}
+}
+
+agot_send_for_faceless_interaction = {
+	icon = icon_hostile
+	desc = agot_send_for_faceless_interaction_desc
+	interface_priority = 100
+	use_diplomatic_range = yes
+
+	category = interaction_category_hostile
+
+	cooldown = { years = 10 }
+
+	is_shown = {
+		exists = global_var:hall_of_faces
+		scope:actor = {
+			is_human = yes
+			NOT = { any_owned_story = { story_type = story_hire_faceless } }
+			any_scheme = {
+				scheme_type = murder
+				scheme_target_character = scope:recipient
+			}
+		}
+	}
+
+	is_valid = {
+		scope:actor = {
+			# Can, in principle, pay the cost of service:
+			agot_can_afford_faceless_price = yes
+
+			custom_tooltip = {
+				text = required_intrigue_faceless.tt
+				OR = {
+					any_councillor = {
+						has_council_position = councillor_spymaster
+						intrigue > 19
+					}
+					intrigue > 19
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			set_variable = {
+				name = faceless_victim
+				value = scope:recipient
+			}
+			create_story = {
+				type = story_hire_faceless
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	ai_frequency = 12
+
+	ai_targets = {
+		ai_recipients = scheme_targets
+	}
+
+	ai_set_target = {
+		scope:recipient = {
+			save_scope_as = target
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 20
+			short_term_gold > 1000
+		}
+
+		modifier = {
+			add = 30
+			scope:recipient = {
+				OR = {
+					has_relation_rival = scope:actor
+					has_relation_nemesis = scope:actor
+				}
+			}
+		}
+
+		modifier = {
+			factor = 0
+			scope:recipient = {
+				OR = {
+					is_ruler = no
+					highest_held_title_tier = tier_barony
+				}
+			}
+		}
+	}
+}
+
+agot_remove_taken_face_interaction = {
+	icon = icon_dynasty
+	desc = agot_remove_taken_face_interaction_desc
+	interface_priority = 100
+	use_diplomatic_range = yes
+
+	category = interaction_category_friendly
+
+	is_shown = {
+		scope:actor = {
+			any_owned_story = {
+				story_type = story_wear_face
+				save_temporary_scope_as = story_temp
+			}
+			NOT = {
+				scope:story_temp ?= {
+					var:new_face = var:old_face
+				}
+			}
+		}
+		scope:actor = scope:recipient
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = agot_remove_taken_face_interaction.same_gender.tt
+			scope:actor = {
+				any_owned_story = {
+					story_type = story_wear_face
+					OR = {
+						AND = {
+							var:old_face ?= { is_male = yes }
+							scope:actor = { is_male = yes }
+						}
+						AND = {
+							var:old_face ?= { is_male = no }
+							scope:actor = { is_male = no }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			hidden_effect = {
+				random_owned_story = {
+					limit = {
+						story_type = story_wear_face
+					}
+					save_scope_as = story
+					var:old_face ?= { save_scope_as = new_face }
+
+					global_var:hall_of_faces = {
+						title_province = {
+							add_to_variable_list = {
+								name = faces
+								target = scope:story.var:new_face
+							}
+						}
+					}
+
+					set_variable = {
+						name = new_face
+						value = scope:new_face
+					}
+				}
+
+				copy_inheritable_appearance_from = scope:new_face
+				set_age = scope:new_face.age
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	ai_will_do = {
+		base = 0
+	}
+}

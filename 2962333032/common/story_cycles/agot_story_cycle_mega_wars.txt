@@ -1,0 +1,827 @@
+﻿###### Needed informaton (surely incomplete)
+# for every cycle:
+#
+# for crown only:
+# variable list: change_liege_list
+# variable list: mw_rebel_leaders
+# variable list: mw_loyalist
+# variable list: mw_neutral
+# variable list: mw_rebel
+#
+#
+#
+
+
+
+story_agot_mw_crown = {
+	# by TitanRogue
+
+	on_setup = {
+		debug_log = "Mega War started on:"
+		debug_log_date = yes
+		##################################
+		set_variable = {
+			name	= mw_status
+			value	= flag:initialized
+		}
+	}
+
+	on_end = {
+		debug_log = "Mega War ended on:"
+		debug_log_date = yes
+
+		save_scope_as = mw_crown_story
+
+		if = {
+			limit = {
+				OR = {
+					has_variable_list = mw_rebel_leader_list
+					has_variable_list = mw_rebel_leader_backup_list
+				}
+			}
+
+			every_in_list = {
+				variable = mw_rebel_leader_list
+
+				every_owned_story = {
+					limit = {
+						story_type = story_agot_mw_rebel
+						var:mw_crown_story_var ?= scope:mw_crown_story
+					}
+
+					save_scope_as = mw_rebel_story
+					scope:mw_crown_story = {
+						var:mw_title.holder ?= { save_scope_as = fallback_winner }
+						agot_mw_rebuild_realm_effect = { REBUILD_MODE = story_ends TARGET = root.story_owner }
+					}
+				}
+			}
+
+			every_in_list = {
+				variable = mw_rebel_leader_backup_list
+
+				every_owned_story = {
+					limit = {
+						story_type = story_agot_mw_rebel
+						var:mw_crown_story_var ?= scope:mw_crown_story
+					}
+
+					save_scope_as = mw_rebel_story
+					scope:mw_crown_story = {
+						var:mw_title.holder ?= { save_scope_as = fallback_winner }
+						agot_mw_rebuild_realm_effect = { REBUILD_MODE = story_ends TARGET = root.story_owner }
+					}
+				}
+			}
+		}
+		else = {
+			scope:mw_crown_story = {
+				var:mw_title.holder ?= { save_scope_as = fallback_winner }
+				agot_mw_rebuild_realm_effect = { REBUILD_MODE = story_ends TARGET = root.story_owner }
+			}
+		}
+
+		# Fire cleanup effects, award outcomes, etc.
+		switch = {
+			trigger = var:mw_status
+			flag:liege_victory 		= { } # Do something
+			flag:liege_loss 		= { } # Do something
+			flag:initialized 		= { debug_log = "Somehow ended the recently initialized megawar. This should not happen." debug_log_scopes = yes }
+			flag:on_going 			= { debug_log = "Somehow ended the ongoing megawar. This should not happen." debug_log_scopes = yes }
+			flag:invalidated 		= { } # Nothing happens
+		}
+
+		# Generic cleanup effects
+		story_owner = {
+			remove_variable = agot_pwl_direct # in case it exists
+		}
+	}
+
+	on_owner_death = {
+		if = {
+			limit = { # Conditions for handling it one way
+				exists = story_owner.primary_heir
+				story_owner.primary_heir = { is_alive = yes }
+			}
+
+			# Inherits megawar
+			make_story_owner = story_owner.primary_heir
+		}
+		else_if = {
+			limit = { exists = var:mw_title.holder }
+
+			make_story_owner = var:mw_title.holder
+		}
+		else = {
+			set_variable = {
+				name	= mw_status
+				value	= flag:invalidated
+			}
+			end_story = yes # Call off the war
+			# TODO effect to end mega war needed
+		}
+	}
+
+
+	#### Daily checks for phases
+	effect_group = {
+		days = 1
+
+		#### PHASE: initialized ####
+		# Final initialization
+		triggered_effect = {
+			trigger = {
+				var:mw_status = flag:initialized
+			}
+			effect = {
+				set_variable = {
+					name	= mw_status
+					value	= flag:on_going
+				}
+
+				every_in_list = {
+					variable = mw_loyalist_list
+
+					limit = {
+						OR = {
+							highest_held_title_tier = tier_empire
+							AND = {
+								exists = scope:mw_choosing_ruler.var:agot_pwl_direct
+								scope:mw_crown_story = { is_target_in_variable_list = { name = mw_neutral_list target = scope:mw_choosing_ruler.var:agot_pwl_direct } }
+							}
+							AND = {
+								exists = scope:mw_choosing_ruler.liege
+								scope:mw_crown_story = { is_target_in_variable_list = { name = mw_loyalist_list target = scope:mw_choosing_ruler.liege } }
+							}
+						}
+					}
+
+					save_scope_as = mw_temp_partic_scope
+
+					root = {
+						every_in_list = {
+							variable = mw_wars
+
+							every_war_participant = {
+								limit = { this = scope:mw_temp_partic_scope}
+								prev = { remove_participant = prev }
+							}
+
+							if = {
+								limit = { is_participant = scope:mw_temp_partic_scope }
+								remove_participant = scope:mw_temp_partic_scope
+							}
+
+							if = {
+								limit = { is_attacker = root.story_owner }
+								add_attacker = scope:mw_temp_partic_scope
+							}
+							else_if = {
+								limit = { is_defender = root.story_owner }
+								add_defender = scope:mw_temp_partic_scope
+							}
+						}
+					}
+
+					agot_mw_clear_debug_data = yes
+				}
+				every_in_list = {
+					variable = mw_rebel_leader_list
+
+					limit = {
+						any_owned_story = {
+							story_type = story_agot_mw_rebel
+							var:mw_status = flag:initialized
+							var:mw_crown_story_var ?= root
+						}
+					}
+
+					every_owned_story = {
+						limit = {
+							story_type = story_agot_mw_rebel
+							var:mw_status = flag:initialized
+							var:mw_crown_story_var ?= root
+						}
+
+						save_scope_as = mw_rebel_story
+
+						every_in_list = {
+							variable = mw_rebel_supporter_list
+							limit = { is_independent_ruler = yes } # DON'T CHANGE THIS TO agot_is_independent_ruler!!!!!!!!!!!!
+
+							save_scope_as = rebel_supporter_war_scope
+
+							root = {
+								every_in_list = {
+									variable = mw_wars
+
+									# We only need to add a participant if they're not already involved
+									limit = { NOT = { is_participant = scope:rebel_supporter_war_scope } }
+
+									if = {
+										limit = { is_attacker = scope:mw_rebel_story.story_owner }
+
+										add_attacker = scope:rebel_supporter_war_scope
+									}
+									else_if = {
+										limit = { is_defender = scope:mw_rebel_story.story_owner }
+
+										add_defender = scope:rebel_supporter_war_scope
+									}
+								}
+							}
+						}
+					}
+				}
+				#clear_variable_list = mw_participants # Disabled due to breaking MP megawars
+			}
+		}
+
+		#### PHASE: on_going ####
+		# Add prior rebel supporters into realm after war ended in case another mega war exists; already done in rebel story on war end
+		triggered_effect = {
+			trigger = {
+				always = no
+				var:mw_status = flag:on_going
+				has_variable_list = mw_loyalist_list
+				has_variable_list = mw_rebel_leader_list # only if someone is on this list the list exists and a mega war exists
+
+				any_in_list = {
+					variable = mw_loyalist_list
+
+					OR = {
+						AND = {
+							exists = var:agot_pwl_direct
+							var:agot_pwl_direct = root.story_owner
+						}
+						AND = {
+							exists = liege.var:agot_pwl_direct
+							liege.var:agot_pwl_direct = root.story_owner
+						}
+						AND = {
+							exists = liege.liege.var:agot_pwl_direct
+							liege.liege.var:agot_pwl_direct = root.story_owner
+						}
+					}
+				}
+			}
+
+			effect = {
+				every_in_list = {
+					variable = mw_loyalist_list
+
+					limit = {
+						NOT = { this = root.story_owner }
+						OR = {
+							AND = {
+								exists = var:agot_pwl_direct
+								var:agot_pwl_direct = root.story_owner
+							}
+							AND = {
+								exists = liege.var:agot_pwl_direct
+								liege.var:agot_pwl_direct = root.story_owner
+							}
+							AND = {
+								exists = liege.liege.var:agot_pwl_direct
+								liege.liege.var:agot_pwl_direct = root.story_owner
+							}
+						}
+					}
+					save_scope_as = loyalist_list_scope
+
+					# Reset pre war lieges
+					#######################################################
+					create_title_and_vassal_change = {
+						type = swear_fealty
+						save_scope_as = change
+					}
+					change_liege = { liege = var:agot_pwl_direct change = scope:change }
+					resolve_title_and_vassal_change = scope:change
+					#######################################################
+
+					### Variable clean up
+					agot_mw_clear_data_effect = yes
+
+					if = {
+						limit = { highest_held_title_tier = tier_empire }
+
+						root.story_owner = {
+							every_character_war = {
+								if = {
+									limit = {
+										is_attacker = scope:story.story_owner
+										NOT = { is_attacker = scope:loyalist_list_scope }
+									}
+									add_attacker = scope:loyalist_list_scope
+								}
+								else_if = {
+									limit = {
+										is_defender = scope:story.story_owner
+										NOT = { is_defender = scope:loyalist_list_scope }
+									}
+									add_defender = scope:loyalist_list_scope
+								}
+							}
+						}
+					}
+					else = {
+						root = {
+							every_in_list = {
+								variable = mw_wars
+
+								remove_participant = scope:loyalist_list_scope
+							}
+						}
+					}
+				}
+			}
+		}
+
+		triggered_effect = {
+			trigger = {
+				NOT = { var:mw_title = story_owner.primary_title }
+			}
+			effect = {
+				set_variable = { name = mw_title value = story_owner.primary_title }
+			}
+		}
+
+		# Just remove agot_pwl_direct from crown
+		triggered_effect = {
+			trigger = {
+				story_owner = {
+					NOT = { any_owned_story = { story_type = story_agot_mw_rebel } }
+					has_variable = agot_pwl_direct
+				}
+			}
+			effect = {
+				story_owner = { remove_variable = agot_pwl_direct }
+			}
+		}
+
+		# Falback if there is no rebel leader left or crown became a dummy char
+		triggered_effect = {
+			trigger = {
+				var:mw_status = flag:on_going
+				OR = {
+					NOT = { # no more rebel leaders left --> invalidate war
+						any_in_list = {
+							variable = mw_rebel_leader_list
+							exists = this
+						}
+					}
+					story_owner = { agot_is_dummy_character = yes } # crown is dummy --> invalidate war
+				}
+			}
+
+			effect = {
+				set_variable = {
+					name = mw_status
+					value = flag:ending
+				}
+			}
+		}
+
+		# DEBUG
+		# End War
+		triggered_effect = {
+			trigger = {
+				has_game_rule = agot_debug_on
+				story_owner = { has_variable = agot_debug_mw_end_story }
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+	}
+
+	# Look for neutral rulers to choose sides
+	effect_group = { # TODO much work needed here
+		days = 1
+
+		trigger = {
+			has_variable_list = mw_neutral_list
+			always = no
+		}
+
+		triggered_effect = {
+			trigger = {
+
+			}
+			effect = {
+				random_in_list = { # fetch a neutral candidate
+					variable = mw_neutral_list
+
+					#weight = { }
+
+					save_scope_as = chosen_neutral_scope
+				}
+				ordered_in_list = { # fetch a rebel leader to potentially join
+					variable = mw_rebel_leader_list
+
+					order_by = {
+						value = 1
+
+						if = { # check opinion
+							limit = {
+								scope:chosen_neutral_scope = { save_temporary_opinion_value_as = { name = temp_opinion target = prev } }
+							}
+
+							if = {
+								limit = { scope:temp_opinion > 0 }
+								add = 20
+							}
+							if = {
+								limit = { scope:temp_opinion > 20 }
+								add = 20
+							}
+							if = {
+								limit = { scope:temp_opinion > 40 }
+								add = 20
+							}
+							if = {
+								limit = { scope:temp_opinion > 60 }
+								add = 20
+							}
+							if = {
+								limit = { scope:temp_opinion > 80 }
+								add = 20
+							}
+						}
+
+						# check relations
+						if = {
+							limit = {
+								scope:chosen_neutral_scope = { has_relation_friend = prev }
+							}
+
+							add = 50
+						}
+						if = {
+							limit = {
+								scope:chosen_neutral_scope = { has_relation_lover = prev }
+							}
+
+							add = 50
+						}
+					}
+
+					max = 1
+
+					save_scope_as = chosen_rebel_leader_scope
+
+					random_owned_story = {
+						limit = { story_type = story_agot_mw_rebel }
+
+						random_in_list = {
+							variable = mw_wars
+
+							save_scope_as = mw_war_scope
+						}
+					}
+				}
+
+				random_list = {
+					1 = { # Join Loyalists
+						agot_mw_join_loyalists_effect = { RULER = scope:chosen_neutral_scope CROWN = root.story_owner }
+
+						modifier = {
+							exists = scope:mw_war_scope
+							scope:chosen_rebel_leader_scope = scope:mw_war_scope.primary_attacker
+							add = agot_mw_get_attacker_war_score_value
+						}
+						modifier = {
+							exists = scope:mw_war_scope
+							scope:chosen_rebel_leader_scope = scope:mw_war_scope.primary_defender
+							add = agot_mw_get_defender_war_score_value
+						}
+						modifier = {
+							exists = scope:mw_war_scope
+							scope:chosen_rebel_leader_scope = scope:mw_war_scope.primary_defender
+							add = {
+								value = 1
+								if = { # check opinion
+									limit = {
+										scope:chosen_neutral_scope = { save_temporary_opinion_value_as = { name = temp_opinion target = root.story_owner } }
+									}
+
+									if = {
+										limit = { scope:temp_opinion > 0 }
+										add = 20
+									}
+									if = {
+										limit = { scope:temp_opinion > 20 }
+										add = 20
+									}
+									if = {
+										limit = { scope:temp_opinion > 40 }
+										add = 20
+									}
+									if = {
+										limit = { scope:temp_opinion > 60 }
+										add = 20
+									}
+									if = {
+										limit = { scope:temp_opinion > 80 }
+										add = 20
+									}
+								}
+							}
+						}
+					}
+					1 = { # Join Rebels
+						agot_mw_join_rebels_effect = { RULER = scope:chosen_neutral_scope REBEL_LEADER = scope:chosen_rebel_leader_scope }
+
+						modifier = {
+							exists = scope:mw_war_scope
+							scope:chosen_rebel_leader_scope = scope:mw_war_scope.primary_defender
+							add = {
+								value = 1
+								if = { # check opinion
+									limit = {
+										scope:chosen_neutral_scope = { save_temporary_opinion_value_as = { name = temp_opinion target = scope:chosen_rebel_leader_scope } }
+									}
+
+									if = {
+										limit = { scope:temp_opinion > 0 }
+										add = 20
+									}
+									if = {
+										limit = { scope:temp_opinion > 20 }
+										add = 20
+									}
+									if = {
+										limit = { scope:temp_opinion > 40 }
+										add = 20
+									}
+									if = {
+										limit = { scope:temp_opinion > 60 }
+										add = 20
+									}
+									if = {
+										limit = { scope:temp_opinion > 80 }
+										add = 20
+									}
+								}
+							}
+						}
+						modifier = {
+							exists = scope:mw_war_scope
+							root.story_owner = scope:mw_war_scope.primary_defender
+							add = agot_mw_get_defender_war_score_value
+						}
+						modifier = {
+							exists = scope:mw_war_scope
+							root.story_owner = scope:mw_war_scope.primary_attacker
+							add = agot_mw_get_attacker_war_score_value
+						}
+					}
+					#100 = {} # Nothing
+				}
+			}
+		}
+	}
+
+	# End War
+	effect_group = {
+		days = 17
+
+		trigger = {
+			var:mw_status = flag:ending
+			#always = no
+		}
+
+		triggered_effect = {
+			trigger = {
+				var:mw_status = flag:ending
+			}
+			effect = {
+				end_story = yes
+			}
+		}
+	}
+}
+
+story_agot_mw_rebel = {
+	# by TitanRogue
+
+	on_setup = {
+		#debug_log = "Mega War started on:"
+		#debug_log_date = yes
+		##################################
+		set_variable = {
+			name	= mw_status
+			value	= flag:initialized
+		}
+		set_variable = {
+			name	= mw_outcome
+			value	= flag:pending
+		}
+	}
+
+	on_end = {
+		#debug_log = "Mega War ended on:"
+		#debug_log_date = yes
+
+		story_owner = { remove_variable = mw_is_rebel_leader }
+	}
+
+	on_owner_death = {
+		# Death not necessarily results in continuation of the war, but for now the heir continues it
+		story_owner = { save_scope_as = former_story_owner }
+		if = {
+			limit = {
+				exists = story_owner.player_heir # Conditions for handling it one way
+				story_owner.player_heir = { is_alive = yes }
+				NOT = { is_target_in_variable_list = { name = mw_loyalist_list target = story_owner.player_heir } }
+			}
+			# Inherits megawar
+			story_owner.player_heir = { save_scope_as = new_story_owner }
+		}
+		else_if = {
+			limit = {
+				exists = story_owner.primary_heir # Conditions for handling it one way
+				story_owner.primary_heir = { is_alive = yes }
+				NOT = { is_target_in_variable_list = { name = mw_loyalist_list target = story_owner.player_heir } }
+			}
+			# Inherits megawar
+			story_owner.primary_heir = { save_scope_as = new_story_owner }
+		}
+		else = {
+			random_in_list = {
+				variable = mw_rebel_supporter_list
+
+				save_scope_as = new_story_owner
+			}
+		}
+		make_story_owner = scope:new_story_owner
+		var:mw_crown_story_var ?= {
+			add_to_variable_list = { name = mw_rebel_leader_list target = scope:new_story_owner }
+			remove_list_variable = { name = mw_rebel_leader_list target = scope:former_story_owner }
+		}
+	}
+
+	effect_group = {
+		days = 2 # this fires 1 day after the initialization of story_agot_mw_crown
+
+		trigger = {
+			var:mw_status = flag:initialized
+		}
+
+		triggered_effect = {
+			trigger = {
+			}
+			effect = {
+				set_variable = {
+					name	= mw_status
+					value	= flag:on_going
+				}
+			}
+		}
+	}
+
+	# Handle daily checks
+	effect_group = {
+		days = 1
+
+		trigger = {
+			NOT = { var:mw_status = flag:initialized }
+		}
+
+		# Falback if war no longer exists; sometimes invalidated wars (eg tyranny war) does not trigger on_war_invalidate on_action(?) | also invalidate if rebel leader became a dummy char
+		triggered_effect = {
+			trigger = {
+				var:mw_outcome = flag:pending
+				story_owner = {
+					OR = {
+						NOT = { is_at_war_with = root.var:mw_crown_story_var.story_owner } # war no longer exists --> invalidate war
+						agot_is_dummy_character = yes # rebel is dummy --> invalidate war
+					}
+				}
+			}
+
+			effect = {
+				set_variable = {
+					name = mw_outcome
+					value = flag:invalidated
+				}
+				var:mw_linked_scenario_story ?= { # update linked story cycle
+					set_variable = {
+						name	= mw_linked_war_status
+						value	= flag:invalidated
+					}
+				}
+			}
+		}
+
+		# END the story
+		triggered_effect = {
+			trigger = {
+				OR = {
+					var:mw_status = flag:ending
+					var:mw_outcome = flag:invalidated # War invalidated, end the story
+				}
+				NOT = { has_variable = mw_postponed_punishment }
+			}
+			effect = {
+				root.var:mw_crown_story_var ?= { # fetch loyalist story scope
+					save_scope_as = mw_crown_story
+				}
+
+				# Check whether punishment is valid (only if one side won)
+				#agot_mw_check_and_setup_punishment_data = yes
+
+				# if no other mega war exists, end both story cycles; leads to immediate realm rebuild
+				# executes "end_story = yes" on both story cycles (and some clean up/prepeartion stuff)
+				root.var:mw_crown_story_var ?= {
+					add_to_variable_list = { name = mw_rebel_leader_backup_list target = root.story_owner }
+					remove_list_variable = { name = mw_rebel_leader_list target = root.story_owner }
+					if = {
+						limit = { exists = root.var:rebel_war }
+
+						remove_list_variable = { name = mw_wars target = root.var:rebel_war }
+					}
+
+					if = {
+						limit = { NOT = { has_variable_list = mw_rebel_leader_list } }
+
+						set_variable = {
+							name = mw_status
+							value = flag:ending
+						}
+						end_story = yes
+					}
+				}
+				end_story = yes
+			}
+		}
+	}
+
+	# Fallback for punishment if it wasn't possible immediately on war's end
+	effect_group = {
+		days = 3
+
+		trigger = {
+			has_variable = mw_postponed_punishment
+		}
+
+		# rebel_war is resolved
+		triggered_effect = {
+			trigger = {
+				var:mw_status = flag:ending
+			}
+			effect = {
+				if = {
+					limit = {
+						var:mw_outcome = flag:rebels_won
+						story_owner = {
+							has_royal_court = yes # make sure only royal court characters get a court event #AGOT TODO create event chain for players without royal court?
+							has_variable_list = mw_traitors_list
+						}
+					}
+
+					story_owner = {
+						trigger_event = agot_mega_wars.0600
+					}
+					remove_variable = mw_postponed_punishment
+				}
+				else_if = {
+					limit = {
+						var:mw_outcome = flag:crown_won
+						var:mw_crown_story_scope.story_owner ?= {
+							has_royal_court = yes # make sure only royal court characters get a court event #AGOT TODO create event chain for players without royal court?
+							has_variable_list = mw_traitors_list
+						}
+					}
+
+					var:mw_crown_story_scope.story_owner ?= {
+						trigger_event = agot_mega_wars.0600
+					}
+					remove_variable = mw_postponed_punishment
+				}
+			}
+		}
+	}
+
+	#### DEBUG ####
+
+	# End War-DEBUG
+	effect_group = {
+		days = 1
+
+		trigger = {
+			has_game_rule = agot_debug_on
+			story_owner = { has_variable = agot_debug_mw_end_story }
+		}
+
+		triggered_effect = {
+			trigger = {
+				story_owner = { has_variable = agot_debug_mw_end_story }
+			}
+
+			effect = {
+				end_story = yes
+			}
+		}
+	}
+}

@@ -1,0 +1,870 @@
+﻿agot_royal_bastard_story = {
+	on_setup = {
+		# Set up variables via passthrough and then remove them
+		# First, the revealer
+		set_variable = {
+			name = revealer
+			value = story_owner.var:revealer_passthrough
+		}
+		story_owner = {
+			remove_variable = revealer_passthrough
+		}
+		# Then the bastard
+		set_variable = {
+			name = bastard
+			value = story_owner.var:bastard_passthrough
+		}
+		story_owner = {
+			remove_variable = bastard_passthrough
+		}
+		# Then the mother
+		if = {
+			limit = {
+				exists = story_owner.var:real_mother_passthrough
+			}
+			set_variable = {
+				name = real_mother
+				value = story_owner.var:real_mother_passthrough
+			}
+			story_owner = {
+				remove_variable = real_mother_passthrough
+			}
+		}
+		# Then the father
+		if = {
+			limit = {
+				exists = story_owner.var:real_father_passthrough
+			}
+			set_variable = {
+				name = real_father
+				value = story_owner.var:real_father_passthrough
+			}
+			story_owner = {
+				remove_variable = real_father_passthrough
+			}
+		}
+		# Then the employer if they exist
+		if = {
+			limit = {
+				exists = story_owner.var:bastard_employer_passthrough
+			}
+			set_variable = {
+				name = employer
+				value = story_owner.var:bastard_employer_passthrough
+			}
+			story_owner = {
+				remove_variable = bastard_employer_passthrough
+			}
+		}
+		# Then the IT holder if they exist
+		title:h_the_iron_throne = {
+			# Set the IT holder
+			if = {
+				limit = {
+					exists = holder
+				}
+				save_scope_as = ruler_scope
+				scope:story = {
+					set_variable = {
+						name = it_ruler
+						value = title:h_the_iron_throne.holder
+					}
+					set_variable = {
+						name = original_it_ruler # To handle title change conflicts
+						value = title:h_the_iron_throne.holder
+					}
+				}
+			}
+			# Get the realm for notifications
+			every_de_jure_county_holder = {
+				limit = {
+					NOT = {
+						primary_title = title:h_the_iron_throne # Unique event for king
+						this = scope:story.var:revealer # Revealer already knows
+						scope:story.var:revealer.employer ?= this # Unique event for employer
+					}
+				}
+				# Send the notifications
+				trigger_event = agot_events_bastard.0951
+			}
+		}
+		if = {
+			limit = { # Am I skipping the reveal stage
+				NOT = { exists = story_owner.var:rb_pressing_claim_directly }
+			}
+			# Send the event to the bastard if they do not know already
+			story_owner = {
+				# Give flags
+				add_character_flag = royal_bastard
+				# Send the notification event
+				if = { # If I am the revealer
+					limit = {
+						this = scope:story.var:revealer
+					}
+					# Do nothing
+				}
+				else_if = { # Send the event where they know already
+					limit = {
+						knows_self_royal_bastard_secret = yes
+					}
+					trigger_event = agot_events_bastard.0956
+				}
+				else = { # Or the event where they do not know
+					trigger_event = agot_events_bastard.0957
+				}
+			}
+			# Then send event to the revealer if they're not the ruler since that's handled in their own event
+			var:revealer = {
+				if = {
+					limit = {
+						NOT = { has_title = title:h_the_iron_throne }
+					}
+					trigger_event = agot_events_bastard.0958
+				}
+			}
+			# Set royal_bastard_story_stage to 1
+			set_variable = {
+				name = royal_bastard_story_stage
+				value = 1
+				# Values are:
+				# 1 - The bastard has been revealed and the ruler has been informed
+				# 2 - The ruler has made a ruling but the responder has not been informed yet
+				# 3 - The responder has been informed of the ruling and has made a decision
+				# 4 - The decision has been made and the story is over
+			}
+			# Finally, send the event to the ruler if they exist
+			var:it_ruler = {
+				if = {
+					limit = { NOT = { this = scope:story.var:bastard } } # Only if king is not themselves the bastard
+					if = {
+						limit = { dynasty = scope:story.var:bastard.dynasty }
+						trigger_event = agot_events_bastard.0963
+					}
+					else = {
+						trigger_event = agot_events_bastard.0959
+					}
+				}
+			}
+		}
+		else = { # I am pressing the claim directly
+			set_variable = {
+				name = response_to_demand
+				value = flag:reject
+			}
+			set_variable = {
+				name = royal_bastard_story_stage
+				value = 3
+			}
+		}
+	}
+
+
+	on_end = {
+		if = {
+			limit = {
+				var:revealer = {
+					has_character_flag = told_true_parentage
+				}
+			}
+			var:revealer = {
+				remove_character_flag ?= told_true_parentage
+			}
+		}
+		if = {
+			limit = {
+				var:employer = {
+					has_character_flag = told_true_parentage
+				}
+			}
+			var:employer = {
+				remove_character_flag ?= told_true_parentage
+			}
+		}
+	}
+
+	on_owner_death = {
+
+	}
+
+	effect_group = { # Keep the IT ruler up to date
+		days = 1
+		triggered_effect = {
+			trigger = {
+				exists = title:h_the_iron_throne.holder
+				NOT = { title:h_the_iron_throne.holder = var:it_ruler }
+			}
+			effect = {
+				set_variable = {
+					name = it_ruler
+					value = title:h_the_iron_throne.holder
+				}
+				if = { # End if bastard becomes ruler during the story for some reason pre-resolution
+					limit = { var:bastard = var:it_ruler }
+					end_story = yes
+				}
+			}
+		}
+	}
+
+	effect_group = { # Keep the employer up to date
+		days = 1
+		triggered_effect = {
+			trigger = {
+				var:bastard = { is_landed = no }
+			}
+			effect = {
+				if = {
+					limit = {
+						exists = var:bastard.court_owner
+					}
+					set_variable = {
+						name = employer
+						value = var:bastard.court_owner
+					}
+				}
+			}
+		}
+	}
+
+	effect_group = { # Send the appropriate events event on royal_bastard_story_stage 2
+		days = 1
+		triggered_effect = {
+			trigger = {
+				var:royal_bastard_story_stage = 2
+			}
+			effect = {
+				if = { # Letter is on its way
+					limit = {
+						OR = {
+							NOT = { exists = var:letter_delay }
+							var:letter_delay < 14
+						}
+					}
+					if = {
+						limit = {
+							NOT = { exists = var:letter_delay }
+						}
+						set_variable = {
+							name = letter_delay
+							value = 0
+						}
+					}
+					else = {
+						set_variable = {
+							name = letter_delay
+							value = {
+								value = var:letter_delay
+								add = 1
+							}
+						}
+					}
+				}
+				else = { # Letter has arrived
+					# Set the royal_bastard_story_stage to 3
+					set_variable = {
+						name = royal_bastard_story_stage
+						value = 3
+					}
+					# Send the event to the employer / bastard provided they're not already resolved
+					if = {
+						limit = {
+							var:employer_is_ruler = flag:false
+						}
+						if = {
+							limit = {
+								var:bastard = {
+									is_landed = no
+								}
+							}
+							var:employer = {
+								trigger_event = agot_events_bastard.0970
+							}
+						}
+						else = {
+							var:bastard = {
+								trigger_event = agot_events_bastard.0971
+							}
+						}
+					}
+					# Send the notification events to the realm
+					title:h_the_iron_throne = {
+						every_de_jure_county_holder = {
+							limit = {
+								NOT = {
+									primary_title = title:h_the_iron_throne # They're the sender
+									this = scope:story.var:bastard.court_owner # They're the bastard or employer
+								}
+							}
+							# Send the notifications based on the decision made
+							if = {
+								limit = {
+									scope:story.var:rulers_choice = flag:execute_both
+								}
+								trigger_event = agot_events_bastard.0980
+							}
+							else_if = {
+								limit = {
+									scope:story.var:rulers_choice = flag:execute_bastard
+								}
+								trigger_event = agot_events_bastard.0981
+							}
+							else_if = {
+								limit = {
+									scope:story.var:rulers_choice = flag:send_to_order
+								}
+								trigger_event = agot_events_bastard.0982
+							}
+							else_if = {
+								limit = {
+									scope:story.var:rulers_choice = flag:imprison
+								}
+								trigger_event = agot_events_bastard.0983
+							}
+							else_if = {
+								limit = {
+									scope:story.var:rulers_choice = flag:bring_to_court
+								}
+								trigger_event = agot_events_bastard.0984
+							}
+							else_if = {
+								limit = {
+									scope:story.var:rulers_choice = flag:give_up_claims
+								}
+								trigger_event = agot_events_bastard.0985
+								# Send foreswear letter to all if they were a courtier as it won't fire elsewise
+								if = {
+									limit = {
+										scope:story.var:employer_is_ruler = flag:true
+									}
+									scope:story.var:bastard = {
+										save_scope_as = reveal_scope
+									}
+									scope:story.var:it_ruler = {
+										save_scope_as = ruler_scope
+									}
+									trigger_event = {
+										id = agot_events_bastard.1006
+										days = 3
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	effect_group = { # Set up war or end story on royal_bastard_story_stage 3
+		days = 1
+		triggered_effect = {
+			trigger = {
+				var:royal_bastard_story_stage = 3
+				exists = var:response_to_demand
+			}
+			effect = {
+				if = { # Test if they've accepted or it's already been resolved
+					limit = {
+						OR = {
+							var:response_to_demand = flag:accept
+							var:employer_is_ruler = flag:true
+						}
+					}
+					end_story = yes
+				}
+				else = { # War time
+					# Defensive refusal - store demand for post-war enforcement, skip marriages and trait stripping
+					if = {
+						limit = { var:response_to_demand = flag:refuse_defensive }
+						var:bastard = {
+							set_variable = {
+								name = enforcement_demand
+								value = scope:story.var:rulers_choice
+							}
+						}
+					}
+					# Offensive rejection - remove order traits and seek marriage alliances before war
+					else = {
+						# Remove traits that would cause weird scenarios if present
+						# Flavor wise this is a matter of pragmatism - possible TODO: Create events for flavor
+						var:bastard = {
+							if = {
+								limit = {
+									has_trait = maester
+								}
+								agot_remove_maesterhood_effect = yes
+							}
+							remove_trait = septon
+							remove_trait = most_devout_member
+							remove_trait = red_priest
+							remove_trait = drowned_man
+							remove_trait = bearded_priest
+							remove_trait = slave
+							remove_trait = nightswatch
+							remove_trait = nightswatch_temp
+							remove_trait = deserter
+							if = {
+								limit = { has_trait = kingsguard }
+								agot_remove_kingsguard_effect = { KINGSGUARD = scope:story.var:bastard }
+							}
+						}
+					# Viable marriages checks
+					if = {
+						limit = { scope:story.var:bastard = { is_married = no } }
+						# Lords paramount
+						title:e_dorne.holder ?= {
+							add_to_list = potential_marriage_hosts
+						}
+						title:e_the_iron_islands.holder ?= {
+							add_to_list = potential_marriage_hosts
+						}
+						title:e_the_north.holder ?= {
+							add_to_list = potential_marriage_hosts
+						}
+						title:e_the_reach.holder ?= {
+							add_to_list = potential_marriage_hosts
+						}
+						title:e_the_riverlands.holder ?= {
+							add_to_list = potential_marriage_hosts
+						}
+						title:e_the_stormlands.holder ?= {
+							add_to_list = potential_marriage_hosts
+						}
+						title:e_the_vale.holder ?= {
+							add_to_list = potential_marriage_hosts
+						}
+						title:e_the_westerlands.holder ?= {
+							add_to_list = potential_marriage_hosts
+						}
+						# TODO add in other potentials logic (e.g. Essos allies, higher-level dukes, etc)
+						# Remove nonsensical hosts
+						every_in_list ?= {
+							list = potential_marriage_hosts
+							limit = {
+								OR = {
+									scope:story.var:employer ?= { prev = this } # Not the employer
+									this = scope:story.var:bastard # Not the bastard
+									this = scope:story.var:it_ruler # Not the future enemy
+									any_ally = {
+										OR = {
+											# Not an existing ally of the bastard / employer
+											scope:story.var:employer ?= { prev = this }
+											this = scope:story.var:bastard
+											# Not the future enemies ally
+											this = scope:story.var:it_ruler
+										}
+									}
+									is_ai = no # No forcing players into alliances they don't want
+								}
+							}
+							remove_from_list = potential_marriage_hosts
+						}
+						# Check hosts directly
+						#every_in_list ?= {
+						#	list = potential_marriage_hosts
+						#	limit = {
+						#		can_marry_character_trigger = { CHARACTER = scope:story.var:bastard }
+						#	}
+						#	add_to_list = potential_spouses # Could marry unmarried paramounts
+						#	set_variable = { # add score for paramount
+						#		name = marriage_score
+						#		value = 40
+						#	}
+						#	set_variable = { # keep track of alliance
+						#		name = alliance_target
+						#		value = this
+						#	}
+						#}
+						# Check hosts relatives
+						every_in_list ?= {
+							list = potential_marriage_hosts
+							save_scope_as = host
+							every_child = { # Could marry their children
+								limit = {
+									can_marry_character_trigger = { CHARACTER = scope:story.var:bastard }
+									OR = { # Either child is not primary heir OR they have other children
+										NOT = { is_primary_heir_of = scope:host }
+										#OR = {
+										#	is_primary_heir_of = scope:host
+										#	scope:host = {
+										#		any_heir = {
+										#			NOT = { is_primary_heir_of = scope:host }
+										#			dynasty = scope:host.dynasty
+										#		}
+										#	}
+										#}
+									}
+								}
+								add_to_list = potential_spouses
+								set_variable = { # add score for paramount child
+									name = marriage_score
+									value = 20
+								}
+								set_variable = { # keep track of alliance
+									name = alliance_target
+									value = scope:host
+								}
+							}
+							every_sibling = { # Or their siblings
+								limit = {
+									can_marry_character_trigger = { CHARACTER = scope:story.var:bastard }
+									OR = {
+										is_primary_heir_of = scope:host
+										scope:host = {
+											any_heir = {
+												NOT = { is_primary_heir_of = scope:host }
+												dynasty = scope:host.dynasty
+											}
+										}
+									}
+								}
+								add_to_list = potential_spouses
+								set_variable = { # add score for paramount sibling
+									name = marriage_score
+									value = 15
+								}
+								set_variable = { # keep track of alliance
+									name = alliance_target
+									value = scope:host
+								}
+							}
+							every_child = { # Or their grandchildren
+								limit = {
+									NOT = { is_primary_heir_of = scope:host }
+									OR = {
+										is_primary_heir_of = scope:host
+										any_child = { count >= 2 }
+									}
+								}
+								every_child = {
+									limit = { can_marry_character_trigger = { CHARACTER = scope:story.var:bastard } }
+									add_to_list = potential_spouses
+									set_variable = { # add score for paramount grandchild
+										name = marriage_score
+										value = 10
+									}
+									set_variable = { # keep track of alliance
+										name = alliance_target
+										value = scope:host
+									}
+								}
+							}
+						}
+						#Now have list of marriable spouses with base scores, apply more scores
+						every_in_list ?= {
+							list = potential_spouses
+							if = { # Marrying young teens is unappealing
+								limit = { age <= 16 }
+								change_variable = {
+									name = marriage_score
+									add = -5
+								}
+							}
+							if = { # Marrying children even moreso
+								limit = { age <= 12 }
+								change_variable = {
+									name = marriage_score
+									add = -10
+								}
+							}
+							if = { # Middle-aged is less undesireable
+								limit = {
+									is_male = no
+									age >= 30
+								}
+								change_variable = {
+									name = marriage_score
+									add = -5
+								}
+							}
+							if = { # Infertile women are also undesireable
+								limit = {
+									is_male = no
+									age >= 45
+								}
+								change_variable = {
+									name = marriage_score
+									add = -10
+								}
+							}
+							if = { # Quite old people generally as well
+								limit = {
+									age >= 60
+								}
+								change_variable = {
+									name = marriage_score
+									add = -20
+								}
+							}
+							if = { # Weak health is bad
+								limit = {
+									has_weak_physical_health_traits_trigger = yes
+								}
+								change_variable = {
+									name = marriage_score
+									add = -10
+								}
+							}
+							if = { # Strong congenial traits are good
+								limit = {
+									OR = {
+										has_trait = beauty_good_1
+										has_trait = beauty_good_2
+										has_trait = beauty_good_3
+										has_trait = intellect_good_1
+										has_trait = intellect_good_2
+										has_trait = intellect_good_3
+										has_trait = physique_good_1
+										has_trait = physique_good_2
+										has_trait = physique_good_3
+									}
+								}
+								change_variable = {
+									name = marriage_score
+									add = 15
+								}
+							}
+							if = { # Weak congenial traits are bad
+								limit = {
+									OR = {
+										has_trait = beauty_bad_1
+										has_trait = beauty_bad_2
+										has_trait = beauty_bad_3
+										has_trait = intellect_bad_1
+										has_trait = intellect_bad_2
+										has_trait = intellect_bad_3
+										has_trait = physique_bad_1
+										has_trait = physique_bad_2
+										has_trait = physique_bad_3
+									}
+								}
+								change_variable = {
+									name = marriage_score
+									add = -15
+								}
+							}
+							if = { # Dragon riders are amazing
+								limit = { has_trait = dragonrider }
+								change_variable = {
+									name = marriage_score
+									add = 30
+								}
+							}
+							scope:story.var:bastard = { # Generally how bastard feels about them
+								save_opinion_value_as = {
+									name = bastard_opinion
+									target = prev
+								}
+							}
+							change_variable = {
+								name = marriage_score
+								add = {
+									value = scope:bastard_opinion
+									multiply = 0.5 # Don't weight it too heavy
+								}
+							}
+							if = {
+								limit = { scope:story.var:employer ?= { exists = yes } }
+								scope:story.var:employer = { # Generally how host feels about them if they exist
+									save_opinion_value_as = {
+										name = employer_opinion
+										target = prev
+									}
+								}
+								change_variable = {
+									name = marriage_score
+									add = {
+										value = scope:employer_opinion
+										multiply = 0.25 # Weighted less than bastard
+									}
+								}
+							}
+						}
+						clear_saved_scope = host
+						clear_saved_scope = bastard_opinion
+						clear_saved_scope ?= employer_opinion
+
+						# Get top 3, penalizing existing list alliances
+						ordered_in_list ?= {
+							list = potential_spouses
+							order_by = var:marriage_score
+							save_scope_as = potential_spouse_1
+							remove_from_list = potential_spouses
+							add_to_list = choices
+							remove_variable = marriage_score
+							var:alliance_target = {
+								save_scope_as = last_alliance
+							}
+						}
+						every_in_list = {
+							list = potential_spouses
+							limit = { var:alliance_target = scope:last_alliance }
+							change_variable = {
+								name = marriage_score
+								add = -50
+							}
+						}
+						ordered_in_list ?= {
+							list = potential_spouses
+							order_by = var:marriage_score
+							save_scope_as = potential_spouse_2
+							remove_from_list = potential_spouses
+							add_to_list = choices
+							remove_variable = marriage_score
+							var:alliance_target = {
+								save_scope_as = last_alliance
+							}
+						}
+						every_in_list = {
+							list = potential_spouses
+							limit = { var:alliance_target = scope:last_alliance }
+							change_variable = {
+								name = marriage_score
+								add = -50
+							}
+						}
+						ordered_in_list ?= {
+							list = potential_spouses
+							order_by = var:marriage_score
+							save_scope_as = potential_spouse_3
+							remove_from_list = potential_spouses
+							add_to_list = choices
+							remove_variable = marriage_score
+						}
+						# Remove vars from other chars
+						every_in_list = {
+							list = potential_spouses
+							remove_variable = marriage_score
+							remove_variable = alliance_target
+						}
+						# If we have choices, trigger event
+						if = {
+							limit = { any_in_list = { list = choices exists = yes } }
+							var:bastard.court_owner = { # Court owner is either the employer or the bastard
+								trigger_event = {
+									id = agot_events_bastard.0990
+									days = 1
+								}
+							}
+						}
+					}
+					} # End else (offensive rejection marriage block)
+					# Set royal_bastard_story_stage to 4
+					set_variable = {
+						name = royal_bastard_story_stage
+						value = 4
+					}
+				}
+			}
+		}
+	}
+
+	effect_group = {
+		days = 1
+		triggered_effect = {
+			trigger = {
+				var:royal_bastard_story_stage = 4
+				NOT = { var:it_ruler = var:bastard.court_owner } # Sanity check - should never declare war on yourself
+				trigger_if = {
+					limit = {
+						var:it_ruler != var:original_it_ruler
+					}
+					has_variable = new_it_ruler_given_decision
+				}
+			}
+			effect = {
+				# Increment / create the war delay
+				if = {
+					limit = {
+						NOT = { exists = var:war_delay }
+					}
+					set_variable = {
+						name = war_delay
+						value = 0
+					}
+				}
+				else = {
+					set_variable = {
+						name = war_delay
+						value = {
+							value = var:war_delay
+							add = 1
+						}
+					}
+				}
+				# Check the war delay and send the appropriate events
+				if = {
+					limit = { var:war_delay = 8 }
+					# Send announcement events
+					if = {
+						limit = { var:response_to_demand = flag:reject }
+						var:bastard.court_owner = {
+							trigger_event = agot_events_bastard.0992
+						}
+						var:it_ruler = {
+							trigger_event = agot_events_bastard.0993
+						}
+					}
+					else_if = {
+						limit = { var:response_to_demand = flag:refuse_defensive }
+						var:bastard.court_owner = {
+							trigger_event = agot_events_bastard.0986
+						}
+						var:it_ruler = {
+							trigger_event = agot_events_bastard.0987
+						}
+					}
+				}
+				else_if = {
+					limit = { var:war_delay = 9 }
+					if = { # Offensive rejection - bastard claims the throne
+						limit = { var:response_to_demand = flag:reject }
+						var:bastard.court_owner = {
+							trigger_event = agot_events_bastard.0991
+						}
+					}
+					else_if = { # Defensive refusal - crown enforces the demand
+						limit = { var:response_to_demand = flag:refuse_defensive }
+						var:it_ruler = {
+							trigger_event = agot_events_bastard.0997
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						var:war_delay > 10
+					}
+					# End the story - everything else is handled by the cb and events
+					end_story = yes
+				}
+			}
+		}
+	}
+
+	# Maintenance Effect Group to handle case(s) where the IT throne ruler changes so that the new ruler is given a chance to respond to the bastard on their own terms
+	effect_group = {
+		days = 1
+		triggered_effect = {
+			trigger = {
+				var:it_ruler != var:original_it_ruler
+				NOT = {
+					has_variable = new_it_ruler_given_decision
+				}
+				NOT = {
+					var:it_ruler = { is_at_war_with = scope:story.var:bastard.court_owner }
+				}
+			}
+			effect = {
+				var:it_ruler = {
+					if = {
+						limit = { dynasty = scope:story.var:bastard.dynasty }
+						trigger_event = agot_events_bastard.0963
+					}
+					else = {
+						trigger_event = agot_events_bastard.0959
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,744 @@
+﻿random_yearly_playable_pulse = {
+	on_actions = {
+		rv_rescue_list_construction
+		delay = { days = { 1 2 } }
+		rv_rescue_war_declaration
+		delay = { days = {30 90} }
+		rv_revenge_list_construction
+		delay = { days = { 1 2 } }
+		rv_revenge_war_declaration
+
+	}
+}
+
+on_release_from_prison = {
+	on_actions = {
+		rv_demanded_list_removal_on_release
+	}
+}
+
+on_death = {
+	on_actions = {
+		rv_demanded_list_removal_on_death
+	}
+}
+
+rv_hard_imprison = {
+	effect = {
+		if = {
+			limit = {
+				scope:defender = {
+					is_alive = yes
+					is_imprisoned = no
+				}
+			}
+			hard_imprison_character_effect = {
+				TARGET = scope:defender
+				IMPRISONER = scope:attacker
+			}
+		}
+	}
+}
+
+rv_rescue_list_construction = {
+	effect = {
+		root = {
+			save_scope_as = rescuer
+
+			if = {
+				limit = {
+					is_playable_character = yes
+					is_ai = yes
+					is_at_war = no
+					debt_level < 0
+					prestige_level > 0
+					NOT = {any_army = { exists = this }}
+				}
+				if = {
+					limit = {has_variable = rv_rescue_priority}
+					remove_variable = rv_rescue_priority
+				}
+
+				if = {
+					limit = {has_variable_list = rv_rescue_list_temp}
+					clear_variable_list = rv_rescue_list_temp
+				}
+				if = {
+					limit = {
+						NOT = {
+							any_owned_story = {
+								story_type = rv_rescue_war_story
+								exists = this
+							}
+						}
+						rv_rescue_potential_check = yes
+					}
+					create_story = {
+						type = rv_rescue_war_story
+						save_scope_as = rv_rescue_story
+					}
+					rv_rescue_ai_list_construction = yes
+				}
+				else_if = {
+					limit = {
+						rv_rescue_potential_check = yes
+					}
+					random_owned_story = {
+						limit = {
+							story_type = rv_rescue_war_story
+						}
+						save_scope_as = rv_rescue_story
+					}
+					rv_rescue_ai_list_construction = yes
+				}
+				every_in_list = {
+					list = rescue_list_unsorted
+					remove_from_list = rescue_list_unsorted
+				}
+			}
+		}
+	}
+}
+
+rv_rescue_war_declaration = {
+	effect = {
+		#debug_log = "rv_on_action_initiated"
+		root = {
+			save_scope_as = attacker
+
+			if = {
+				limit = {
+					is_playable_character = yes
+					is_ai = yes
+					is_at_war = no
+					debt_level < 0
+					prestige_level > 0
+					NOT = {any_army = { exists = this }}
+					has_variable = rv_rescue_priority
+					any_owned_story = {
+						story_type = rv_rescue_war_story
+						has_variable_list = rv_rescue_list
+						any_in_list = {
+							variable = rv_rescue_list
+							is_alive = yes
+							OR = {
+								is_imprisoned = yes
+								is_concubine = yes
+							}
+						}
+					}
+					NOT = { government_has_flag = government_is_nw }
+					is_human = yes
+				}
+				#debug_log = "rv_check_passed"
+
+				scope:attacker = {
+					random_owned_story = {
+						limit = {
+							story_type = rv_rescue_war_story
+							has_variable_list = rv_rescue_list
+						}
+						save_scope_as = rv_rescue_story
+						every_in_list = {
+							variable = rv_rescue_list
+							#debug_log = "rv_rescuer_switched"
+							limit = {
+								exists = this
+								is_alive = yes
+								OR = {
+									AND = {
+										is_imprisoned = yes
+										NOT = { is_imprisoned_by = scope:attacker }
+									}
+									AND = {
+										is_concubine = yes
+										NOT = { is_concubine_of = scope:attacker }
+									}
+								}
+							}
+							add_to_temporary_list = potential_rescue_target
+							if = {
+								limit = {
+									is_imprisoned = yes
+									NOT = {is_imprisoned_by = scope:attacker}
+								}
+								imprisoner = {
+									add_to_temporary_list = potential_defender_list
+									#debug_log = "rv_imprisoner_added"
+								}
+							}
+							else_if = {
+								limit = {
+									is_concubine = yes
+									NOT = { is_concubine_of = scope:attacker }
+									OR = {
+										AND = {
+											any_former_spouse = {
+												this = scope:attacker
+											}
+											any_consort = {
+												reverse_has_opinion_modifier = {
+													modifier = forced_me_concubine_marriage_opinion
+													target = prev
+												}
+												reverse_has_opinion_modifier = {
+													modifier = forced_spouse_concubine_marriage_opinion
+													target = scope:attacker
+												}
+											}
+										}
+
+										AND = {
+											is_close_or_extended_family_of = scope:attacker
+											any_consort = {
+												reverse_has_opinion_modifier = {
+													modifier = forced_family_concubine_marriage_opinion
+													target = scope:attacker
+												}
+											}
+										}
+									}
+								}
+								every_consort = {
+									add_to_temporary_list = potential_defender_list
+									#debug_log = "rv_imprisoner_added"
+								}
+							}
+						}
+					}
+				}
+
+				every_in_list = {
+					list = potential_defender_list
+					limit = {
+						is_landed = yes
+						highest_held_title_tier >= tier_county
+						NOT = { government_has_flag = government_is_nw }
+						scope:attacker = { is_at_war = no }
+						in_diplomatic_range = scope:attacker
+						NOR = {
+							has_truce = scope:attacker
+							is_allied_to = scope:attacker
+							is_vassal_or_below_of = scope:attacker
+						}
+
+						trigger_if = {
+							limit = {
+								scope:attacker = { is_landless_adventurer = yes }
+							}
+							save_temporary_scope_as = defender
+							scope:attacker.domicile.domicile_location.county.holder = {
+								NOR = {
+									this = scope:defender
+									any_liege_or_above = { this = scope:defender }
+								}
+							}
+						}
+					}
+					save_scope_as = defender
+					#save_scope_as = recipient # For war_declarer_needs_hook_on_liege trigger
+					if = {
+						limit = {
+							OR = {
+								rv_war_declarer_needs_hook_on_liege = no
+								AND = {
+									rv_war_declarer_needs_hook_on_liege = yes
+									scope:attacker = {
+										has_usable_hook = liege
+									}
+								}
+							}
+							scope:attacker.prestige > scope:attacker.rv_rescue_cost_mult
+						}
+						random = {
+							chance = 0
+							modifier = {
+								add ={
+									value = rv_rescue_war_ai_score_value
+									divide = 1
+								}
+							}
+							opinion_modifier = {
+								opinion_target = scope:defender
+								who = scope:attacker
+								multiplier = -0.2
+							}
+							modifier = {
+								add = -10
+								scope:attacker = {
+									dread_modified_ai_boldness = {
+										dreaded_character = scope:defender
+										value <= 0
+									}
+								}
+							}
+							modifier = {
+								add = -20
+								scope:attacker = {
+									dread_modified_ai_boldness = {
+										dreaded_character = scope:defender
+										value <= -40
+									}
+								}
+							}
+							modifier = {
+								add = -25
+								scope:attacker = {
+									target_is_liege_or_above = scope:defender
+									scope:defender = {
+										opinion = {
+											target = scope:attacker
+											value >= -30
+										}
+									}
+								}
+							}
+							modifier = {
+								factor = 0
+								scope:attacker.gold < 0
+							}
+							modifier = {
+								factor = 0.5
+								scope:attacker.gold < scope:attacker.medium_gold_value
+							}
+							modifier = {
+								factor = 0
+								rv_attacker_military_strength < rv_defender_military_strength_mult
+							}
+							modifier = {
+								factor = 1.3
+								rv_attacker_military_strength > rv_defender_military_strength_mult_2
+							}
+							modifier = {
+								factor = rv_rescue_ransom_refused_modifier
+								scope:defender = { is_ai = no }
+							}
+							modifier = {
+								factor = 0
+								scope:attacker = { has_variable = rv_ai_war_declared }
+							}
+							scope:attacker = {
+								add_prestige = rv_rescue_cost_AI
+								if = {
+									limit = {
+										rv_war_declarer_needs_hook_on_liege = yes
+										scope:attacker = {
+											has_usable_hook = liege
+										}
+									}
+									use_hook = liege
+								}
+								start_war = {
+									casus_belli = rv_rescue_war
+									target = scope:defender
+								}
+								set_variable = {
+									name = rv_ai_war_declared
+									value = yes
+								}
+								#debug_log = "rv_on_action_war_triggered"
+							}
+						}
+					}
+				}
+			}
+			if = {
+				limit = { has_variable = rv_ai_war_declared }
+				remove_variable = rv_ai_war_declared
+			}
+		}
+
+		every_in_list = {
+			list = potential_defender_list
+			remove_from_list = potential_defender_list
+		}
+		every_in_list = {
+			list = potential_rescue_target
+			remove_from_list = potential_rescue_target
+		}
+	}
+}
+
+rv_revenge_list_construction = {
+	effect = {
+		root = {
+			save_scope_as = attacker
+
+			if = {
+				limit = {
+					is_playable_character = yes
+					is_ai = yes
+					is_at_war = no #Disable this during testing
+					debt_level < 0
+					prestige_level > 0
+					NOT = {any_army = { exists = this }}
+					is_healthy = yes
+					prestige >= 550
+					ai_vengefulness >= medium_negative_ai_value #Disable this during testing
+				}
+
+				rv_revenge_add_dead_characters_to_root_list_construction = yes
+
+				#rv_revenge_add_dead_characters_to_attacker_story = yes
+
+				every_in_list = {
+					variable = rv_to_be_revenged
+
+					if = {
+						limit = {
+							save_temporary_scope_as = rv_dead_char
+							exists = killer
+							killer = {save_temporary_scope_as = killer_temp}
+							root = {
+								NOT = {
+									is_target_in_variable_list = {
+										name = rv_revenge_potential_defender
+										target = scope:killer_temp
+									}
+								}
+							}
+						}
+						killer = { save_scope_as = killer_temp }
+						root = {
+							add_to_variable_list = {
+								name = rv_revenge_potential_defender
+								target = scope:killer_temp
+							}
+						}
+					}
+				}
+
+				if = {
+					limit = {
+						OR = {
+							has_variable_list = rv_revenging_dead_lovers
+							has_variable_list = rv_revenging_dead_soulmates
+							has_variable_list = rv_revenging_dead_friends
+							has_variable_list = rv_revenging_dead_best_friends
+							has_variable_list = rv_revenging_dead_spouses
+							has_variable_list = rv_revenging_dead_families
+							has_variable_list = rv_to_be_revenged
+						}
+					}
+					clear_variable_list = rv_revenging_dead_lovers
+					clear_variable_list = rv_revenging_dead_soulmates
+					clear_variable_list = rv_revenging_dead_friends
+					clear_variable_list = rv_revenging_dead_best_friends
+					clear_variable_list = rv_revenging_dead_spouses
+					clear_variable_list = rv_revenging_dead_families
+					clear_variable_list = rv_to_be_revenged
+				}
+			}
+		}
+	}
+}
+
+rv_revenge_war_declaration = {
+	effect = {
+		root = {
+			save_scope_as = attacker
+
+			if = {
+				limit = {
+					has_variable_list = rv_revenge_potential_defender
+					is_playable_character = yes
+					is_ai = yes
+					is_at_war = no
+					debt_level < 0
+					prestige_level > 0
+					NOT = {
+						any_army = { exists = this }
+					}
+					is_healthy = yes
+					prestige >= 550
+					ai_vengefulness >= medium_negative_ai_value
+					NOT = { government_has_flag = government_is_nw }
+					is_human = yes
+				}
+
+				every_in_list = {
+					variable = rv_revenge_potential_defender
+
+					save_scope_as = defender
+					save_scope_as = rv_defender
+
+					limit = {
+						is_alive = yes
+						is_playable_character = yes
+						NOT = { government_has_flag = government_is_nw }
+						in_diplomatic_range = scope:attacker
+						NOR = {
+							has_truce = scope:attacker
+							is_allied_to = scope:attacker
+							is_vassal_or_below_of = scope:attacker
+						}
+						trigger_if = {
+							limit = {
+								scope:attacker = { is_landless_adventurer = yes }
+							}
+							save_temporary_scope_as = defender
+							scope:attacker.domicile.domicile_location.county.holder = {
+								NOR = {
+									this = scope:defender
+									any_liege_or_above = { this = scope:defender }
+								}
+							}
+						}
+					}
+
+					scope:attacker ={
+						rv_revenge_add_dead_characters_to_root_sgui = yes
+					}
+
+					if = {
+						limit = {
+							OR = {
+								rv_war_declarer_needs_hook_on_liege = no
+								AND = {
+									rv_war_declarer_needs_hook_on_liege = yes
+									scope:attacker = {
+										has_usable_hook = liege
+									}
+								}
+							}
+							scope:attacker.prestige > scope:attacker.rv_revenge_cost_for_ai_logic
+						}
+						#scope:attacker = {
+							#set_variable = { #debug
+								#name = rv_revenge_ai_score
+								#value = rv_revenge_ai_score
+							#}
+						#}
+						random = {
+							chance = 0
+							modifier = {
+								add ={
+									value = scope:attacker.rv_revenge_discount_for_ai_logic
+									divide = -30
+									max = 60
+								}
+							}
+							opinion_modifier = {
+								opinion_target = scope:defender
+								who = scope:attacker
+								multiplier = -0.2
+							}
+							modifier = {
+								add = 10
+								scope:attacker = {
+									has_relation_rival = scope:defender
+								}
+							}
+							modifier = {
+								add = 20
+								scope:attacker = {
+									has_relation_nemesis = scope:defender
+								}
+							}
+							modifier = {
+								add = -15
+								scope:attacker = {
+									OR = {
+										has_relation_friend = scope:defender
+										has_relation_lover = scope:defender
+									}
+								}
+							}
+							modifier = {
+								add = -30
+								scope:attacker = {
+									has_relation_best_friend = scope:defender
+									has_relation_soulmate = scope:defender
+								}
+							}
+							modifier = {
+								add = -10
+								scope:attacker = {
+									dread_modified_ai_boldness = {
+										dreaded_character = scope:defender
+										value <= 0
+									}
+								}
+							}
+							modifier = {
+								add = -20
+								scope:attacker = {
+									dread_modified_ai_boldness = {
+										dreaded_character = scope:defender
+										value <= -40
+									}
+								}
+							}
+							modifier = {
+								add = -25
+								scope:attacker = {
+									target_is_liege_or_above = scope:defender
+									scope:defender = {
+										opinion = {
+											target = scope:attacker
+											value >= -30
+										}
+									}
+								}
+							}
+							modifier = {
+								factor = 0.25
+								scope:attacker.ai_vengefulness < 0
+							}
+							modifier = {
+								factor = 0.5
+								scope:attacker.ai_vengefulness > 0
+								scope:attacker.ai_vengefulness < medium_positive_ai_value
+							}
+							#modifier = {
+								#factor = 1
+								#scope:attacker.ai_vengefulness > medium_positive_ai_value
+								#scope:attacker.ai_vengefulness < high_positive_ai_value
+							#}
+							modifier = {
+								factor = 1.25
+								scope:attacker.ai_vengefulness > high_positive_ai_value
+								scope:attacker.ai_vengefulness < very_high_positive_ai_value
+							}
+							modifier = {
+								factor = 1.5
+								scope:attacker.ai_vengefulness > very_high_positive_ai_value
+							}
+							modifier = {
+								factor = 0
+								scope:attacker.gold < 0
+							}
+							modifier = {
+								factor = 0.5
+								scope:attacker.gold < scope:attacker.medium_gold_value
+							}
+							modifier = {
+								factor = 0
+								rv_attacker_military_strength < rv_defender_military_strength_mult
+							}
+							modifier = {
+								factor = 1.3
+								rv_attacker_military_strength > rv_defender_military_strength_mult_2
+							}
+							modifier = {
+								factor = 0
+								scope:attacker = {has_variable = rv_ai_war_declared}
+							}
+							#modifier = {
+								#add = 1000 # for testing
+								#always = yes
+							#}
+							scope:attacker = {
+								add_prestige = rv_revenge_cost_AI
+								if = {
+									limit = {
+										rv_war_declarer_needs_hook_on_liege = yes
+										scope:attacker = {
+											has_usable_hook = liege
+										}
+									}
+									use_hook = liege
+								}
+								start_war = {
+									casus_belli = rv_revenge_war
+									target = scope:defender
+								}
+								set_variable = {
+									name = rv_ai_war_declared
+									value = yes
+								}
+								#debug_log = "rv_revenge_on_action_war_triggered"
+							}
+						}
+					}
+					if = {
+						limit = {
+							OR = {
+								has_variable_list = rv_revenging_dead_lovers
+								has_variable_list = rv_revenging_dead_soulmates
+								has_variable_list = rv_revenging_dead_friends
+								has_variable_list = rv_revenging_dead_best_friends
+								has_variable_list = rv_revenging_dead_spouses
+								has_variable_list = rv_revenging_dead_families
+								has_variable_list = rv_to_be_revenged
+							}
+						}
+						clear_variable_list = rv_revenging_dead_lovers
+						clear_variable_list = rv_revenging_dead_soulmates
+						clear_variable_list = rv_revenging_dead_friends
+						clear_variable_list = rv_revenging_dead_best_friends
+						clear_variable_list = rv_revenging_dead_spouses
+						clear_variable_list = rv_revenging_dead_families
+						clear_variable_list = rv_to_be_revenged
+					}
+				}
+			}
+			if = {
+				limit = { has_variable = rv_ai_war_declared }
+				remove_variable = rv_ai_war_declared
+			}
+			clear_variable_list = rv_revenge_potential_defender  ###Disable for testing
+		}
+	}
+}
+
+rv_demanded_list_removal_on_release = {
+	effect = {
+		if = {
+			limit = { has_variable_list = rv_demanded_me_list }
+			every_in_list = {
+				variable = rv_demanded_me_list
+
+				remove_list_variable = {
+					name = rv_declined_prisoner_list
+					target = root
+				}
+				root = {
+					remove_list_variable = {
+						name = rv_demanded_me_list
+						target = prev
+					}
+				}
+			}
+		}
+	}
+}
+
+rv_demanded_list_removal_on_death = {
+	effect = {
+		if = {
+			limit = { has_variable_list = rv_demanded_me_list }
+			every_in_list = {
+				variable = rv_demanded_me_list
+
+				remove_list_variable = {
+					name = rv_declined_prisoner_list
+					target = root
+				}
+				root = {
+					remove_list_variable = {
+						name = rv_demanded_me_list
+						target = prev
+					}
+				}
+			}
+		}
+		if = {
+			limit = { has_variable_list = rv_declined_prisoner_list }
+			every_in_list = {
+				variable = rv_declined_prisoner_list
+
+				remove_list_variable = {
+					name = rv_demanded_me_list
+					target = root
+				}
+				root = {
+					remove_list_variable = {
+						name = rv_declined_prisoner_list
+						target = prev
+					}
+				}
+			}
+		}
+	}
+}

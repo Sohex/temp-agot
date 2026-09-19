@@ -1,0 +1,339 @@
+﻿knight_dragon_attack = {
+	type = knight
+
+	is_valid = {
+		is_current_dragonrider_warfare = yes
+		scope:combat_side.enemy_side = {
+			any_side_knight = {
+				is_alive = yes
+				is_current_dragonrider_warfare = no
+				prowess < root.var:current_dragon.prowess_for_combat_event_opponent # Dragons have prowess so this is fine
+			}
+		}
+	}
+
+	chance = {
+		base = 0
+		modifier = {
+			add = var:current_dragon.dragon_combat_effectiveness
+			factor = 0.2
+			always = yes
+		}
+
+		modifier = {
+			factor = 2
+			var:current_dragon = { has_trait = dragon_bloodthirsty }
+		}
+		modifier = {
+			factor = 1.5
+			var:current_dragon = { has_trait = dragon_aggressive }
+		}
+		modifier = {
+			factor = 1.25
+			var:current_dragon = { has_trait = dragon_impulsive }
+		}
+		modifier = {
+			factor = 0.75
+			var:current_dragon = { has_trait = dragon_calculating }
+		}
+		modifier = {
+			factor = 0.5
+			var:current_dragon = { has_trait = dragon_friendly }
+		}
+		modifier = {
+			factor = 0.25
+			var:current_dragon = { has_trait = dragon_skittish }
+		}
+		modifier = {
+			factor = 0.25
+			var:current_dragon = {
+				OR = {
+					has_trait = dragon_wounded_1
+					has_trait = dragon_wounded_2
+					has_trait = dragon_wounded_3
+					has_trait = dragon_wounded_4
+					has_trait = dragon_wounded_5
+				}
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				scope:combat_side.enemy_side = {
+					any_side_knight = {
+						is_alive = yes
+						is_current_dragonrider_warfare = no
+					}
+				}
+			}
+			scope:combat_side.enemy_side = {
+				random_side_knight = {
+					limit = {
+						is_alive = yes
+						is_current_dragonrider_warfare = no
+						prowess < root.var:current_dragon.prowess_for_combat_event_opponent
+					}
+					save_temporary_scope_as = enemy_knight
+				}
+			}
+			if = {
+				limit = {
+					root = { is_alive = yes }
+					scope:enemy_knight = { is_alive = yes }
+				}
+				dragon_kill_version_randomization_effect = { DRAGON = root.var:current_dragon }
+				scope:enemy_knight = {
+					if = {
+						limit = {
+							is_acclaimed = yes
+						}
+						accolade = { add_glory = minimal_glory_gain }
+					}
+				}
+			}
+		}
+	}
+}
+
+knight_dragon_joined_battle = {
+	type = knight
+
+	is_valid = {
+		is_current_dragonrider_warfare = yes
+		var:current_dragon = { NOT = { has_character_flag = recently_joined_battle } }
+	}
+
+	chance = {
+		base = 100000
+	}
+
+	effect = {
+		# Get dragonrider
+		save_scope_as = dragonrider_in_battle
+		var:current_dragon = {
+			save_scope_as = dragon_in_battle
+		}
+		location = { # Save the location of the battle
+			save_scope_as = battle_location
+		}
+		# Get commander
+		scope:combat_side = {
+			if = {
+				limit = {
+					exists = side_commander
+				}
+				side_commander = {
+					save_scope_as = dragon_commander_in_battle
+				}
+			}
+		}
+		# Get dragonrider enemy
+		if = {
+			limit = {
+				scope:combat_side.enemy_side = {
+					OR = {
+						any_side_knight = { # Enemy knight is alive, is dragonrider, and has a dragon
+							is_alive = yes
+							is_current_dragonrider_warfare = yes
+						}
+						any_side_commander = { # Enemy commander is alive, is dragonrider, and has a dragon
+							is_alive = yes
+							is_current_dragonrider_warfare = yes
+						}
+					}
+				}
+			}
+			scope:combat_side.enemy_side = { # Grab appropriate enemy dragonrider, commanders are prioritized
+				random_side_knight = {
+					limit = {
+						is_alive = yes
+						is_current_dragonrider_warfare = yes
+					}
+					save_scope_as = enemy_dragonrider
+				}
+				random_side_commander = {
+					limit = {
+						is_alive = yes
+						is_current_dragonrider_warfare = yes
+					}
+					save_scope_as = enemy_dragonrider
+				}
+			}
+		}
+		# Get non-dragonrider enemy
+		if = {
+			limit = {
+				scope:combat_side.enemy_side = {
+					any_side_knight = {
+						is_alive = yes
+						is_current_dragonrider_warfare = no
+					}
+				}
+			}
+			scope:combat_side.enemy_side = {
+				random_side_knight = {
+					limit = {
+						is_alive = yes
+						is_current_dragonrider_warfare = no
+					}
+					save_scope_as = enemy_knight
+				}
+			}
+		}
+		# Get enemy commander
+		scope:combat_side.enemy_side = {
+			if = {
+				limit = { exists = side_commander }
+				side_commander = {
+					save_scope_as = enemy_commander_in_battle
+					if = { # Duel primary commander first if possible
+						limit = {
+							is_alive = yes
+							is_current_dragonrider_warfare = yes
+						}
+						save_scope_as = enemy_dragonrider
+					}
+				}
+			}
+		}
+		# Add flag to dragon
+		scope:dragon_in_battle = {
+			add_character_flag = {
+				flag = recently_joined_battle
+				days = 15
+			}
+		}
+		# Call dragon warfare events
+		scope:dragonrider_in_battle = {
+			agot_call_dragon_warfare_events = yes
+		}
+	}
+}
+
+#Disabled
+# knight_duell = {  #AGOT Added by Ronko
+# 	type = knight
+# 	is_valid = {
+# 		#is_ai = no
+# 		is_alive = yes
+# 		NOT = { has_character_flag = already_fighting }
+# 		# prevent duels from deciding wars as the outcome can be quite random
+# 		NOT = {
+# 			AND = {
+# 				exists = scope:combat_side.combat.combat_war.primary_attacker
+# 				scope:combat_side.combat.combat_war.primary_attacker = root
+# 			}
+# 		}
+# 		NOT = {
+# 			AND = {
+# 				exists = scope:combat_side.combat.combat_war.primary_defender
+# 				scope:combat_side.combat.combat_war.primary_defender = root
+# 			}
+# 		}
+# 		NOT = {
+# 			AND = {
+# 				exists = scope:combat_side.combat.combat_war.primary_attacker.primary_heir
+# 				scope:combat_side.combat.combat_war.primary_attacker.primary_heir = root
+# 			}
+# 		}
+# 		NOT = {
+# 			AND = {
+# 				exists = scope:combat_side.combat.combat_war.primary_defender.primary_heir
+# 				scope:combat_side.combat.combat_war.primary_defender.primary_heir = root
+# 			}
+# 		}
+# 		NOT = {
+# 			AND = {
+# 				exists = scope:combat_side.combat.combat_war.primary_attacker.player_heir
+# 				scope:combat_side.combat.combat_war.primary_attacker.player_heir = root
+# 			}
+# 		}
+# 		NOT = {
+# 			AND = {
+# 				exists = scope:combat_side.combat.combat_war.primary_defender.player_heir
+# 				scope:combat_side.combat.combat_war.primary_defender.player_heir = root
+# 			}
+# 		}
+# 	}
+# 	chance = {
+# 		base = 120
+# 		modifier = {
+# 		 	factor = 2
+# 		 	has_trait = brave
+# 		}
+# 		modifier = {
+# 		 	factor = 0.5
+# 		 	has_trait = craven
+# 		}
+# 	}
+# 	effect = {
+# 		scope:combat_side.enemy_side = {
+# 			random_side_knight = {
+# 				limit = {
+# 					is_alive = yes
+# 					NOT = { has_character_flag = already_fighting }
+# 					# prevent duels from deciding wars as the outcome can be quite random
+# 					NOT = {
+# 						AND = {
+# 							exists = scope:combat_side.combat.combat_war.primary_attacker
+# 							this = scope:combat_side.combat.combat_war.primary_attacker
+# 						}
+# 					}
+# 					NOT = {
+# 						AND = {
+# 							exists = scope:combat_side.combat.combat_war.primary_defender
+# 							this = scope:combat_side.combat.combat_war.primary_defender
+# 						}
+# 					}
+# 					NOT = {
+# 						AND = {
+# 							exists = scope:combat_side.combat.combat_war.primary_attacker.primary_heir
+# 							this = scope:combat_side.combat.combat_war.primary_attacker.primary_heir
+# 						}
+# 					}
+# 					NOT = {
+# 						AND = {
+# 							exists = scope:combat_side.combat.combat_war.primary_defender.primary_heir
+# 							this = scope:combat_side.combat.combat_war.primary_defender.primary_heir
+# 						}
+# 					}
+# 					NOT = {
+# 						AND = {
+# 							exists = scope:combat_side.combat.combat_war.primary_attacker.player_heir
+# 							this = scope:combat_side.combat.combat_war.primary_attacker.player_heir
+# 						}
+# 					}
+# 					NOT = {
+# 						AND = {
+# 							exists = scope:combat_side.combat.combat_war.primary_defender.player_heir
+# 							this = scope:combat_side.combat.combat_war.primary_defender.player_heir
+# 						}
+# 					}
+# 				}
+# 				save_temporary_scope_as = enemy_knight
+# 			}
+# 		}
+# 		if = {
+# 			limit = {
+# 				#exists = scope:enemy_knight
+# 				scope:enemy_knight ?= { is_alive = yes }
+# 				#scope:enemy_knight ?= { is_at_same_location = root }
+# 				scope:enemy_knight ?= { NOT = { has_character_flag = already_fighting } }
+# 				NOT = { has_character_flag = already_fighting }
+# 			}
+# 			add_character_flag = already_fighting
+# 			scope:enemy_knight = { add_character_flag = already_fighting }
+# 			configure_start_single_combat_effect = {
+# 				SC_INITIATOR = root
+# 				SC_ATTACKER = root
+# 				SC_DEFENDER = scope:enemy_knight
+# 				FATALITY = possible
+# 				FIXED = no
+# 				LOCALE = battlefield
+# 				OUTPUT_EVENT = agot_battlefield_duel.0001
+# 				INVALIDATION_EVENT = single_combat.1006
+# 			}
+# 		}
+# 	}

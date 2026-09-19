@@ -1,0 +1,1062 @@
+﻿wildling_raid_cb = {
+	group = event
+
+	on_declaration = {
+		on_declared_war = yes
+	}
+	should_invalidate = {
+		scope:defender = {
+			is_ruler = no
+		}
+	}
+	white_peace_possible = no #would be weird for the night watch to vibe with the wildlings without it being a major event
+	cost = {
+		piety = {
+			value = 0
+		}
+		prestige = {
+			value = 0
+		}
+	}
+
+	on_victory_desc = {
+		first_valid = {
+			desc = wildling_raid_wars_victory_desc
+		}
+	}
+
+	on_victory = {
+		scope:defender = {
+			pay_long_term_gold = {
+				target = scope:attacker
+				gold = wildling_raid_cb
+			}
+			add_prestige = wildlings_raid_gold_remove
+			every_realm_province = {
+				limit = {
+					has_holding_type = castle_holding
+				}
+				add_province_modifier = {
+					modifier = nw_castle_raided
+					years = 5
+				}
+			}
+			every_realm_province = {
+				limit = {
+					has_holding_type = city_holding
+				}
+				add_province_modifier = {
+					modifier = nw_city_raided
+					years = 5
+				}
+			}
+		}
+		scope:attacker = {
+			add_prestige = wildling_raid_cb
+			if = {
+				limit = {
+					title:d_wildling_army = {
+						is_title_created = yes
+					}
+				}
+				destroy_title = title:d_wildling_army
+			}
+		}
+	}
+
+	on_defeat_desc = {
+		first_valid = {
+			desc = wildling_raid_wars_defeat_desc
+		}
+	}
+
+	on_defeat = {
+		scope:attacker = {
+			add_prestige = -500
+			if = {
+				limit = {
+					title:d_wildling_army = {
+						is_title_created = yes
+					}
+				}
+				destroy_title = title:d_wildling_army
+			}
+			remove_character_flag = wildling_raid_happened
+		}
+
+		if = {
+			limit = { exists = scope:war.var:wildling_raid_strength }
+			scope:defender = {
+				add_prestige = {
+					value = scope:war.var:wildling_raid_strength
+					subtract = {
+						value = 0
+						scope:attacker = {
+							every_army = {
+								add = army_size
+							}
+						}
+					}
+					min = 5
+					max = 500
+				}
+			}
+		}
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		first_valid = {
+			desc = wildling_raid_wars_white_peace_desc
+		}
+	}
+
+	on_invalidated = {
+		scope:attacker = { remove_character_flag = wildling_raid_happened }
+	}
+
+	on_invalidated_desc = {
+		first_valid = {
+			desc = wildling_raid_wars_invalidated_desc
+		}
+	}
+
+	transfer_behavior = transfer
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = WILDLING_RAID_WAR_NAME
+	war_name_base = WILDLING_RAID_WAR_NAME_BASE
+	cb_name = WILDLING_RAID_CB
+}
+
+## Range Beyond the Wall
+## Based off of Struggle raiding CB. Allows NW to wreck the shit of wildlings
+nw_single_county_ranging_cb = {
+	group = struggle
+	icon = struggle
+
+	combine_into_one = yes
+	should_show_war_goal_subview = yes
+	allow_hostages = no
+	mutually_exclusive_titles = { always = yes }
+	interface_priority = 110
+
+	attacker_score_from_occupation_scale = 150
+	attacker_score_from_battles_scale = 150
+	defender_score_from_battles_scale = 150
+
+	allowed_for_character = {
+		# Attacker must be Interloper in BTW Struggle
+		any_character_struggle = {
+			involvement = interloper
+			is_struggle_type = btw_struggle
+		}
+
+		# Attacker must have NW government
+		government_has_flag = government_is_nw
+		NOT = { government_has_flag = government_is_first_ranger }
+	}
+
+	allowed_against_character = {
+		#Single County
+		any_held_title = {
+			tier = tier_county
+			count = 1
+		}
+		NOT = {
+			any_vassal = {
+				primary_title.tier >= tier_county
+			}
+		}
+
+		# Defender must be Involved in BTW Struggle
+		any_character_struggle = {
+			involvement = involved
+			is_struggle_type = btw_struggle
+		}
+
+		# Attacker's vassals or lieges must not be at war with defender
+		scope:attacker = {
+			NOR = {
+				any_vassal_or_below = {
+					is_at_war_with = scope:defender
+				}
+				any_liege_or_above = {
+					is_at_war_with = scope:defender
+				}
+			}
+		}
+	}
+
+	target_titles = all
+	target_title_tier = county
+	target_de_jure_regions_above = no
+	ignore_effect = change_title_holder
+
+	ai_score = {
+		value = nw_generic_ranging_ai_score_value
+	}
+
+	ai_score_mult = {
+		value = nw_generic_ranging_ai_score_mult_value
+	}
+
+	valid_to_start = {
+		exists = scope:target
+		NOT = {
+			scope:target.title_province = { has_province_modifier = nw_successful_ranging }
+		}
+	}
+
+	should_invalidate = {
+		NOT = {
+			any_in_list = {
+				list = target_titles
+				holder = { target_is_same_character_or_above = scope:defender }
+			}
+		}
+	}
+
+	on_invalidated_desc = msg_county_conquest_war_invalidated_message
+
+	on_invalidated = {}
+
+	cost = {
+		prestige = {
+			value = minor_prestige_value
+			multiply = 2
+			multiply = common_cb_prestige_cost_multiplier
+		}
+	}
+
+	on_declaration = {
+		scope:attacker = {
+			agot_debug_log_effect = { MSG = agot_debug_msg_on_nw_generic_ranging_declared }
+		}
+		on_declared_war = yes
+	}
+
+	on_victory_desc = {
+		triggered_desc = {
+			trigger = {
+				scope:attacker = { is_local_player = yes }
+			}
+			desc = nw_single_county_ranging_cb_desc_victory_attacker
+		}
+		triggered_desc = {
+			trigger = {
+				scope:defender = { is_local_player = yes }
+			}
+			desc = nw_single_county_ranging_cb_desc_victory_defender
+		}
+	}
+
+	on_victory = {
+		#EP2 accolade glory gain for winning against higher ranked enemy
+		scope:attacker = { accolade_attacker_war_end_glory_gain_low_effect = yes }
+
+		every_in_list = {
+			list = target_titles
+			save_scope_as = raid_county
+			# Set raided province modifier
+			title_province = {
+				add_province_modifier = {
+					modifier = nw_successful_ranging
+					years = 3
+				}
+			}
+			show_as_tooltip = {
+				every_in_list = {
+					list = target_titles
+					fp2_border_raid_damage_effect = yes
+				}
+			}
+			# Find province for building destruction
+			ordered_county_province = {
+				order_by = num_buildings
+				random = {
+					chance = 25
+					modifier = { factor = destroy_building_soldier_multiplier_value } # chance increases with more soldiers
+					modifier = { add = destroy_building_development_multiplier_value } # chance increases with development
+					custom_tooltip = destroy_random_building_tt
+					destroy_random_building_variable_effect = yes
+				}
+			}
+		}
+
+		hidden_effect = {
+			scope:attacker = {
+				send_interface_message = {
+					type = event_raid_good
+					title = nw_generic_ranging_message_title
+					show_as_tooltip = {
+						every_in_list = {
+							list = target_titles
+							fp2_border_raid_damage_effect = yes
+						}
+					}
+				}
+			}
+			scope:defender = {
+				send_interface_message = {
+					type = event_raid_bad
+					title = nw_generic_ranging_message_title
+					every_in_list = {
+						list = target_titles
+						fp2_border_raid_damage_effect = yes
+					}
+				}
+			}
+		}
+
+		# Prestige Progress for the Attacker
+		every_in_list = {
+			list = target_titles
+			scope:attacker = {
+				add_prestige_experience = miniscule_prestige_value
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Break alliances now out of diplo range
+		if = {
+			limit = {
+				scope:attacker = {
+					any_ally = {
+						NOT = { in_diplomatic_range = scope:attacker }
+					}
+				}
+			}
+			scope:attacker = {
+				every_ally = {
+					limit = {
+						NOT = { in_diplomatic_range = scope:attacker }
+					}
+					break_alliance = scope:attacker
+				}
+			}
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		triggered_desc = {
+			trigger = {
+				scope:attacker = { is_local_player = yes }
+			}
+			desc = nw_single_county_ranging_cb_desc_white_peace_attacker
+		}
+		triggered_desc = {
+			trigger = {
+				scope:defender = { is_local_player = yes }
+			}
+			desc = nw_single_county_ranging_cb_desc_white_peace_defender
+		}
+	}
+
+	on_white_peace = {
+		# Prestige loss for the attacker
+		scope:attacker = {
+			add_prestige = {
+				value = miniscule_prestige_value
+				multiply = -1.0
+			}
+			stress_impact = {
+				ambitious = medium_stress_impact_gain
+				arrogant = medium_stress_impact_gain
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		scope:defender = {
+			stress_impact = {
+				arrogant = medium_stress_impact_gain
+			}
+		}
+
+		add_truce_white_peace_effect = yes
+	}
+
+	on_defeat_desc = {
+		triggered_desc = {
+			trigger = {
+				scope:attacker = { is_local_player = yes }
+			}
+			desc = nw_single_county_ranging_cb_desc_defeat_attacker
+		}
+		triggered_desc = {
+			trigger = {
+				scope:defender = { is_local_player = yes }
+			}
+			desc = nw_single_county_ranging_cb_desc_defeat_defender
+		}
+	}
+
+	on_defeat = {
+		#EP2 accolade glory gain for winning against higher ranked enemy
+		scope:defender = { accolade_defender_war_end_glory_gain_low_effect = yes }
+
+		# Prestige loss for the attacker
+		scope:attacker = {
+			pay_short_term_gold_reparations_effect = {
+				GOLD_VALUE = 1
+			}
+			add_prestige = {
+				value = medium_prestige_value
+				multiply = -1.0
+			}
+		}
+
+		# Prestige for Defender
+		scope:defender = {
+			add_prestige_war_defender_effect = {
+				PRESTIGE_VALUE = medium_prestige_value
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		add_truce_attacker_defeat_effect = yes
+
+		scope:attacker = {
+			save_temporary_scope_as = loser
+		}
+
+		on_lost_aggression_war_discontent_loss = yes
+	}
+
+	transfer_behavior = transfer
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	attacker_allies_inherit = no
+	defender_allies_inherit = no
+
+	war_name = GENERIC_RANGING_WAR_NAME
+	war_name_base = GENERIC_RANGING_NAME_BASE
+	cb_name = GENERIC_RANGING_CB
+
+	use_de_jure_wargoal_only = yes
+
+	defender_ticking_warscore_delay = { months = 5 }
+	defender_ticking_warscore = 0.10
+
+	attacker_wargoal_percentage = 1
+	attacker_ticking_warscore = 1
+
+	max_defender_score_from_occupation = 100
+	max_attacker_score_from_occupation = 100
+
+	ticking_war_score_targets_entire_realm = no
+}
+
+nw_multi_county_ranging_cb = {
+	group = struggle
+	icon = struggle
+
+	combine_into_one = yes
+	should_show_war_goal_subview = yes
+	allow_hostages = no
+	mutually_exclusive_titles = { always = yes }
+	interface_priority = 110
+
+	attacker_score_from_occupation_scale = 150
+	attacker_score_from_battles_scale = 150
+	defender_score_from_battles_scale = 150
+
+	allowed_for_character = {
+		# Attacker must be Interloper in BTW Struggle
+		any_character_struggle = {
+			involvement = interloper
+			is_struggle_type = btw_struggle
+		}
+
+		# Attacker must have NW government
+		government_has_flag = government_is_nw
+		NOT = { government_has_flag = government_is_first_ranger }
+	}
+
+	allowed_against_character = {
+		#Multi County
+		OR = {
+			any_vassal = {
+				primary_title.tier >= tier_county
+			}
+			any_held_title = {
+				tier = tier_county
+				count > 1
+			}
+		}
+
+		# Defender must be Involved in BTW Struggle
+		any_character_struggle = {
+			involvement = involved
+			is_struggle_type = btw_struggle
+		}
+
+		# Attacker's vassals or lieges must not be at war with defender
+		scope:attacker = {
+			NOR = {
+				any_vassal_or_below = {
+					is_at_war_with = scope:defender
+				}
+				any_liege_or_above = {
+					is_at_war_with = scope:defender
+				}
+			}
+		}
+	}
+
+	target_titles = all
+	target_title_tier = county
+	target_de_jure_regions_above = no
+
+	ai_score = {
+		value = nw_generic_ranging_ai_score_value
+	}
+
+	ai_score_mult = {
+		value = nw_generic_ranging_ai_score_mult_value
+	}
+
+	valid_to_start = {
+		exists = scope:target
+	}
+
+	should_invalidate = {
+		NOT = {
+			any_in_list = {
+				list = target_titles
+				holder = { target_is_same_character_or_above = scope:defender }
+			}
+		}
+	}
+
+	on_invalidated_desc = msg_county_conquest_war_invalidated_message
+
+	on_invalidated = {}
+
+	cost = {
+		prestige = {
+			value = minor_prestige_value
+			multiply = 2
+			multiply = common_cb_prestige_cost_multiplier
+		}
+	}
+
+	on_declaration = {
+		scope:attacker = {
+			agot_debug_log_effect = { MSG = agot_debug_msg_on_nw_generic_ranging_declared }
+		}
+		on_declared_war = yes
+	}
+
+	on_victory_desc = {
+		triggered_desc = {
+			trigger = {
+				scope:attacker = { is_local_player = yes }
+			}
+			desc = nw_multi_county_ranging_cb_desc_victory_attacker
+		}
+		triggered_desc = {
+			trigger = {
+				scope:defender = { is_local_player = yes }
+			}
+			desc = nw_multi_county_ranging_cb_desc_victory_defender
+		}
+	}
+
+	on_victory = {
+		#EP2 accolade glory gain for winning against higher ranked enemy
+		scope:attacker = { accolade_attacker_war_end_glory_gain_low_effect = yes }
+
+		every_in_list = {
+			list = target_titles
+			save_scope_as = target_county
+			custom_tooltip = {
+				text = nw_generic_ranging_county_becomes_wilderness
+				make_settlement_county_wilderness = { COUNTY = scope:target_county }
+			}
+		}
+
+		# Prestige Progress for the Attacker
+		every_in_list = {
+			list = target_titles
+			scope:attacker = {
+				add_prestige_experience = miniscule_prestige_value
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Break alliances now out of diplo range
+		if = {
+			limit = {
+				scope:attacker = {
+					any_ally = {
+						NOT = { in_diplomatic_range = scope:attacker }
+					}
+				}
+			}
+			scope:attacker = {
+				every_ally = {
+					limit = {
+						NOT = { in_diplomatic_range = scope:attacker }
+					}
+					break_alliance = scope:attacker
+				}
+			}
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		triggered_desc = {
+			trigger = {
+				scope:attacker = { is_local_player = yes }
+			}
+			desc = nw_multi_county_ranging_cb_desc_white_peace_attacker
+		}
+		triggered_desc = {
+			trigger = {
+				scope:defender = { is_local_player = yes }
+			}
+			desc = nw_multi_county_ranging_cb_desc_white_peace_defender
+		}
+	}
+
+	on_white_peace = {
+		# Prestige loss for the attacker
+		scope:attacker = {
+			add_prestige = {
+				value = miniscule_prestige_value
+				multiply = -1.0
+			}
+			stress_impact = {
+				ambitious = medium_stress_impact_gain
+				arrogant = medium_stress_impact_gain
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		scope:defender = {
+			stress_impact = {
+				arrogant = medium_stress_impact_gain
+			}
+		}
+
+		add_truce_white_peace_effect = yes
+	}
+
+	on_defeat_desc = {
+		triggered_desc = {
+			trigger = {
+				scope:attacker = { is_local_player = yes }
+			}
+			desc = nw_multi_county_ranging_cb_desc_defeat_attacker
+		}
+		triggered_desc = {
+			trigger = {
+				scope:defender = { is_local_player = yes }
+			}
+			desc = nw_multi_county_ranging_cb_desc_defeat_defender
+		}
+	}
+
+	on_defeat = {
+		#EP2 accolade glory gain for winning against higher ranked enemy
+		scope:defender = { accolade_defender_war_end_glory_gain_low_effect = yes }
+
+		# Prestige loss for the attacker
+		scope:attacker = {
+			pay_short_term_gold_reparations_effect = {
+				GOLD_VALUE = 1
+			}
+			add_prestige = {
+				value = medium_prestige_value
+				multiply = -1.0
+			}
+		}
+
+		# Prestige for Defender
+		scope:defender = {
+			add_prestige_war_defender_effect = {
+				PRESTIGE_VALUE = medium_prestige_value
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		add_truce_attacker_defeat_effect = yes
+
+		scope:attacker = {
+			save_temporary_scope_as = loser
+		}
+
+		on_lost_aggression_war_discontent_loss = yes
+	}
+
+	transfer_behavior = transfer
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	attacker_allies_inherit = no
+	defender_allies_inherit = no
+
+	war_name = GENERIC_RANGING_WAR_NAME
+	war_name_base = GENERIC_RANGING_NAME_BASE
+	cb_name = "GENERIC_RANGING_CB"
+
+	use_de_jure_wargoal_only = yes
+
+	defender_ticking_warscore_delay = { months = 5 }
+	defender_ticking_warscore = 0.10
+
+	attacker_wargoal_percentage = 1
+	attacker_ticking_warscore = 1
+
+	max_defender_score_from_occupation = 100
+	max_attacker_score_from_occupation = 100
+
+	ticking_war_score_targets_entire_realm = no
+}
+
+### Great Ranging CB ###
+### Allows you to destroy duchy+ titles BTW
+great_ranging_cb = {
+	group = struggle
+	icon = struggle
+
+	allow_hostages = no
+	interface_priority = 110
+
+	allowed_for_character = {
+		# Attacker must be Interloper in BTW Struggle
+		any_character_struggle = {
+			involvement = interloper
+			is_struggle_type = btw_struggle
+		}
+
+		# Attacker must have NW government
+		government_has_flag = government_is_nw
+		NOT = { government_has_flag = government_is_first_ranger }
+	}
+
+	allowed_against_character = {
+		# Defender must be Involved in BTW Struggle
+		any_character_struggle = {
+			involvement = involved
+			is_struggle_type = btw_struggle
+		}
+
+		# Attacker's vassals or lieges must not be at war with defender
+		scope:attacker = {
+			NOR = {
+				any_vassal_or_below = {
+					is_at_war_with = scope:defender
+				}
+				any_liege_or_above = {
+					is_at_war_with = scope:defender
+				}
+			}
+		}
+
+		# Defender primary title must be kingdom or higher
+		primary_title.tier >= tier_kingdom
+	}
+
+	target_titles = none
+
+	white_peace_possible = no
+
+	ai_score = {
+		value = 1000
+	}
+
+	should_invalidate = {
+		scope:defender = {
+			NOT = { primary_title.tier >= tier_kingdom }
+		}
+	}
+
+	cost = {
+		prestige = {
+			value = medium_prestige_value
+			multiply = 2
+			multiply = common_cb_prestige_cost_multiplier
+		}
+	}
+
+	on_declaration = {
+		on_declared_war = yes
+	}
+
+	on_victory_desc = {
+		first_valid = {
+			desc = great_ranging_victory_desc
+		}
+	}
+
+	on_victory = {
+		#EP2 accolade glory gain for winning against higher ranked enemy
+		scope:attacker = { accolade_attacker_war_end_glory_gain_low_effect = yes }
+
+
+		scope:defender.primary_title = { save_scope_as = defender_realm }
+		# Destroy all defender titles in the same tier as their primary title
+		custom_tooltip = {
+			text = shatter_wildling_realm
+			scope:defender = {
+				every_vassal_or_below = {
+					every_held_title = {
+						limit = {
+							tier = tier_county
+							NOT = {
+								this = prev.capital_county
+							}
+						}
+						save_scope_as = target_county
+						make_settlement_county_wilderness = { COUNTY = scope:target_county }
+					}
+					every_held_title = {
+						limit = {
+							tier > tier_county
+						}
+						scope:attacker = {
+							destroy_title = prev
+						}
+					}
+				}
+				every_held_title = {
+					limit = {
+						tier = tier_county
+						NOT = {
+							this = prev.capital_county
+						}
+					}
+					save_scope_as = target_county
+					make_settlement_county_wilderness = { COUNTY = scope:target_county }
+				}
+				every_held_title = {
+					limit = {
+						tier > tier_county
+					}
+					scope:attacker = {
+						destroy_title = prev
+					}
+				}
+			}
+		}
+
+		# Imprison defender
+		scope:attacker = {
+			imprison = {
+				target = scope:defender
+				type = dungeon
+			}
+		}
+
+		# Add modifier to capital county
+		scope:attacker = {
+			capital_county = {
+				add_county_modifier = {
+					modifier = nw_successful_great_ranging_1
+					years = 10
+				}
+			}
+		}
+
+		# Prestige for the attacker
+		scope:attacker = {
+			add_prestige = 200
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+	}
+
+	on_defeat_desc = {
+		first_valid = {
+			desc = great_ranging_defeat_desc
+		}
+	}
+
+	on_defeat = {
+		#EP2 accolade glory gain for winning against higher ranked enemy
+		scope:defender = { accolade_defender_war_end_glory_gain_low_effect = yes }
+
+		# Prestige loss for the attacker
+		scope:attacker = {
+			add_prestige = -500
+		}
+
+		# Prestige for the defender
+		scope:defender = {
+			add_prestige = 500
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = minor_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Truce
+		add_truce_attacker_defeat_effect = yes
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		first_valid = {
+			desc = great_ranging_white_peace_desc
+		}
+	}
+
+	on_invalidated_desc = {
+		first_valid = {
+			desc = great_ranging_invalidated_desc
+		}
+	}
+
+	transfer_behavior = transfer
+
+	on_primary_attacker_death = inherit
+	on_primary_defender_death = inherit
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	war_name = GREAT_RANGING_WAR_NAME
+	war_name_base = GREAT_RANGING_WAR_NAME_BASE
+	cb_name = GREAT_RANGING_CB
+}

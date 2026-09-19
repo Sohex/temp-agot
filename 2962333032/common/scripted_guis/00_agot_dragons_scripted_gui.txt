@@ -1,0 +1,985 @@
+﻿agot_can_have_dragon = {
+	scope = character
+
+	is_shown = {
+		OR = {
+			any_relation = {
+				type = agot_dragon
+			}
+		}
+	}
+}
+
+
+small_size_dragon = {
+	scope = character
+
+	is_shown = {
+		has_trait = dragon
+		dragon_size <= 18
+		NOT = {
+			dragon_size > 18
+		}
+	}
+}
+
+normal_size_dragon = {
+	scope = character
+
+	is_shown = {
+		has_trait = dragon
+		dragon_size > 18
+		NOT = {
+			dragon_size <= 18
+		}
+	}
+}
+
+not_dragon_or_dragonrider = {
+	scope = character
+
+	is_shown = {
+		NOR = {
+			has_trait = dragon
+			has_character_flag = currently_riding_dragon
+			has_character_flag = in_dragon_combat
+		}
+	}
+}
+
+dragonrider_flight = {
+	scope = character
+
+	is_shown = {
+		has_character_flag = currently_riding_dragon
+	}
+}
+
+dragon_land = {
+	scope = character
+
+	is_shown = {
+		has_character_flag = in_dragon_combat
+	}
+}
+
+dragon = {
+	#scope = empty
+	saved_scopes = {
+		char
+	}
+	is_shown = {
+		exists = scope:char
+		scope:char = { has_trait = dragon }
+	}
+}
+
+main_dragon = {
+	is_shown = {
+		has_trait = dragon
+	}
+}
+
+siege_dragon = {
+	scope = character
+	saved_scopes = { sieging_location }
+
+	is_shown = {
+		# do we have a friendly, allied dragon rider participating in the siege?
+		scope:sieging_location ?= { # player has an army with a dragon rider at siege
+			any_character_in_location = { # army commander and knights are valid riders
+				agot_dragon_is_viable_siege_rider_trigger = yes
+			}
+		}
+	}
+
+	is_valid = {
+		scope:sieging_location ?= { # player has an army with a dragon rider at siege
+			custom_tooltip = { # Can't dragon siege pirate dens
+				text = agot_dragon_siege.gui_tt_event_already_fired
+				NOT = { has_variable = agot_dragon_event_open }
+			}
+			custom_tooltip = { # Can't dragon siege pirate dens
+				text = agot_dragon_siege.gui_tt_cant_siege_pirate_den
+				NOT = { has_holding_type = pirate_den_holding }
+			}
+			custom_tooltip = {
+				text = agot_dragon_siege.gui_tt_cant_damage_multiple # this is only to avoid error spam
+				any_character_in_location = { # army commander and knights are valid riders
+					agot_dragon_is_viable_siege_rider_trigger = yes
+				}
+			}
+			custom_tooltip = { # Block button if there is no valid rider available.
+				text = agot_dragon_siege.gui_tt_no_valid_rider
+				any_character_in_location = { # army commander and knights are valid riders
+					agot_dragon_is_viable_siege_rider_trigger = yes
+					NOR = {
+						has_trait_rank = {
+							trait = wounded
+							rank > 1
+						}
+						has_trait = incapable
+						has_trait = infirm
+					}
+					var:current_dragon ?= {
+						NOT = {
+							has_trait_rank = {
+								trait = dragon_wounded
+								rank > 1
+							}
+						}
+					}
+				}
+			}
+			trigger_if = { # There is only one rider at the siege.
+				limit = {
+					any_character_in_location = { # Army commander and knights are valid riders
+						agot_dragon_is_viable_siege_rider_trigger = yes
+						count = 1
+						var:current_dragon ?= { save_temporary_scope_as = only_dragon }
+					}
+				}
+				custom_tooltip = { # Can't damage more
+					text = agot_dragon_siege.gui_tt_cant_damage_single
+					any_character_in_location = { # army commander and knights are valid riders
+						agot_dragon_is_viable_siege_rider_trigger = yes
+						agot_dragon_siege_can_deal_more_damage_trigger = yes
+					}
+				}
+				custom_tooltip = { # Only rider at siege already attacked due to being suggested/ordered
+					text = agot_dragon_siege.tt.rider_already_attacked.single
+					any_character_in_location = { # army commander and knights are valid riders
+						agot_dragon_is_viable_siege_rider_trigger = yes
+						NOT = { var:agot_ordered_dragon_use ?= scope:sieging_location }
+					}
+				}
+			}
+			trigger_else = { # There are several riders at the siege.
+				custom_tooltip = { # Can't damage more
+					text = agot_dragon_siege.gui_tt_cant_damage_multiple
+					any_character_in_location = { # army commander and knights are valid riders
+						agot_dragon_is_viable_siege_rider_trigger = yes
+						agot_dragon_siege_can_deal_more_damage_trigger = yes
+					}
+				}
+				custom_tooltip = { # No rider at siege that wasn't suggested/ordered to use dragon yet and is ai
+					text = agot_dragon_siege.tt.rider_already_attacked.multiple
+					any_character_in_location = { # army commander and knights are valid riders
+						agot_dragon_is_viable_siege_rider_trigger = yes
+						NOT = { var:agot_ordered_dragon_use ?= scope:sieging_location }
+					}
+				}
+			}
+			trigger_if = { # Was already dragon sieged by yourself.
+				limit = { barony.var:used_dragon_sieged_today ?= root }
+				custom_tooltip = {
+					text = agot_dragon_siege.gui_tt_check
+					barony = { NOT = { has_variable = used_dragon_sieged_today } }
+				}
+			}
+			trigger_else = { # Was already dragon sieged by someone else.
+				custom_tooltip = {
+					text = agot_dragon_siege.gui_tt_commander_check
+					barony = { NOT = { has_variable = used_dragon_sieged_today } }
+				}
+			}
+		}
+	}
+
+	effect = {
+		save_scope_as = commander
+
+		scope:sieging_location ?= {
+			every_character_in_location = { # army commander and knights are valid riders
+				limit = {
+					agot_dragon_is_viable_siege_rider_trigger = yes
+					agot_dragon_siege_can_deal_more_damage_trigger = yes
+				}
+				add_to_temporary_list = t_dragon_rider_list
+			}
+		}
+
+		if = { # if only one dragon, don't show selection gui # AGOT TODO if rider is war ally, add event that asks him to use his dragon --> may decide against it, cause he's craven or whatever
+			limit = {
+				any_in_list = {
+					list = t_dragon_rider_list
+					count = 1
+
+					agot_dragon_possible_riders_trigger = { PLAYER = root }
+				}
+			}
+			random_in_list = {
+				list = t_dragon_rider_list
+				limit = {
+					agot_dragon_possible_riders_trigger = { PLAYER = root }
+				}
+				var:current_dragon ?= { save_scope_as = sieging_dragon }
+				save_scope_as = sieging_rider
+				if = { # if clicker is rider --> straight to normal event 0001
+					limit = { this = root }
+					custom_tooltip = agot_dragon_siege.gui_tt_one_dragon_free
+					root = { trigger_event = agot_dragon_siege.0100 }
+				}
+				else = {
+					if = {
+						limit = { agot_dragon_rider_is_bound_trigger = yes }
+						save_scope_value_as = { name = demand_dragon_use value = flag:bound }
+						custom_tooltip = agot_dragon_siege.gui_tt_one_dragon_bound
+					}
+					else = { # rider is not bound by your orders --> only suggest to use dragon (to help AI as a player)
+						custom_tooltip = agot_dragon_siege.gui_tt_one_dragon_free
+						save_scope_value_as = { name = demand_dragon_use value = flag:free }
+					}
+					root = { trigger_event = agot_dragon_siege.0002 }
+				}
+			}
+		}
+		else_if = {
+			limit = { any_in_list = { list = t_dragon_rider_list count > 1 } }
+			custom_tooltip = agot_dragon_siege.gui_tt_multiple_dragons
+			root = { trigger_event = agot_dragon_siege.0001 }
+		}
+
+		if = {
+			limit = {
+				location = {
+					has_stationed_scorpions = yes
+				}
+			}
+			custom_tooltip = agot_dragon_siege.gui_anti_dragon_tt
+		}
+		else_if = {
+			limit = {
+				location = {
+					OR = {
+						has_building = workshops_05
+						has_building = workshops_06
+						AND = {
+							fort_level >= 10
+							county.culture = { has_innovation = innovation_agot_anti_dragon_fighting }
+						}
+					}
+				}
+			}
+			custom_tooltip = agot_dragon_siege.gui_scorpion_1_tt
+		}
+		else_if = {
+			limit = {
+				location = {
+					OR = {
+						has_building = workshops_07
+						has_building = workshops_08
+						AND = {
+							fort_level >= 20
+							county.culture = { has_innovation = innovation_agot_anti_dragon_fighting }
+						}
+					}
+				}
+			}
+			custom_tooltip = agot_dragon_siege.gui_scorpion_2_tt
+		}
+	}
+}
+
+capture_wild_dragon = {
+	scope = character
+
+	is_shown = {
+		scope:owner ?= {
+			agot_has_an_active_dragonpit = yes
+		}
+		has_trait = dragon
+		is_alive = yes
+		OR = {
+			any_liege_or_above = { this = scope:owner }
+			location.county = {
+				holder = {
+					OR = {
+						any_liege_or_above = { this = scope:owner }
+						this = scope:owner
+					}
+				}
+				agot_title_is_an_active_dragonpit = yes
+			}
+		}
+		NOT = { has_character_flag = owned_dragon }
+		NOT = { has_character_flag = in_dragonpit }
+	}
+
+	is_valid = {
+		scope:owner = {
+			custom_tooltip = {
+				text = agot_capture_dragon_cd_gui_tt
+				NOT = {
+					has_variable = capture_cd
+				}
+			}
+		}
+	}
+
+	ai_is_valid = {
+		scope:owner ?= {
+			agot_has_an_active_dragonpit = yes
+		}
+		has_trait = dragon
+		exists = employer
+		NOT = { has_character_flag = owned_dragon }
+		NOT = { has_character_flag = in_dragonpit }
+	}
+
+	effect = {
+		agot_change_dragonpit_status = yes
+	}
+}
+
+send_to_dragonpit = {
+	scope = character
+
+	is_shown = {
+		scope:owner ?= {
+			agot_has_an_active_dragonpit = yes
+		}
+		has_trait = dragon
+		exists = employer
+		employer = scope:owner
+		has_character_flag = owned_dragon
+		NOT = { has_character_flag = in_dragonpit }
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = CANT_SENT_TO_DRAGONPIT_TT
+			NOT = {
+				owns_story_of_type = story_dragon_at_war
+			}
+		}
+		custom_tooltip = {
+			text = CANT_SENT_TO_DRAGONPIT_TRAVELING_TT
+			trigger_if = {
+				limit = {
+					exists = var:current_rider
+					exists = var:current_rider.current_travel_plan
+				}
+				var:current_rider.current_travel_plan = {
+					NOT = { has_travel_option = dragon_flight_option }
+				}
+			}
+			NOT = { exists = current_travel_plan }
+		}
+	}
+
+	ai_is_valid = {
+		scope:owner ?= {
+			agot_has_an_active_dragonpit = yes
+		}
+		has_trait = dragon
+		exists = employer
+		has_character_flag = owned_dragon
+		NOT = { has_character_flag = in_dragonpit }
+	}
+
+	effect = {
+		agot_change_dragonpit_status = yes
+	}
+}
+
+move_or_remove_from_dragonpit = {
+	scope = character
+
+	is_shown = {
+		has_trait = dragon
+		exists = employer
+		employer = scope:owner
+		#has_character_flag = owned_dragon
+		has_character_flag = in_dragonpit
+		scope:owner ?= {
+			agot_has_multiple_active_dragonpits = yes
+		}
+	}
+
+	ai_is_valid = {
+		has_trait = dragon
+		exists = employer
+		#has_character_flag = owned_dragon
+		has_character_flag = in_dragonpit
+	}
+
+	effect = {
+		agot_change_dragonpit_status = yes
+	}
+}
+
+remove_from_dragonpit = {
+	scope = character
+
+	is_shown = {
+		has_trait = dragon
+		exists = employer
+		employer = scope:owner
+		#has_character_flag = owned_dragon
+		has_character_flag = in_dragonpit
+		scope:owner ?= {
+			agot_has_multiple_active_dragonpits = no
+		}
+	}
+
+	ai_is_valid = {
+		has_trait = dragon
+		exists = employer
+		#has_character_flag = owned_dragon
+		has_character_flag = in_dragonpit
+	}
+
+	effect = {
+		agot_change_dragonpit_status = yes
+	}
+}
+
+agot_dragonpit_amenities_gui = {
+	scope = character
+
+	is_shown = {
+		any_held_title = {
+			tier = tier_county
+			OR = {
+				any_county_province = {
+					has_holding_type = castle_holding
+					has_building_or_higher = generic_dragon_pit_01
+				}
+				any_county_province = {
+					OR = {
+						has_building_or_higher = dragonpit_01 # Historical Version
+						has_building = dragonpit_ruins_03 # Fully Restored Ruin Version
+						has_building = agot_dragonmont_01 # Dragonmont
+					}
+				}
+			}
+			has_variable = has_dragonkeeper_order
+		}
+	}
+}
+
+agot_view_dragons_in_dragonpit = {
+	scope = title
+
+	is_shown = {
+		OR = {
+			has_building_or_higher = generic_dragon_pit_01
+			has_building_or_higher = dragonpit_01 # Historical Version
+			has_building = dragonpit_ruins_03 # Fully Restored Ruin Version
+			has_building = agot_dragonmont_01 # Dragonmont
+		}
+	}
+
+	effect = {
+		trigger_event = agot_dragon_pits.0999
+	}
+}
+
+agot_can_see_dragon_military_view = {
+	scope = character
+	is_shown = {
+		any_courtier = {
+			has_trait = dragon
+			OR = {
+				has_character_flag = owned_dragon
+				NOT = { has_character_flag = in_dragonpit }
+			}
+		}
+	}
+}
+
+agot_can_see_owned_dragons_military = {
+	scope = character
+	is_shown = {
+		any_courtier = {
+			has_character_flag = owned_dragon
+			NOT = {
+				has_variable = current_rider
+			}
+		}
+	}
+}
+
+agot_can_see_tamed_dragons_military = {
+	scope = character
+	is_shown = {
+		any_courtier = {
+			has_variable = current_rider
+		}
+	}
+}
+
+agot_can_see_wild_dragons_military = {
+	scope = character
+	is_shown = {
+		any_courtier = {
+			AND = {
+				has_trait = dragon
+				NOR = {
+					has_character_flag = owned_dragon
+					has_character_flag = in_dragonpit
+					has_variable = current_rider
+				}
+			}
+		}
+	}
+}
+
+agot_visible_dragons_military_war_participant = {
+	scope = character
+	is_shown = {
+		OR = {
+			is_current_dragonrider = yes
+			any_courtier = { is_current_dragonrider = yes }
+			any_vassal = { is_current_dragonrider = yes }
+		}
+	}
+}
+
+agot_visible_dragons_military_war_overview = {
+	scope = war
+	saved_scopes = { participant }
+	is_shown = {
+		OR = {
+			any_war_attacker = {
+				this = scope:participant
+				OR = {
+					is_current_dragonrider = yes
+					any_courtier = { is_current_dragonrider = yes }
+					any_vassal = { is_current_dragonrider = yes }
+				}
+			}
+			any_war_defender = {
+				this = scope:participant
+				OR = {
+					is_current_dragonrider = yes
+					any_courtier = { is_current_dragonrider = yes }
+					any_vassal = { is_current_dragonrider = yes }
+				}
+			}
+		}
+	}
+}
+
+agot_dragons_military_war_overview_attacker = {
+	scope = war
+	saved_scopes = { attacker }
+	is_shown = {
+		any_war_attacker = {
+			this = scope:attacker
+			OR = {
+				is_current_dragonrider = yes
+				any_courtier = { is_current_dragonrider = yes }
+				any_vassal = { is_current_dragonrider = yes }
+			}
+		}
+	}
+}
+
+agot_dragons_military_war_overview_defender = {
+	scope = war
+	saved_scopes = { defender }
+	is_shown = {
+		any_war_defender = {
+			this = scope:defender
+			OR = {
+				is_current_dragonrider = yes
+				any_courtier = { is_current_dragonrider = yes }
+				any_vassal = { is_current_dragonrider = yes }
+			}
+		}
+	}
+}
+
+agot_dragons_versus_war_overview_attacker = {
+	scope = war
+	is_shown = {
+		any_war_attacker = {
+			OR = {
+				is_current_dragonrider = yes
+				any_courtier = { is_current_dragonrider = yes }
+				any_vassal = { is_current_dragonrider = yes }
+			}
+		}
+	}
+}
+
+agot_dragons_versus_war_overview_defender = {
+	scope = war
+	is_shown = {
+		any_war_defender = {
+			OR = {
+				is_current_dragonrider = yes
+				any_courtier = { is_current_dragonrider = yes }
+				any_vassal = { is_current_dragonrider = yes }
+			}
+		}
+	}
+}
+
+agot_male_gender_shown = {
+	scope = character
+
+	is_shown = {
+		is_male = yes
+		NOT = { has_trait = dragon }
+	}
+}
+
+agot_female_gender_shown = {
+	scope = character
+
+	is_shown = {
+		is_female = yes
+		NOT = { has_trait = dragon }
+	}
+}
+
+agot_unknown_gender_dragon_shown = {
+	scope = character
+
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		has_variable = dragon_gender_hidden
+	}
+}
+
+agot_male_gender_dragon_shown = {
+	scope = character
+
+	is_shown = {
+		has_trait = dragon
+		is_male = yes
+		OR = {
+			is_alive = no
+			NOT = { has_variable = dragon_gender_hidden }
+		}
+	}
+}
+
+agot_female_gender_dragon_shown = {
+	scope = character
+
+	is_shown = {
+		has_trait = dragon
+		is_female = yes
+		OR = {
+			is_alive = no
+			NOT = { has_variable = dragon_gender_hidden }
+		}
+	}
+}
+
+agot_show_dragon_past_rider_when_dead = {
+	scope = character
+	saved_scopes = {dragon}
+	is_shown = {
+		scope:dragon = {
+			is_alive = no
+		}
+		AND = {
+			has_global_variable_list = gl_dragon_variable_storage
+			any_in_global_list = {
+				variable = gl_dragon_variable_storage
+				var:dragon_id ?= scope:dragon
+				has_variable_list = past_riders
+			}
+		}
+	}
+	effect = {
+		if = {
+			limit = {
+				agot_has_dragon_storage_system_global_list = yes
+			}
+			random_in_global_list = {
+				variable = gl_dragon_variable_storage
+				limit = {
+					var:dragon_id = scope:dragon
+				}
+				save_scope_as = story
+			}
+		}
+		scope:story = {
+			every_in_list = {
+				variable = past_riders
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		trigger_event = agot_dragon_maintenance.0803
+	}
+}
+
+# For Dragon Event Windows
+agot_dragon_event_check_if_night_flight = {
+	scope = character
+	is_shown = {
+		has_character_flag = dragon_night_ride
+		has_character_flag = currently_riding_dragon
+	}
+}
+
+agot_dragon_event_check_if_day_flight = {
+	scope = character
+	is_shown = {
+		NOT = { has_character_flag = dragon_night_ride }
+		has_character_flag = currently_riding_dragon
+	}
+}
+
+# For Character Window Portraits
+agot_check_host = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		exists = root.liege_or_court_owner
+		OR = {
+			var:current_rider ?= { NOT = { this = root.liege_or_court_owner } }
+			AND = {
+				NOT = { has_variable = current_rider }
+				any_relation = {
+					type = agot_dragon
+					is_alive = yes
+				}
+			}
+			AND = {
+				NOT = { has_variable = current_rider }
+				NOT = {
+					any_relation = {
+						type = agot_dragon
+						is_alive = yes
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_check_landed_rider = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		OR = {
+			AND = {
+				has_variable = current_rider
+				NOT = { exists = root.liege_or_court_owner }
+			}
+			var:current_rider ?= { this = root.liege_or_court_owner }
+		}
+	}
+}
+
+agot_check_rider = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		exists = root.liege_or_court_owner
+		OR = {
+			var:current_rider ?= { this = { is_courtier_of = root.liege_or_court_owner } }
+			var:current_rider ?= { NOT = { this = root.liege_or_court_owner } }
+		}
+	}
+}
+
+agot_check_bonded_human = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		any_relation = {
+			type = agot_dragon
+			is_alive = yes
+		}
+		NOT = { has_variable = current_rider }
+	}
+}
+
+# For List COAs
+agot_list_check_rider = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		has_character_flag = owned_dragon
+		has_variable = current_rider
+	}
+}
+
+agot_list_check_bonded_human = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		has_character_flag = owned_dragon
+		any_relation = {
+			type = agot_dragon
+			is_alive = yes
+		}
+		NOT = { has_variable = current_rider }
+	}
+}
+
+agot_list_check_host = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		AND = {
+			NOT = { has_variable = current_rider }
+			NOT = {
+				any_relation = {
+					type = agot_dragon
+					is_alive = yes
+				}
+			}
+		}
+	}
+}
+
+agot_list_check_roaming = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		OR = {
+			AND = {
+				exists = root.liege_or_court_owner
+				exists = root.location.county
+				NOT = { root.liege_or_court_owner = root.location.county.holder }
+			}
+			NOT = { exists = root.liege_or_court_owner }
+		}
+		NOT = { has_character_flag = owned_dragon }
+		NOT = { has_variable = current_rider }
+		NOT = {
+			any_relation = {
+				type = agot_dragon
+				is_alive = yes
+			}
+		}
+		NOT = { has_variable = pitted_dragon_location }
+	}
+}
+
+# For commander list Dragonrider icon
+agot_commander_list_check_rider = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_variable = current_dragon
+		is_current_dragonrider_warfare = yes
+	}
+}
+
+# For Relation and Location Information
+agot_relation_check_rider = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		has_character_flag = owned_dragon
+		has_variable = current_rider
+		NOT = { has_character_flag = in_dragonpit }
+		NOT = { has_variable = pitted_dragon_location }
+	}
+}
+
+agot_relation_check_bonded_human = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		has_character_flag = owned_dragon
+		any_relation = {
+			type = agot_dragon
+			is_alive = yes
+			exists = root.liege_or_court_owner
+			NOT = { this = root.liege_or_court_owner }
+		}
+		NOT = { has_variable = current_rider }
+		NOT = { has_character_flag = in_dragonpit }
+		NOT = { has_variable = pitted_dragon_location }
+	}
+}
+
+agot_relation_check_owned = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		has_character_flag = owned_dragon
+		any_relation = {
+			type = agot_dragon
+			is_alive = yes
+			exists = root.liege_or_court_owner
+			this = root.liege_or_court_owner
+		}
+		NOT = { has_variable = current_rider }
+		NOT = { has_character_flag = in_dragonpit }
+		NOT = { has_variable = pitted_dragon_location }
+	}
+}
+
+agot_relation_check_host = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		has_character_flag = in_dragonpit
+		has_variable = pitted_dragon_location
+	}
+}
+
+agot_relation_check_free = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		has_character_flag = owned_dragon
+		NOT = { has_variable = current_rider }
+		NOT = {
+			any_relation = {
+				type = agot_dragon
+				is_alive = yes
+			}
+		}
+		NOT = { has_variable = pitted_dragon_location }
+	}
+}
+
+agot_relation_check_wild = {
+	scope = character
+	is_shown = {
+		is_alive = yes
+		has_trait = dragon
+		NOT = { has_character_flag = owned_dragon }
+		NOT = { has_variable = current_rider }
+		NOT = {
+			any_relation = {
+				type = agot_dragon
+				is_alive = yes
+			}
+		}
+		NOT = { has_variable = pitted_dragon_location }
+	}
+}
+
+agot_choose_dragonpit_set_selected_title = {
+	scope = character
+	is_shown = { var:selected_title ?= scope:selected_title }
+	effect = {
+		set_variable = {
+			name = selected_title
+			value = scope:selected_title
+		}
+	}
+}

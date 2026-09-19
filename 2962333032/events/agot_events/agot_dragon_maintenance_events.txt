@@ -1,0 +1,991 @@
+﻿namespace = agot_dragon_maintenance
+
+# 0001 - Assign Dragon Education Trait upon hitting maturity age
+# 0100 - Unlanded AI Pulse to Try Taming (Not for bonded dragons)
+# 0101 - Unlanded AI Pulse to Try Bonding
+# 0102 - Unlanded AI Pulse to Try Deepen Bonding
+# 0800-0801 Show All Dragons in save
+# 0802 - Show me the Dragon Eggs
+# 0803 - Show me the Past Dragon Riders
+# 0901 - Dragon World Notification Events (Dragonrider Died)
+# 0902 - Dragon World Notification Events (Dragon Tamed)
+# 0903 - Dragon World Notification Events (Dragon Egg Hatched)
+# 0904 - Dragon World Notification Event (Dragon Died)
+# 0999 - Dragon Editor
+
+# Assign Dragon Education Trait upon hitting maturity age
+agot_dragon_maintenance.0001 = {
+	hidden = yes
+	trigger = {
+		NOR = {
+			has_trait = education_dragon_1
+			has_trait = education_dragon_2
+			has_trait = education_dragon_3
+			has_trait = education_dragon_4
+			has_trait = education_dragon_5
+		}
+	}
+	immediate = {
+		if = {
+			limit = {
+				has_game_rule = agot_canon_dragons_enabled_traits
+				has_character_flag = agot_canon_education_dragon_1
+			}
+			remove_character_flag = agot_canon_education_dragon_1
+			add_trait = education_dragon_1
+		}
+		else_if = {
+			limit = {
+				has_game_rule = agot_canon_dragons_enabled_traits
+				has_character_flag = agot_canon_education_dragon_2
+			}
+			remove_character_flag = agot_canon_education_dragon_2
+			add_trait = education_dragon_2
+		}
+		else_if = {
+			limit = {
+				has_game_rule = agot_canon_dragons_enabled_traits
+				has_character_flag = agot_canon_education_dragon_3
+			}
+			remove_character_flag = agot_canon_education_dragon_3
+			add_trait = education_dragon_3
+		}
+		else_if = {
+			limit = {
+				has_game_rule = agot_canon_dragons_enabled_traits
+				has_character_flag = agot_canon_education_dragon_4
+			}
+			remove_character_flag = agot_canon_education_dragon_4
+			add_trait = education_dragon_4
+		}
+		else_if = {
+			limit = {
+				has_game_rule = agot_canon_dragons_enabled_traits
+				has_character_flag = agot_canon_education_dragon_5
+			}
+			remove_character_flag = agot_canon_education_dragon_5
+			add_trait = education_dragon_5
+		}
+		else_if = {
+			limit = {
+				NOT = { has_character_flag = owned_dragon }
+			}
+			add_trait = education_dragon_1
+		}
+		else = {
+			random_list = {
+				25 = {
+					modifier = { # More likely if alone
+						factor = 2
+						employer = {
+							any_courtier = {
+								has_trait = dragon
+								count = 1
+							}
+						}
+					}
+					add_trait = education_dragon_2
+				}
+				50 = {
+					modifier = { # More likely if socialized
+						factor = 2
+						employer = {
+							any_courtier = {
+								has_trait = dragon
+								count > 2
+							}
+						}
+					}
+					modifier = { # More likely if very socialized
+						factor = 3
+						employer = {
+							any_courtier = {
+								has_trait = dragon
+								count > 4
+							}
+						}
+					}
+					modifier = { # More likely if in dragonpit
+						add = 20
+						has_character_flag = in_dragonpit
+					}
+					add_trait = education_dragon_3
+				}
+				30 = {
+					modifier = { # More likely if socialized
+						factor = 2
+						employer = {
+							any_courtier = {
+								has_trait = dragon
+								count > 2
+							}
+						}
+					}
+					modifier = { # More likely if very socialized
+						factor = 3
+						employer = {
+							any_courtier = {
+								has_trait = dragon
+								count > 4
+							}
+						}
+					}
+					modifier = { # More likely if in dragonpit
+						add = 20
+						has_character_flag = in_dragonpit
+					}
+					add_trait = education_dragon_4
+				}
+				10 = {
+					modifier = { # More likely if socialized
+						factor = 2
+						employer = {
+							any_courtier = {
+								has_trait = dragon
+								count > 2
+							}
+						}
+					}
+					modifier = { # More likely if very socialized
+						factor = 3
+						employer = {
+							any_courtier = {
+								has_trait = dragon
+								count > 4
+							}
+						}
+					}
+					modifier = { # More likely if in dragonpit
+						add = 20
+						has_character_flag = in_dragonpit
+					}
+					add_trait = education_dragon_5
+				}
+			}
+		}
+	}
+}
+# Unlanded AI Pulse to Try Taming (Not for bonded dragons)
+agot_dragon_maintenance.0100 = {
+	hidden = yes
+	immediate = {
+		random_courtier_or_guest = {
+			limit = {
+				is_landed = no
+				is_ai = yes
+				is_human = yes
+				age >= 12 # No more infants taming Vermithor :(
+				trigger_if = {
+					limit = {
+						NOT = { has_game_rule = dragons_anyone }
+					}
+					agot_has_dragonblood_heritage = yes
+				}
+				trigger_if = {
+					limit = {
+						NOR = {
+							house ?= { has_house_modifier = dragonrider_house_modifier }
+							any_ancestor = {
+								even_if_dead = yes
+								has_trait = dragonrider
+							}
+						}
+					}
+					ai_has_cautious_personality = no
+					OR = {
+						has_trait = ambitious
+						has_trait = brave
+						ai_boldness >= 50 # Bold characters or characters who are less rational (reckless) will be targeted
+						ai_rationality <= 25
+					}
+				}
+				NOR = {
+					has_trait = dragonrider
+					has_trait_with_flag = can_not_bond_dragon
+					has_character_modifier = agot_dragon_disinterest
+					any_relation = {
+						type = agot_dragon
+					}
+					any_scheme = {
+						scheme_type = bond_with_dragon_scheme
+					}
+				}
+				save_temporary_scope_as = tamer
+				court_owner ?= {
+					any_courtier_or_guest = {
+						has_trait = dragon
+						NOR = {
+							has_variable = current_rider # No rider, no bonder
+							any_relation = {
+								type = agot_dragon
+							}
+						}
+						dragon_size >= dragon_taming_minimum_size
+						save_temporary_scope_as = dragon
+						agot_can_tame_or_bond_or_etc_with_pitted_dragons = {
+							DRAGON = scope:dragon ACTOR = scope:tamer
+						}
+					}
+				}
+			}
+			weight = {
+				base = 1
+				unlanded_tame_bond_etc_pulse_scripted_modifier = yes
+			}
+			save_scope_as = tamer
+			court_owner = {
+				random_courtier_or_guest = {
+					limit = {
+						has_trait = dragon
+						NOR = {
+							has_variable = current_rider # No rider, no bonder
+							any_relation = {
+								type = agot_dragon
+							}
+						}
+						dragon_size >= dragon_taming_minimum_size
+						save_temporary_scope_as = dragon
+						agot_can_tame_or_bond_or_etc_with_pitted_dragons = {
+							DRAGON = scope:dragon ACTOR = scope:tamer
+						}
+					}
+					weight = {
+						base = 1
+						modifier = {
+							add = {
+								save_temporary_scope_as = dragon
+								value = dragon_traits_in_common
+								multiply = dragon_scheme_base_common_traits_value
+							}
+						}
+						modifier = {
+							add = scope:dragon.taming_chance
+						}
+						modifier = {
+							add = 1000
+							scope:tamer = {
+								any_equipped_character_artifact = {
+									artifact_type = dragon_doll
+									has_variable = modelled_dragon
+									var:modelled_dragon = { save_temporary_scope_as = modelled_dragon }
+								}
+							}
+							scope:modelled_dragon ?= this
+						}
+					}
+					save_scope_as = dragon
+				}
+			}
+			trigger_event = { id = dragon_taming_events.0101 days = { 0 14 } }
+		}
+	}
+}
+# Unlanded AI Pulse to Try Bonding
+agot_dragon_maintenance.0101 = {
+	hidden = yes
+	immediate = {
+		random_courtier_or_guest = {
+			limit = {
+				is_landed = no
+				is_ai = yes
+				is_human = yes
+				age >= 6 # No more infants taming Vermithor :(
+				trigger_if = {
+					limit = {
+						NOT = { has_game_rule = dragons_anyone }
+					}
+					agot_has_dragonblood_heritage = yes
+				}
+				trigger_if = {
+					limit = {
+						NOR = {
+							house ?= { has_house_modifier = dragonrider_house_modifier }
+							any_ancestor = {
+								even_if_dead = yes
+								has_trait = dragonrider
+							}
+						}
+					}
+					ai_has_cautious_personality = no
+					OR = {
+						has_trait = ambitious
+						has_trait = brave
+						ai_boldness >= 50 # Bold characters or characters who are less rational (reckless) will be targeted
+						ai_rationality <= 25
+					}
+				}
+				NOR = {
+					has_trait = dragonrider
+					has_trait_with_flag = can_not_bond_dragon
+					has_character_modifier = agot_dragon_disinterest
+					any_relation = {
+						type = agot_dragon
+					}
+				}
+				save_temporary_scope_as = tamer
+				court_owner ?= {
+					any_courtier_or_guest = {
+						has_trait = dragon
+						age >= 6
+						NOR = {
+							has_variable = current_rider # No rider, no bonder
+							any_relation = {
+								type = agot_dragon
+							}
+						}
+						save_temporary_scope_as = dragon
+						agot_can_tame_or_bond_or_etc_with_pitted_dragons = {
+							DRAGON = scope:dragon ACTOR = scope:tamer
+						}
+					}
+				}
+			}
+			weight = {
+				base = 1
+				unlanded_tame_bond_etc_pulse_scripted_modifier = yes
+			}
+			save_scope_as = tamer
+			court_owner = {
+				random_courtier_or_guest = {
+					limit = {
+						has_trait = dragon
+						age >= 6
+						NOR = {
+							has_variable = current_rider # No rider, no bonder
+							any_relation = {
+								type = agot_dragon
+							}
+						}
+						save_temporary_scope_as = dragon
+						agot_can_tame_or_bond_or_etc_with_pitted_dragons = {
+							DRAGON = scope:dragon ACTOR = scope:tamer
+						}
+					}
+					weight = {
+						base = 1
+						modifier = {
+							add = {
+								save_temporary_scope_as = dragon
+								value = dragon_traits_in_common
+								multiply = dragon_scheme_base_common_traits_value
+							}
+						}
+						modifier = {
+							add = scope:dragon.taming_chance
+						}
+						modifier = {
+							add = 1000
+							scope:tamer = {
+								any_equipped_character_artifact = {
+									artifact_type = dragon_doll
+									has_variable = modelled_dragon
+									var:modelled_dragon = { save_temporary_scope_as = modelled_dragon }
+								}
+							}
+							scope:modelled_dragon ?= this
+						}
+					}
+					save_scope_as = dragon
+				}
+			}
+			start_scheme = {
+				type = bond_with_dragon_scheme
+				target_character = scope:dragon
+			}
+			debug_log = "Unlanded AI started Bond Scheme"
+			debug_log_scopes = yes
+		}
+	}
+}
+# Unlanded AI Pulse to Try Deepen Bonding
+agot_dragon_maintenance.0102 = {
+	hidden = yes
+	immediate = {
+		random_courtier_or_guest = {
+			limit = {
+				is_landed = no
+				is_ai = yes
+				is_human = yes
+				any_relation = {
+					type = agot_dragon
+				}
+				has_trait = dragonrider
+				has_trait_xp = {
+					trait = dragonrider
+					track = dragon_bond
+					value < 100
+				}
+				save_temporary_scope_as = tamer
+				court_owner ?= {
+					any_courtier_or_guest = {
+						has_trait = dragon
+						var:current_rider ?= scope:tamer
+						any_relation = {
+							type = agot_dragon
+						}
+					}
+				}
+			}
+			save_scope_as = tamer
+			court_owner = {
+				random_courtier_or_guest = {
+					limit = {
+						has_trait = dragon
+						var:current_rider ?= scope:tamer
+						any_relation = {
+							type = agot_dragon
+						}
+					}
+					save_scope_as = dragon
+				}
+			}
+			start_scheme = {
+				type = deepen_bond_with_dragon_scheme
+				target_character = scope:dragon
+			}
+			debug_log = "Unlanded AI started Deepen Bond Scheme"
+			debug_log_scopes = yes
+		}
+	}
+}
+
+# Copy of vanilla event, birth.9004, to rename dragons.
+agot_dragon_maintenance.0200 = {
+	type = character_event
+	title = birth.9004.t
+	desc = agot_dragon_maintenance.0200.desc
+
+	theme = family
+
+	override_background = { reference = relaxing_room }
+	right_portrait = {
+		character = scope:child
+		trigger = {
+			scope:child = {
+				has_trait = dragon
+			}
+		}
+		animation = dragon_main
+		camera = camera_dragon_event_standing_baby
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+	#NAMING WIDGET
+	widgets = {
+		widget = {
+			is_shown = {
+				OR = {
+					allow_naming_on_birth_of_child_trigger = { CHILD = scope:child }
+					allow_naming_of_dragon_trigger = { DRAGON = scope:child }
+				}
+			}
+			gui = "event_window_widget_name_child"
+			container = "dynamic_birth_name"
+			controller = name_character
+			setup_scope = {
+				scope:child = { save_scope_as = name_character_target }
+			}
+		}
+	}
+	#Go ahead
+	option = {
+		name = birth.9004.a
+	}
+	#On second though...
+	option = {
+		name = {
+			text = {
+				first_valid = {
+					#If we're renaming ourself
+					triggered_desc = {
+						trigger = { root = scope:child }
+						desc = birth.9004.b
+					}
+					#If we're renaming someone else
+					triggered_desc = {
+						desc = birth.9004.b.other
+					}
+				}
+			}
+		}
+		flavor = {
+			first_valid = {
+				#If we're renaming ourself
+				triggered_desc = {
+					trigger = { root = scope:child }
+					desc = birth.9004.b.tt
+				}
+				#If we're renaming someone else
+				triggered_desc = {
+					desc = birth.9004.b.tt.other
+				}
+			}
+		}
+		is_cancel_option = yes
+	}
+}
+
+# Events to display all dragons in the save
+agot_dragon_maintenance.0800 = {
+	type = character_event
+	title = agot_dragon_maintenance.0800.t
+	desc = agot_dragon_maintenance.0800.desc
+
+	theme = dragon
+	override_background = { reference = agot_dragonpit }
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+	# Wild Dragons
+	option = {
+		name = agot_dragon_maintenance.0800.a
+		trigger = {
+			any_in_global_list = {
+				variable = living_dragons
+				NOT = {
+					has_character_flag = owned_dragon
+				}
+			}
+		}
+		set_variable = show_wild_dragons
+		trigger_event = agot_dragon_maintenance.0801
+	}
+	# Untamed Dragons
+	option = {
+		name = agot_dragon_maintenance.0800.b
+		trigger = {
+			any_in_global_list = {
+				variable = living_dragons
+				has_character_flag = owned_dragon
+				NOT = {
+					has_variable = current_rider
+				}
+			}
+		}
+		set_variable = show_untamed_dragons
+		trigger_event = agot_dragon_maintenance.0801
+	}
+	# Tamed Dragons
+	option = {
+		name = agot_dragon_maintenance.0800.c
+		trigger = {
+			any_in_global_list = {
+				variable = living_dragons
+				has_variable = current_rider
+			}
+		}
+		set_variable = show_tamed_dragons
+		trigger_event = agot_dragon_maintenance.0801
+	}
+	# Dead Dragons
+	option = {
+		name = agot_dragon_maintenance.0800.d
+		trigger = {
+			any_in_global_list = {
+				variable = dead_dragons_list
+				exists = this
+			}
+		}
+		set_variable = show_dead_dragons
+		trigger_event = agot_dragon_maintenance.0801
+	}
+	# Dragon Eggs
+	option = {
+		name = agot_dragon_maintenance.0800.eggs
+		trigger = {
+			any_artifact = {
+				has_variable = dragon_egg
+			}
+		}
+		trigger_event = agot_dragon_maintenance.0802
+	}
+	# Main
+	option = {
+		name = global_events_settings.main_screen
+		trigger_event = global_events_settings.0001
+	}
+	# Nevermind
+	option = {
+		name = global_events_settings.dismiss
+	}
+}
+agot_dragon_maintenance.0801 = {
+	type = character_event
+	title = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					has_variable = show_wild_dragons
+				}
+				desc = agot_dragon_maintenance.0801.t_wild
+			}
+			triggered_desc = {
+				trigger = {
+					has_variable = show_untamed_dragons
+				}
+				desc = agot_dragon_maintenance.0801.t_untamed
+			}
+			triggered_desc = {
+				trigger = {
+					has_variable = show_tamed_dragons
+				}
+				desc = agot_dragon_maintenance.0801.t_tamed
+			}
+			triggered_desc = {
+				trigger = {
+					has_variable = show_dead_dragons
+				}
+				desc = agot_dragon_maintenance.0801.t_dead
+			}
+		}
+	}
+	desc = agot_dragon_maintenance.0801.desc
+
+	theme = dragon
+	override_background = { reference = agot_dragonpit }
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_three_options"
+		container = "custom_widgets_container"
+	}
+
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				has_variable = show_wild_dragons
+			}
+			every_in_global_list = {
+				variable = living_dragons
+				limit = {
+					NOT = {
+						has_character_flag = owned_dragon
+					}
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_variable = show_untamed_dragons
+			}
+			every_in_global_list = {
+				variable = living_dragons
+				limit = {
+					has_character_flag = owned_dragon
+					NOT = {
+						has_variable = current_rider
+					}
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_variable = show_tamed_dragons
+			}
+			every_in_global_list = {
+				variable = living_dragons
+				limit = {
+					has_variable = current_rider
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_variable = show_dead_dragons
+			}
+			every_in_global_list = {
+				variable = dead_dragons_list
+				limit = {
+					is_alive = no
+					has_trait = dragon
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_maintenance.0801.a
+		trigger_event = agot_dragon_maintenance.0800
+		if = {
+			limit = {
+				has_variable = show_wild_dragons
+			}
+			remove_variable = show_wild_dragons
+		}
+		else_if = {
+			limit = {
+				has_variable = show_untamed_dragons
+			}
+			remove_variable = show_untamed_dragons
+		}
+		else_if = {
+			limit = {
+				has_variable = show_tamed_dragons
+			}
+			remove_variable = show_tamed_dragons
+		}
+		else_if = {
+			limit = {
+				has_variable = show_dead_dragons
+			}
+			remove_variable = show_dead_dragons
+		}
+	}
+
+	option = {
+		name = global_events_settings.main_screen
+		trigger_event = global_events_settings.0001
+		if = {
+			limit = {
+				has_variable = show_wild_dragons
+			}
+			remove_variable = show_wild_dragons
+		}
+		else_if = {
+			limit = {
+				has_variable = show_untamed_dragons
+			}
+			remove_variable = show_untamed_dragons
+		}
+		else_if = {
+			limit = {
+				has_variable = show_tamed_dragons
+			}
+			remove_variable = show_tamed_dragons
+		}
+		else_if = {
+			limit = {
+				has_variable = show_dead_dragons
+			}
+			remove_variable = show_dead_dragons
+		}
+	}
+
+	option = {
+		name = global_events_settings.dismiss
+		if = {
+			limit = {
+				has_variable = show_wild_dragons
+			}
+			remove_variable = show_wild_dragons
+		}
+		else_if = {
+			limit = {
+				has_variable = show_untamed_dragons
+			}
+			remove_variable = show_untamed_dragons
+		}
+		else_if = {
+			limit = {
+				has_variable = show_tamed_dragons
+			}
+			remove_variable = show_tamed_dragons
+		}
+		else_if = {
+			limit = {
+				has_variable = show_dead_dragons
+			}
+			remove_variable = show_dead_dragons
+		}
+	}
+	after = {
+		if = {
+			limit = {
+				has_variable_list = possible_characters
+			}
+			clear_variable_list = possible_characters
+		}
+	}
+}
+#Show me the Eggs
+agot_dragon_maintenance.0802 = {
+	type = character_event
+	title = agot_dragon_maintenance.0802.t
+	desc = agot_dragon_maintenance.0802.desc
+	theme = dragon
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_dragon_egg_selection"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		every_artifact = {
+			limit = {
+				has_variable = dragon_egg
+			}
+			root = {
+				add_to_variable_list = {
+					name = possible_dragon_eggs
+					target = prev
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_dragon_maintenance.0801.a
+		trigger_event = agot_dragon_maintenance.0800
+		clear_variable_list = possible_dragon_eggs
+	}
+	option = {
+		name = global_events_settings.main_screen
+		trigger_event = global_events_settings.0001
+		clear_variable_list = possible_dragon_eggs
+	}
+	# Cool thanks
+	option = {
+		name = global_events_settings.dismiss
+		clear_variable_list = possible_dragon_eggs
+	}
+}
+# Show me the past riders
+agot_dragon_maintenance.0803 = {
+	type = character_event
+	window = agot_dragon_character_event
+	title = agot_dragon_maintenance.0803.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = {
+						any_in_global_list = {
+							variable = gl_dragon_variable_storage
+							var:dragon_id ?= scope:dragon
+							has_variable_list = past_riders
+						}
+					}
+				}
+				desc = agot_dragon_maintenance.0803.no_riders_desc
+			}
+			triggered_desc = {
+				desc = agot_dragon_maintenance.0803.desc
+			}
+		}
+	}
+
+	theme = dragon
+	override_background = { reference = agot_dragonpit }
+
+	widget = {
+		is_shown = {
+			is_ai = no
+			any_in_global_list = {
+				variable = gl_dragon_variable_storage
+				var:dragon_id ?= scope:dragon
+				has_variable_list = past_riders
+			}
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	left_portrait = root
+	lower_left_portrait = { character = scope:dragon }
+
+	immediate = {
+		ordered_in_list = {
+			variable = possible_characters
+			order_by = age
+			root = { set_variable = { name = si_selected_character value = prev } }
+			save_scope_as = past_riders
+		}
+	}
+
+	option = {
+		name = agot_dragon_maintenance.0803.a
+		var:si_selected_character = {
+			save_scope_as = selected_char
+		}
+		remove_variable = si_selecting_character
+		clear_variable_list = possible_characters
+	}
+}
+# Dragon Editor Event
+agot_dragon_maintenance.9999 = {
+	title = agot_dragon_maintenance.9999.t
+	desc = agot_dragon_maintenance.9999.desc
+	window = agot_customizer_event
+	theme = dragon
+	widget = {
+		gui = "agot_dragon_customizer"
+		container = "custom_widgets_container"
+	}
+	override_background = {
+		reference = agot_dragon_customizer # plains scene with origin-anchored lights so the fake shadow stays put during fire
+	}
+	left_portrait = {
+		character = var:editing_dragon
+		animation = dragon_customizer_idle # plain idle loop only - no roar/flair while editing
+		camera = camera_dragon_customizer
+		#Add this so dragon fits within event window
+		#outfit_tags = { linear_camera_zoom }
+	}
+	right_portrait = { # head view slot, drawn by the event window only while the Head tab is open (the GUI passes camera_dragon_head)
+		character = var:editing_dragon
+		animation = dragon_customizer_head # calm idle loop with the fixed-frame head zoom
+	}
+	immediate = {
+		random_in_global_list = {
+			variable = gl_dragon_variable_storage
+			limit = { var:dragon_id ?= root.var:editing_dragon }
+			save_scope_as = story
+		}
+	}
+	option = {
+		name = agot_dragon_maintenance.9999.a
+		if = {
+			limit = { exists = var:editing_dragon }
+			var:editing_dragon = { agot_clear_dragon_animation_flags = yes }
+		}
+		remove_variable = editing_dragon
+		remove_variable = value_to_change
+		if = { # Return to customizer screen if we came from there
+			limit = {
+				has_character_flag = return_to_dragon_customizer
+			}
+			trigger_event = agot_dragon_designer.0003
+			remove_character_flag = return_to_dragon_customizer
+		}
+	}
+
+	#We have to set the proper color flags after customization
+	after = {
+		agot_change_dragon_color_flags = { DRAGON = scope:dragon }
+	}
+}

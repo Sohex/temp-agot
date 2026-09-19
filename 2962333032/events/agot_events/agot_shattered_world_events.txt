@@ -1,0 +1,323 @@
+﻿namespace = agot_shattered_world
+
+scripted_trigger valid_ruler_to_shatter = {
+	is_landed = yes
+	NOR = {
+		government_has_flag = government_is_uninteractable
+		top_liege = { government_has_flag = government_is_nw }
+	}
+}
+
+agot_shattered_world.0001 = { # Starter
+	hidden = yes
+	scope = none
+
+	immediate = {
+		every_ruler = {
+			every_character_war = {
+				limit = { always = yes }
+				end_war = invalidated
+			}
+		}
+
+		every_living_character = {
+			limit = { is_imprisoned = yes }
+			release_from_prison = yes
+		}
+
+		every_living_character = {
+			limit = { is_hostage = yes }
+			return_hostage = yes
+		}
+
+		every_ruler = {
+			every_ally = {
+				break_alliance = prev
+			}
+		}
+
+		title:h_the_iron_throne.holder ?= {
+			every_councillor = {
+				limit = { has_variable = small_council }
+				fire_small_councillor = yes
+			}
+		}
+
+		if = {
+			limit = { game_start_date = 8282.9.15 }
+			agot_shattered_world_8284_scenario_cleanup = yes
+		}
+
+		set_global_variable = agot_startup_fire_councillors
+
+		if = {
+			limit = {
+				has_game_rule = agot_shatter_to_counties_even
+			}
+			agot_shattered_world_break_tributary = yes
+			agot_end_kingsguard_effect = yes
+			every_ruler = {
+				limit = { valid_ruler_to_shatter = yes }
+				agot_shatter_to_counties = yes
+			}
+			every_ruler = {
+				limit = { valid_ruler_to_shatter = yes }
+				agot_shattered_world_even_counties = yes
+			}
+			agot_shattered_world_title_cleanup = yes
+		}
+		else_if = {
+			limit = {
+				has_game_rule = agot_shatter_to_counties
+			}
+			agot_shattered_world_break_tributary = yes
+			agot_end_kingsguard_effect = yes
+			every_ruler = {
+				limit = { valid_ruler_to_shatter = yes }
+				agot_shatter_to_counties = yes
+			}
+			agot_shattered_world_title_cleanup = yes
+		}
+		else_if = {
+			limit = { has_game_rule = agot_shatter_to_duchies }
+			agot_shattered_world_break_tributary = yes
+			agot_end_kingsguard_effect = yes
+			every_ruler = {
+				limit = { valid_ruler_to_shatter = yes }
+				agot_shatter_to_duchies = yes
+			}
+			every_independent_ruler = {
+				limit = {
+					primary_title.tier = tier_duchy
+					is_landed = yes
+					NOT = { government_has_flag = government_is_uninteractable }
+				}
+				agot_shatter_assign_de_jure_vassals = yes
+			}
+			agot_shattered_world_title_cleanup = yes
+		}
+		else_if = {
+			limit = { has_game_rule = agot_shatter_to_kingdoms }
+			title:h_the_iron_throne = {
+				holder = { destroy_title = prev }
+			}
+			agot_end_kingsguard_effect = yes
+			agot_shattered_world_title_cleanup = yes
+			every_ruler = {
+				limit = { valid_ruler_to_shatter = yes }
+				agot_shatter_to_kingdoms = yes
+			}
+			every_independent_ruler = {
+				limit = {
+					primary_title.tier = tier_kingdom
+					is_landed = yes
+					NOT = { government_has_flag = government_is_uninteractable }
+				}
+				agot_shatter_assign_de_jure_vassals = yes
+			}
+			# DONT ASK ME WHY THIS ONE WORKS BUT THE ONE ABOVE DOES NOT. THIS CODE IS CURSED. DO NOT TOUCH - sky
+			#lowkey tho i think this is because of how the titles are, but whatever bro
+			every_ruler = {
+				limit = {
+					primary_title.tier = tier_kingdom
+				}
+				agot_shatter_assign_de_jure_vassals = yes
+			}
+		}
+		else_if = {
+			limit = { has_game_rule = agot_shatter_to_petty_kingdoms }
+			title:h_the_iron_throne = {
+				holder = { destroy_title = prev }
+			}
+			agot_shattered_world_break_tributary = yes
+			agot_end_kingsguard_effect = yes
+			agot_shattered_world_pk_de_jure = yes
+			agot_shattered_world_pk_kings = yes
+			agot_shattered_world_title_cleanup = yes
+			every_ruler = {
+				limit = { valid_ruler_to_shatter = yes }
+				agot_shatter_to_kingdoms = yes
+			}
+			every_independent_ruler = {
+				limit = {
+					primary_title.tier = tier_kingdom
+					is_landed = yes
+					NOT = { government_has_flag = government_is_uninteractable }
+				}
+				agot_shatter_assign_de_jure_vassals = yes
+			}
+			# DONT ASK ME WHY THIS ONE WORKS BUT THE ONE ABOVE DOES NOT. THIS CODE IS CURSED. DO NOT TOUCH - sky
+			#lowkey tho i think this is because of how the titles are, but whatever bro
+			every_ruler = {
+				limit = {
+					primary_title.tier = tier_kingdom
+				}
+				agot_shatter_assign_de_jure_vassals = yes
+			}
+		}
+		else_if = {
+			limit = { has_game_rule = agot_shatter_to_empires }
+			title:h_the_iron_throne = {
+				holder = { destroy_title = prev }
+			}
+			agot_shattered_world_lp_kings = yes
+			agot_shattered_world_title_cleanup = yes
+		}
+		remove_global_variable = agot_startup_fire_councillors
+
+		agot_shattered_world_scenario_cleanup = yes
+		agot_shattered_admin_cleanup = yes
+
+		every_ruler = { # Override default equal succession for Old Gods
+			limit = {
+				faith = faith:old_gods_wnw
+				NOT = { has_realm_law = male_preference_law }
+			}
+			add_realm_law = male_preference_law
+		}
+
+		every_ruler = {
+			limit = {
+				NOT = { has_realm_law = crown_authority_0 }
+			}
+			add_realm_law_skip_effects = crown_authority_0
+			remove_variable = crown_authority_cooldown
+		}
+
+		every_ruler = {
+			limit = {
+				has_government = lp_feudal_government
+			}
+			change_government = feudal_government
+		}
+
+		every_ruler = {
+			limit = {
+				has_government = lp_feudal_government
+			}
+			change_government = feudal_government
+		}
+
+		if = {
+			limit = {
+				has_ach_dlc_trigger = yes
+			}
+			every_ruler = {
+				limit = {
+					coronation_trigger = yes
+					age >= 12
+				}
+				save_temporary_scope_as = ruler
+				if = {
+					limit = {
+						highest_held_title_tier > tier_kingdom
+						NOT = {
+							faith = { has_doctrine = doctrine_no_anointment }
+						}
+					}
+					if = {
+						limit = {
+							NOT = {
+								has_game_rule = coronation_laws_off
+								has_realm_law = crowned_emperor
+							}
+						}
+						add_realm_law_skip_effects = crowned_emperor
+					}
+					set_variable = crowned_emperor_var
+				}
+				else = {
+					if = {
+						limit = {
+							NOT = {
+								has_game_rule = coronation_laws_off
+								has_realm_law = crowned_king
+							}
+						}
+						add_realm_law_skip_effects = crowned_king
+					}
+					set_variable = crowned_king_var
+				}
+			}
+		}
+	}
+}
+
+agot_shattered_world.1000 = {
+	theme = new_royal_court
+	type = character_event
+	title = agot_shattered_world.1000.t
+	desc = agot_shattered_world.1000.desc
+
+	left_portrait = {
+		character = root
+		animation = ecstasy
+	}
+
+	# I want to be admin gov
+	option = {
+		name = agot_shattered_world.1000.a
+		change_government = administrative_government
+
+		ai_chance = {
+			base = 100
+			modifier = {
+				add = -100
+				capital_province = {
+					geographical_region = world_stepstones
+				}
+			}
+			modifier = {
+				add = -100
+				capital_province = {
+					geographical_region = world_essos_disputed_lands
+				}
+			}
+		}
+	}
+
+	# Fuck you, I wanna stay feudal
+	option = {
+		name = agot_shattered_world.1000.b
+		change_government = feudal_government
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				capital_province = {
+					geographical_region = world_essos_disputed_lands
+				}
+			}
+		}
+	}
+
+	# Super fuck you, lets become a pirate
+	option = {
+		name = agot_shattered_world.1000.c
+		trigger = {
+			capital_province = {
+				geographical_region = world_stepstones
+			}
+		}
+		if = {
+			limit = {
+				agot_dlc_check_for_landless_pirates = yes
+			}
+			change_government = pirate_government
+		}
+		else = {
+			change_government = pirate_no_dlc_government
+		}
+
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				capital_province = {
+					geographical_region = world_stepstones
+				}
+			}
+		}
+	}
+}

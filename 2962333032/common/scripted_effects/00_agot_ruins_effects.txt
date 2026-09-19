@@ -1,0 +1,185 @@
+﻿### AGOT - Ruins
+
+# Ruinize a province
+agot_ruin_province_effect = {
+
+	if = { # If this is the citadel, find a new place
+		limit = {
+			this = global_var:citadel_title
+		}
+		agot_citadel_transfer_effect = yes
+
+		# Pawn the citadel ruin off
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		barony = {
+			change_title_holder = {
+				holder = county.holder
+				change = scope:change
+			}
+			set_coa = ruins_coa
+		}
+		resolve_title_and_vassal_change = scope:change
+
+		# In ruins
+		title_province = {
+			remove_building = the_citadel_02
+		}
+	}
+	if = {
+		limit = {
+			county = {
+				has_variable = has_dragonkeeper_order
+			}
+		}
+		county = { agot_destroy_dragonpit_effect = yes }
+	}
+	title_province = {
+		set_holding_type = ruin_holding
+		add_building = medium_ruin_01
+	}
+
+	if = {
+		limit = { holder = county.holder }
+
+		create_character = {
+			age = 20
+			gender = male
+			location = barony.title_province
+			faith = county.faith
+			culture = county.culture
+			dynasty = none
+			save_scope_as = ruin_holder
+		}
+
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		barony = {
+			change_title_holder = {
+				holder = scope:ruin_holder
+				change = scope:change
+			}
+			set_coa = ruins_coa
+		}
+		resolve_title_and_vassal_change = scope:change
+	}
+
+	holder = { change_government = ruins_government }
+}
+
+# Ruinize an entire county
+agot_ruin_county_effect = {
+	every_county_province = {
+		limit = {
+			has_holding = yes
+			is_county_capital = no
+		}
+		barony = { agot_ruin_province_effect = yes }
+	}
+
+	title:c_ruins.holder = { save_scope_as = ruins_empress }
+
+	county = {
+		set_county_faith = faith:fg_unknown
+		set_county_culture = culture:unknown_culture
+		agot_destroy_dragonpit_effect = yes
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+
+		change_title_holder = {
+			holder = scope:ruins_empress
+			change = scope:change
+			take_baronies = no
+		}
+
+		resolve_title_and_vassal_change = scope:change
+
+		set_coa = ruins_coa
+
+		title_province = {
+			set_holding_type = ruin_holding
+			add_building = medium_ruin_01
+			barony = { set_coa = ruins_coa }
+		}
+
+		change_development_level = -100
+	}
+}
+
+agot_ruinize_title_effect = {
+	$TITLE$ = { save_scope_as = ruined_title }
+	if = {
+		limit = {
+			scope:ruined_title.tier = tier_county
+		}
+		scope:ruined_title = { agot_ruin_county_effect = yes }
+	}
+	else_if = {
+		limit = {
+			scope:ruined_title.tier = tier_barony
+		}
+		if = {
+			limit = {
+				NOT = {
+					scope:ruined_title = { is_capital_barony = yes }
+				}
+			}
+			scope:ruined_title = { agot_ruin_province_effect = yes }
+		}
+		else_if = {
+			limit = {
+				scope:ruined_title.title_province = { has_holding_type = castle_holding }
+				scope:ruined_title.county = {
+					any_county_province = {
+						has_holding_type = castle_holding
+						barony = {
+							NOT = { is_capital_barony = yes }
+						}
+					}
+				}
+			}
+			scope:ruined_title.county = {
+				random_county_province = {
+					limit = {
+						has_holding_type = castle_holding
+						barony = {
+							NOT = { is_capital_barony = yes }
+						}
+					}
+					county.holder = { save_scope_as = county_holder }
+
+					create_title_and_vassal_change = {
+						type = granted
+						save_scope_as = change
+						add_claim_on_loss = no
+					}
+					barony = {
+						change_title_holder = {
+							holder = scope:county_holder
+							change = scope:change
+						}
+					}
+					resolve_title_and_vassal_change = scope:change
+
+					barony = { set_capital_barony = yes }
+				}
+			}
+			scope:ruined_title = { agot_ruin_province_effect = yes }
+		}
+		else_if = {
+			limit = {
+				scope:ruined_title.tier = tier_barony
+			}
+			scope:ruined_title.county = { agot_ruin_county_effect = yes }
+		}
+	}
+}

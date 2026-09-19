@@ -1,0 +1,244 @@
+﻿agot_btw_wildling_call_to_arms = {
+	interface_priority = 20
+	common_interaction = yes
+	category = interaction_category_diplomacy
+	icon = alliance
+
+	use_diplomatic_range = no
+
+	cooldown = { years = 10 }
+	is_shown = {
+		scope:actor = {
+			this = scope:recipient
+		}
+		scope:actor = {
+			culture = { agot_is_wildling_culture = yes }
+		}
+	}
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			any_character_war = {
+				primary_defender = scope:actor
+				primary_attacker = {
+					NOT = {
+						any_character_struggle = {
+							is_struggle_type = btw_struggle
+							involvement = involved
+						}
+					}
+				}
+			}
+		}
+	}
+
+	auto_accept = yes
+	on_accept = {
+		scope:actor = {
+			save_scope_as = wildling_caller
+		}
+		every_ruler = {
+			limit = {
+				agot_is_independent_ruler = yes
+				NOT = { is_at_war_with = scope:actor }
+				any_character_struggle = {
+					is_struggle_type = btw_struggle
+					involvement = involved
+				}
+				culture = { agot_is_wildling_culture = yes }
+				any_realm_county = {
+					is_neighbor_to_realm = scope:actor
+				}
+				NOR = {
+					this = scope:actor
+					this = scope:recipient
+				}
+			}
+			trigger_event = {
+				id = agot_btw_interaction_events.0001
+				days = { 2 5 }
+			}
+		}
+	}
+
+	cost = {
+		prestige = 150
+	}
+
+	ai_frequency = 6
+	ai_targets = {
+		ai_recipients = neighboring_rulers
+	}
+	ai_will_do = {
+		base = 1
+		modifier = {
+			add = 15
+			has_trait = craven
+		}
+		modifier = {
+			add = -15
+			has_trait = brave
+		}
+		modifier = {
+			add = 15
+			has_trait = fickle
+		}
+		modifier = {
+			add = -15
+			has_trait = stubborn
+		}
+		modifier = {
+			add = 15
+			has_trait = honest
+		}
+		modifier = {
+			add = -15
+			has_trait = deceitful
+		}
+		modifier = {
+			add = 15
+			has_trait = humble
+		}
+		modifier = {
+			add = -15
+			has_trait = arrogant
+		}
+		modifier = {
+			add = 15
+			has_trait = trusting
+		}
+		modifier = {
+			add = -15
+			has_trait = paranoid
+		}
+		modifier = {
+			add = -20
+			OR = {
+				has_trait = lunatic_1
+				has_trait = lunatic_genetic
+				has_trait = possessed_1
+				has_trait = possessed_genetic
+			}
+		}
+		modifier = {
+			add = -20
+			OR = {
+				has_trait = intellect_bad
+				has_trait = dull
+			}
+		}
+		modifier = {
+			add = 50
+			OR = {
+				has_trait = intellect_bad
+				has_trait = dull
+			}
+		}
+		modifier = { #Comparative military strength.
+			add = {
+				value = 1
+				subtract = {
+					value = primary_attacker.current_military_strength
+					divide = { value = scope:actor.current_military_strength min = 1 }
+				}
+				multiply = 50
+				max = 20
+			}
+		}
+		ai_value_modifier = {
+			ai_greed = 0.5
+			ai_rationality = 15
+			ai_boldness = 10
+			ai_honor = 20
+			ai_zeal = 1
+			ai_compassion = 10
+		}
+	}
+}
+
+agot_btw_nightswatch_petition_non_rc = {
+	interface_priority = 30
+	common_interaction = yes
+	category = interaction_category_diplomacy
+	icon = alliance
+	use_diplomatic_range = no
+
+	is_shown = {
+		scope:recipient = {
+			is_ruler = yes
+			is_landed = yes
+			primary_title = {
+				tier > 1
+			}
+			capital_province = {
+				geographical_region = world_westeros
+			}
+			NOR = {
+				has_character_modifier = agot_btw_refused_nw_petition
+				has_character_modifier = agot_btw_accepted_nw_petition
+			}
+			OR = {
+				NOT = {
+					capital_province = {
+						geographical_region = world_westeros_beyond_the_wall
+					}
+				}
+				scope:actor = {
+					OR = {
+						has_trait = lunatic_1
+						has_trait = lunatic_genetic
+					}
+				}
+			}
+			NOT = {
+				any_liege_or_above = { this = scope:actor }
+			}
+			is_ai = yes
+		}
+		scope:actor = {
+			exists = title:k_the_wall.holder
+			this = title:k_the_wall.holder
+			NOT = { this = scope:recipient }
+			agot_is_independent_ruler = yes
+			government_has_flag = government_is_nw
+			# NW Royal Court Disabled
+			# OR = {
+			# 	NOT = { has_dlc_feature = royal_court } #DLC check
+			# 	scope:recipient = {
+			# 		primary_title = {
+			# 			tier < 4
+			# 		}
+			# 	}
+			# }
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:recipient = {
+			NOR = {
+				has_character_modifier = agot_btw_refused_nw_petition
+				has_character_modifier = agot_btw_accepted_nw_petition
+			}
+		}
+		scope:actor = {
+			exists = scope:actor.cp:councillor_chancellor
+			NOT = { exists = var:agot_btw_petition_cooldown }
+		}
+	}
+
+	auto_accept = yes
+	on_accept = {
+		scope:recipient = {
+			save_scope_as = nw_petition_target
+		}
+		scope:actor = {
+			set_variable = {
+				name = agot_btw_petition_cooldown
+				years = 10
+			}
+			trigger_event = {
+				id = agot_nw_petition_events.0002
+				delayed = yes
+			}
+		}
+	}
+}

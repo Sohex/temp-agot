@@ -1,0 +1,2142 @@
+﻿namespace = agot_faegon_invasion
+
+
+scripted_effect blackfyre_identity_swap = {
+	character:Mopatis_hh_1 = {
+		set_house = house:house_Blackfyre
+		set_mother = character:Blackfyre_16
+		set_father = character:Jayn_52
+	}
+	hidden_effect = {
+		character:Jayn_53 = {
+			set_to_lowborn = yes
+			set_mother = scope:peasant1
+			set_father = scope:peasant2
+		}
+	}
+	set_house = house:house_Blackfyre
+	set_mother = character:Mopatis_hh_1
+	set_father = character:Mopatis_1
+	every_held_title = {
+		set_coa = house:house_Blackfyre
+	}
+}
+
+scripted_effect blackfyre_identity_creation = {
+	create_character = {
+		template = peasant_character
+		age = 50
+		gender = female
+		culture = root.culture
+		faith = root.faith
+		location = root.location
+		save_scope_as = peasant1
+	}
+	create_character = {
+		template = peasant_character
+		age = 50
+		gender = male
+		culture = root.culture
+		faith = root.faith
+		location = root.location
+		save_scope_as = peasant2
+	}
+	set_variable = {
+		name = identity
+		value = flag:open_blackfyre
+	}
+	blackfyre_identity_swap = yes
+}
+
+agot_faegon_invasion.0001 = {
+	hidden = yes
+	immediate = {
+		set_global_variable = {
+			name = faegon_invasion
+			value = yes
+		}
+		create_character = {
+			location = title:b_mummer_lane.title_province
+			template = faegon_template
+			save_scope_as = faegon
+		}
+		scope:faegon = {
+			create_landless_adventurer_title_effect = {
+				REASON = flag:voluntary
+				FLAVOR_CHAR = scope:faegon
+			}
+			primary_title = {
+				save_title_name_change_data = { TRANSFER_VAR = yes }
+				set_title_name = faegon_laamp_name
+			}
+			add_realm_law = camp_purpose_legitimists
+
+			# Identity Calculation
+			if = {
+				limit = {
+					has_game_rule = agot_faegon_identity_default
+				}
+				random_list = {
+					40 = {
+						trigger = {
+							exists = global_var:aegon_vi_killed_in_sack
+						}
+						set_variable = {
+							name = identity
+							value = flag:alleged_real_aegon
+						}
+						random_list = {
+							1 = {
+								copy_inheritable_appearance_from = character:Targaryen_11
+								add_character_flag = is_Targaryen_11
+								make_trait_inactive = is_Targaryen_11
+							}
+							1 = {}
+						}
+					}
+					40 = {
+						trigger = {
+							character:Targaryen_11 = {
+								is_alive = no
+								death_reason = death_aegonvi_murder_known
+							}
+						}
+						set_variable = {
+							name = identity
+							value = flag:alleged_real_aegon
+						}
+						random_list = {
+							1 = {
+								copy_inheritable_appearance_from = character:Targaryen_11
+								add_character_flag = is_Targaryen_11
+								make_trait_inactive = is_Targaryen_11
+							}
+							1 = {}
+						}
+					}
+					20 = {
+						blackfyre_identity_creation = yes
+						modifier = {
+							add = 50
+							title:h_the_iron_throne.holder.house = dynasty:dynn_Targaryen.dynasty_founder.house
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					has_game_rule = agot_faegon_identity_real
+				}
+				if = {
+					limit = {
+						OR = {
+							exists = global_var:aegon_vi_killed_in_sack
+							character:Targaryen_11 = {
+								is_alive = no
+								death_reason = death_aegonvi_murder_known
+							}
+						}
+					}
+					set_variable = {
+						name = identity
+						value = flag:alleged_real_aegon
+					}
+					copy_inheritable_appearance_from = character:Targaryen_11
+					add_character_flag = is_Targaryen_11
+					make_trait_inactive = is_Targaryen_11
+				}
+				else = {
+					blackfyre_identity_creation = yes
+				}
+
+			}
+			else_if = {
+				limit = {
+					has_game_rule = agot_faegon_identity_open_blackfyre
+				}
+				blackfyre_identity_creation = yes
+			}
+			if = {
+				limit = {
+					var:identity = flag:alleged_real_aegon
+				}
+				if = {
+					limit = {
+						character:Clegane_3 = {
+							is_alive = yes
+						}
+					}
+					add_opinion = {
+						target = character:Clegane_3
+						modifier = agot_killed_my_kin_story_opinion
+					}
+				}
+				if = {
+					limit = {
+						character:Lorch_2 = {
+							is_alive = yes
+						}
+					}
+					add_opinion = {
+						target = character:Lorch_2
+						modifier = agot_killed_my_kin_story_opinion
+					}
+				}
+			}
+			add_trait = refusing_marriage
+			domicile ?= {
+				add_domicile_building = camp_main_02
+				add_domicile_building = proving_grounds_01
+				add_domicile_building = mess_tent_01
+				add_domicile_building = camp_main_03
+				add_domicile_building = proving_grounds_02
+				add_domicile_building = mess_tent_02
+			}
+			add_gold = 500
+			add_prestige = 500
+			trigger_event = agot_faegon_invasion.0002
+		}
+
+		scope:peasant1 ?= {
+			death = {
+				death_reason = death_vanished
+			}
+		}
+		scope:peasant2 ?= {
+			death = {
+				death_reason = death_vanished
+			}
+		}
+	}
+}
+
+scripted_trigger targaryens_hold_it_throne_and_want_to_marry = {
+	title:h_the_iron_throne.holder ?= {
+		house ?= dynasty:dynn_Targaryen.dynasty_founder.house
+		AND = {
+			sex_opposite_of = root
+			is_married = no
+		}
+	}
+}
+
+agot_faegon_invasion.0002 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		global_var:targaryen_exile_title.holder ?= {
+			save_scope_as = targaryen_exile
+		}
+		if = {
+			limit = {
+				targaryens_hold_it_throne_and_want_to_marry = yes
+			}
+			title:h_the_iron_throne.holder = {
+				save_scope_as = iron_throne_monarch
+			}
+		}
+		if = {
+			limit = {
+				any_artifact = {
+					count < 1
+					has_artifact_modifier = vs_blackfyre_modifier
+				}
+				NAND = {
+					exists = dynasty:dynn_Mopatis
+					dynasty:dynn_Mopatis.dynasty_founder.house.house_head ?= {
+						is_ai = no
+						any_secret = { secret_type = secret_agot_hidden_artifact }
+					}
+				}
+			}
+			hidden_effect ={
+				if = {
+					limit = {
+						exists = dynasty:dynn_Mopatis
+						dynasty:dynn_Mopatis.dynasty_founder.house.house_head ?= {
+							any_secret = { secret_type = secret_agot_hidden_artifact }
+						}
+					}
+					dynasty:dynn_Mopatis.dynasty_founder.house.house_head ?= {
+						random_secret = {
+							limit = { secret_type = secret_agot_hidden_artifact }
+							remove_secret = yes
+						}
+					}
+				}
+				if = {
+					limit = {
+						exists = global_var:blackfyre_hidden
+					}
+					remove_global_variable = blackfyre_hidden
+				}
+			}
+			agot_create_artifact_vs_blackfyre_effect = { OWNER = root }
+		}
+	}
+	# Ask the Targaryens to Marry
+	option = {
+		name = agot_faegon_invasion.0002.a
+		trigger = {
+			exists = scope:targaryen_exile
+			scope:targaryen_exile = {
+				agot_targaryen_exiles_can_be_pinged_for_cross_content = yes
+				OR = {
+					AND = {
+						sex_opposite_of = scope:faegon
+						is_married = no
+					}
+					any_courtier = {
+						is_close_or_extended_family_of = scope:targaryen_exile
+						house = scope:targaryen_exile.house
+						AND = {
+							sex_opposite_of = scope:faegon
+							is_married = no
+						}
+					}
+				}
+			}
+		}
+		scope:targaryen_exile = {
+			trigger_event = agot_faegon_invasion.0003
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+	# Marriable Targaryen Sits on the Throne
+	option = {
+		name = agot_faegon_invasion.0002.c
+		trigger = {
+			targaryens_hold_it_throne_and_want_to_marry = yes
+		}
+		title:h_the_iron_throne.holder = {
+			trigger_event = agot_faegon_invasion.0020
+		}
+		ai_chance = {
+			base = 150
+		}
+	}
+	# Go it alone - Declare War
+	option = {
+		name = {
+			trigger = {
+				exists = scope:targaryen_exile
+			}
+			text = agot_faegon_invasion.0002.b
+		}
+		name = {
+			trigger = {
+				NOT = { exists = scope:targaryen_exile }
+			}
+			text = agot_faegon_invasion.0002.b_no_exiles
+		}
+		trigger_event = agot_faegon_invasion.0007
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+agot_faegon_invasion.0003 = {
+	type = character_event
+	title = agot_faegon_invasion.0003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:faegon.var:identity = flag:alleged_real_aegon
+				}
+				desc = agot_faegon_invasion.0003.desc
+			}
+			triggered_desc = {
+				trigger = {
+					scope:faegon.var:identity = flag:open_blackfyre
+				}
+				desc = agot_faegon_invasion.0003.desc_blackfyre
+			}
+		}
+	}
+	override_background = { reference = wilderness }
+	theme = marriage
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	lower_center_portrait = {
+		trigger = {
+			exists = scope:marriage_candidate
+			NOT = { scope:marriage_candidate ?= root }
+		}
+		character = scope:marriage_candidate
+	}
+	right_portrait = {
+		character = scope:faegon
+		animation = thinking
+	}
+	immediate = {
+		if = {
+			limit = {
+				AND = {
+					sex_opposite_of = scope:faegon
+					is_married = no
+				}
+			}
+			save_scope_as = marriage_candidate
+		}
+		else_if = {
+			limit = {
+				any_courtier = {
+					is_close_or_extended_family_of = scope:targaryen_exile
+					house = scope:targaryen_exile.house
+					AND = {
+						sex_opposite_of = scope:faegon
+						is_married = no
+					}
+				}
+			}
+			random_courtier = {
+				limit = {
+					is_close_or_extended_family_of = scope:targaryen_exile
+					house = scope:targaryen_exile.house
+					AND = {
+						sex_opposite_of = scope:faegon
+						is_married = no
+					}
+				}
+				save_scope_as = marriage_candidate
+			}
+		}
+	}
+	# The Dragons Must be United
+	option = {
+		name = {
+			trigger = { scope:faegon.var:identity = flag:alleged_real_aegon }
+			text = agot_faegon_invasion.0003.a_alleged_aegon_tt # Come home, Aegon
+		}
+		name = {
+			trigger = { scope:faegon.var:identity = flag:open_blackfyre }
+			text = agot_faegon_invasion.0003.a_blackfyre_tt # We must unite the dragons, our home is at stake
+		}
+		scope:marriage_candidate = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				if = {
+					limit = {
+						has_been_promised_grand_wedding = yes
+					}
+					break_grand_wedding_betrothal_effect = yes
+				}
+				else = {
+					break_betrothal = betrothed
+				}
+			}
+			if = {
+				limit = {
+					is_adult = yes
+				}
+				marry = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+			else = {
+				create_betrothal = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:faegon.var:identity = flag:open_blackfyre
+				house:house_Blackfyre = {
+					has_house_modifier = divided_dynasty_house_modifier
+				}
+			}
+			mend_house_blackfyre_divided_dynasty_modifier_effect = yes
+		}
+		if = {
+			limit = {
+				is_ai = no
+			}
+			trigger_event = agot_faegon_invasion.0004 # Handler for swapping to Faegon for humans
+		}
+		else = {
+			agot_invasions_move_to_new_court = { NEW_LIEGE = scope:faegon }
+		}
+		if = {
+			limit = {
+				any_in_global_list = {
+					variable = targaryen_exiles_destined_dragons
+					NOT = {
+						any_relation = {
+							type = agot_dragon
+						}
+					}
+				}
+			}
+			random_in_global_list = {
+				variable = targaryen_exiles_destined_dragons
+				limit = {
+					NOT = {
+						any_relation = {
+							type = agot_dragon
+						}
+					}
+				}
+				save_scope_as = dragon_for_faegon
+			}
+			scope:faegon = {
+				set_variable = {
+					name = reaction_to_targaryen_offer
+					value = flag:targs_accepted_try_to_tame_dragon
+				}
+				trigger_event = {
+					id = agot_faegon_invasion.0005
+					days = 1
+				}
+			}
+		}
+		else = {
+			scope:faegon = {
+				set_variable = {
+					name = reaction_to_targaryen_offer
+					value = flag:targs_accepted_but_no_dragon
+				}
+				trigger_event = {
+					id = agot_faegon_invasion.0005
+					days = 1
+				}
+			}
+		}
+		ai_chance = {
+			base = 45
+			modifier = {
+				factor = 1
+				OR = {
+					has_trait = craven
+					has_trait = family_first
+					has_trait = trusting
+				}
+			}
+			modifier = {
+				factor = 3
+				NOT = {
+					any_owned_story = {
+						story_type = story_agot_targaryen_exile_invasion
+					}
+				}
+			}
+		}
+	}
+	# A pretender, nothing more nothing less.
+	option = {
+		name = agot_faegon_invasion.0003.b
+		scope:faegon = {
+			add_opinion = {
+				target = root
+				modifier = agot_defamed_my_legitimacy_opinion
+			}
+			set_variable = {
+				name = reaction_to_targaryen_offer
+				value = flag:targs_rejected_me
+			}
+			trigger_event = {
+				id = agot_faegon_invasion.0005
+				days = 1
+			}
+		}
+		ai_chance = {
+			base = 55
+			ai_value_modifier = {
+				ai_boldness = 0.5
+			}
+			ai_value_modifier = {
+				ai_vengefulness = 0.5
+			}
+		}
+	}
+}
+agot_faegon_invasion.0004 = {
+	type = character_event
+	title = agot_faegon_invasion.0004.t
+	desc = agot_faegon_invasion.0004.desc
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = marriage
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:faegon
+		animation = acknowledging
+	}
+	immediate = {
+	}
+	# We must rally around Aegon, now
+	option = {
+		name = agot_faegon_invasion.0004.a
+		trigger = {
+			has_multiple_players = no
+		}
+		agot_invasions_move_to_new_court = { NEW_LIEGE = scope:faegon }
+	}
+	# We will support your claim - but I want to remain a laamp
+	option = {
+		name = agot_faegon_invasion.0004.b
+		add_realm_law = camp_purpose_wanderers
+		primary_title = {
+			save_title_name_change_data = { TRANSFER_VAR = yes }
+			set_title_name = d_laamp_targaryen_host_generic
+		}
+	}
+}
+
+agot_faegon_invasion.0005 = {
+	type = character_event
+	title = agot_faegon_invasion.0005.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					var:reaction_to_targaryen_offer = flag:targs_accepted_try_to_tame_dragon
+				}
+				desc = agot_faegon_invasion.0005_desc.targs_accepted_try_to_tame_dragon
+			}
+			triggered_desc = {
+				trigger = {
+					var:reaction_to_targaryen_offer = flag:targs_accepted_but_no_dragon
+				}
+				desc = agot_faegon_invasion.0005_desc.targs_accepted_but_no_dragon
+			}
+			triggered_desc = {
+				trigger = {
+					var:reaction_to_targaryen_offer = flag:targs_rejected_me
+				}
+				desc = agot_faegon_invasion.0005_desc.targs_rejected_me
+			}
+		}
+	}
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = dragon
+	left_portrait = {
+		character = scope:targaryen_exile
+		triggered_animation = {
+			trigger = {
+				scope:faegon = {
+					var:reaction_to_targaryen_offer = flag:targs_rejected_me
+				}
+			}
+			animation = disapproval
+		}
+		triggered_animation = {
+			trigger = {
+				scope:faegon = {
+					OR = {
+						var:reaction_to_targaryen_offer = flag:targs_accepted_try_to_tame_dragon
+						var:reaction_to_targaryen_offer = flag:targs_accepted_but_no_dragon
+					}
+				}
+			}
+			animation = war_attacker
+		}
+	}
+	right_portrait = {
+		character = scope:faegon
+		triggered_animation = {
+			trigger = {
+				scope:faegon = {
+					var:reaction_to_targaryen_offer = flag:targs_rejected_me
+				}
+			}
+			animation = disapproval
+		}
+		triggered_animation = {
+			trigger = {
+				scope:faegon = {
+					OR = {
+						var:reaction_to_targaryen_offer = flag:targs_accepted_try_to_tame_dragon
+						var:reaction_to_targaryen_offer = flag:targs_accepted_but_no_dragon
+					}
+				}
+			}
+			animation = personality_bold
+		}
+	}
+	lower_center_portrait = {
+		trigger = {
+			exists = scope:dragon_for_faegon
+		}
+		character = scope:dragon_for_faegon
+		animation = dragon_head
+	}
+	immediate = {}
+
+	# Try to tame the last dragon
+	option = {
+		name = agot_faegon_invasion.0005.targs_accepted_try_to_tame_dragon
+		trigger = {
+			var:reaction_to_targaryen_offer = flag:targs_accepted_try_to_tame_dragon
+		}
+		trigger_event = agot_faegon_invasion.0006
+	}
+	# Good! War it is
+	option = {
+		name = agot_faegon_invasion.0005.targs_accepted_but_no_dragon
+		trigger = {
+			var:reaction_to_targaryen_offer = flag:targs_accepted_but_no_dragon
+		}
+	}
+	# Targaryens Rejected
+	option = {
+		name = agot_faegon_invasion.0005.targs_rejected_me
+		trigger = {
+			var:reaction_to_targaryen_offer = flag:targs_rejected_me
+		}
+		set_relation_grudge = scope:targaryen_exile
+	}
+	after = {
+		trigger_event = { id = agot_faegon_invasion.0007 days = 1 }
+		remove_variable = reaction_to_targaryen_offer
+	}
+}
+agot_faegon_invasion.0006 = {
+	type = character_event
+	title = agot_faegon_invasion.0006.t
+	desc = agot_faegon_invasion.0006.desc
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = dragon
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:dragon_for_faegon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+		outfit_tags = { linear_camera_zoom }
+	}
+	immediate = {}
+	option = {
+		name = agot_faegon_invasion.0006.a
+		hidden_effect = {
+			agot_tame_dragon = {
+				TAMER = root
+				DRAGON = scope:dragon_for_faegon
+			}
+		}
+	}
+}
+agot_faegon_invasion.0007 = {
+	type = character_event
+	title = agot_faegon_invasion.0007.t
+	desc = agot_faegon_invasion.0007.desc
+	override_background = { reference = agot_iron_throne }
+	theme = war
+	left_portrait = {
+		character = root
+		animation = celebrate_sword
+	}
+	right_portrait = {
+		character = title:h_the_iron_throne.holder
+		animation = war_defender
+	}
+	immediate = {
+		if = {
+			limit = {
+				var:identity ?= flag:open_blackfyre
+			}
+			traditional_blackfyre_loyalist_alliance_effect = yes
+			if = {
+				limit = {
+					any_spouse = {
+						house ?= dynasty:dynn_Targaryen.dynasty_founder.house
+					}
+				}
+				traditional_targaryen_loyalist_alliance_effect = yes
+			}
+		}
+		else = {
+			traditional_targaryen_loyalist_alliance_effect = yes
+		}
+	}
+	option = {
+		name = agot_faegon_invasion.0007.a
+		agot_invade_the_it_but_without_crashing = yes
+		spawn_army = {
+			name = faegon_follower_spawned_army_name
+			men_at_arms = {
+				type = light_footmen # 5000
+				stacks = 50
+			}
+			men_at_arms = {
+				type = pikemen_unit # 5000
+				stacks = 50
+			}
+			men_at_arms = {
+				type = armored_footmen # 2500
+				stacks = 25
+			}
+			men_at_arms = {
+				type = longbowmen # 2500
+				stacks = 25
+			}
+			men_at_arms = {
+				type = light_horsemen # 2500
+				stacks = 25
+			}
+			men_at_arms = {
+				type = armored_horsemen # 500
+				stacks = 10
+			}
+			men_at_arms = {
+				type = trebuchet # 50
+				stacks = 5
+			}
+			men_at_arms = {
+				type = war_elephant # 100
+				stacks = 4
+			}
+			men_at_arms = {
+				type = scorpions
+				stacks = 2
+			}
+			location = root.location
+			origin = root.location
+			inheritable = no
+		}
+		custom_tooltip = agot_faegon_invasion.0007.a_war_started
+		hidden_effect = {
+			start_war = {
+				casus_belli = faegon_invasion_war_cb
+				claimant = root
+				target = title:h_the_iron_throne.holder
+				target_title = title:h_the_iron_throne
+				target_title = title:e_the_crownlands
+				target_title = title:k_the_blackwater
+				target_title = title:d_kings_landing
+				target_title = title:c_kings_landing
+				target_title = title:k_dragonstone
+				target_title = title:d_dragonstone
+				target_title = title:c_dragonstone
+			}
+		}
+		add_character_modifier = {
+			modifier = agot_exile_faegon_invader_embark_modifier
+			years = 5
+		}
+		save_scope_as = faegon
+		every_player = {
+			limit = {
+				location = { geographical_region = world_westeros_seven_kingdoms }
+			}
+			trigger_event = agot_faegon_invasion.0100
+		}
+	}
+	after = {
+		if = {
+			limit = {
+				title:d_laamp_merc_golden_company.holder ?= {
+					NOT = {
+						has_really_bad_opinion_of_root_trigger = yes
+					}
+				}
+			}
+			every_character_war = {
+				limit = {
+					using_cb = faegon_invasion_war_cb
+				}
+				add_attacker = title:d_laamp_merc_golden_company.holder
+			}
+		}
+		else_if = {
+			limit = {
+				global_var:dynamic_gc_formed.holder ?= {
+					NOT = {
+						has_really_bad_opinion_of_root_trigger = yes
+					}
+				}
+			}
+			every_character_war = {
+				limit = {
+					using_cb = faegon_invasion_war_cb
+				}
+				add_attacker = title:d_laamp_merc_golden_company.holder
+			}
+		}
+	}
+}
+
+agot_faegon_invasion.0008 = {
+	type = character_event
+	title = agot_faegon_invasion.0008.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					has_variable = given_throne_without_war
+				}
+				desc = agot_faegon_invasion.0008.desc_no_war
+			}
+			triggered_desc = {
+				trigger = {
+					NOT = { has_variable = given_throne_without_war }
+				}
+				desc = agot_faegon_invasion.0008.desc
+			}
+		}
+	}
+	override_background = {
+		reference = agot_iron_throne
+	}
+	theme = war
+	left_portrait = {
+		character = root
+		animation = war_over_win
+	}
+	immediate = {
+		house = {
+			if = {
+				limit = {
+					house_head = {
+						is_playable_character = no
+					}
+				}
+				set_house_head = root
+			}
+		}
+		set_nickname_effect = { NICKNAME = nick_the_conqueror }
+		faegon_has_taken_throne_or_become_king_effect = yes
+		agot_invaders_dragonstone_transfer_effect = {
+			RECIPIENT = root
+		}
+	}
+	option = {
+		name = {
+			trigger = {
+				var:identity = flag:alleged_real_aegon
+			}
+			text = agot_faegon_invasion.0008.i_am_aegon_vi
+		}
+		name = {
+			trigger = {
+				var:identity = flag:open_blackfyre
+			}
+			text = agot_faegon_invasion.0008.i_am_a_blackfyre
+		}
+		add_prestige = major_prestige_value
+		custom_tooltip = agot_targaryen_exile_invasion.0401.tt
+		hidden_effect = {
+			agot_purge_and_convert_targ_and_blackfyre_scripted_alliances = { VARIABLE_NAME = targ_loyalist_story_content_ally }
+			agot_purge_and_convert_targ_and_blackfyre_scripted_alliances = { VARIABLE_NAME = blackfyre_loyalist_story_content_ally }
+		}
+	}
+	after = {
+		save_scope_as = faegon_victor
+		hidden_effect = {
+			trigger_event = { id = agot_targaryen_exile_invasion.0403 days = 7 }
+			scope:peasant1 ?= {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+			scope:peasant2 ?= {
+				death = {
+					death_reason = death_vanished
+				}
+			}
+			if = {
+				limit = {
+					NOR = {
+						has_game_rule = agot_faegon_identity_real
+						var:identity = flag:open_blackfyre
+					}
+					character:Mopatis_1 = {
+						is_ai = no
+						is_alive = yes
+					}
+				}
+				random_list = {
+					70 = {}
+					30 = {
+						character:Mopatis_1 = {
+							trigger_event = agot_faegon_invasion.0009
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					NOR = {
+						has_game_rule = agot_faegon_identity_real
+						var:identity = flag:open_blackfyre
+					}
+				}
+				random_list = {
+					69 = {
+						# Identity Remains the Same
+						modifier = {
+							character:Mopatis_1 = {
+								is_alive = no
+							}
+							add = 31
+						}
+					}
+					30 = {
+						set_variable = {
+							name = identity
+							value = flag:secret_blackfyre
+						}
+						trigger_event = {
+							id = agot_faegon_invasion.0010
+							days = 1
+						}
+					}
+					1 = {
+						set_variable = {
+							name = identity
+							value = flag:secret_orphan
+						}
+						trigger_event = {
+							id = agot_faegon_invasion.0010
+							days = 1
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_faegon_invasion.0009 = {
+	type = character_event
+	title = agot_faegon_invasion.0009.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					var:faegons_identity = flag:secret_blackfyre
+				}
+				desc = agot_faegon_invasion.0009.desc_secret_blackfyre
+			}
+			triggered_desc = {
+				trigger = {
+					var:faegons_identity = flag:secret_orphan
+				}
+				desc = agot_faegon_invasion.0009.desc_secret_orphan
+			}
+		}
+	}
+	override_background = { reference = agot_iron_throne }
+	theme = family
+	left_portrait = {
+		character = scope:faegon_victor
+		animation = thinking
+	}
+	right_portrait = {
+		character = root
+		animation = stress
+	}
+	immediate = {
+		random_list = {
+			85 = {
+				set_variable = {
+					name = faegons_identity
+					value = flag:secret_blackfyre
+				}
+				trigger_event = {
+					id = agot_faegon_invasion.0010
+					days = 1
+				}
+			}
+			15 = {
+				set_variable = {
+					name = faegons_identity
+					value = flag:secret_orphan
+				}
+				trigger_event = {
+					id = agot_faegon_invasion.0010
+					days = 1
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_faegon_invasion.0009.a
+		scope:faegon_victor = {
+			trigger_event = agot_faegon_invasion.0010
+		}
+	}
+	option = {
+		name = agot_faegon_invasion.0009.b
+		trigger = {
+			any_character_artifact = {
+				has_variable = dragon_egg
+			}
+		}
+		every_character_artifact = {
+			limit = {
+				has_variable = dragon_egg
+			}
+			set_owner = scope:faegon_victor
+		}
+		scope:faegon_victor = {
+			trigger_event = agot_faegon_invasion.0010
+		}
+	}
+	option = {
+		name = agot_faegon_invasion.0009.c
+	}
+}
+
+agot_faegon_invasion.0010 = {
+	type = character_event
+	title = agot_faegon_invasion.0010.t
+	desc = {
+		desc = agot_faegon_invasion.0010.desc_intro
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:illyrio = {
+						is_alive = yes
+					}
+				}
+				desc = agot_faegon_invasion.0010.desc_intro_illyrio_is_alive
+			}
+			triggered_desc = {
+				trigger = {
+					scope:illyrio = {
+						is_alive = no
+					}
+				}
+				desc = agot_faegon_invasion.0010.desc_intro_illyrio_is_dead
+			}
+		}
+		desc = agot_faegon_invasion.0010.desc_intro_end
+		desc = agot_faegon_invasion.0010_desc_body
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					var:identity = flag:secret_blackfyre
+				}
+				desc = agot_faegon_invasion.0010.desc_secret_blackfyre
+			}
+			triggered_desc = {
+				trigger = {
+					var:identity = flag:secret_orphan
+				}
+				desc = agot_faegon_invasion.0010.desc_secret_orphan
+			}
+		}
+	}
+	override_background = { reference = agot_iron_throne }
+	theme = family
+	left_portrait = {
+		character = root
+		animation = rage
+	}
+	right_portrait = {
+		character = scope:illyrio
+		triggered_animation = {
+			trigger = {
+				scope:illyrio = {
+					is_alive = yes
+				}
+			}
+			animation = stress
+		}
+	}
+	immediate = {
+		character:Mopatis_1 = {
+			save_scope_as = illyrio
+		}
+		character:Mopatis_hh_1 = {
+			save_scope_as = sarra
+		}
+		add_stress = major_stress_gain
+		if = {
+			limit = {
+				var:identity = flag:secret_blackfyre
+			}
+			hidden_effect = {
+				set_real_mother = character:Mopatis_hh_1
+				set_real_father = character:Mopatis_1
+			}
+		}
+		else_if = {
+			limit = {
+				var:identity = flag:secret_orphan
+			}
+			hidden_effect = {
+				create_character = {
+					template = peasant_character
+					age = 40
+					gender = female
+					culture = culture:lyseni
+					faith = faith:fc_pan_lys
+					location = root.location
+					save_scope_as = peasant1
+					after_creation = {
+						death = {
+							death_reason = death_vanished
+						}
+					}
+				}
+				create_character = {
+					template = peasant_character
+					age = 40
+					gender = male
+					dynasty = generate
+					culture = culture:lyseni
+					faith = faith:fc_pan_lys
+					location = root.location
+					save_scope_as = peasant2
+					after_creation = {
+						death = {
+							death_reason = death_vanished
+						}
+					}
+				}
+				hidden_effect = {
+					set_real_mother = scope:peasant1
+					set_real_father = scope:peasant2
+				}
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					scope:illyrio = {
+						is_ai = yes
+						is_alive = yes
+						any_character_artifact = {
+							has_variable = dragon_egg
+						}
+					}
+					scope:illyrio = {
+						is_alive = no
+						any_child = {
+							is_ai = yes
+							any_character_artifact = {
+								has_variable = dragon_egg
+							}
+						}
+					}
+				}
+			}
+			random_list = {
+				20 = {}
+				80 = {
+					if = {
+						limit = {
+							scope:illyrio = {
+								is_alive = yes
+							}
+						}
+						scope:illyrio = {
+							every_character_artifact = {
+								limit = {
+									has_variable = dragon_egg
+								}
+								set_owner = root
+							}
+						}
+					}
+					else = {
+						scope:illyrio = {
+							random_child = {
+								limit = {
+									is_ai = yes
+									any_character_artifact = {
+										has_variable = dragon_egg
+									}
+								}
+								every_character_artifact = {
+									limit = {
+										has_variable = dragon_egg
+									}
+									set_owner = root
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_faegon_invasion.0010.keep_a_secret
+		custom_tooltip = agot_faegon_invasion.0010.keep_a_secret_secret_blackfyre_tt
+		trigger = {
+			var:identity = flag:secret_blackfyre
+		}
+		if = {
+			limit = {
+				scope:illyrio = {
+					is_alive = yes
+				}
+			}
+			set_relation_grudge = scope:illyrio
+		}
+		ai_chance = {
+			base = 40
+		}
+	}
+	option = {
+		name = agot_faegon_invasion.0010.declare_it_to_the_world
+		custom_tooltip = agot_faegon_invasion.0010.declare_it_to_the_world_secret_blackfyre_tt
+		trigger = {
+			var:identity = flag:secret_blackfyre
+		}
+		blackfyre_identity_swap = yes
+		every_ally = {
+			limit = {
+				house = dynasty:dynn_Hayford.dynasty_founder.house
+				house = dynasty:dynn_Goodbrook.dynasty_founder.house
+				house = dynasty:dynn_Rowan.dynasty_founder.house
+				house = dynasty:dynn_Oakheart.dynasty_founder.house
+				house = dynasty:dynn_Tarly.dynasty_founder.house
+				house = dynasty:dynn_Hightower.dynasty_founder.house
+				house = dynasty:dynn_Hasty.dynasty_founder.house
+				house = dynasty:dynn_Lonmouth.dynasty_founder.house
+				house = dynasty:dynn_Rykker.dynasty_founder.house
+				house = dynasty:dynn_Ashford.dynasty_founder.house
+				house = dynasty:dynn_Boggs.dynasty_founder.house
+				house = dynasty:dynn_Brune.dynasty_founder.house
+				house = dynasty:dynn_Bush.dynasty_founder.house
+				house = dynasty:dynn_Pyne.dynasty_founder.house
+				house = dynasty:dynn_Hardy.dynasty_founder.house
+				house = dynasty:dynn_Cave.dynasty_founder.house
+				house = dynasty:dynn_Crabb.dynasty_founder.house
+				house = dynasty:dynn_Celtigar.dynasty_founder.house
+				house = dynasty:dynn_Velaryon.dynasty_founder.house
+				house = dynasty:dynn_Massey.dynasty_founder.house
+				house = dynasty:dynn_Mooton.dynasty_founder.house
+				house = dynasty:dynn_Butterwell.dynasty_founder.house
+				house = dynasty:dynn_Sunderland.dynasty_founder.house
+				house = dynasty:dynn_Vyrwel.dynasty_founder.house
+				house = dynasty:dynn_Bracken.dynasty_founder.house
+				house = dynasty:dynn_Hersy.dynasty_founder.house
+				house = dynasty:dynn_Darry.dynasty_founder.house
+			}
+			add_opinion = {
+				modifier = agot_betrayed_my_support_opinion
+				target = root
+			}
+		}
+		ai_chance = {
+			base = 60
+		}
+	}
+	option = {
+		name = agot_faegon_invasion.0010.keep_a_secret
+		custom_tooltip = agot_faegon_invasion.0010.keep_a_secret_secret_orphan_tt
+		trigger = {
+			var:identity = flag:secret_orphan
+		}
+		if = {
+			limit = {
+				scope:illyrio = {
+					is_alive = yes
+				}
+			}
+			set_relation_grudge = scope:illyrio
+		}
+		ai_chance = {
+			base = 60
+		}
+	}
+	option = {
+		name = agot_faegon_invasion.0010.declare_it_to_the_world
+		custom_tooltip = agot_faegon_invasion.0010.declare_it_to_the_world_orphan_tt
+		trigger = {
+			var:identity = flag:secret_orphan
+		}
+		set_mother = scope:peasant1
+		set_father = scope:peasant2
+		set_house = scope:peasant2.house
+		every_ally = {
+			limit = {
+				has_vassal_stance = parochial
+				has_vassal_stance = courtly
+				has_vassal_stance = glory_hound
+			}
+			add_opinion = {
+				modifier = agot_betrayed_my_support_opinion
+				target = root
+			}
+		}
+		ai_chance = {
+			base = 40
+		}
+	}
+	after = {
+		hidden_effect = {
+			every_held_title = {
+				set_coa = root.house
+			}
+		}
+	}
+}
+
+scripted_effect targaryens_control_it_and_agree_to_let_faegon_come_home_effect = {
+	scope:marriage_candidate = {
+		if = {
+			limit = {
+				is_betrothed = yes
+			}
+			if = {
+				limit = {
+					has_been_promised_grand_wedding = yes
+				}
+				break_grand_wedding_betrothal_effect = yes
+			}
+			else = {
+				break_betrothal = betrothed
+			}
+		}
+		if = {
+			limit = {
+				is_adult = yes
+			}
+			if = {
+				limit = {
+					is_female = yes
+				}
+				marry_matrilineal = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+			else = {
+				marry = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					is_female = yes
+				}
+				create_betrothal_matrilineal = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+			else = {
+				create_betrothal = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+		}
+	}
+	if = {
+		limit = {
+			scope:faegon.var:identity = flag:open_blackfyre
+			house:house_Blackfyre = {
+				has_house_modifier = divided_dynasty_house_modifier
+			}
+		}
+		mend_house_blackfyre_divided_dynasty_modifier_effect = yes
+	}
+}
+
+scripted_effect faegon_given_throne_without_war = {
+	set_variable = given_throne_without_war
+	trigger_event = {
+		id = agot_faegon_invasion.0008
+		days = 1
+	}
+}
+
+agot_faegon_invasion.0020 = {
+	type = character_event
+	title = agot_faegon_invasion.0020.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:faegon.var:identity = flag:alleged_real_aegon
+				}
+				desc = agot_faegon_invasion.0020.desc_allegedly_aegon
+			}
+			triggered_desc = {
+				trigger = {
+					scope:faegon.var:identity = flag:open_blackfyre
+				}
+				desc = agot_faegon_invasion.0020.desc_open_blackfyre
+			}
+		}
+	}
+	override_background = {
+		reference = agot_iron_throne
+	}
+	theme = marriage
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:faegon
+		animation = personality_bold
+	}
+	immediate = {
+		save_scope_as = marriage_candidate
+	}
+	# We accept, but I will remain monarch
+	option = {
+		name = agot_faegon_invasion.0020.a
+		custom_tooltip = agot_faegon_invasion.0020.a_tt # Faegon Must Accept or Reject
+		scope:faegon = {
+			trigger_event = agot_faegon_invasion.0021
+		}
+		ai_chance = {
+			base = 20
+			modifier = {
+				factor = 1
+				OR = {
+					has_trait = craven
+					has_trait = trusting
+				}
+			}
+		}
+	}
+
+	# We accept, and you will be monarch as you ask.
+	option = {
+		name = agot_faegon_invasion.0020.b
+		scope:marriage_candidate = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				if = {
+					limit = {
+						has_been_promised_grand_wedding = yes
+					}
+					break_grand_wedding_betrothal_effect = yes
+				}
+				else = {
+					break_betrothal = betrothed
+				}
+			}
+			if = {
+				limit = {
+					is_adult = yes
+				}
+				marry = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+			else = {
+				create_betrothal = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:faegon.var:identity = flag:open_blackfyre
+				house:house_Blackfyre = {
+					has_house_modifier = divided_dynasty_house_modifier
+				}
+			}
+			mend_house_blackfyre_divided_dynasty_modifier_effect = yes
+		}
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		every_held_title = {
+			change_title_holder_include_vassals = {
+				holder = scope:faegon
+				change = scope:change
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+		if = {
+			limit = {
+				is_ai = no
+			}
+			set_player_character = scope:faegon
+		}
+		add_internal_flag = special
+		scope:faegon = {
+			add_courtier = root
+			faegon_given_throne_without_war = yes
+		}
+		hidden_effect = {
+			return_to_court = yes
+		}
+		ai_chance = {
+			base = 5
+			modifier = {
+				factor = 1
+				OR = {
+					has_trait = craven
+					has_trait = trusting
+				}
+			}
+		}
+	}
+	# We accept, but want to retain Dragonstone.
+	option = {
+		name = agot_faegon_invasion.0020.c
+		trigger = {
+			has_title = title:c_dragonstone
+		}
+		scope:marriage_candidate = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				if = {
+					limit = {
+						has_been_promised_grand_wedding = yes
+					}
+					break_grand_wedding_betrothal_effect = yes
+				}
+				else = {
+					break_betrothal = betrothed
+				}
+			}
+			if = {
+				limit = {
+					is_adult = yes
+				}
+				marry = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+			else = {
+				create_betrothal = scope:faegon
+				scope:faegon = {
+					if = {
+						limit = {
+							has_trait = refusing_marriage
+						}
+						remove_trait = refusing_marriage
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:faegon.var:identity = flag:open_blackfyre
+				house:house_Blackfyre = {
+					has_house_modifier = divided_dynasty_house_modifier
+				}
+			}
+			mend_house_blackfyre_divided_dynasty_modifier_effect = yes
+		}
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		every_held_title = {
+			limit = {
+				NOR = {
+					this = title:k_dragonstone
+					this = title:d_dragonstone
+					this = title:c_dragonstone
+				}
+			}
+			change_title_holder_include_vassals = {
+				holder = scope:faegon
+				change = scope:change
+			}
+		}
+		scope:faegon = {
+			faegon_given_throne_without_war = yes
+		}
+		resolve_title_and_vassal_change = scope:change
+		ai_chance = {
+			base = 15
+			modifier = {
+				factor = 1
+				OR = {
+					has_trait = craven
+					has_trait = trusting
+				}
+			}
+		}
+	}
+
+	# A pretender, nothing more nothing less.
+	option = {
+		name = agot_faegon_invasion.0020.d
+		scope:faegon = {
+			add_opinion = {
+				target = root
+				modifier = agot_defamed_my_legitimacy_opinion
+			}
+			set_variable = {
+				name = reaction_to_targaryen_offer
+				value = flag:targs_rejected_me
+			}
+			trigger_event = {
+				id = agot_faegon_invasion.0005
+				days = 1
+			}
+		}
+		ai_chance = {
+			base = 60
+			ai_value_modifier = {
+				ai_boldness = 0.5
+			}
+			ai_value_modifier = {
+				ai_vengefulness = 0.5
+			}
+		}
+	}
+}
+
+agot_faegon_invasion.0021 = {
+	type = character_event
+	hidden = yes
+	# Okay, I'll take it.
+	option = {
+		name = agot_faegon_invasion.0021.a
+		set_variable = accepted_offer
+		scope:marriage_candidate = {
+			if = {
+				limit = {
+					is_betrothed = yes
+				}
+				if = {
+					limit = {
+						has_been_promised_grand_wedding = yes
+					}
+					break_grand_wedding_betrothal_effect = yes
+				}
+				else = {
+					break_betrothal = betrothed
+				}
+			}
+			if = {
+				limit = {
+					is_adult = yes
+				}
+				if = {
+					limit = {
+						is_female = yes
+					}
+					marry_matrilineal = scope:faegon
+					scope:faegon = {
+						if = {
+							limit = {
+								has_trait = refusing_marriage
+							}
+							remove_trait = refusing_marriage
+						}
+					}
+				}
+				else = {
+					marry = scope:faegon
+					scope:faegon = {
+						if = {
+							limit = {
+								has_trait = refusing_marriage
+							}
+							remove_trait = refusing_marriage
+						}
+					}
+				}
+			}
+			else = {
+				if = {
+					limit = {
+						is_female = yes
+					}
+					create_betrothal_matrilineal = scope:faegon
+				}
+				else = {
+					create_betrothal = scope:faegon
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:faegon.var:identity = flag:open_blackfyre
+				house:house_Blackfyre = {
+					has_house_modifier = divided_dynasty_house_modifier
+				}
+			}
+			mend_house_blackfyre_divided_dynasty_modifier_effect = yes
+		}
+		agot_invasions_move_to_new_court = { NEW_LIEGE = scope:marriage_candidate }
+		faegon_has_taken_throne_or_become_king_effect = yes
+		scope:marriage_candidate = {
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = agot_faegon_invasion.0021.iron_throne_title_accepted
+				custom_tooltip = agot_faegon_invasion.0021.iron_throne_title_tt_accepted
+				left_icon = scope:faegon
+				right_icon = scope:marriage_candidate
+			}
+		}
+		ai_chance = {
+			base = 47
+			modifier = {
+				factor = 1
+				OR = {
+					has_trait = craven
+					has_trait = trusting
+				}
+			}
+		}
+	}
+
+	# Not good enough, declare war
+	option = {
+		name = agot_faegon_invasion.0021.b
+		scope:marriage_candidate = {
+			send_interface_toast = {
+				type = event_toast_effect_bad
+				title = agot_faegon_invasion.0021.iron_throne_title_rejected
+				custom_tooltip = agot_faegon_invasion.0021.iron_throne_title_tt
+				left_icon = scope:faegon
+				right_icon = scope:marriage_candidate
+			}
+		}
+		set_variable = {
+			name = reaction_to_targaryen_offer
+			value = flag:targs_rejected_me
+		}
+		trigger_event = {
+			id = agot_faegon_invasion.0005
+			days = 1
+		}
+		ai_chance = {
+			base = 52
+			ai_value_modifier = {
+				ai_boldness = 0.5
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = {
+				exists = var:accepted_offer
+			}
+			hidden_effect = {
+				scope:peasant1 ?= {
+					death = {
+						death_reason = death_vanished
+					}
+				}
+				scope:peasant2 ?= {
+					death = {
+						death_reason = death_vanished
+					}
+				}
+				if = {
+					limit = {
+						character:Mopatis_1 = {
+							is_ai = no
+							is_alive = yes
+						}
+						NOT = {
+							var:identity = flag:open_blackfyre
+						}
+					}
+					random_list = {
+						70 = {}
+						30 = {
+							character:Mopatis_1 = {
+								trigger_event = agot_faegon_invasion.0009
+							}
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						NOT = {
+							var:identity = flag:open_blackfyre
+						}
+					}
+					random_list = {
+						69 = {
+							# Identity Remains the Same
+							modifier = {
+								character:Mopatis_1 = {
+									is_alive = no
+								}
+								add = 31
+							}
+						}
+						30 = {
+							set_variable = {
+								name = identity
+								value = flag:secret_blackfyre
+							}
+							trigger_event = {
+								id = agot_faegon_invasion.0010
+								days = 1
+							}
+						}
+						1 = {
+							set_variable = {
+								name = identity
+								value = flag:secret_orphan
+							}
+							trigger_event = {
+								id = agot_faegon_invasion.0010
+								days = 1
+							}
+						}
+					}
+				}
+			}
+			remove_variable = accepted_offer
+		}
+	}
+}
+
+agot_faegon_invasion.0040 = {
+	type = character_event
+	title = agot_faegon_invasion.0040.t
+	desc = agot_faegon_invasion.0040.desc
+	override_background = { reference = agot_iron_throne }
+	theme = court
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:faegon_victor
+		animation = celebrate_sword
+	}
+	immediate = {
+		save_scope_as = targaryen_exile
+	}
+	# Go Home to Westeros
+	option = {
+		name = agot_faegon_invasion.0040.a
+		trigger = {
+			has_multiple_players = no
+		}
+		agot_invasions_move_to_new_court = { NEW_LIEGE = scope:faegon_victor }
+		scope:faegon_victor = {
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = agot_faegon_invasion.0040.targs_will_go_home
+				custom_tooltip = agot_faegon_invasion.0040.targs_will_go_home_tt
+				left_icon = scope:faegon
+				right_icon = scope:targaryen_exile
+			}
+		}
+		if = {
+			limit = {
+				scope:faegon_victor.var:identity ?= flag:open_blackfyre
+				house:house_Blackfyre = {
+					has_house_modifier = divided_dynasty_house_modifier
+				}
+			}
+			house:house_Blackfyre = {
+				remove_house_modifier = divided_dynasty_house_modifier
+			}
+		}
+		if = {
+			limit = {
+				is_at_war_with = title:h_the_iron_throne.holder
+			}
+			every_character_war = {
+				limit = {
+					primary_defender = title:h_the_iron_throne.holder
+				}
+				end_war = invalidated
+			}
+		}
+		ai_chance = {
+			base = 45
+			modifier = {
+				factor = 1
+				OR = {
+					has_trait = craven
+					has_trait = family_first
+					has_trait = trusting
+				}
+			}
+			modifier = {
+				factor = 3
+				NOT = {
+					any_owned_story = {
+						story_type = story_agot_targaryen_exile_invasion
+					}
+				}
+			}
+		}
+	}
+	# If MP is enabled, and faegon is a human player
+	option = {
+		name = agot_faegon_invasion.0040.mp_enabled
+		trigger = {
+			has_multiple_players = yes
+			scope:faegon_victor = {
+				is_ai = no
+			}
+		}
+		if = {
+			limit = {
+				has_targaryen_exile_story = yes
+			}
+			hidden_effect = {
+				random_owned_story = {
+					limit = {
+						story_type = story_agot_targaryen_exile_invasion
+					}
+					end_story = yes
+				}
+			}
+		}
+		add_realm_law = camp_purpose_wanderers
+		if = {
+			limit = {
+				is_at_war_with = title:h_the_iron_throne.holder
+			}
+			every_character_war = {
+				limit = {
+					primary_defender = title:h_the_iron_throne.holder
+				}
+				end_war = invalidated
+			}
+		}
+		if = {
+			limit = {
+				scope:faegon_victor.var:identity ?= flag:open_blackfyre
+				house:house_Blackfyre = {
+					has_house_modifier = divided_dynasty_house_modifier
+				}
+			}
+			house:house_Blackfyre = {
+				remove_house_modifier = divided_dynasty_house_modifier
+			}
+		}
+	}
+	# Who?
+	option = {
+		name = agot_faegon_invasion.0040.b
+		hidden_effect = {
+			scope:faegon_victor = {
+				send_interface_toast = {
+					type = event_toast_effect_bad
+					title = agot_faegon_invasion.0040.targs_wont_go_home
+					custom_tooltip = agot_faegon_invasion.0040.targs_wont_go_home_tt
+					left_icon = scope:faegon
+					right_icon = scope:targaryen_exile
+				}
+			}
+		}
+		ai_chance = {
+			base = 55
+			ai_value_modifier = {
+				ai_greed = 0.5
+			}
+		}
+	}
+}
+
+agot_faegon_invasion.0100 = {
+	type = character_event
+	window = fullscreen_event
+	title = agot_faegon_invasion.0100.t
+	desc = {
+		desc = agot_faegon_invasion.0100.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:faegon.var:identity = flag:alleged_real_aegon
+				}
+				desc = agot_faegon_invasion.0100.desc_alleged_aegon
+			}
+			triggered_desc = {
+				trigger = {
+					scope:faegon.var:identity = flag:open_blackfyre
+				}
+				desc = agot_faegon_invasion.0100.desc_blackfyre
+			}
+		}
+		desc = agot_faegon_invasion.0100.desc_end
+	}
+	theme = war
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	immediate = {}
+	option = {
+		name = agot_faegon_invasion.0100.b
+	}
+	option = {
+		name = agot_faegon_invasion.0100.a
+		add_internal_flag = special
+		trigger = {
+			has_dlc_feature = roads_to_power
+			has_multiple_players = no
+		}
+		set_player_character = scope:faegon
+	}
+}

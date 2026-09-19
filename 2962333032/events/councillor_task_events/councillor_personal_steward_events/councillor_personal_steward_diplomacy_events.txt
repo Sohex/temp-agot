@@ -1,0 +1,562 @@
+﻿#Events related to the Personal Steward Councillor's diplomacy task
+
+namespace = councillor_personal_steward_diplomacy
+
+
+# Notifications events (1001-1999)
+	#1001 - The opinion of a Close Kinsman in your realm improves
+	#1002 - A rivalry between your children is ended
+	#1003 - Your heir becomes friend with (another) one of your children
+	#1004 - The diplomacy skill of your Chancellor increases
+	#1005 - Personal Steward lose Shy
+	#1006 - Personal Steward gains Gregarious
+
+# Events (2001-4999)
+	#2001 - Heir, or all children, become more interesting as marriage partners
+	#2002 - Friendship between your heir and the heir of one of your powerful vassals
+	#2003 - Reconcile with a rival that is present in your realm
+	#2004 - Foreign claimant seeks audience at your court - opportunity to use their claim!
+
+
+
+#######################
+# NOTIFICATION EVENTS
+# 1001 - 1999
+# by Linnéa Thimrén
+#######################
+
+#The opinion of a Close Kinsman in your realm improves
+councillor_personal_steward_diplomacy.1001 = {
+	hidden = yes
+
+	trigger = {
+		valid_personal_steward_councillor_trigger = yes
+		NOT = {
+			has_character_flag = had_event_councillor_personal_steward_diplomacy_1001
+		}
+		OR = {
+			any_close_or_extended_family_member = {
+				NOT = { this = scope:councillor }
+				target_is_liege_or_above = root
+				#We need one of these to be true to match the triggers in immediate
+				OR = {
+					is_landed = yes
+					is_adult = yes
+				}
+			}
+			AND = {
+				exists = dynasty
+				dynasty = {
+					any_dynasty_member = {
+						is_adult = yes
+						NOT = { this = scope:councillor }
+						target_is_liege_or_above = root
+						OR = {
+							is_of_major_interest_to_root_trigger = yes
+							is_of_minor_interest_to_root_trigger = yes
+						}
+					}
+				}
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		councillor_personal_steward_limited_skill_rating_modifier = {
+			SKILL = diplomacy
+			SCALE = 1
+			SKILL_RATING = personal_steward_skill_rating_1
+		}
+	}
+
+	immediate = {
+		cp:councillor_personal_steward = {
+			save_scope_as = councillor
+		}
+		add_character_flag = {
+			flag = had_event_councillor_personal_steward_diplomacy_1001
+			days = 1825
+		}
+		random_close_or_extended_family_member = {
+			limit = {
+				NOT = { this = scope:councillor }
+				target_is_liege_or_above = root
+				is_landed = yes
+			}
+			save_scope_as = close_kin
+		}
+		if = {
+			limit = {
+				NOT = { exists = scope:close_kin }
+				exists = dynasty
+				dynasty = {
+					any_dynasty_member = {
+						is_adult = yes
+						NOT = { this = scope:councillor }
+						target_is_liege_or_above = root
+						OR = {
+							is_of_major_interest_to_root_trigger = yes
+							is_of_minor_interest_to_root_trigger = yes
+						}
+					}
+				}
+			}
+			dynasty = {
+				random_dynasty_member = {
+					limit = {
+						is_adult = yes
+						NOT = { this = scope:councillor }
+						target_is_liege_or_above = root
+						is_of_major_interest_to_root_trigger = yes
+						is_landed = yes
+					}
+					alternative_limit = {
+						is_adult = yes
+						NOT = { this = scope:councillor }
+						target_is_liege_or_above = root
+						is_of_minor_interest_to_root_trigger = yes
+						is_landed = yes
+					}
+					alternative_limit = {
+						is_adult = yes
+						NOT = { this = scope:councillor }
+						target_is_liege_or_above = root
+						OR = {
+							is_of_major_interest_to_root_trigger = yes
+							is_of_minor_interest_to_root_trigger = yes
+						}
+					}
+					save_scope_as = close_kin
+				}
+			}
+		}
+		if = {
+			limit = {
+				NOT = { exists = scope:close_kin }
+			}
+			random_close_or_extended_family_member = {
+				limit = {
+					is_adult = yes
+					NOT = { this = scope:councillor }
+					target_is_liege_or_above = root
+				}
+				save_scope_as = close_kin
+			}
+		}
+		if = {
+			limit = { exists = scope:close_kin }
+			send_interface_message = {
+				type = msg_personal_steward_task_good
+				title = councillor_personal_steward_diplomacy.1001.desc
+				desc = {
+					triggered_desc = {
+						trigger = {
+							scope:councillor = { diplomacy < average_skill_level }
+						}
+						desc = personal_steward_task_diplomacy_good_unskilled_notification_tooltip
+					}
+					triggered_desc = {
+						trigger = {
+							scope:councillor = { diplomacy >= average_skill_level }
+						}
+						desc = personal_steward_task_diplomacy_good_skilled_notification_tooltip
+					}
+				}
+
+				left_icon = scope:close_kin
+				right_icon = scope:councillor
+
+				scope:close_kin = {
+					add_opinion = {
+						target = root
+						modifier = respect_opinion
+						opinion = 20
+					}
+					hidden_effect = {
+						add_opinion = {
+							target = scope:councillor
+							modifier = respect_opinion
+							opinion = 20
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+#The diplomacy skill of your Chancellor increases
+councillor_personal_steward_diplomacy.1004 = {
+	hidden = yes
+
+	trigger = {
+		valid_personal_steward_councillor_trigger = yes
+		NOT = {
+			has_character_flag = had_event_councillor_personal_steward_diplomacy_1004
+		}
+		cp:councillor_personal_steward = {
+			diplomacy > mediocre_skill_rating
+		}
+
+		any_diplomacy_councillor = {
+			diplomacy <= mediocre_skill_rating
+		}
+	}
+
+	weight_multiplier = {
+		base = 0.75
+		councillor_personal_steward_limited_skill_rating_modifier = {
+			SKILL = diplomacy
+			SCALE = 1
+			SKILL_RATING = personal_steward_skill_rating_1
+		}
+		modifier = {
+			add = 0.25
+			any_diplomacy_councillor = {
+				diplomacy <= low_skill_rating
+			}
+		}
+		modifier = {
+			add = 0.25
+			scope:councillor = {
+				has_diplomacy_lifestyle_trait_trigger = yes
+			}
+		}
+	}
+
+	immediate = {
+		cp:councillor_personal_steward = {
+			save_scope_as = councillor
+		}
+		add_character_flag = {
+			flag = had_event_councillor_personal_steward_diplomacy_1004
+			days = 1825
+		}
+		random_diplomacy_councillor = {
+			limit = {
+				diplomacy <= low_skill_rating
+			}
+			alternative_limit = {
+				diplomacy <= mediocre_skill_rating
+			}
+			save_scope_as = diplo_councillor
+		}
+		send_interface_message = {
+			type = msg_personal_steward_task_good
+			title = councillor_personal_steward_diplomacy.1004.desc
+			desc = {
+				triggered_desc = {
+					trigger = {
+						scope:councillor = { diplomacy < average_skill_level }
+					}
+					desc = personal_steward_task_diplomacy_good_unskilled_notification_tooltip
+				}
+				triggered_desc = {
+					trigger = {
+						scope:councillor = { diplomacy >= average_skill_level }
+					}
+					desc = personal_steward_task_diplomacy_good_skilled_notification_tooltip
+				}
+			}
+
+			left_icon = scope:councillor
+			right_icon = scope:diplo_councillor
+
+			scope:diplo_councillor = {
+				show_as_tooltip = {
+					add_diplomacy_skill = 1
+				}
+				hidden_effect = {
+					add_opinion = {
+						target = scope:councillor
+						modifier = respect_opinion
+						opinion = 10
+					}
+				}
+			}
+		}
+		scope:diplo_councillor = {
+			send_interface_message = {
+				type = msg_personal_steward_task_good
+				title = councillor_personal_steward_diplomacy.1004.desc_diplo_councillor
+				desc = {
+					triggered_desc = {
+						trigger = {
+							scope:councillor = { diplomacy < average_skill_level }
+						}
+						desc = task_diplomacy_good_unskilled_notification_tooltip
+					}
+					triggered_desc = {
+						trigger = {
+							scope:councillor = { diplomacy >= average_skill_level }
+						}
+						desc = task_diplomacy_good_skilled_notification_tooltip
+					}
+				}
+
+				left_icon = scope:councillor
+
+				add_diplomacy_skill = 1
+			}
+		}
+	}
+}
+
+#Personal Steward gains Gregarious
+councillor_personal_steward_diplomacy.1006 = {
+	hidden = yes
+
+	trigger = {
+		valid_personal_steward_councillor_trigger = yes
+		personal_steward_diplomacy_tier_2_trigger = yes
+		cp:councillor_personal_steward = {
+			has_diplomacy_lifestyle_trait_trigger = yes
+			NOR = {
+				has_trait = shy
+				has_trait = gregarious
+			}
+			number_of_personality_traits <= 3
+		}
+	}
+
+	weight_multiplier = {
+		base = 0.5
+		councillor_personal_steward_limited_skill_rating_modifier = {
+			SKILL = diplomacy
+			SCALE = 1
+			SKILL_RATING = personal_steward_skill_rating_2
+		}
+		modifier = {
+			add = 0.5
+			cp:councillor_personal_steward = {
+				number_of_personality_traits <= 2
+			}
+		}
+		modifier = {
+			add = 0.25
+			cp:councillor_personal_steward = {
+				has_diplomacy_lifestyle_trait_trigger = yes
+			}
+		}
+	}
+
+	immediate = {
+		cp:councillor_personal_steward = {
+			save_scope_as = councillor
+		}
+		send_interface_message = {
+			type = msg_personal_steward_task_good
+			title = councillor_personal_steward_diplomacy.1005.desc
+			desc = {
+				triggered_desc = {
+					trigger = {
+						scope:councillor = { diplomacy < average_skill_level }
+					}
+					desc = personal_steward_task_diplomacy_good_unskilled_notification_tooltip
+				}
+				triggered_desc = {
+					trigger = {
+						scope:councillor = { diplomacy >= average_skill_level }
+					}
+					desc = personal_steward_task_diplomacy_good_skilled_notification_tooltip
+				}
+			}
+
+			left_icon = scope:councillor
+
+			scope:councillor = {
+				add_trait = gregarious
+			}
+		}
+	}
+}
+
+#Reconcile with a rival that is present in your realm
+councillor_personal_steward_diplomacy.2003 = {
+	type = character_event
+	title = councillor_personal_steward_diplomacy.2003.t
+	desc = councillor_personal_steward_diplomacy.2003.desc
+	theme = diplomacy
+	left_portrait = {
+		character = scope:rival
+		animation = personality_cynical
+	}
+	right_portrait = {
+		character = scope:councillor
+		animation = personality_forgiving
+	}
+
+	trigger = {
+		valid_personal_steward_councillor_trigger = yes
+		NOT = { has_character_flag = had_event_councillor_personal_steward_diplomacy_2003 }
+		any_relation = {
+			type = rival
+			NOT = { this = scope:councillor }
+			is_ai = yes
+			top_liege = root.top_liege
+			number_of_personality_traits_in_common = {
+				target = root
+				value >= 1
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		councillor_personal_steward_limited_skill_rating_modifier = {
+			SKILL = diplomacy
+			SCALE = 1
+			SKILL_RATING = personal_steward_skill_rating_2
+		}
+	}
+
+	immediate = {
+		add_character_flag = {
+			flag = had_event_councillor_personal_steward_diplomacy_2003
+			days = 3650
+		}
+		random_relation = {
+			type = rival
+			limit = {
+				NOT = { this = scope:councillor }
+				is_ai = yes
+				top_liege = root.top_liege
+				number_of_personality_traits_in_common = {
+					target = root
+					value >= 1
+				}
+			}
+			save_scope_as = rival
+			personality_check_shared_good_ruler_traits_effect = {
+				CHAR1 = this
+				CHAR2 = root
+				STRICT = no
+			}
+		}
+		if = {
+			limit = { root = { is_ai = no }	}
+			scope:councillor = {
+				assign_quirk_effect = yes
+			}
+		}
+	}
+
+	option = { #Sure, let's calm down
+		name = councillor_personal_steward_diplomacy.2003.a
+		remove_relation_rival = scope:rival
+		hidden_effect = {
+			scope:rival = {
+				add_opinion = {
+					target = scope:councillor
+					modifier = respect_opinion
+					opinion = 10
+				}
+			}
+		}
+		stress_impact = {
+			vengeful = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_compassion = 0.75
+			}
+		}
+	}
+
+	option = { #No
+		name = councillor_personal_steward_diplomacy.2003.b
+		add_piety = minor_piety_loss
+		duel = {
+			skill = prowess
+			target = scope:rival
+			17 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 2
+				}
+				scope:rival = {
+					increase_wounds_effect = { REASON = fight }
+				}
+			}
+			10 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -2
+				}
+				increase_wounds_effect = { REASON = fight }
+			}
+		}
+		scope:rival = {
+			add_opinion = {
+				target = root
+				modifier = respect_opinion
+				opinion = -40
+			}
+		}
+		scope:councillor = {
+			add_opinion = {
+				target = root
+				modifier = respect_opinion
+				opinion = -20
+			}
+		}
+		stress_impact = {
+			compassionate = medium_stress_impact_gain
+		}
+		ai_chance = {
+			base = 50
+			ai_value_modifier = {
+				ai_vengefulness = 0.75
+			}
+		}
+	}
+
+	option = { #Let me convince you of their vile vile ways
+		name = councillor_personal_steward_diplomacy.2003.c
+		duel = {
+			skill = diplomacy
+			target = scope:rival
+			20 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 1
+				}
+				scope:councillor = {
+					add_opinion = {
+						target = scope:rival
+						modifier = respect_opinion
+						opinion = -30
+					}
+					add_opinion = {
+						target = root
+						modifier = respect_opinion
+						opinion = 20
+					}
+				}
+			}
+			10 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -1
+				}
+				scope:councillor = {
+					add_opinion = {
+						target = root
+						modifier = respect_opinion
+						opinion = -20
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 50
+			compare_modifier = {
+				value = diplomacy
+				step = 4
+				multiplier = 0.5
+			}
+		}
+	}
+}

@@ -1,0 +1,562 @@
+﻿agot_sailing_completed_log_entry_effect = {
+	scope:activity = {
+		add_activity_log_entry = {
+			key = agot_sailing_completed_log
+			tags = { completed }
+			# this line below adds the entry to the Effects section of the conclusion UI
+			show_in_conclusion = yes
+			character = root
+			scope:host = {
+				stress_impact = {
+					base = medium_stress_impact_loss
+				}
+				if = {
+					limit = {
+						NOT = { has_character_flag = failed_valyrian_mission }
+					}
+					add_prestige = medium_prestige_gain
+					dynasty ?= {
+						add_dynasty_prestige = minor_dynasty_prestige_gain
+					}
+				}
+				if = { # Murder
+					limit = { has_activity_intent = murder_attendee_intent }
+					if = {
+						limit = {
+							exists = intent_target.killer
+							intent_target.killer = root
+						}
+						custom_tooltip = intent_murder_success_tt
+					}
+					else_if = {
+						limit = {
+							exists = intent_target.killer
+							intent_target.killer = { is_alive = no }
+						}
+						custom_tooltip = intent_murder_dead_tt
+					}
+					else = { custom_tooltip = intent_murder_fail_tt }
+				}
+				else_if = { # Woo
+					limit = { has_activity_intent = woo_attendee_intent }
+					if = {
+						limit = { has_relation_lover = intent_target }
+						custom_tooltip = intent_woo_success_tt
+					}
+					else_if = {
+						limit = { has_relation_potential_friend = intent_target }
+						custom_tooltip = intent_woo_potential_tt
+					}
+					else = { custom_tooltip = intent_woo_fail_tt }
+				}
+				else_if = { # Befriend
+					limit = { has_activity_intent = befriend_attendee_intent }
+					if = {
+						limit = { has_relation_friend = intent_target }
+						custom_tooltip = intent_befriend_success_tt
+					}
+					else_if = {
+						limit = { has_relation_potential_friend = intent_target }
+						custom_tooltip = intent_befriend_potential_tt
+					}
+					else = { custom_tooltip = intent_befriend_fail_tt }
+				}
+				else_if = {
+					limit = { has_activity_intent = gain_sailing_xp_intent }
+					if = {
+						limit = {
+							has_trait_xp = {
+								trait = lifestyle_mariner
+								value >= root.var:sailing_xp_required
+							}
+						}
+						custom_tooltip = intent_xp_success_tt
+					}
+					else = { custom_tooltip = intent_xp_fail_tt }
+				}
+			}
+			every_attending_character = {
+				limit = {
+					NOT = { this = scope:host }
+				}
+				custom = EVERY_ACTIVITY_PARTICIPANT_EFFECT
+				stress_impact = {
+					base = medium_stress_impact_loss
+				}
+				add_opinion = {
+					target = scope:host
+					modifier = impressed_opinion
+					opinion = 10
+				}
+				if = { # Recreation
+					limit = {
+						has_activity_intent = reduce_stress_intent
+					}
+					stress_impact = {
+						base = medium_stress_impact_loss
+						gregarious = miniscule_stress_impact_loss
+					}
+				}
+			}
+		}
+	}
+}
+
+treasure_trove = {
+	if = {
+		limit = {
+			$LOCATION$ = { has_province_modifier = sunken_ship_sighted }
+		}
+		add_gold = { 200 500 }
+		$LOCATION$ = { remove_province_modifier = sunken_ship_sighted }
+		scope:activity = {
+			every_attending_character = {
+				limit = {
+					NOT = { this = scope:host }
+				}
+				add_character_flag = small_stash
+				trigger_event = agot_sailing.6010
+			}
+		}
+	}
+	else = {
+		random_list = {
+			1 = { # Large Gold stash
+				modifier = {
+					has_character_flag = sailing_white_whale_combat_blessing
+					add = 2
+				}
+				add_gold = { 1200 1500 }
+				scope:activity = {
+					every_attending_character = {
+						limit = {
+							NOT = { this = scope:host }
+						}
+						add_character_flag = big_stash
+						trigger_event = agot_sailing.6010
+					}
+				}
+				random = {
+					chance = 1
+						modifier = {
+						has_character_flag = sailing_white_whale_blessing
+						add = 5
+					}
+					agot_sunken_treasure_map_effect = { OWNER = root }
+				}
+			}
+			1 = { # Normal Gold stash
+				add_gold = { 800 1000 }
+				scope:activity = {
+					every_attending_character = {
+						limit = {
+							NOT = { this = scope:host }
+						}
+						add_character_flag = normal_stash
+						trigger_event = agot_sailing.6010
+					}
+				}
+				random = {
+					chance = 1
+					modifier = {
+						has_character_flag = sailing_white_whale_blessing
+						add = 5
+					}
+					agot_sunken_treasure_map_effect = { OWNER = root }
+				}
+			}
+			1 = { # Small Gold Stash
+				modifier = {
+					has_character_flag = sailing_white_whale_blessing
+					add = -1
+				}
+				modifier = {
+					has_character_flag = sailing_white_whale_combat_blessing
+					add = -1
+				}
+				add_gold = { 300 500 }
+				scope:activity = {
+					every_attending_character = {
+						limit = {
+							NOT = { this = scope:host }
+						}
+						add_character_flag = small_stash
+						trigger_event = agot_sailing.6010
+					}
+				}
+				random = {
+					chance = 1
+					agot_sunken_treasure_map_effect = { OWNER = root }
+				}
+			}
+		}
+	}
+}
+
+treasure_trove_artifacts = {
+	if = {
+		limit = {
+			$LOCATION$ = {
+				OR = {
+					geographical_region = world_essos_pentos
+					geographical_region = world_essos_myr
+					geographical_region = world_essos_tyrosh
+					geographical_region = world_essos_lys
+					geographical_region = world_essos_disputed_lands
+				}
+			}
+		}
+		random = {
+			chance = 5
+			random_list = {
+				#Andal Variant
+				1 = {
+					agot_create_artifact_vs_andal_armingsword_gold_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_andal_armingsword_silver_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_andal_longsword_gold_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_andal_longsword_silver_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				# # First Man Variant
+				1 = {
+					agot_create_artifact_vs_firstman_armingsword_gold_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_firstman_armingsword_silver_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_firstman_armingsword_bronze_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_firstman_longsword_gold_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_firstman_longsword_silver_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_firstman_longsword_bronze_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				# Valyrian Variant
+				1 = {
+					agot_create_artifact_vs_valyrian_armingsword_gold_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_valyrian_armingsword_silver_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_valyrian_longsword_gold_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+				1 = {
+					agot_create_artifact_vs_valyrian_longsword_silver_historical_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = valyrian_steel_sword }
+				}
+			}
+			random_list = {
+				10 = {
+					agot_create_artifact_myrish_lace_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = spare }
+				}
+				10 = {
+					agot_create_artifact_norvoshi_bear_carving_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = spare }
+				}
+				10 = {
+					agot_create_artifact_pentoshi_cheese_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = spare }
+				}
+				10 = {
+					trigger = {
+						any_artifact = {
+							count < 77
+							has_variable = crystal_carving
+						}
+					}
+					create_artifact_crystal_carving_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = spare }
+				}
+				10 = {
+					agot_create_oily_black_stone_effect = { OWNER = ROOT }
+					scope:newly_created_artifact ?= { save_scope_as = spare }
+				}
+			}
+		}
+	}
+	random = {
+		chance = 33
+		random_list = {
+			1 = {
+				create_artifact_weapon_effect = {
+					OWNER = scope:host
+					CREATOR = scope:host
+					SET_WEAPON_TYPE = flag:no
+				}
+				scope:newly_created_artifact ?= { save_scope_as = generic_artifact }
+			}
+			1 = {
+				create_artifact_bow_effect = {
+					OWNER = scope:host
+					CREATOR = scope:host
+					SET_BOW_TYPE = flag:no
+				}
+				scope:newly_created_artifact ?= { save_scope_as = generic_artifact }
+			}
+			1 = {
+				create_artifact_armor_effect = {
+					OWNER = scope:host
+					CREATOR = scope:host
+					SET_ARMOR_TYPE = flag:no
+				}
+				scope:newly_created_artifact ?= { save_scope_as = generic_artifact }
+			}
+			1 = {
+				create_artifact_brooch_effect = {
+					OWNER = scope:host
+					SMITH = scope:host
+				}
+				scope:newly_created_artifact ?= { save_scope_as = generic_artifact }
+			}
+		}
+	}
+	if = {
+		limit = {
+			scope:treasure_location = { is_vermax_grave = yes }
+			NOT = { has_global_variable = vermax_found }
+			game_start_date >= 8130.1.5
+		}
+		random = {
+			chance = 25
+			agot_create_artifact_dragon_skull_effect = {
+				OWNER = this
+				DRAGON = character:dragon_vermax
+				KILLER = character:dragon_vermax
+			}
+			scope:newly_created_artifact ?= { save_scope_as = vermax_skull }
+			set_global_variable = vermax_found
+		}
+	}
+	random = {
+		chance = 0
+		modifier = {
+			has_character_flag = sailing_white_whale_blessing
+			add = 5
+		}
+		add_character_flag = found_horn
+		agot_create_artifact_krakenhorn_generic_effect = { OWNER = root }
+	}
+}
+
+remove_house_ship = {
+	if = {
+		limit = {
+			house = { has_house_modifier = owns_small_ship }
+		}
+		house = { remove_house_modifier = owns_small_ship }
+	}
+	else_if = {
+		limit = {
+			house = { has_house_modifier = owns_small_ship_diving }
+		}
+		house = { remove_house_modifier = owns_small_ship_diving }
+	}
+	else_if = {
+		limit = {
+			house = { has_house_modifier = owns_big_ship }
+		}
+		house = { remove_house_modifier = owns_big_ship }
+	}
+	else_if = {
+		limit = {
+			house = { has_house_modifier = owns_big_ship_diving }
+		}
+		house = { remove_house_modifier = owns_big_ship_diving }
+	}
+}
+
+sailing_variable_effect = {
+	if = {
+		limit = {
+			OR = {
+				NOT = { has_trait = lifestyle_mariner }
+				AND = {
+					has_trait = lifestyle_mariner
+					has_trait_xp = {
+						trait = lifestyle_mariner
+						value < 10
+					}
+				}
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 0
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value < 20
+			}
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value >= 10
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 10
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value < 30
+			}
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value >= 20
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 20
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value < 40
+			}
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value >= 30
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 30
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value < 50
+			}
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value >= 40
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 40
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value < 60
+			}
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value >= 50
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 50
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value < 70
+			}
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value >= 60
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 60
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value < 80
+			}
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value >= 70
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 70
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value < 90
+			}
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value >= 80
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 80
+		}
+	}
+	else_if = {
+		limit = {
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value < 100
+			}
+			has_trait_xp = {
+				trait = lifestyle_mariner
+				value >= 90
+			}
+		}
+		set_variable = {
+			name = sailing_xp_required
+			value = 90
+		}
+	}
+	else = {
+		set_variable = {
+			name = sailing_xp_required
+			value = 100
+		}
+	}
+}

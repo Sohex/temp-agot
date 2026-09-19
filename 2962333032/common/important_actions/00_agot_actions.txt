@@ -1,0 +1,165 @@
+﻿action_pick_patron = {
+	type = alert
+	check_create_action = {
+		if = {
+			limit = {
+				is_adult = yes
+				agot_has_patron_god_char_modifier = no
+				faith = {
+					agot_faith_has_patron_gods = yes
+				}
+			}
+			try_create_important_action = {
+				important_action_type = action_pick_patron
+				actor = root
+			}
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			faith = {
+				open_view_data = {
+					view = faith
+				}
+			}
+		}
+	}
+}
+
+action_agot_squire_can_be_knighted = {
+	type = alert
+	check_create_action = {
+		if = {
+			limit = {
+				is_agot_knight_trigger = yes
+				any_relation = {
+					type = agot_squire
+					agot_can_become_a_knight_trigger = yes
+					save_temporary_scope_as = squire
+				}
+				is_character_interaction_valid = {
+					recipient = scope:squire
+					interaction = agot_offer_knighthood_interaction
+				}
+			}
+			try_create_important_action = {
+				important_action_type = action_agot_squire_can_be_knighted
+				actor = root
+				recipient = scope:squire
+			}
+		}
+	}
+
+	effect = {
+		open_interaction_window = {
+			interaction = agot_offer_knighthood_interaction
+			actor = scope:actor
+			recipient = scope:recipient
+		}
+	}
+
+}
+
+action_agot_faceless_interaction = {
+	type = action
+	icon = action_no_heir
+	is_dangerous = no
+	combine_into_one = yes
+
+	check_create_action = {
+		if = {
+			limit = {
+				NOT = { any_owned_story = { story_type = story_hire_faceless } }
+			}
+
+			every_scheme = {
+				limit = {
+					scheme_type = murder
+				}
+
+				scheme_target_character = { save_scope_as = target }
+				try_create_important_action = {
+					important_action_type = action_agot_faceless_interaction
+					actor = root
+					recipient = scope:target
+				}
+			}
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			open_view_data = {
+				view = character
+			}
+		}
+		open_interaction_window = {
+			interaction = agot_send_for_faceless_interaction
+			actor = scope:actor
+			recipient = scope:recipient
+		}
+	}
+}
+
+action_can_hire_maester = {
+	priority = 300
+	combine_into_one = yes
+	check_create_action = {
+		if = {
+			limit = {
+				NOR = {
+					employs_court_position = maester_court_position
+					any_court_position_holder = {
+						type = maester_court_position
+					}
+					agot_is_landless_nw_character = yes
+				}
+				monthly_character_income > monthly_character_expenses
+				culture = {
+					has_innovation = innovation_maesters
+				}
+			}
+			try_create_important_action = {
+				important_action_type = action_can_hire_maester
+				actor = root
+			}
+		}
+	}
+	effect = {
+		open_appoint_court_position_window = maester_court_position
+	}
+}
+
+action_appoint_pirate_ship_landless_successor = {
+	type = alert
+	check_create_action = {
+		if = {
+			limit = {
+				any_held_title = {
+					agot_is_pirate_domicile_title_trigger = yes
+				}
+				is_landed = no
+				OR = {
+					NOT = { has_variable = appointed_pirate_jank_heir }
+					var:appointed_pirate_jank_heir ?= {
+						is_alive = no
+					}
+				}
+				any_courtier = {
+					count > 0
+					agot_pirate_landless_succession_jank_courtier_checker = { DYING_PIRATE = root }
+				}
+			}
+			try_create_important_action = {
+				important_action_type = action_appoint_pirate_ship_landless_successor
+				actor = root
+			}
+		}
+	}
+	effect = {
+		open_view_data = {
+			view = character
+		}
+	}
+}

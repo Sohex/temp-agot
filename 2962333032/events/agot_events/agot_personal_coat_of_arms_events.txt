@@ -1,0 +1,117 @@
+﻿namespace = agot_events_personal_coat_of_arms
+
+agot_events_personal_coat_of_arms.0001 = {
+	hidden = yes
+	immediate = {
+		if = {
+			limit = {
+				scope:exiled_dummy = {
+					is_courtier_of = root
+				}
+			}
+			remove_courtier_or_guest = scope:exiled_dummy
+		}
+		else = {
+			scope:exiled_dummy.employer = { remove_courtier_or_guest = scope:exiled_dummy }
+		}
+		title:c_ruins.holder = {
+			save_scope_as = ruins
+		}
+		scope:ruins = {
+			add_courtier = scope:exiled_dummy
+		}
+		#scope:exiled_dummy = {
+		#	move_to_pool_at = character:Ruin_Empress.capital_province
+		#}
+	}
+}
+# Event for when the real character w/ the COA dies or personal COA is removed
+agot_events_personal_coat_of_arms.0002 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		exists = var:my_personal_coa
+		var:my_personal_coa = {
+			AND = {
+				var:my_coa_belongs_to = root
+				is_alive = yes
+			}
+		}
+	}
+	immediate = {
+		agot_prune_personal_coa = yes
+	}
+}
+# Event for when the dummy character w/ the COA dies
+agot_events_personal_coat_of_arms.0003 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		exists = var:my_coa_belongs_to
+		var:my_coa_belongs_to = {
+			is_alive = yes
+		}
+		NOT = { has_character_flag = removing_personal_coa }
+	}
+	immediate = {
+		root.house = {
+			save_scope_as = dummy_house
+		}
+		var:my_coa_belongs_to = {
+			save_scope_as = coa_owner
+		}
+		if = {
+			limit = {
+				character:Ruin_Empress = {
+					is_alive = yes
+				}
+			}
+			create_character = {
+				name = "Dummy"
+				gender = male
+				employer = character:Ruin_Empress
+				trait = agot_dummy_trait
+				random_traits = no
+				faith = scope:coa_owner.faith
+				culture = scope:coa_owner.culture
+				dynasty = generate
+				save_scope_as = new_dummy
+			}
+		}
+		else_if = {
+			limit = {
+				character:Ruin_Empress = {
+					is_alive = no
+				}
+			}
+			title:c_ruins.holder = {
+				save_scope_as = ruins
+			}
+			create_character = {
+				name = "Dummy"
+				gender = male
+				employer = scope:ruins
+				trait = agot_dummy_trait
+				random_traits = no
+				faith = scope:coa_owner.faith
+				culture = scope:coa_owner.culture
+				dynasty = generate
+				save_scope_as = new_dummy
+			}
+		}
+		scope:new_dummy = {
+			set_house = root.house
+			set_variable = {
+				name = my_coa_belongs_to
+				value = scope:coa_owner
+			}
+		}
+		scope:coa_owner = {
+			set_variable = {
+				name = my_personal_coa
+				value = scope:new_dummy
+			}
+			set_relation_agot_personal_coa_slave = scope:new_dummy
+		}
+	}
+}

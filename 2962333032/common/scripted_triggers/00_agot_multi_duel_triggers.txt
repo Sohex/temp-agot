@@ -1,0 +1,937 @@
+﻿# General Multi Duel triggers
+# Trial of Seven triggers
+
+################################## ################################### ##################################
+################################## ################################### ##################################
+###################################### GENERAL MULTI DUEL TRIGGERS ######################################
+################################## ################################### ##################################
+################################## ################################### ##################################
+
+agot_multi_duelist_cant_continue = {
+	OR = {
+		NOT = { is_alive = yes }
+		has_character_flag = agot_multi_duel_yielded
+		has_character_flag = agot_multi_duel_downed
+	}
+}
+
+############################## ############################### ##############################
+############################## ############################### ##############################
+################################## TRIAL OF SEVEN TRIGGERS ##################################
+############################## ############################### ##############################
+############################## ############################### ##############################
+
+agot_basic_tos_trigger = {
+	is_human = yes
+	is_alive = yes
+	agot_is_available_for_anything = yes
+	religion = religion:the_seven_religion
+	OR = {
+		government_has_flag = government_is_feudal
+		government_has_flag = government_is_lp_feudal
+		government_has_flag = government_is_landless_adventurer
+		government_has_flag = government_is_kg
+	}
+	NOT = { any_owned_story = { story_type = multi_duel_leader_story } }
+	NOT = { any_owned_story = { story_type = multi_duel_duelist_story } }
+	trigger_if = {
+		limit = {
+			exists = scope:recipient
+			scope:recipient = { NOT = { has_character_flag = agot_tos_via_interaction_check } }
+			scope:recipient = { exists = involved_activity }
+		}
+		scope:recipient = { involved_activity = { NOT = { has_activity_type = activity_wedding } } }
+	}
+	trigger_if = {
+		limit = {
+			exists = scope:crown_thief
+			scope:crown_thief = { NOT = { has_character_flag = agot_tos_via_interaction_check } }
+			scope:crown_thief = { exists = involved_activity }
+		}
+		scope:crown_thief = { involved_activity = { NOT = { has_activity_type = activity_wedding } } }
+	}
+	NOT = { has_character_flag = tos_duelist_already_picked }
+}
+
+agot_ready_for_tos_trigger = {
+	agot_basic_tos_trigger = yes
+	trigger_if = {
+		limit = {
+			exists = scope:recipient
+			scope:recipient = { NOT = { has_character_flag = agot_tos_via_interaction_check} }
+		}
+		can_start_single_combat_trigger = yes
+	}
+	trigger_if = {
+		limit = {
+			exists = scope:crown_thief
+			scope:crown_thief = { NOT = { has_character_flag = agot_tos_via_interaction_check} }
+		}
+		can_start_single_combat_trigger = yes
+	}
+	has_trait = education_martial_prowess
+	religion = religion:the_seven_religion
+	is_agot_knight_trigger = yes
+}
+
+agot_squire_ready_for_tos_trigger = {
+	agot_basic_tos_trigger = yes
+	prowess >= 12
+	religion = religion:the_seven_religion
+	age <= 70
+	age >= 14
+	ai_boldness >= 50
+	NOR = {
+		has_trait = pregnant
+		has_trait = incapable
+		has_trait = blind
+	}
+	has_contagious_deadly_disease_trigger = no
+	can_start_single_combat_banned_checks_trigger = no
+	OR = {
+		AND = {
+			has_trait_xp = {
+				trait = squire
+				track = knight
+				value < 100
+			}
+			any_owned_story = {
+				story_type = story_agot_squire_ongoing
+			}
+		}
+		AND = {
+			has_trait = squire
+			has_trait_xp = {
+				trait = squire
+				track = knight
+				value < 100
+			}
+		}
+	}
+	is_agot_knight_trigger = no
+	is_imprisoned = no
+}
+
+agot_can_be_trial_of_seven_duelist = {
+	$ROYAL$ = { save_temporary_scope_as = temp_royal_leader }
+	$OTHER$ = { save_temporary_scope_as = temp_other_leader }
+	$CURRENT_LEADER$ = { save_temporary_scope_as = this_leader }
+	save_temporary_scope_as = temp_candidate
+
+	#Laamp eligibility
+	trigger_if = {
+		limit = { government_has_flag = government_is_landless_adventurer }
+		exists = location.county.holder.top_liege
+		location.county.holder.top_liege = scope:temp_royal_leader.top_liege
+	}
+	#General eligibility
+	trigger_else = {
+		exists = top_liege
+		top_liege = scope:temp_royal_leader.top_liege
+	}
+	#General checks for fighters
+	is_ai = yes
+	is_imprisoned = no
+	agot_ready_for_tos_trigger = yes
+	prowess >= 15
+	NOT = { this = scope:temp_royal_leader }
+	NOT = { this = scope:temp_other_leader }
+	#Player King
+	trigger_if = {
+		limit = {
+			has_trait = kingsguard
+			scope:this_leader = { has_character_flag = agot_tos_royal_side }
+			scope:this_leader = { NOT = { has_variable = usurped_my_birthright } }
+			scope:temp_other_leader = { NOT = { has_variable = usurped_my_birthright } }
+			scope:this_leader = { NOT = { is_ai = yes } }
+		}
+		always = yes
+	}
+	#Usurper in Succession Crisis
+	trigger_else_if = {
+		limit = {
+			has_trait = kingsguard
+			scope:this_leader = { has_character_flag = agot_tos_royal_side }
+			scope:this_leader = { NOT = { has_variable = usurped_my_birthright } }
+			scope:temp_other_leader = { has_variable = usurped_my_birthright }
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_legit
+			target = scope:temp_other_leader
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_usurper
+			target = scope:temp_royal_leader
+		}
+		scope:opinion_on_the_usurper >= scope:opinion_on_the_legit
+		scope:opinion_on_the_usurper >= 0
+	}
+	#Legit Heir in Succession Crisis
+	trigger_else_if = {
+		limit = {
+			has_trait = kingsguard
+			scope:this_leader = { NOT = { has_character_flag = agot_tos_royal_side } }
+			scope:this_leader = { has_variable = usurped_my_birthright }
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_legit
+			target = scope:temp_other_leader
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_usurper
+			target = scope:temp_royal_leader
+		}
+		scope:opinion_on_the_usurper <= scope:opinion_on_the_legit
+		scope:opinion_on_the_legit >= 0
+	}
+	#KG can join the non royal side if they like them (if somehow KG would get in the non royal pool)
+	trigger_else_if = {
+		limit = {
+			has_trait = kingsguard
+			scope:this_leader = { NOT = { has_character_flag = agot_tos_royal_side } }
+			scope:this_leader = { NOT = { has_variable = usurped_my_birthright } }
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader
+			target = scope:this_leader
+		}
+		scope:opinion_on_the_leader > 90
+	}
+	#Dishonorable KG joins the king only if they have positive opinion
+	trigger_else_if = {
+		limit = {
+			has_trait = kingsguard
+			scope:this_leader = { has_character_flag = agot_tos_royal_side }
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader
+			target = scope:this_leader
+		}
+		scope:opinion_on_the_leader >= -50
+	}
+	#Dishonorable character joins only if they like them
+	trigger_else_if = {
+		limit = {
+			ai_honor < 0
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader
+			target = scope:this_leader
+		}
+		scope:opinion_on_the_leader > 25
+	}
+	#Character joins only if they have positive opinion
+	trigger_else = {
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader
+			target = scope:this_leader
+		}
+		scope:opinion_on_the_leader > 0
+	}
+	#Vassals of the liege joins the king only if they like them more
+	trigger_if = {
+		limit = {
+			scope:this_leader = scope:temp_royal_leader
+			exists = liege
+			any_liege_or_above = { this = scope:temp_other_leader }
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_liege
+			target = scope:temp_other_leader
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_top_liege
+			target = scope:temp_royal_leader
+		}
+		scope:opinion_on_the_liege < scope:opinion_on_the_top_liege
+	}
+	#Not already selected
+	trigger_if = {
+		limit = { scope:this_leader = { has_variable_list = multi_duel_tos_temp_list } }
+		scope:this_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_candidate } } }
+	}
+	#Not selected by the defender already (defender checks earlier than the accuser)
+	trigger_if = {
+		limit = {
+			scope:this_leader = scope:temp_other_leader
+			scope:temp_other_leader = { has_variable_list = multi_duel_tos_temp_list }
+		}
+		scope:temp_royal_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_candidate } } }
+	}
+	#Not involved in a multi duel already
+	NOT = { any_owned_story = { story_type = multi_duel_duelist_story } }
+	NOT = { any_owned_story = { story_type = multi_duel_leader_story } }
+	#Legitimate heir can't participate if already refused in revent
+	NOT = { has_variable = usurped_my_birthright }
+}
+
+agot_can_be_trial_of_seven_duelist_extended_pool = {
+	$ROYAL$ = { save_temporary_scope_as = temp_royal_leader }
+	$OTHER$ = { save_temporary_scope_as = temp_other_leader }
+	$CURRENT_LEADER$ = { save_temporary_scope_as = this_leader }
+	save_temporary_scope_as = temp_candidate
+
+	#General checks for fighters
+	is_ai = yes
+	agot_ready_for_tos_trigger = yes
+	prowess >= 15
+	NOT = { this = scope:temp_royal_leader }
+	NOT = { this = scope:temp_other_leader }
+
+	#Laamp eligibility
+	trigger_if = {
+		limit = { government_has_flag = government_is_landless_adventurer }
+		exists = location.county.holder.top_liege
+		location.county.holder.top_liege = scope:temp_royal_leader.top_liege
+	}
+	#KG can join the non royal side if they like them (if somehow KG would get in the non royal pool)
+	trigger_if = {
+		limit = {
+			has_trait = kingsguard
+			scope:this_leader = { NOT = { has_character_flag = agot_tos_royal_side } }
+			scope:this_leader = { NOT = { has_variable = usurped_my_birthright } }
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader
+			target = scope:this_leader
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_king
+			target = scope:temp_royal_leader
+		}
+		scope:opinion_on_the_leader > 75
+		scope:opinion_on_the_king < -50
+	}
+	#Honor
+	trigger_if = {
+		limit = {
+			scope:this_leader = { has_character_flag = tos_honorable_knight }
+			exists = location.empire
+			location.empire = scope:this_leader.location.empire
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader_honor
+			target = scope:this_leader
+		}
+		OR = {
+			AND = {
+				ai_honor >= 50
+				scope:opinion_on_the_leader_honor > 40
+			}
+			AND = {
+				ai_honor >= 75
+				scope:this_leader.ai_honor >= 50
+				scope:opinion_on_the_leader_honor > 20
+			}
+		}
+	}
+	trigger_if = {
+		limit = {
+			scope:this_leader = { has_character_flag = tos_honorable_knight }
+			exists = location.empire
+			NOT = { location.empire = scope:this_leader.location.empire }
+		}
+		exists = location.empire
+		location.empire = {
+			any_title_to_title_neighboring_empire = {
+				OR = {
+					trigger_if = {
+						limit = { exists = scope:temp_royal_leader.primary_title }
+						target_is_de_jure_liege_or_above = scope:temp_royal_leader.primary_title
+					}
+					trigger_if = {
+						limit = { exists = scope:temp_royal_leader.top_liege.primary_title }
+						target_is_de_jure_liege_or_above = scope:temp_royal_leader.top_liege.primary_title
+					}
+				}
+			}
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader_honor
+			target = scope:this_leader
+		}
+		AND = {
+			ai_honor >= 75
+			scope:this_leader.ai_honor >= 75
+			scope:opinion_on_the_leader_honor > 50
+		}
+	}
+	#Greed
+	trigger_if = {
+		limit = {
+			scope:this_leader = { has_character_flag = tos_greedy_knight }
+			exists = location.empire
+			location.empire = scope:this_leader.location.empire
+		}
+		exists = location.empire
+		location.empire = scope:this_leader.location.empire
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader_greed
+			target = scope:this_leader
+		}
+		OR = {
+			AND = {
+				ai_greed >= 50
+				scope:opinion_on_the_leader_greed > 40
+			}
+			AND = {
+				ai_greed >= 75
+				scope:this_leader.ai_greed >= 50
+				scope:opinion_on_the_leader_greed > 20
+			}
+		}
+	}
+	trigger_if = {
+		limit = {
+			scope:this_leader = { has_character_flag = tos_greedy_knight }
+			exists = location.empire
+			NOT = { location.empire = scope:this_leader.location.empire }
+		}
+		exists = location.empire
+		location.empire = {
+			any_title_to_title_neighboring_empire = {
+				OR = {
+					trigger_if = {
+						limit = { exists = scope:temp_royal_leader.primary_title }
+						target_is_de_jure_liege_or_above = scope:temp_royal_leader.primary_title
+					}
+					trigger_if = {
+						limit = { exists = scope:temp_royal_leader.top_liege.primary_title }
+						target_is_de_jure_liege_or_above = scope:temp_royal_leader.top_liege.primary_title
+					}
+				}
+			}
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader_greed
+			target = scope:this_leader
+		}
+		AND = {
+			ai_greed >= 75
+			scope:this_leader.ai_greed >= 75
+			scope:opinion_on_the_leader_greed > 50
+		}
+	}
+	#Arrogance
+	trigger_if = {
+		limit = {
+			scope:this_leader = { has_character_flag = tos_dishonorable_knight }
+			exists = location.empire
+			location.empire = scope:this_leader.location.empire
+		}
+		exists = location.empire
+		location.empire = scope:this_leader.location.empire
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader_arrogance
+			target = scope:this_leader
+		}
+		OR = {
+			AND = {
+				ai_honor <= -25
+				scope:opinion_on_the_leader_arrogance > 40
+			}
+			AND = {
+				ai_honor <= -50
+				scope:this_leader.ai_honor <= -50
+				scope:opinion_on_the_leader_arrogance > 20
+			}
+		}
+	}
+	trigger_if = {
+		limit = {
+			scope:this_leader = { has_character_flag = tos_dishonorable_knight }
+			exists = location.empire
+			NOT = { location.empire = scope:this_leader.location.empire }
+		}
+		exists = location.empire
+		location.empire = {
+			any_title_to_title_neighboring_empire = {
+				OR = {
+					trigger_if = {
+						limit = { exists = scope:temp_royal_leader.primary_title }
+						target_is_de_jure_liege_or_above = scope:temp_royal_leader.primary_title
+					}
+					trigger_if = {
+						limit = { exists = scope:temp_royal_leader.top_liege.primary_title }
+						target_is_de_jure_liege_or_above = scope:temp_royal_leader.top_liege.primary_title
+					}
+				}
+			}
+		}
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader_arrogance
+			target = scope:this_leader
+		}
+		AND = {
+			ai_honor <= -78
+			scope:this_leader.ai_honor <= -75
+			scope:opinion_on_the_leader_arrogance > 50
+		}
+	}
+	#Not already selected
+	trigger_if = {
+		limit = { scope:this_leader = { has_variable_list = multi_duel_tos_temp_list } }
+		scope:this_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_candidate } } }
+	}
+	#Not selected by the defender already (defender checks earlier than the accuser)
+	trigger_if = {
+		limit = {
+			scope:this_leader = scope:temp_other_leader
+			scope:temp_other_leader = { has_variable_list = multi_duel_tos_temp_list }
+		}
+		scope:temp_royal_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_candidate } } }
+	}
+	#Not involved in a multi duel already
+	NOT = { any_owned_story = { story_type = multi_duel_duelist_story } }
+	NOT = { any_owned_story = { story_type = multi_duel_leader_story } }
+	#Legitimate heir can't participate if already refused in revent
+	NOT = { has_variable = usurped_my_birthright }
+}
+
+agot_can_be_trial_of_seven_duelist_squire_pool = {
+	$ROYAL$ = { save_temporary_scope_as = temp_royal_leader }
+	$OTHER$ = { save_temporary_scope_as = temp_other_leader }
+	$CURRENT_LEADER$ = { save_temporary_scope_as = this_leader }
+	save_temporary_scope_as = temp_candidate
+
+	#General checks for fighters
+	is_ai = yes
+	agot_squire_ready_for_tos_trigger = yes
+	NOT = { this = scope:temp_royal_leader }
+	NOT = { this = scope:temp_other_leader }
+
+	#Laamp eligibility
+	trigger_if = {
+		limit = { government_has_flag = government_is_landless_adventurer }
+		exists = location.county.holder.top_liege
+		location.county.holder.top_liege = scope:temp_royal_leader.top_liege
+	}
+	#Honor
+	trigger_if = {
+		limit = { scope:this_leader = { has_character_flag = tos_honorable_knight } }
+		exists = location.empire
+		location.empire = scope:this_leader.location.empire
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader_honor
+			target = scope:this_leader
+		}
+		OR = {
+			AND = {
+				ai_honor >= 50
+				scope:opinion_on_the_leader_honor > 30
+			}
+			AND = {
+				ai_honor >= 75
+				scope:this_leader.ai_honor >= 50
+			}
+		}
+	}
+	#Greed
+	trigger_if = {
+		limit = { scope:this_leader = { has_character_flag = tos_greedy_knight } }
+		exists = location.empire
+		location.empire = scope:this_leader.location.empire
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader_greed
+			target = scope:this_leader
+		}
+		OR = {
+			AND = {
+				ai_greed >= 50
+				scope:opinion_on_the_leader_greed > 30
+			}
+			AND = {
+				ai_greed >= 75
+				scope:this_leader.ai_greed >= 50
+			}
+		}
+	}
+	#Arrogance
+	trigger_if = {
+		limit = { scope:this_leader = { has_character_flag = tos_dishonorable_knight } }
+		exists = location.empire
+		location.empire = scope:this_leader.location.empire
+		save_temporary_opinion_value_as = {
+			name = opinion_on_the_leader_arrogance
+			target = scope:this_leader
+		}
+		OR = {
+			AND = {
+				ai_honor <= -25
+				scope:opinion_on_the_leader_arrogance > 0
+			}
+			AND = {
+				ai_honor <= -50
+				scope:this_leader.ai_honor <= -50
+			}
+		}
+	}
+	#Not already selected
+	trigger_if = {
+		limit = { scope:this_leader = { has_variable_list = multi_duel_tos_temp_list } }
+		scope:this_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_candidate } } }
+	}
+	#Not selected by the defender already (defender checks earlier than the accuser)
+	trigger_if = {
+		limit = {
+			scope:this_leader = scope:temp_other_leader
+			scope:temp_other_leader = { has_variable_list = multi_duel_tos_temp_list }
+		}
+		scope:temp_royal_leader = { NOT = { is_target_in_variable_list = { name = multi_duel_tos_temp_list target = scope:temp_candidate } } }
+	}
+	#Not involved in a multi duel already
+	NOT = { any_owned_story = { story_type = multi_duel_duelist_story } }
+	NOT = { any_owned_story = { story_type = multi_duel_leader_story } }
+	#Legitimate heir can't participate if already refused in revent
+	NOT = { has_variable = usurped_my_birthright }
+}
+
+#Succession Crisis Heir of Legit Heir trigger
+agot_eligible_heir_for_succession_crisis_legit_heir = {
+	$USURPER$ = { save_temporary_scope_as = t_usurper }
+	$LEGIT_HEIR$ = { save_temporary_scope_as = t_legit_heir }
+	$FINAL_USURPER$ = { save_temporary_scope_as = t_final_usurper }
+
+	is_alive = yes
+	exists = house
+	house = scope:t_legit_heir.house
+	NOT = { has_trait = bastard }
+	NOT = { has_trait = bastard_founder }
+	NOT = { has_trait = disinherited }
+	agot_can_be_ruler = yes
+	NOT = { this = scope:t_usurper }
+	NOT = { is_child_of = scope:t_usurper }
+	NOT = { this = scope:t_final_usurper }
+	NOT = { is_child_of = scope:t_final_usurper }
+	trigger_if = {
+		limit = { exists = scope:tos_looking_for_a_new_heir }
+		NOT = { this = scope:t_usurper.primary_heir }
+		NOT = { this = scope:t_final_usurper.primary_heir }
+	}
+	trigger_if = {
+		limit = {
+			is_male = yes
+			OR = {
+				exists = primary_spouse
+				exists = betrothed
+			}
+		}
+		trigger_if = {
+			limit = {
+				exists = primary_spouse
+				exists = primary_spouse.house
+			}
+			OR = {
+				house = primary_spouse.house
+				NOT = { matrilinear_marriage = yes }
+			}
+		}
+		trigger_if = {
+			limit = {
+				exists = betrothed
+				exists = betrothed.house
+			}
+			OR = {
+				house = betrothed.house
+				NOT = { matrilinear_betrothal = yes }
+			}
+		}
+	}
+	trigger_if = {
+		limit = {
+			is_female = yes
+			OR = {
+				exists = primary_spouse
+				exists = betrothed
+			}
+		}
+		trigger_if = {
+			limit = {
+				exists = primary_spouse
+				exists = primary_spouse.house
+			}
+			OR = {
+				house = primary_spouse.house
+				NOT = { matrilinear_marriage = yes }
+			}
+		}
+		trigger_if = {
+			limit = {
+				exists = betrothed
+				exists = betrothed.house
+			}
+			OR = {
+				house = betrothed.house
+				NOT = { matrilinear_betrothal = yes }
+			}
+		}
+	}
+}
+
+agot_valid_tos_dishonorable_imprisonment_char_trigger = {
+	$OG_ACCUSER$ = { save_temporary_scope_as = t_og_accuser }
+	$ACCUSER$ = { save_temporary_scope_as = t_accuser }
+	$DEFENDER$ = { save_temporary_scope_as = t_defender }
+
+	NOT = { this = scope:t_defender }
+	AND = {
+		agot_ready_for_tos_trigger = yes
+		is_imprisoned = no
+		NOT = { has_relation_friend = scope:t_defender }
+		NOT = { has_relation_lover = scope:t_defender }
+		#Royal House Member
+		trigger_if = {
+			limit = { NOT = { scope:t_accuser = scope:t_og_accuser } }
+			is_ai = yes
+			OR = {
+				is_courtier_of = scope:t_og_accuser
+				is_vassal_of = scope:t_og_accuser
+				trigger_if = {
+					limit = {
+						exists = top_liege
+						is_playable_character = no
+					}
+					top_liege = scope:t_og_accuser
+				}
+			}
+			scope:t_accuser = {
+				AND = {
+					agot_tos_imprisonment_royal_char_trigger = { T_DEFENDER = scope:t_defender }
+					agot_tos_imprisonment_royal_house_member_char_trigger = { T_DEFENDER = scope:t_defender }
+				}
+			}
+		}
+		#Royal Head
+		trigger_if = {
+			limit = {
+				scope:t_accuser = scope:t_og_accuser
+				is_ai = yes
+			}
+			scope:t_accuser = {
+				agot_tos_imprisonment_royal_char_trigger = { T_DEFENDER = scope:t_defender }
+			}
+		}
+	}
+}
+
+agot_tos_imprisonment_royal_char_trigger = {
+	$T_DEFENDER$ = { save_temporary_scope_as = t_defender }
+	#Prisoner is rival, or I'm just a bad person
+	OR = {
+		#Dishonorable
+		ai_honor <=-50
+		#Irrational
+		ai_rationality <=-50
+		#Zealous
+		ai_zeal >=50
+		#Rivalry
+		has_relation_rival = scope:t_defender
+	}
+}
+
+agot_tos_imprisonment_royal_house_member_char_trigger = {
+	$T_DEFENDER$ = { save_temporary_scope_as = t_defender }
+	#Has a valid reason
+	OR = {
+		has_opinion_modifier = { modifier = plotting_against_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = abducted_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = attempted_murder_me_crime target = scope:t_defender }
+		has_opinion_modifier = { modifier = abducted_me_crime target = scope:t_defender }
+		has_opinion_modifier = { modifier = attempted_abduct_me_crime target = scope:t_defender }
+		has_opinion_modifier = { modifier = tortured_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = disfigured_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = maimed_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = blinded_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = castrated_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = stole_artifact_from_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = fabricate_hook_threatened_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = schemed_against_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = scheming_against_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = challenged_authority_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = blamed_me_unjustly target = scope:t_defender }
+		has_opinion_modifier = { modifier = tried_to_eat_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = shamed_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = wounded_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = imprisoned_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = imprisoned_me_dungeon target = scope:t_defender }
+		has_opinion_modifier = { modifier = imprisoned_me_past target = scope:t_defender }
+		has_opinion_modifier = { modifier = banished_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = killed_my_child target = scope:t_defender }
+		has_opinion_modifier = { modifier = rival_insult_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = usurped_title target = scope:t_defender }
+		has_opinion_modifier = { modifier = tried_to_poison_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = tutored_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = fp3_stole_from_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = fp3_sabotaged_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = fp3_denounced_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = betrayed_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = tournament_savagely_beaten_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = ruined_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = slandered_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = deposed_me_opinion target = scope:t_defender }
+		has_opinion_modifier = { modifier = mw_wanted_to_execute_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = mw_evaded_execution target = scope:t_defender }
+		has_opinion_modifier = { modifier = muted_me target = scope:t_defender }
+		has_opinion_modifier = { modifier = agot_tried_to_sacrifice_me target = scope:t_defender }
+		#Or an invalid one
+		AND = {
+			has_relation_rival = scope:t_defender
+			ai_rationality = -100
+			OR = {
+				has_trait = lunatic_1
+				has_trait = lunatic_genetic
+				has_trait = possessed_1
+				has_trait = possessed_genetic
+			}
+		}
+	}
+}
+
+#########################
+### SCENARIO TRIGGERS ###
+#########################
+
+### Usurpation TOS
+#Accuser: vassal/laamp claimant
+#Criminal: king/queen
+agot_valid_tos_usurpation_scenario_trigger = {
+	$ACTOR$ = { save_temporary_scope_as = t_actor }
+	$RECIPIENT$ = { save_temporary_scope_as = t_recipient }
+	exists = scope:t_actor.top_liege
+	trigger_if = {
+		limit = { NOT = { scope:t_actor.top_liege = scope:t_recipient } }
+		exists = scope:t_actor.location.empire
+		exists = scope:t_recipient.location.empire
+		scope:t_actor.location.empire = scope:t_recipient.location.empire
+	}
+	trigger_else = {
+		scope:t_actor.top_liege = scope:t_recipient
+	}
+	exists = scope:t_recipient.primary_title
+	scope:t_recipient = {
+		primary_title.tier >= tier_kingdom
+		agot_is_independent_ruler = yes
+	}
+	scope:t_actor = { has_claim_on = scope:t_recipient.primary_title }
+	#Succession Crisis Outcome
+	scope:t_recipient = { has_character_flag = agot_usurped_the_throne }
+}
+
+### Usurpation v Helper TOS
+#Accuser: vassal/laamp claimant helper
+#Criminal: king/queen
+agot_valid_tos_usurpation_helper_scenario_trigger = {
+	$ACTOR$ = { save_temporary_scope_as = t_actor }
+	$RECIPIENT$ = { save_temporary_scope_as = t_recipient }
+	exists = scope:t_actor.top_liege
+	trigger_if = {
+		limit = { NOT = { scope:t_actor.top_liege = scope:t_recipient } }
+		exists = scope:t_actor.location.empire
+		exists = scope:t_recipient.location.empire
+		scope:t_actor.location.empire = scope:t_recipient.location.empire
+	}
+	trigger_else = {
+		scope:t_actor.top_liege = scope:t_recipient
+	}
+	exists = scope:t_recipient.primary_title
+	scope:t_recipient = {
+		primary_title.tier >= tier_kingdom
+		agot_is_independent_ruler = yes
+	}
+	exists = scope:t_recipient.house
+	scope:t_recipient.house = {
+		any_house_member = {
+			agot_eligible_heir_for_succession_crisis_legit_heir = { USURPER = scope:t_recipient LEGIT_HEIR = scope:t_recipient FINAL_USURPER = scope:t_recipient }
+			NOT = { this = scope:t_recipient }
+			NOT = { this = scope:t_actor }
+			NOT = { has_relation_rival = scope:t_actor }
+			NOT = { has_relation_friend = scope:t_recipient }
+			exists = var:usurped_my_birthright
+			any_claim = {
+				tier > tier_barony
+				holder = scope:t_recipient
+				count > 0
+			}
+			is_imprisoned = no
+			save_temporary_scope_as = t_legit_heir
+			scope:t_recipient.primary_title = {
+				scope:t_legit_heir = {
+					has_claim_on = prev
+				}
+			}
+		}
+	}
+	# Succession Crisis Outcome
+	scope:t_recipient = { has_character_flag = agot_usurped_the_throne }
+}
+
+### Dishonorable Imprisonment TOS
+#Accuser: king/queen
+#Criminal: vassal
+agot_valid_tos_dishonorable_imprisonment_scenario_trigger = {
+	$ACTOR$ = { save_temporary_scope_as = t_actor }
+	$RECIPIENT$ = { save_temporary_scope_as = t_recipient }
+
+	exists = scope:t_recipient.primary_title
+	exists = scope:t_recipient.house
+	scope:t_recipient.primary_title = { NOT = { has_variable = trial_of_seven_cooldown } }
+	scope:t_recipient = {
+		primary_title.tier >= tier_kingdom
+		agot_is_independent_ruler = yes
+		NOT = { has_character_flag = trial_of_seven_blocker }
+	}
+	scope:t_actor = { agot_ready_for_tos_trigger = yes }
+	scope:t_actor = {
+		OR = {
+			# Has a Royal friend
+			any_relation = {
+				type = friend
+				house ?= scope:t_recipient.house
+			}
+			# Has a Royal Rival
+			any_relation = {
+				type = rival
+				house ?= scope:t_recipient.house
+			}
+			# Has a House Feud
+			house ?= {
+				any_house_relation = {
+					has_house_relation_level = feud
+				}
+			}
+			# Is from the Royal dynasty
+			dynasty ?= scope:t_recipient.dynasty
+			# High lord
+			AND = {
+				is_playable_character = yes
+				highest_held_title_tier >= tier_kingdom
+			}
+			# Prestigious lord
+			AND = {
+				is_playable_character = yes
+				highest_held_title_tier >= tier_duchy
+				prestige_level >= 4
+			}
+			# Pious lord
+			AND = {
+				is_playable_character = yes
+				highest_held_title_tier >= tier_duchy
+				piety_level >= 4
+			}
+		}
+	}
+	OR = {
+		#ruler is the main accuser
+		scope:t_recipient = {
+			save_temporary_scope_as = t_this
+			agot_valid_tos_dishonorable_imprisonment_char_trigger = { OG_ACCUSER = scope:t_recipient ACCUSER = scope:t_this DEFENDER = scope:t_actor }
+		}
+		#ruler's house member is the main accuser
+		scope:t_recipient.house = {
+			any_house_member = {
+				save_temporary_scope_as = t_this
+				agot_valid_tos_dishonorable_imprisonment_char_trigger = { OG_ACCUSER = scope:t_recipient ACCUSER = scope:t_this DEFENDER = scope:t_actor }
+			}
+		}
+	}
+}

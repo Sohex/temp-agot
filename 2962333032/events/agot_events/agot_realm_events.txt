@@ -1,0 +1,863 @@
+﻿#Events Governing Title and Realm Successions
+
+namespace = agot_realm
+
+##################################################
+# Dispossessed Character asks for land return
+# Badger
+# 1001
+##################################################
+
+# scripted_trigger agot_realm_1001_claim_trigger = {
+# 	tier >= tier_county
+# 	NOR = { #Don't give away your dejure capital realm
+# 		this = root.primary_title
+# 		this = root.capital_barony
+# 		is_de_jure_liege_or_above_target = root.capital_barony
+# 		this = title:d_dragonstone #Replace when we have an heir title designation
+# 		this = title:c_dragonstone
+# 	}
+# 	any_past_holder = { #Make sure there's an available character to ask
+# 		exists = dynasty
+# 		dynasty = {
+# 			any_dynasty_member = {
+# 				is_available_ai_adult = yes
+# 				is_landed = no
+# 				character_gender_can_inherit_from_trigger = {
+# 					CHARACTER = root
+# 				}
+# 				if = {
+# 					limit = {
+# 						is_married = yes
+# 						is_female = no
+# 					}
+# 					matrilinear_marriage = no
+# 				}
+# 				can_be_knight_trigger = { ARMY_OWNER = root }
+# 				NOT = {
+# 					any_heir_title = {} # Not heir to anything
+# 				}
+# 			}
+# 		}
+# 	}
+# }
+
+# scripted_trigger agot_realm_1001_claimant_trigger = {
+# 	this.dynasty = scope:dynasty
+# 	is_available_ai_adult = yes
+# 	is_landed = no
+# 	character_gender_can_inherit_from_trigger = {
+# 		CHARACTER = root
+# 	}
+# 	if = {
+# 		limit = {
+# 			is_married = yes
+# 			is_female = no
+# 		}
+# 		matrilinear_marriage = no
+# 	}
+# 	can_be_knight_trigger = { ARMY_OWNER = root }
+# 	NOT = {
+# 		any_heir_title = {} # Not heir to anything
+# 	}
+# }
+
+# # Land Request
+# agot_realm.1001 = {
+# 	type = character_event
+# 	title = agot_realm.1001.t
+# 	desc = agot_realm.1001.desc
+# 	theme = realm
+
+# 	left_portrait = root
+# 	right_portrait = scope:historic_claimant
+
+# 	trigger = {
+# 		NOT = { root.dynasty = scope:historic_claimant.dynasty }
+# 		primary_title.tier = tier_hegemony
+# 		any_held_title = {
+# 			agot_realm_1001_claim_trigger = yes
+# 		}
+# 		any_living_character = {
+# 			agot_realm_1001_claimant_trigger = yes
+# 		}
+# 	}
+
+# 	orphan = yes
+
+# 	weight_multiplier = {
+# 		base = 1
+# 	}
+
+# 	immediate = {
+# 		every_held_title = {
+# 			limit = {
+# 				agot_realm_1001_claim_trigger = yes
+# 			}
+# 			add_to_list = claimant_titles
+# 		}
+# 		ordered_in_list = {
+# 			list = claimant_titles
+# 			order_by = tier
+# 			max = 1
+# 			agot_has_historical_claim_effect = { TITLE = this }
+# 			save_scope_as = claim_title
+# 		}
+# 		random_living_character = {
+# 			limit = {
+# 				agot_realm_1001_claimant_trigger = yes
+# 			}
+# 			save_scope_as = historic_claimant
+# 		}
+# 	}
+
+# 	option = { #Sure
+# 		name = agot_realm.1001.a
+
+# 		if = {
+# 			limit = {
+# 				scope:historic_claimant = {
+# 					has_trait = bastard
+# 				}
+# 			}
+# 			agot_legitimize_bastard_effect = {
+# 				BASTARD = scope:historic_claimant
+# 				LEGITIMIZER = root
+# 			}
+# 		}
+# 		if = {
+# 			limit = {
+# 				can_add_hook = {
+# 					type = favor_hook
+# 					target = scope:historic_claimant
+# 				}
+# 			}
+# 			add_hook = {
+# 				type = loyalty_hook
+# 				target = scope:historic_claimant
+# 			}
+# 		}
+# 		create_title_and_vassal_change = {
+# 			type = granted
+# 			save_scope_as = change
+# 			add_claim_on_loss = no
+# 		}
+# 		scope:claim_title = {
+# 			every_in_de_jure_hierarchy = { #Give them the direct titles
+# 				limit = {
+# 					exists = holder
+# 					holder = root
+# 				}
+# 				add_to_temporary_list = titles_given
+# 			}
+# 			every_in_de_jure_hierarchy = { #And any vassals
+# 				limit = {
+# 					exists = holder
+# 					tier > scope:claim
+# 					holder.liege = root
+# 				}
+# 				holder = {
+# 					add_to_temporary_list = vassals_given
+# 				}
+# 			}
+# 		}
+# 		every_in_list = {
+# 			list = titles_given
+# 			change_title_holder = {
+# 				holder = scope:historic_claimant
+# 				change = scope:change
+# 			}
+# 		}
+# 		every_in_list = {
+# 			list = vassals_given
+# 			change_liege = {
+# 				liege = scope:historic_claimant
+# 				change = scope:change
+# 			}
+# 		}
+# 		resolve_title_and_vassal_change = scope:change
+
+# 		if = {
+# 			limit = {
+# 				scope:claim_title.tier = tier_county
+# 			}
+# 			reverse_add_opinion = {
+# 				target = scope:historic_claimant
+# 				modifier = received_title_county
+# 			}
+# 		}
+# 		if = {
+# 			limit = {
+# 				scope:claim_title.tier = tier_duchy
+# 			}
+# 			reverse_add_opinion = {
+# 				target = scope:historic_claimant
+# 				modifier = received_title_duchy
+# 			}
+# 		}
+# 		if = {
+# 			limit = {
+# 				scope:claim_title.tier = tier_kingdom
+# 			}
+# 			reverse_add_opinion = {
+# 				target = scope:historic_claimant
+# 				modifier = received_title_kingdom
+# 			}
+# 		}
+# 		if = {
+# 			limit = {
+# 				scope:claim_title.tier = tier_empire
+# 			}
+# 			reverse_add_opinion = {
+# 				target = scope:historic_claimant
+# 				modifier = received_title_empire
+# 			}
+# 		}
+
+# 		ai_chance = {
+# 			base = 100
+# 		}
+# 	}
+
+# 	option = { #No title but you can stay here
+# 		name = agot_realm.1001.b
+
+# 		add_courtier ?= scope:historic_claimant
+# 	}
+
+# 	option = { #Throw this Vagrant in prison
+# 		name = agot_realm.1001.c
+
+# 		add_dread = 30
+
+# 		imprison_character_effect = {
+# 			TARGET = scope:historic_claimant
+# 			IMPRISONER = root
+# 		}
+# 	}
+
+# 	option = { #Please leave whoever you are
+# 		name = agot_realm.1001.d
+
+# 		add_prestige = minor_prestige_gain
+# 	}
+# }
+
+####################################
+#      	  	The Teats	 	       #
+#        	  Badger			   #
+#              0020		       	   #
+####################################
+
+agot_realm.0020 = {
+	type = character_event
+
+	title = agot_realm.0020.t
+	desc = agot_realm.0020.desc
+
+	theme = seduction
+	override_background = {
+		reference = wilderness_forest
+	}
+
+	left_portrait = root
+	right_portrait = scope:lover
+
+	immediate = {
+		add_character_flag = had_event_agot_filler_westeros_0056
+
+		random_relation = {
+			type = lover
+			save_scope_as = lover
+		}
+
+		title:b_the_teats = {
+			save_scope_as = teats
+		}
+
+		scope:lover = {
+			assign_quirk_effect = yes
+		}
+	}
+
+	trigger = {
+		NOT = { has_character_flag = had_event_agot_filler_westeros_0056 }
+		is_available_adult = yes
+		primary_title ?= { tier = tier_hegemony }
+		any_sub_realm_county = { this = title:c_the_ravishment  }  #Teats are in your sub-realm, barony doesn't work as no holding
+		OR = {
+			has_trait = lustful
+			has_trait = arbitrary
+			has_trait = fickle
+		}
+		any_relation = {
+			type = lover
+			is_female = yes #no boobs no chance
+			OR = {
+				has_trait = physique_good
+				has_trait = beauty_good
+			}
+		}
+	}
+
+	option = {
+		name = agot_realm.0020.a
+		custom_tooltip = agot_realm.0020.a.tt
+
+		set_global_variable = {
+			name = teats_name
+			value = scope:lover
+		}
+
+		title:b_the_teats = {
+			save_title_name_change_data = { TRANSFER_VAR = yes }
+			set_title_name = renamed_teats
+		}
+
+
+		scope:lover = {
+			add_prestige_level = 1
+
+			add_opinion = {
+				target = root
+				modifier = flattered_opinion
+				opinion = 50
+			}
+		}
+
+		add_prestige = minor_prestige_gain
+		add_piety = major_piety_loss
+
+
+		ai_chance = { #why not good flavor
+			base = 100
+		}
+	}
+
+	option = {
+		name = agot_realm.0020.b
+		custom_tooltip = agot_realm.0020.b.tt
+
+		trigger = {
+			root = { is_female = yes }
+			OR = {
+				has_trait = arrogant
+				has_trait = arbitrary
+			}
+		}
+
+		set_global_variable = {
+			name = teats_name
+			value = root
+		}
+
+		title:b_the_teats = {
+			save_title_name_change_data = { TRANSFER_VAR = yes }
+			set_title_name = renamed_teats
+		}
+
+		add_prestige_level = 1
+		add_piety = massive_piety_loss
+
+		ai_chance = { #why not flavor
+			base = 100
+		}
+	}
+
+
+	option = {
+		name = agot_realm.0020.c
+		add_piety = medium_piety_gain
+
+		ai_chance = { #why not flavor
+			base = 0
+		}
+	}
+}
+
+##################################################
+# Bad King Cut by the Iron Throne
+# Badger
+# 0030
+##################################################
+
+agot_realm.0030 = {
+	type = character_event
+	title = agot_realm.0030.t
+	desc = agot_realm.0030.desc
+
+	theme = realm
+
+	override_background = {
+		reference = agot_iron_throne
+	}
+
+	left_portrait = {
+		character = root
+		animation = pain
+	}
+
+	right_portrait = {
+		character = scope:councillor
+		animation = worry
+	}
+
+	trigger = {
+		is_available_adult = yes
+		has_title = title:h_the_iron_throne
+		capital_county = title:c_kings_landing
+		#BAD KING TRIGGERS?
+		OR = {
+			has_trait = paranoid #Aerys
+			has_trait = sadistic #Maegor/Joff
+			has_trait = lunatic_1
+			stress >= high_stress #Viserys/Rhaenyra
+		}
+		NOT = {
+			has_character_flag = cut_by_throne
+		}
+	}
+
+	immediate = {
+		add_character_flag = cut_by_throne
+
+		random_councillor = {
+			limit = {
+				is_available = yes
+				NOT = { #Better to grab a real councillor
+					is_kingsguard_trigger = yes
+				}
+			}
+			save_scope_as = councillor
+		}
+	}
+
+	option = {
+		name = agot_realm.0030.a
+		custom_tooltip = agot_realm.0030.a.tt
+		#Big Prestige/Opinion hit?
+		stress_impact = {
+			base = medium_stress_impact_gain
+		}
+		#Ouch I cut
+		random_list = {
+			24 = {
+				add_trait = wounded_1
+			}
+			5 = {
+				add_trait = wounded_2
+			}
+			1 = { #Get Maegor'd loser
+				death = {
+					death_reason = death_iron_throne
+				}
+			}
+		}
+		hidden_effect = { #Hidden because it makes a hideous tooltip
+			every_vassal = {
+				add_opinion = {
+					target = root
+					modifier = cut_on_throne_opinion
+				}
+			}
+			every_councillor = {
+				add_opinion = {
+					target = root
+					modifier = cut_on_throne_opinion
+				}
+			}
+		}
+	}
+}
+
+##################################################
+# King Executed My Relative
+# Sililex
+# 0031
+##################################################
+
+agot_realm.0031 = {
+	type = character_event
+	title = agot_realm.0031.t
+	desc = agot_realm.0031.desc
+	theme = realm
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+	lower_center_portrait = {
+		character = scope:victim
+	}
+	right_portrait = scope:executioner
+
+	trigger = {
+		NOT = { this = scope:executioner }
+	}
+
+	option = {
+		name = agot_realm.0031.a
+		flavor = agot_realm.0031.a.f
+		trigger = {
+			age >= 16
+		}
+		ai_chance = {
+			base = 5
+			modifier = {
+				has_trait = craven
+				add = -10
+			}
+			modifier = {
+				has_trait = vengeful
+				add = 20
+			}
+		}
+		scope:executioner = {
+			set_relation_rival = {
+				target = root
+				reason = rival_executed_relative
+			}
+		}
+		start_war = {
+			cb = depose_war
+			target = scope:executioner
+		}
+		stress_impact = {
+			craven = major_stress_impact_gain
+		}
+	}
+
+	option = {
+		name = agot_realm.0031.b
+		flavor = agot_realm.0031.b.f
+		trigger = {
+			age >= 16
+		}
+		ai_chance = {
+			base = 10
+			ai_value_modifier = {
+				ai_boldness = -0.5
+				ai_vengefulness = 0.5
+			}
+		}
+		scope:executioner = {
+			set_relation_rival = {
+				target = root
+				reason = rival_executed_relative
+			}
+		}
+		start_scheme = {
+			type = murder
+			target_character = scope:executioner
+		}
+	}
+
+	option = {
+		name = agot_realm.0031.c
+		flavor = agot_realm.0031.c.f
+		ai_chance = {
+			base = 15
+			ai_value_modifier = {
+				ai_boldness = -0.2
+				ai_vengefulness = 0.2
+			}
+		}
+		scope:executioner = {
+			set_relation_rival = {
+				target = root
+				reason = rival_executed_relative
+			}
+		}
+	}
+
+	option = {
+		name = agot_realm.0031.d
+		flavor = agot_realm.0031.d.f
+		ai_chance = {
+			base = 70
+			ai_value_modifier = {
+				ai_boldness = -0.5
+			}
+			modifier = {
+				has_trait = vengeful
+				factor = 0.5
+			}
+			modifier = {
+				has_trait = just
+				factor = 2
+			}
+		}
+		stress_impact = {
+			arrogant = medium_stress_impact_gain
+			vengeful = major_stress_impact_gain
+		}
+	}
+}
+
+##################################################
+# Girlbossing
+# Aithnea
+# 0040
+##################################################
+
+agot_realm.0040 = {
+	type = character_event
+	title = agot_realm.0040.t
+	desc = {
+		desc = agot_realm.0040.desc
+		triggered_desc = {
+			trigger = {
+				scope:old_heir = {
+					OR = {
+						good_sum_of_all_skills_trigger = yes
+						has_trait = diligent
+						has_trait = shrewd
+						has_trait = intellect_good
+					}
+				}
+			}
+			desc = agot_realm.0040.capable
+		}
+		triggered_desc = {
+			trigger = {
+				has_relation_friend = scope:old_heir
+			}
+			desc = agot_realm.0040.friend
+		}
+		desc = agot_realm.0040.outro
+	}
+
+	theme = realm
+
+	override_background = {
+		reference = agot_iron_throne
+	}
+
+	left_portrait = {
+		character = root
+		animation = newborn
+	}
+
+	right_portrait = {
+		character = scope:old_heir
+		animation = personality_content
+	}
+
+	trigger = {
+		is_ruler = yes
+		government_has_flag = government_is_feudal
+		NOT = {
+			this = character:Targaryen_60
+		}
+		OR = {
+			scope:child = { is_primary_heir_of = root }
+			AND = {
+				scope:child = { has_trait = twin }
+				primary_heir ?= {
+					age = 0
+					has_trait = twin
+				}
+			}
+		}
+		OR = {
+			any_child = {
+				save_temporary_scope_as = old_heir_temp
+				NOT = { this = scope:child }
+				age >= 1 #not twin
+				OR = {
+					mother ?= {
+						NOT = { this = scope:child.mother }
+					}
+					age >= 16
+				}
+				root.primary_title = {
+					place_in_line_of_succession = {
+						target = prev
+						value == 2
+					}
+				}
+			}
+			AND = {
+				scope:child = { has_trait = twin }
+				any_child = {
+					age = 0
+					has_trait = twin
+					root.primary_title = {
+						place_in_line_of_succession = {
+							target = prev
+							value == 2
+						}
+					}
+				}
+				any_child = {
+					save_temporary_scope_as = old_heir_temp
+					NOT = { this = scope:child }
+					age >= 1 #not twin
+					OR = {
+						mother ?= {
+							NOT = { this = scope:child.mother }
+						}
+						age >= 16
+					}
+					root.primary_title = {
+						place_in_line_of_succession = {
+							target = prev
+							value == 3
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		random_child = {
+			limit = {
+				save_temporary_scope_as = old_heir_temp
+				NOT = { this = scope:child }
+				age >= 1 #not twin
+				OR = {
+					mother ?= {
+						NOT = { this = scope:child.mother }
+					}
+					age >= 16
+				}
+				OR = {
+					root.primary_title = {
+						place_in_line_of_succession = {
+							target = prev
+							value == 2
+						}
+					}
+					AND = {
+						scope:child = { has_trait = twin }
+						root.primary_title = {
+							place_in_line_of_succession = {
+								target = prev
+								value == 3
+							}
+						}
+					}
+				}
+			}
+			save_scope_as = old_heir
+		}
+		if = {
+			limit = {
+				NOT = { exists = scope:old_heir }
+			}
+			random_child = {
+				limit = {
+					save_temporary_scope_as = old_heir_temp
+					NOT = { this = scope:child }
+					age >= 1 #not twin
+					OR = {
+						mother ?= {
+							NOT = { this = scope:child.mother }
+						}
+						age >= 16
+					}
+					root.primary_title = {
+						place_in_line_of_succession = {
+							target = prev
+							value == 3
+						}
+					}
+				}
+				save_scope_as = old_heir
+			}
+		}
+
+		primary_heir = { save_scope_as = new_heir }
+	}
+
+	option = {
+		name = agot_realm.0040.a
+		set_designated_heir = scope:old_heir
+		add_prestige = { value = massive_prestige_loss }
+		set_relation_potential_rival = scope:new_heir
+		if = {
+			limit = {
+				scope:new_heir.mother = { is_alive = yes }
+				NOT = { scope:old_heir.mother = scope:new_heir.mother }
+			}
+			set_relation_potential_rival = scope:new_heir.mother
+		}
+		stress_impact = {
+			base = major_stress_impact_gain
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 50
+				scope:old_heir = {
+					age >= 16
+					OR = {
+						good_sum_of_all_skills_trigger = yes
+						has_trait = diligent
+						has_trait = shrewd
+						has_trait = intellect_good
+					}
+				}
+			}
+			modifier = {
+				add = 50
+				scope:old_heir = {
+					mother ?= {
+						NOT = { this = scope:new_heir.mother }
+					}
+					OR = {
+						good_sum_of_all_skills_trigger = yes
+						has_trait = diligent
+						has_trait = shrewd
+						has_trait = intellect_good
+					}
+				}
+			}
+			modifier = {
+				add = 25
+				scope:old_heir = {
+					age >= 16
+					OR = {
+						good_sum_of_all_skills_trigger = yes
+						has_trait = diligent
+						has_trait = shrewd
+						has_trait = intellect_good
+					}
+					has_relation_friend = root
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_realm.0040.b
+		ai_chance = {
+			base = 100
+		}
+	}
+}
+
+agot_realm.9000 = {
+	hidden = yes
+
+	trigger = {
+		has_government = lp_feudal_government
+		scope:vassal = {
+			has_government = feudal_government
+			agot_is_valid_lp_feudal_government_target = yes
+		}
+	}
+
+	immediate = {
+		scope:vassal = {
+			change_government = lp_feudal_government
+			every_vassal_or_below = {
+				limit = {
+					has_government = feudal_government
+					agot_is_valid_lp_feudal_government_target = yes
+				}
+				change_government = lp_feudal_government
+			}
+		}
+	}
+}

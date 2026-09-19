@@ -1,0 +1,419 @@
+﻿#For the Lord Commander of the Night's Watch: Call the First Ranger to War
+call_first_ranger_to_war_interaction = {
+	category = interaction_category_diplomacy
+	icon = alliance
+	desc = call_first_ranger_to_war_interaction_desc
+
+	greeting = positive
+	notification_text = call_first_ranger_to_war_interaction_notification
+	popup_on_receive = yes
+	pause_on_receive = yes
+
+	interface_priority = 60
+	ai_min_reply_days = 0
+	ai_max_reply_days = 0
+
+	cooldown_against_recipient = { years = 3 }
+	can_send_despite_rejection = yes
+	ai_accept_negotiation = yes
+	send_options_exclusive = no
+	is_shown = {
+		scope:actor != scope:recipient
+		scope:actor = title:k_the_wall.holder
+		scope:actor = { government_has_flag = government_is_nw }
+		scope:actor = {
+			trigger_if = { # Avoid calling First Ranger without armies
+				limit = {
+					is_ai = yes
+				}
+				scope:recipient.current_military_strength >= 50
+			}
+		}
+		scope:recipient = { agot_is_landless_nw_character = yes }
+	}
+	is_valid_showing_failures_only = {
+		scope:recipient = {
+			is_travelling = no
+			is_at_war = no
+			is_imprisoned = no
+		}
+		scope:actor = {
+			is_at_war = yes
+			custom_tooltip = {
+				text = I_MUST_BE_THE_WAR_LEADER
+				any_character_war = {
+					is_war_leader = scope:actor
+				}
+			}
+			NOT = {
+				is_at_war_with = scope:recipient
+			}
+		}
+		scope:actor = {
+			NOT = {
+				any_war_ally = {
+					count >= 3
+				}
+			}
+		}
+		scope:actor = {
+			OR = {
+				is_ai = no
+				any_character_war = {
+					count = all
+					OR = {
+						AND = {
+							primary_attacker = scope:actor
+							defender_war_score <= 95
+						}
+						AND = {
+							primary_defender = scope:actor
+							attacker_war_score <= 95
+						}
+					}
+				}
+			}
+		}
+	}
+
+	auto_accept = {
+		custom_description = {
+			text = "spending_hook"
+			subject = scope:actor
+			object = scope:recipient
+			scope:hook = yes
+			scope:actor = { has_strong_hook = scope:recipient }
+		}
+	}
+
+	on_accept = {
+		scope:actor = {
+			every_character_war = {
+				add_to_list = actor_wars
+			}
+		}
+		every_in_list = {
+			list = actor_wars
+			limit = {
+				primary_defender = scope:actor
+			}
+			add_to_list = join_as_defender
+			remove_from_list = actor_wars
+		}
+		every_in_list = {
+			list = actor_wars
+			limit = {
+				primary_attacker = scope:actor
+			}
+			add_to_list = join_as_attacker
+			remove_from_list = actor_wars
+		}
+
+		every_in_list = {
+			list = join_as_attacker
+			add_attacker = scope:recipient
+		}
+		every_in_list = {
+			list = join_as_defender
+			add_defender = scope:recipient
+		}
+		#list all wars that scope:recipient can't join
+		every_in_list = {
+			list = actor_wars
+			custom = hire_laamp_mercenaries_interaction.not_primary_side
+			# I swear it was the only way to make the tooltip look nice
+			every_in_list = {
+				list = actor_wars
+				save_temporary_scope_as = war
+				custom_tooltip = hire_laamp_mercenaries_interaction.war
+			}
+		}
+
+		debug_log = "Landed ruler hired a LAAMP to join wars"
+		debug_log_scopes = yes
+	}
+
+	on_decline = { scope:recipient = { add_prestige = medium_prestige_loss } }
+
+	# Use hook
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = SCHEME_HOOK
+	}
+	should_use_extra_icon = {
+		scope:actor = { has_usable_hook = scope:recipient }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	ai_frequency = 12
+	ai_targets = {
+		ai_recipients = nearby_domicile_owners
+	}
+	ai_potential = {
+		any_character_war = {
+			is_war_leader = prev
+		}
+	}
+	ai_accept = {
+		base = 10
+
+		opinion_modifier = { # Opinion Factor
+			who = scope:recipient
+			opinion_target = scope:actor
+			desc = AI_OPINION_REASON
+		}
+
+		modifier = {  # Tends to join defensive wars
+			add = 50
+			scope:actor = {
+				any_character_war = {
+					primary_defender = scope:actor
+				}
+			}
+			desc = DEFENSIVE_WAR_REASON
+		}
+
+		modifier = { # Reluctant to join against Friends
+			add = -50
+			scope:actor = {
+				any_character_war = {
+					OR = {
+						AND = {
+							NOT = { primary_attacker = scope:actor }
+							primary_attacker = {
+								has_relation_friend = scope:recipient
+							}
+						}
+						AND = {
+							NOT = { primary_defender = scope:actor }
+							primary_defender = {
+								has_relation_friend = scope:recipient
+							}
+						}
+					}
+				}
+			}
+		}
+
+		modifier = { # Reluctant to join against Best Friends
+			add = -100
+			scope:actor = {
+				any_character_war = {
+					OR = {
+						AND = {
+							NOT = { primary_attacker = scope:actor }
+							primary_attacker = {
+								has_relation_best_friend = scope:recipient
+							}
+						}
+						AND = {
+							NOT = { primary_defender = scope:actor }
+							primary_defender = {
+								has_relation_best_friend = scope:recipient
+							}
+						}
+					}
+				}
+			}
+		}
+		modifier = { # Reluctant to join against Lovers
+			add = -100
+			scope:actor = {
+				any_character_war = {
+					OR = {
+						AND = {
+							NOT = { primary_attacker = scope:actor }
+							primary_attacker = {
+								has_relation_lover = scope:recipient
+							}
+						}
+						AND = {
+							NOT = { primary_defender = scope:actor }
+							primary_defender = {
+								has_relation_lover = scope:recipient
+							}
+						}
+					}
+				}
+			}
+		}
+		modifier = { # Reluctant to join against Soul mate
+			add = -200
+			scope:actor = {
+				any_character_war = {
+					OR = {
+						AND = {
+							NOT = { primary_attacker = scope:actor }
+							primary_attacker = {
+								has_relation_soulmate = scope:recipient
+							}
+						}
+						AND = {
+							NOT = { primary_defender = scope:actor }
+							primary_defender = {
+								has_relation_soulmate = scope:recipient
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 50
+
+		#don't do it if you are stronger than the enemy
+		modifier = {
+			scope:actor = {
+				any_character_war = {
+					count = all
+					OR = {
+						AND = {
+							primary_attacker = scope:actor
+							primary_defender.current_military_strength < scope:actor.current_military_strength
+						}
+						AND = {
+							primary_defender = scope:actor
+							primary_attacker.current_military_strength < scope:actor.current_military_strength
+						}
+					}
+				}
+			}
+			add = -200
+		}
+
+		#more likely to ask if losing
+		modifier = {
+			scope:actor = {
+				any_character_war = {
+					OR = {
+						AND = {
+							primary_attacker = scope:actor
+							defender_war_score > 25
+						}
+						AND = {
+							primary_defender = scope:actor
+							attacker_war_score > 25
+						}
+					}
+				}
+			}
+			add = 20
+		}
+
+		#don't do it if they betrayed you already in any of your ongoing wars
+		modifier = {
+			scope:actor = {
+				any_character_war = {
+					OR = {
+						is_target_in_variable_list = {
+							name = already_switched_side
+							target = scope:recipient
+						}
+						is_target_in_variable_list = {
+							name = left_voluntarily
+							target = scope:recipient
+						}
+					}
+				}
+			}
+			add = -1000
+		}
+	}
+}
+
+#For Wildlings: Ambush the First Ranger
+ambush_the_first_ranger_interaction = {
+	category = interaction_category_hostile
+	icon = icon_hostile
+	desc = ambush_the_first_ranger_interaction_desc
+
+	interface_priority = 60
+	ai_min_reply_days = 0
+	ai_max_reply_days = 0
+
+	cooldown_against_recipient = { years = 3 }
+	can_send_despite_rejection = yes
+	ai_accept_negotiation = yes
+	send_options_exclusive = no
+	is_shown = {
+		scope:actor != scope:recipient
+		agot_ranger_beyond_the_wall = yes
+		scope:actor = {
+			is_landed = yes
+			is_adult = yes
+			culture = { agot_is_wildling_culture = yes }
+		}
+		scope:recipient = {
+			agot_is_landless_nw_character = yes
+			NOT = { has_character_flag = recently_ambushed_by_wildlings }
+		}
+		title:d_nw_landless_first_ranger.holder.domicile.domicile_location.county.duchy = scope:actor.capital_county.duchy
+	}
+	is_valid_showing_failures_only = {
+		scope:recipient = {	is_imprisoned = no }
+	}
+
+	auto_accept = yes
+
+	on_accept = {
+		scope:actor = { trigger_event = agot_nw_ranger_events.0012 }
+	}
+
+	ai_frequency = 12
+	ai_targets = {
+		ai_recipients = nearby_domicile_owners
+	}
+	ai_potential = {
+		agot_wildling_insane = yes
+	}
+
+	ai_will_do = {
+		base = 1
+
+		#Friends won't attack
+		modifier = {
+			scope:actor = {
+				OR = {
+					has_relation_friend = scope:recipient
+					has_relation_lover = scope:recipient
+				}
+			}
+			add = -500
+		}
+		#Rivals will attack
+		modifier = {
+			scope:actor = {
+				has_relation_rival = scope:recipient
+			}
+			add = 500
+		}
+		#Liked First Ranger less likely targeted
+		modifier = {
+			scope:actor = {
+				opinion = { target = scope:recipient value > 25 }
+			}
+			add = -100
+		}
+		#Unliked First Ranger more likely targeted
+		modifier = {
+			scope:actor = {
+				opinion = { target = scope:recipient value < 0 }
+			}
+			add = 50
+		}
+		#Evil Wildlings will do this more often
+		modifier = {
+			scope:actor = {
+				agot_wildling_insane = no
+			}
+			add = 150
+		}
+	}
+}

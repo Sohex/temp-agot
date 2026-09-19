@@ -1,0 +1,505 @@
+#########################################################
+################# AGOT COUNCIL WINDOW ###################
+#########################################################
+
+types CouncilWindow
+{
+	#############
+	# CASTELLAN #
+	#############
+	type agot_castellan_insert = widget_councillor_item
+	{
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		datacontext = "[CouncilWindow.GetCouncillor('councillor_castellan')]"
+		datacontext = "[GuiCouncilPosition.GetActiveCouncilTask]"
+		datacontext = "[ActiveCouncilTask.GetPositionType]"
+		datacontext = "[ActiveCouncilTask.GetCouncillor]"
+		datacontext = "[GetIllustration('agot_councilposition')]"
+
+		visible = "[Not(IsNWAdventurer(GetPlayer))]"
+
+		#Default Background
+		background = {
+			texture = gfx/interface/illustrations/council/castellan/bg_council_castellan_diplomacy.dds
+			margin_bottom = 20
+			margin_right = 5
+			fittype = centercrop
+			using = Mask_Rough_Edges
+			alpha = 1
+		}
+
+		#Specific Background
+		background = {
+			texture = "[Illustration.GetTexture( ActiveCouncilTask.GetCouncillor.MakeScope )]"
+			margin_bottom = 20
+			margin_right = 5
+			fittype = centercrop
+			alpha = 1
+			using = Mask_Rough_Edges
+		}
+
+		background = {
+			texture = "gfx/interface/component_masks/mask_vignette.dds"
+			color = { 0.15 0.15 0.15 1 }
+			alpha = 0.3
+		}
+
+		#stops weird fade if same size idk why
+		blockoverride "portrait_size"
+		{
+			size = { 261 286 }
+		}
+
+		blockoverride "regular_task" {
+
+			flowcontainer = { # Used to be a dynamicgridbox until it overflowed
+				name = "council_position_tasks"
+				visible = "[Not(Or(CouncilWindow.IsLiegeCouncilShown, CouncilWindow.IsTopLiegeCouncilShown))]"
+				datamodel = "[GuiCouncilPosition.GetPotentialCouncilTasks]"
+
+				datamodel_wrap = 10
+
+				ignoreinvisible = yes
+				direction = vertical
+
+				parentanchor = bottom|left
+				position = { 10 0 }
+
+				background = {
+					texture = "gfx/interface/hud/tab_bg.dds"
+					mirror = horizontal
+					margin_top = 1
+					margin_bottom = 12
+					margin_right = 15
+					margin_left = 10
+					using = Color_Black
+				}
+
+				item = {
+					container = {
+						visible = "[GuiPotentialCouncilTask.IsVisible]"
+
+						widget = {
+							size = { 42 42 }
+
+							icon = {
+								visible = "[GuiPotentialCouncilTask.IsActive]"
+								texture = "gfx/particles/halo.dds"
+								parentanchor = center
+								size = { 58 58 }
+								color = { 1 0.85 0.6 1 }
+							}
+
+							button_round = {
+								visible = "[Or(GuiPotentialCouncilTask.CanSelect, GuiPotentialCouncilTask.IsActive)]"
+								parentanchor = center
+								size = { 46 46 }
+								gfxtype = togglepushbuttongfx
+								effectname = "NoHighlight"
+
+								onclick = "[GuiPotentialCouncilTask.SelectTaskType]"
+								enabled = "[Not(Or(CouncilWindow.IsLiegeCouncilShown, CouncilWindow.IsTopLiegeCouncilShown))]"
+								down = "[GuiPotentialCouncilTask.IsActive]"
+
+								using = tooltip_ws
+
+								tooltipwidget = {
+									council_task_icon_tooltip_widget = {
+										using = DefaultTooltipBackground
+										using = GeneralTooltipSetup
+										alwaystransparent = no
+									}
+								}
+
+								upframe = 1
+								downframe = 1
+								uphoverframe = 2
+								disableframe = 6
+
+								button_normal = {
+									name = "potential_task"
+									parentanchor = center
+									widgetanchor = center
+									datacontext = "[GuiPotentialCouncilTask.GetCouncilTaskType]"
+									effectname = "NoHighlight"
+									gfxtype = togglepushbuttongfx
+									shaderfile = "gfx/FX/pdxgui_pushbutton.shader"
+									texture = "[CouncilTaskType.GetIcon]"
+									alwaystransparent = yes
+									size = { 38 38 }
+								}
+							}
+						}
+
+						widget = {
+							size = { 40 40 }
+							visible = "[Not(GuiPotentialCouncilTask.CanSelect)]"
+
+							icon = {
+								datacontext = "[GuiPotentialCouncilTask.GetCouncilTaskType]"
+								parentanchor = center
+								size = { 35 35 }
+								alwaystransparent = yes
+
+								texture = "[CouncilTaskType.GetIcon]"
+								alpha = 0.4
+
+								tooltipwidget = {
+									invalid_potential_council_task_icon_tooltip_widget = {
+										using = DefaultTooltipBackground
+										using = GeneralTooltipSetup
+										alwaystransparent = no
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		#Castellan Reassign Button
+		hbox = {
+			position = { 100 36 }
+			visible = "[And(GuiCouncilPosition.ArePotentialTasksVisible, GuiPotentialCouncilTask.IsVisible)]"
+			widget = {
+				size = { 50 50 }
+				visible = "[Not(Or(CouncilWindow.IsLiegeCouncilShown, CouncilWindow.IsTopLiegeCouncilShown))]"
+
+				icon = {
+					visible = "[GuiPotentialCouncilTask.IsActive]"
+					texture = "gfx/particles/halo.dds"
+					size = { 50 50 }
+					color = { 1 0.85 0.6 1 }
+				}
+
+				button_round = {
+					shaderfile = "gfx/FX/pdxgui_pushbutton.shader"
+					visible = "[Or(GuiPotentialCouncilTask.CanSelect, GuiPotentialCouncilTask.IsActive)]"
+					size = { 50 50 }
+					gfxtype = togglepushbuttongfx
+					effectname = "NoHighlight"
+
+					datacontext = "[GetScriptedGui('castellan_reassign')]"
+					onclick = "[GetScriptedGui('castellan_reassign').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+					enabled = "[Not(Or(CouncilWindow.IsLiegeCouncilShown, CouncilWindow.IsTopLiegeCouncilShown))]"
+					tooltip = "COUNCIL_TASK_CASTELLAN_REVERT"
+					down = "[GuiPotentialCouncilTask.IsActive]"
+
+					using = tooltip_se
+				}
+
+				button_change_castellan_task = {
+					color = { 0.7 0.7 0.7 0.7 }
+					alwaystransparent = yes
+					parentanchor = center
+					position = { 0 0 }
+					size = { 45 45 }
+					using = tooltip_ws
+				}
+			}
+		}
+	}
+
+	############################
+	# ADMIRAL AND CHAPLAIN ROW #
+	############################
+	type agot_admiral_chaplain_insert = hbox
+	{
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		margin = { 10 0 }
+		margin_bottom = 5
+		spacing = 5
+
+		visible = "[Not(IsNWAdventurer(GetPlayer))]"
+
+		widget_councillor_item = {
+			layoutpolicy_horizontal = expanding
+			layoutpolicy_vertical = expanding
+			datacontext = "[CouncilWindow.GetCouncillor('councillor_admiral')]"
+			datacontext = "[GuiCouncilPosition.GetActiveCouncilTask]"
+			datacontext = "[ActiveCouncilTask.GetPositionType]"
+			datacontext = "[ActiveCouncilTask.GetCouncillor]"
+
+			visible = "[Or(And(CouncilWindow.IsLiegeCouncilShown, GetScriptedGui('agot_admiral_position_valid').IsShown(GuiScope.SetRoot(GetPlayer.GetLiege.MakeScope).End)), GetScriptedGui('agot_admiral_position_valid').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
+
+			background = {
+				texture = "gfx/interface/illustrations/council/bg_council_admiral.dds"
+				margin_bottom = 20
+				margin_right = 5
+				fittype = centercrop
+				using = Mask_Rough_Edges
+				alpha = 1
+			}
+
+			background = {
+				texture = "gfx/interface/component_masks/mask_vignette.dds"
+				color = { 0.15 0.15 0.15 1 }
+				alpha = 0.3
+			}
+		}
+
+		widget_councillor_item = {
+			layoutpolicy_horizontal = expanding
+			layoutpolicy_vertical = expanding
+			datacontext = "[CouncilWindow.GetCouncillor('councillor_court_chaplain')]"
+			datacontext = "[GuiCouncilPosition.GetActiveCouncilTask]"
+			datacontext = "[ActiveCouncilTask.GetPositionType]"
+			datacontext = "[ActiveCouncilTask.GetCouncillor]"
+
+			datacontext = "[GetIllustration('agot_chaplain')]"
+			visible = "[Or(And(CouncilWindow.IsLiegeCouncilShown, GetScriptedGui('agot_chaplain_position_valid').IsShown(GuiScope.SetRoot(GetPlayer.GetLiege.MakeScope).End)), GetScriptedGui('agot_chaplain_position_valid').IsShown(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
+
+			background = {
+				texture = "[Illustration.GetTexture( ActiveCouncilTask.GetCouncillor.GetFaith.MakeScope )]"
+				fittype = centercrop
+				alpha = 0.7
+				using = Mask_Rough_Edges
+
+				margin_bottom = 20
+				margin_right = 5
+			}
+
+			background = {
+				texture = "gfx/interface/component_masks/mask_vignette.dds"
+				color = { 0.15 0.15 0.15 1 }
+				alpha = 0.3
+			}
+		}
+	}
+
+	#################################
+	# NIGHTS WATCH PERSONAL STEWARD #
+	#################################
+	type agot_nw_personal_steward_insert = widget_councillor_item
+	{
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		datacontext = "[CouncilWindow.GetCouncillor('councillor_personal_steward')]"
+		datacontext = "[GuiCouncilPosition.GetActiveCouncilTask]"
+		datacontext = "[ActiveCouncilTask.GetPositionType]"
+		datacontext = "[ActiveCouncilTask.GetCouncillor]"
+
+		visible = "[GetPlayer.GetGovernment.IsType('nights_watch_government')]"
+
+		blockoverride "skill_visible" {
+			visible = no
+		}
+
+		background = {
+			texture = "gfx/interface/skinned/illustrations/council/bg_council_spouse.dds"
+			margin_bottom = 20
+			margin_right = 5
+			fittype = centercrop
+			alpha = 1
+			using = Mask_Rough_Edges
+		}
+
+		background = {
+			texture = "gfx/interface/component_masks/mask_vignette.dds"
+			color = { 0.15 0.15 0.15 1 }
+			alpha = 0.3
+		}
+
+		blockoverride "portrait_size"
+		{
+			size = { 260 286 }
+		}
+
+		blockoverride "regular_task" {}
+
+		blockoverride "assist_task"
+		{
+			hbox = {
+				visible = "[Character.IsValid]"
+				layoutpolicy_horizontal = expanding
+				margin = { 5 5 }
+				spacing = 3
+
+				button_standard = {
+					size = { 210 25 }
+					onclick = "[GuiCouncilPosition.ShowHideTasks]"
+					tooltip = "[GuiCouncilPosition.GetShowHideTooltip]"
+					down = "[GuiCouncilPosition.ArePotentialTasksVisible]"
+
+					text_single = {
+						datacontext = "[ActiveCouncilTask.GetTaskTypeOrDefault]"
+						parentanchor = vcenter
+						position = { 10 0 }
+						text = "[CouncilTaskType.GetName]"
+						align = nobaseline
+					}
+
+					button_change = {
+						name = "show_tasks"
+						parentanchor = right|vcenter
+						position = { -5 0 }
+						alwaystransparent = yes
+						size = { 25 25 }
+					}
+				}
+			}
+		}
+	}
+
+	#####################################
+	# NIGHTS WATCH FIRST RANGER COUNCIL #
+	#####################################
+	type agot_ranger_one_insert = widget_councillor_item
+	{
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		datacontext = "[CouncilWindow.GetCouncillor('councillor_ranger_1')]"
+		datacontext = "[GuiCouncilPosition.GetActiveCouncilTask]"
+		datacontext = "[ActiveCouncilTask.GetPositionType]"
+		datacontext = "[ActiveCouncilTask.GetCouncillor]"
+
+		visible = "[IsNWAdventurer(GetPlayer)]"
+
+		background = {
+			texture = "gfx/interface/skinned/illustrations/council/agot_bg_council_ranger_frozen_forest_a.dds"
+			margin_bottom = 20
+			margin_right = 5
+			fittype = centercrop
+			alpha = 1
+			using = Mask_Rough_Edges
+		}
+
+		background = {
+			texture = "gfx/interface/component_masks/mask_vignette.dds"
+			color = { 0.15 0.15 0.15 1 }
+			alpha = 0.3
+		}
+
+		blockoverride "portrait_size"
+		{
+			size = { 260 286 }
+		}
+
+		blockoverride "missing_councillor"
+		{
+			portrait_council = {
+				name = "councillor_portrait_blank"
+				visible = "[And( Not(Character.IsValid), CouncilWindow.IsPlayerCouncilShown)]"
+				parentanchor = center
+
+				text_label_center = {
+					parentanchor = bottom|hcenter
+					position = { 0 -10 }
+					text = "RANGER_PATHFINDER_CLICK_TO_HIRE"
+					default_format = "#high;italic"
+					max_width = 235
+				}
+
+				blockoverride "onclick" {
+					onclick = "[GuiCouncilPosition.SelectCouncillor]"
+
+					button_icon = {
+						parentanchor = center
+						alwaystransparent = yes
+						size = { 50 50 }
+						position = { 0 70 }
+						texture = "gfx/interface/icons/flat_icons/plus.dds"
+					}
+				}
+			}
+		}
+	}
+
+	type agot_ranger_two_insert = widget_councillor_item
+	{
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		datacontext = "[CouncilWindow.GetCouncillor('councillor_ranger_2')]"
+		datacontext = "[GuiCouncilPosition.GetActiveCouncilTask]"
+		datacontext = "[ActiveCouncilTask.GetPositionType]"
+		datacontext = "[ActiveCouncilTask.GetCouncillor]"
+
+		visible = "[IsNWAdventurer(GetPlayer)]"
+
+		background = {
+			texture = "gfx/interface/skinned/illustrations/council/agot_bg_council_ranger_frozen_forest_b.dds"
+			margin_bottom = 20
+			margin_right = 5
+			fittype = centercrop
+			alpha = 1
+			using = Mask_Rough_Edges
+		}
+
+		background = {
+			texture = "gfx/interface/component_masks/mask_vignette.dds"
+			color = { 0.15 0.15 0.15 1 }
+			alpha = 0.3
+		}
+
+		blockoverride "portrait_size"
+		{
+			size = { 260 286 }
+		}
+	}
+
+	type agot_ranger_three_insert = widget_councillor_item
+	{
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		datacontext = "[CouncilWindow.GetCouncillor('councillor_ranger_3')]"
+		datacontext = "[GuiCouncilPosition.GetActiveCouncilTask]"
+		datacontext = "[ActiveCouncilTask.GetPositionType]"
+		datacontext = "[ActiveCouncilTask.GetCouncillor]"
+
+		visible = "[IsNWAdventurer(GetPlayer)]"
+
+		background = {
+			texture = "gfx/interface/skinned/illustrations/council/agot_bg_council_ranger_frozen_forest_c.dds"
+			margin_bottom = 20
+			margin_right = 5
+			fittype = centercrop
+			alpha = 1
+			using = Mask_Rough_Edges
+		}
+
+		background = {
+			texture = "gfx/interface/component_masks/mask_vignette.dds"
+			color = { 0.15 0.15 0.15 1 }
+			alpha = 0.3
+		}
+
+		blockoverride "portrait_size"
+		{
+			size = { 260 286 }
+		}
+	}
+
+	type agot_ranger_four_insert = widget_councillor_item
+	{
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		datacontext = "[CouncilWindow.GetCouncillor('councillor_ranger_4')]"
+		datacontext = "[GuiCouncilPosition.GetActiveCouncilTask]"
+		datacontext = "[ActiveCouncilTask.GetPositionType]"
+		datacontext = "[ActiveCouncilTask.GetCouncillor]"
+
+		visible = "[IsNWAdventurer(GetPlayer)]"
+
+		background = {
+			texture = "gfx/interface/skinned/illustrations/council/agot_bg_council_ranger_frozen_forest_d.dds"
+			margin_bottom = 20
+			margin_right = 5
+			fittype = centercrop
+			alpha = 1
+			using = Mask_Rough_Edges
+		}
+
+		background = {
+			texture = "gfx/interface/component_masks/mask_vignette.dds"
+			color = { 0.15 0.15 0.15 1 }
+			alpha = 0.3
+		}
+
+		blockoverride "portrait_size"
+		{
+			size = { 260 286 }
+		}
+	}
+}

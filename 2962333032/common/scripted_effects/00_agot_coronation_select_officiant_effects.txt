@@ -1,0 +1,163 @@
+﻿officiant_ai_choose_character_from_list_effect = {
+	ordered_in_list = {
+		$LIST_TYPE$ = $LIST$
+
+		limit = {
+			NOR = {
+				this = scope:activity.special_guest:coronation_officiant
+				this = scope:activity.special_guest:coronation_target
+			}
+			#Only participants please
+			is_participant_in_activity = scope:activity
+		}
+
+		order_by = {
+			if = {
+				limit = {
+					this = scope:coronation_target.cp:councillor_castellan
+				}
+
+				add = 100
+			}
+
+			# General
+			if = { #More likely to pick powerful vassals
+				limit = { is_powerful_vassal_of = scope:coronation_target }
+
+				add = 125
+			}
+			else_if = { #If no powerful vassals are available select councillors
+				limit = {
+					is_councillor_of = scope:coronation_target
+					NOT = {
+						has_trait = kingsguard
+					}
+				}
+				add = 100
+			}
+			if = { #Lords Paramount are more prestigious
+				limit = { primary_title.tier = tier_empire }
+
+				add = 100
+			}
+			if = {
+				limit = { primary_title.tier = tier_kingdom }
+
+				add = 75
+			}
+			if = {
+				limit = { primary_title.tier = tier_duchy }
+
+				add = 50
+			}
+			if = {
+				limit = { primary_title.tier = tier_county }
+
+				add = 25
+			}
+
+
+			# Zealots want their head of faith
+			if = {
+				limit = {
+					this = scope:coronation_target.faith.religious_head
+					root = {
+						OR = {
+							has_trait = devoted
+							has_trait = theologian
+							has_trait = zealous
+						}
+						ai_zeal >= 50
+					}
+				}
+
+				add = 1000
+			}
+			if = { #Zealous ai will not like other faiths
+				limit = {
+					NOT = {
+						this.faith = scope:coronation_target.faith
+					}
+					root = {
+						ai_zeal >= 50
+					}
+				}
+
+				add = -200
+			}
+
+			if = { #Cynics/Atheists won't choose head of faith
+				limit = {
+					this = scope:coronation_target.faith.religious_head
+					root = {
+						has_trait = cynical
+						ai_zeal <= 50
+					}
+				}
+
+				add = -1000
+			}
+
+			# Family bonuses
+			if = { #Adult heir is favored
+				limit = {
+					is_heir_of = scope:coronation_target
+					is_adult = yes
+				}
+
+				add = 150
+			}
+			if = { #If available, consorts are favored
+				limit = { is_consort_of = scope:coronation_target }
+
+				add = 150
+			}
+			if = {
+				limit = { is_sibling_of = scope:coronation_target }
+
+				add = 125
+			}
+			if = {
+				limit = { is_extended_family_of = scope:coronation_target }
+
+				add = 40
+			}
+
+			# Friend/Lover bonuses
+			if = { #Best friends are rare, so they get top priority
+				limit = { has_relation_best_friend = scope:coronation_target }
+
+				add = 200
+			}
+			if = {
+				limit = { has_relation_friend = scope:coronation_target }
+
+				add = 60
+			}
+			if = {
+				limit = { has_relation_soulmate = scope:coronation_target }
+
+				add = 100
+			}
+			if = {
+				limit = { has_relation_lover = scope:coronation_target }
+
+				add = 60
+			}
+			if = {
+				limit = { has_relation_rival = scope:coronation_target }
+
+				add = -100
+			}
+			if = { #Nemeses will never be chosen by the ai
+				limit = { has_relation_nemesis = scope:coronation_target }
+
+				add = -1000
+			}
+		}
+
+		max = $MAX$
+
+		save_scope_as = ai_selected_char
+	}
+}

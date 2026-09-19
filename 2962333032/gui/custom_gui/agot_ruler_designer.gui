@@ -1,0 +1,380 @@
+﻿types RulerDesigner
+{
+	##########################
+	# TRUE SIDE PROFILE VIEW #
+	##########################
+	type agot_ruler_designer_side_profile_button = hbox
+	{
+		layoutpolicy_horizontal = expanding
+
+		button_checkbox_label = {
+			datacontext = "[RulerDesignerWindow.GetCharacterToOverwrite]"
+			visible = "[ShouldDisplayProfileViewButton]"
+			onclick = "[GetScriptedGui('character_profile_view').Execute(GuiScope.SetRoot(Character.MakeScope).End)]"
+			tooltip = "RULER_DESIGNER_TOGGLE_SIDE_PROFILE_TOOLTIP"
+
+			blockoverride "checkbox"
+			{
+				checked = "[GetGlobalVariable('true_profile_view').IsSet]"
+			}
+
+			blockoverride "text" {
+				text = "RULER_DESIGNER_TOGGLE_SIDE_PROFILE_LABEL"
+			}
+		}
+	}
+
+	type agot_ruler_designer_true_profile_icon_right = icon
+	{
+		visible = "[GetGlobalVariable('true_profile_view').IsSet]"
+		parentanchor = center
+		position = { 180 -150 }
+		size = { 1500 800 }
+		texture = "[RulerDesignerWindow.GetPortrait( 'environment_character_creator_neutral', 'agot_camera_ruler_designer_head_true_profile_right', PdxGetWidgetScreenSize( PdxGuiWidget.Self ) )]" 
+
+		using = Animation_ShowHide_Quick
+
+		state = {
+			name = "ruler_designer_portrait_refresh"
+			using = Animation_Refresh_FadeOut
+		}
+
+		state = {
+			using = Animation_Refresh_FadeIn
+		}
+
+		modify_texture = {
+			texture = "gfx/portraits/portrait_mask_event_letter.dds"
+			blend_mode = alphamultiply
+		}
+
+		modify_texture = {
+			texture = "gfx/interface/component_masks/mask_fade_horizontal_thick.dds"
+			blend_mode = alphamultiply
+		}
+	}
+
+	type agot_ruler_designer_true_profile_icon_left = icon
+	{
+		visible = "[GetGlobalVariable('true_profile_view').IsSet]"
+		parentanchor = center
+		position = { -150 -160 }
+		size = { 500 1060 }
+		texture = "[RulerDesignerWindow.GetPortrait( 'environment_character_creator_neutral', 'agot_camera_ruler_designer_head_true_profile_left', PdxGetWidgetScreenSize( PdxGuiWidget.Self ) )]"
+
+		using = Animation_ShowHide_Quick
+
+		state = {
+			name = "ruler_designer_portrait_refresh"
+			using = Animation_Refresh_FadeOut
+		}
+
+		state = {
+			using = Animation_Refresh_FadeIn
+		}
+
+		modify_texture = {
+			texture = "gfx/portraits/portrait_mask_event_letter.dds"
+			blend_mode = alphamultiply
+		}
+	}
+
+	###################
+	# CLOTHING TOGGLE #
+	###################
+	type agot_ruler_designer_undress_button = hbox
+	{
+		layoutpolicy_horizontal = expanding
+
+		button_checkbox_label = {
+			datacontext = "[RulerDesignerWindow.GetCharacterToOverwrite]"
+
+			state = {
+				name = _mouse_press
+				on_finish = "[GetScriptedGui('character_undress').Execute(GuiScope.SetRoot(Character.MakeScope).End)]"
+			}
+			state = {
+				name = _mouse_release
+				on_finish = "[RulerDesignerWindow.ToggleShowAccessories]"
+				on_finish = "[RulerDesignerWindow.ToggleShowAccessories]"
+			}
+			tooltip = "RULER_DESIGNER_TOGGLE_SHOW_CLOTHING_TOOLTIP"
+
+			blockoverride "checkbox"
+			{
+				checked = "[Not(GetGlobalVariable('character_undress').IsSet)]"
+			}
+
+			blockoverride "text" {
+				text = "RULER_DESIGNER_TOGGLE_SHOW_CLOTHING_LABEL"
+			}
+		}
+	}
+
+	#############################
+	# HEIGHT CONVERSION DISPLAY #
+	#############################
+	type agot_height_ft_text_label_vbox = vbox
+	{
+		layoutpolicy_vertical = expanding
+		visible = "[And(UsingImperial, ObjectsEqual(GeneCategory.GetName, Localize('gene_height')))]"
+
+		text_label_left = { # 3 & 4
+			layoutpolicy_horizontal = expanding
+			min_width = 190
+			max_width = 190
+			multiline = yes
+			visible = "[ShouldDisplayThreeAndFour]"
+			text = "AGOT_RULER_DESIGNER_HEIGHT_3_4"
+		}
+
+		text_label_left = { # 5 & 6
+			layoutpolicy_horizontal = expanding
+			min_width = 190
+			max_width = 190
+			multiline = yes
+			visible = "[ShouldDisplayFiveAndSix]"
+			text = "AGOT_RULER_DESIGNER_HEIGHT_5_6"
+		}
+
+		text_label_left = { # 7 & 8
+			layoutpolicy_horizontal = expanding
+			min_width = 190
+			max_width = 190
+			multiline = yes
+			visible = "[ShouldDisplaySevenAndEight]"
+			text = "AGOT_RULER_DESIGNER_HEIGHT_7_8"
+		}
+
+		expand = {}
+	}
+
+	type agot_height_mt_text_label_vbox = vbox
+	{
+		layoutpolicy_vertical = expanding
+		visible = "[And(Not(UsingImperial), ObjectsEqual(GeneCategory.GetName, Localize('gene_height')))]"
+
+		text_label_left = {
+			layoutpolicy_horizontal = expanding
+			min_width = 190
+			max_width = 190
+			multiline = yes
+			text = "AGOT_RULER_DESIGNER_HEIGHT_CM"
+		}
+
+		expand = {}
+	}
+
+	type agot_body_hair_male_only_text = text_single
+	{
+		name = "morph_gene_male_only"
+		layoutpolicy_horizontal = expanding
+		visible = "[ObjectsEqual(GeneCategory.GetName, Localize('gene_body_hair'))]"
+		max_width = 250
+		multiline = yes
+
+		text = "AGOT_RULER_DESIGNER_GENE_ONLY_MEN"
+		align = center
+		default_format = "#weak"
+	}
+
+	#################
+	# VALUE DISPLAY #
+	#################
+	type agot_scrollbar_morph_gene_value = hbox
+	{
+		#################
+		# Head and Neck #
+		#################
+
+		# Head Height
+		text_single = {
+			name = "morph_gene_value_head_height"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)155'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)90')), ObjectsEqual(GeneCategory.GetName, Localize('gene_head_height')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		# Head Top Height
+		text_single = {
+			name = "morph_gene_value_head_top_height"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)220'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)90')), ObjectsEqual(GeneCategory.GetName, Localize('gene_head_top_height')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		# Head Width
+		text_single = {
+			name = "morph_gene_value_head_width"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)165'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)65')), ObjectsEqual(GeneCategory.GetName, Localize('gene_head_width')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		# Neck Length
+		text_single = {
+			name = "morph_gene_value_neck_length"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)141'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)115')), ObjectsEqual(GeneCategory.GetName, Localize('gene_neck_length')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		# Neck Width
+		text_single = {
+			name = "morph_gene_value_neck_width"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)128'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)65')), ObjectsEqual(GeneCategory.GetName, Localize('gene_neck_width')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		####################
+		# Facial Structure #
+		####################
+
+		# Jaw Forward
+		text_single = {
+			name = "morph_gene_value_jaw_forward"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)141'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)115')), ObjectsEqual(GeneCategory.GetName, Localize('gene_jaw_forward')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		# Jaw Height
+		text_single = {
+			name = "morph_gene_value_jaw_height"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)141'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)90')), ObjectsEqual(GeneCategory.GetName, Localize('gene_jaw_height')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		########
+		# Eyes #
+		########
+
+		# Eye Height
+		text_single = {
+			name = "morph_gene_value_eye_height"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)155'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)128')), ObjectsEqual(GeneCategory.GetName, Localize('gene_eye_height')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		#########
+		# Mouth #
+		#########
+
+		# Mouth Corner Height
+		text_single = {
+			name = "morph_gene_value_mouth_corner_height"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)128'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)90')), ObjectsEqual(GeneCategory.GetName, Localize('gene_mouth_corner_height')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		# Mouth Forward
+		text_single = {
+			name = "morph_gene_value_mouth_forward"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)216'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)114')), ObjectsEqual(GeneCategory.GetName, Localize('gene_mouth_forward')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		# Mouth Height
+		text_single = {
+			name = "morph_gene_value_mouth_height"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)192'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)115')), ObjectsEqual(GeneCategory.GetName, Localize('gene_mouth_height')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+
+		# Mouth Width
+		text_single = {
+			name = "morph_gene_value_mouth_width"
+			visible = "[And(Or(GreaterThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)141'), LessThan_float(RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self), '(float)65')), ObjectsEqual(GeneCategory.GetName, Localize('gene_mouth_width')))]"
+			text = "[RulerDesignerWindow.GetMorphGeneValue(GeneCategory.Self)]"
+			align = nobaseline
+			margin = { -30 0 }
+			default_format = "#negative_value"
+		}
+	}
+
+	type agot_scrollbar_value_slider = scrollbar
+	{
+		direction = horizontal
+		size = { 270 20 }
+		wheelstep = 0
+		min = 0 # You should probably not change these min and max values, the code relies on them being uint8s
+		max = 255
+
+		onvaluechanged = "[RulerDesignerWindow.OnMorphGeneChange( GeneCategory.Self, PdxGuiWidget.Self )]"
+		value = "[RulerDesignerWindow.GetMorphGeneValue( GeneCategory.Self )]"
+
+		track = {
+			button = {
+				texture = "gfx/interface/progressbars/progress_black.dds"
+				size = { 20 14 }
+				spriteType = Corneredtiled
+				spriteborder = { 6 6 }
+				alwaystransparent = yes
+
+				icon = {
+					texture = "gfx/interface/scrollbars/scrollbar_slider.dds"
+					spriteType = Corneredtiled
+					spriteborder = { 0 3 }
+					framesize = { 5 40 }
+					size = { 5 20 }
+					alpha = 0.8
+					parentanchor = center
+				}
+			}
+		}
+
+		slider = {
+			using = SettingsValueSlider
+		}
+
+		dec_button = {
+			using = SettingsValueDecButton
+		}
+
+		inc_button = {
+			using = SettingsValueIncButton
+		}
+	}
+
+	# Other Buttons #
+	type agot_pirate_finalze_big_button = button_primary_big
+	{
+		text = "RULER_DESIGNER_FINALIZE"
+		visible = "[GetVariableSystem.Exists('pirate_designer')]"
+
+		enabled = "[RulerDesignerWindow.CanFinalize]"
+		tooltip = "[RulerDesignerWindow.GetFinalizeTooltip]"
+
+		onclick = "[RulerDesignerWindow.FinalizeOverwrite]"
+		onclick = "[GetScriptedGui( 'agot_create_pirate_rd' ).Execute( GuiScope.SetRoot( RulerDesignerWindow.GetCharacterToOverwrite.MakeScope ).End) ]"
+		onclick = "[GetVariableSystem.Clear('pirate_designer')]"		
+	}
+}

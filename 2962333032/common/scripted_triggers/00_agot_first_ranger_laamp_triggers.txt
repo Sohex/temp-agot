@@ -1,0 +1,221 @@
+﻿#############################
+### First Ranger Triggers ###
+#############################
+
+#Checks if character is landless NW
+agot_is_landless_nw_character = {
+	government_has_flag = government_is_nw
+	is_landed = no
+	is_ruler = yes
+	domicile ?= { is_domicile_type = agot_ranger_camp }
+}
+
+#Ranger moved the camp beyond the wall
+agot_ranger_beyond_the_wall = {
+	title:d_nw_landless_first_ranger.holder.domicile.domicile_location.county.title_province ?= { geographical_region = world_westeros_beyond_the_wall }
+	NOT = { title:d_nw_landless_first_ranger.holder.domicile.domicile_location.county.holder ?= title:k_the_wall.holder }
+	NOT = { title:d_nw_landless_first_ranger.holder.domicile.domicile_location.county.holder.top_liege ?= title:k_the_wall.holder }
+}
+
+#Ranger contract availability
+agot_valid_ranger_trigger = {
+	$EMPLOYER$ = {
+		# Players shouldn't get tangled up in contracts, ever.
+		is_ai = yes
+		# Plus some standard stuff.
+		is_alive = yes
+		is_adult = yes
+		culture = { agot_is_wildling_culture = yes }
+		is_landed = yes
+		NOT = { government_has_flag = government_is_uninteractable }
+	}
+	$EMPLOYER$ = { is_incapable = no }
+	# Laamps shouldn't offer contracts in their local area, ever.
+	$EMPLOYER$ = { agot_is_landless_nw_character = no }
+	# Don't offer to work with those who've wronged us.
+	## No one we're at war with.
+	$EMPLOYER$ = { NOT = { is_at_war_with = $LAAMP$ } }
+	$LAAMP$ = { agot_is_landless_nw_character = yes }
+	$LAAMP$ = {
+		trigger_if = {
+			limit = { is_at_war = no }
+			is_commanding_army = no
+		}
+	}
+	$LAAMP$ = {
+		any_courtier = {
+			is_councillor_of = $LAAMP$
+			has_council_position = councillor_ranger_1
+		}
+	}
+	agot_ranger_beyond_the_wall = yes
+}
+
+agot_ranger_valid_for_questing = {
+	is_alive = yes
+	is_at_war = no
+	agot_is_landless_nw_character = yes
+}
+
+#Ranger can join to the First Ranger camp
+agot_valid_ranger_camper = {
+	agot_valid_ranger_basic_trigger = yes
+	trigger_if = {
+		limit = { exists = title:k_the_wall.holder }
+		NOT = { is_councillor_of = title:k_the_wall.holder }
+	}
+	NOT = { has_any_court_position = yes }
+}
+
+#Ranger can become First Ranger
+agot_valid_first_ranger_candidate = {
+	agot_valid_ranger_basic_trigger = yes
+	NOT = { is_councillor_of = title:k_the_wall.holder }
+}
+
+#Basic ranger trigger
+agot_valid_ranger_basic_trigger = {
+	is_physically_able_adult = yes
+	is_male = yes
+	has_trait = nightswatch
+	has_trait = lifestyle_nw_ranger
+	NOT = { has_trait = maester }
+	NOT = { has_trait = septon }
+	is_landed = no
+	is_ruler = no
+}
+
+#Uncooperative wildling (usually used for hostile ranger missions)
+agot_wildling_uncooperative_with_nw = {
+	is_available_healthy_ai_adult = yes
+	can_start_single_combat_trigger = yes
+	agot_wildling_easy = no
+	agot_wildling_uneasy = yes
+}
+
+#Cooperative wildling (usually used for friend and neutral ranger missions)
+agot_wildling_cooperative_with_nw = {
+	is_available_healthy_ai_adult = yes
+	agot_wildling_easy = yes
+	agot_wildling_uneasy = no
+}
+
+#Wildling characters who would not be fully against interacting with rangers
+agot_wildling_easy = {
+	OR = {
+		has_trait = eccentric
+		has_trait = disloyal
+		has_trait = cynical
+		has_trait = gregarious
+		has_trait = deceitful
+		has_trait = schemer
+	}
+}
+
+#Wildling characters who would be fully against interacting with rangers
+agot_wildling_uneasy = {
+	OR = {
+		has_trait = ambitious
+		has_trait = loyal
+		has_trait = zealous
+		has_trait = shy
+		has_trait = honest
+		has_trait = arrogant
+	}
+}
+
+#Dangerous Wildling characters
+agot_wildling_insane = {
+	OR = {
+		has_trait = murderer
+		has_trait = cannibal
+		has_trait = kinslayer_1
+		has_trait = kinslayer_2
+		has_trait = kinslayer_3
+		has_trait = berserker
+		has_trait = torturer
+		has_trait = vengeful
+		has_trait = sadistic
+		has_trait = callous
+		has_trait = paranoid
+		has_trait = lunatic
+		has_trait = lunatic_genetic
+		has_trait = possessed_1
+		has_trait = possessed_genetic
+	}
+}
+
+#AI Ranger contract availability
+agot_ai_nw_ranger_is_valid = {
+	is_alive = yes
+	is_ai = yes
+	is_imprisoned = no
+	agot_is_landless_nw_character = yes
+}
+
+#Eligible for NW restoration quest
+agot_eligible_to_restore_nw_trigger = {
+	NOT = { exists = title:k_the_wall.holder }
+	NOT = { exists = title:c_castle_black.var:agot_last_ranger_cooldown }
+	title:c_castle_black = { NOT = { has_variable = post_nw_quest_blocker } }
+	agot_nw_castles_owned_by_wildlings_trigger = yes
+	government_has_flag = government_is_landless_adventurer
+	is_playable_character = yes
+	primary_title = { NOT = { has_variable = post_nw_quest } }
+	NOT = { any_owned_story = { story_type = last_ranger_story } }
+	culture = { agot_is_wildling_culture = no }
+	culture = { agot_is_westerosi_culture = yes }
+	NOT = { has_character_flag = the_last_ranger }
+	NOT = { has_character_flag = agot_nw_ranger_events0100_dont_ask_me_again }
+	NOT = { has_trait = deserter }
+	is_male = yes
+	is_adult = yes
+	location ?= { geographical_region = world_westeros_seven_kingdoms }
+}
+
+agot_nw_castles_owned_by_wildlings_trigger = {
+	OR = {
+		title:c_castle_black.holder ?= {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+			is_independent_ruler = yes
+		}
+		title:c_castle_black.holder.top_liege ?= {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+		}
+	}
+	OR = {
+		title:c_eastwatch.holder ?= {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+			is_independent_ruler = yes
+		}
+		title:c_eastwatch.holder.top_liege ?= {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+		}
+	}
+	OR = {
+		title:c_the_nightfort.holder ?= {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+			is_independent_ruler = yes
+		}
+		title:c_the_nightfort.holder.top_liege ?= {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+		}
+	}
+	OR = {
+		title:c_the_shadow_tower.holder ?= {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+			is_independent_ruler = yes
+		}
+		title:c_the_shadow_tower.holder.top_liege ?= {
+			culture = { agot_is_wildling_culture = yes }
+			NOT = { government_has_flag = government_is_nw }
+		}
+	}
+}

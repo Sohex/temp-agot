@@ -1,0 +1,110 @@
+﻿#petition_liege_paramount_trigger = {
+#	exists = primary_title.de_jure_liege
+#	primary_title.de_jure_liege = {
+#		exists = holder
+#		holder = prev.liege
+#		NOT = { THIS = prev.liege.primary_title }
+#		tier < prev.liege.primary_title.tier
+#	}
+#	primary_title.tier = tier_duchy
+#	has_government = lp_feudal_government
+#}
+petition_liege_paramount_trigger = {
+	OR = {
+		highest_held_title_tier = tier_kingdom
+		highest_held_title_tier = tier_duchy
+	}
+	has_government = lp_feudal_government
+	liege ?= { has_title = title:h_the_iron_throne }
+	primary_title.empire = {
+		holder ?= prev.liege
+		this != prev.top_liege.capital_county.empire
+		trigger_if = {
+			limit = { prev = { is_ai = yes } }
+			this != hegemony.title_capital_county.empire
+		}
+	}
+}
+
+petition_liege_councillor_agot_trigger = {
+	NOT = { scope:petition_vassal.var:petition_liege_council_first = flag:$ROLE$ }
+	trigger_if = {
+		limit = { exists = scope:petition_liege.cp:councillor_$ROLE$ }
+		OR = {
+			scope:petition_vassal.$SKILL$ > scope:petition_liege.cp:councillor_$ROLE$.$SKILL$
+		}
+	}
+}
+
+can_go_on_reaving_trigger = {
+	is_available_for_activity_trigger = yes
+	can_raid_trigger = yes
+	OR = {
+		AND = {
+			is_female = yes
+			host.faith = { NOT = { has_doctrine_parameter = male_dominated_council } }
+		}
+		AND = {
+			is_male = yes
+			host.faith = { NOT = { has_doctrine_parameter = female_dominated_council } }
+		}
+		AND = {
+			has_trait = shieldmaiden
+			host.culture = { has_cultural_parameter = has_access_to_shieldmaidens }
+		}
+	}
+}
+
+reaving_participant_trigger = {
+	is_ai = yes
+	NOT = { this = root }
+	is_alive = yes
+	is_imprisoned = no
+}
+
+
+#Root scope is location
+location_has_weirwood_trigger = {
+	has_building_or_higher = godswood_01
+}
+
+agot_event_valid_for_qolab = {
+	scope:contest_complete = flag:joust
+	OR = {
+		scope:host = { primary_title.tier > tier_duchy }
+		AND = {
+			has_activity_type = activity_tournament
+			has_activity_option = { category = tournament_option_prizes option = tournament_prizes_splendid }
+		}
+	}
+}
+
+agot_character_should_name_qolab = {
+	exists = scope:contest_winner
+	this = scope:contest_winner
+	involved_activity = {
+		agot_event_valid_for_qolab = yes
+	}
+}
+
+agot_can_be_activity_guest = {
+	trigger_if = {
+		limit = { scope:host = { government_has_flag = government_is_nw } }
+		government_has_flag = government_is_nw
+	}
+	trigger_else = {
+		NOT = { government_has_flag = government_is_nw }
+	}
+	is_human = yes
+	trigger_if = {
+		limit = { scope:host.culture = { agot_is_wildling_culture = yes } }
+		OR = {
+			culture = { agot_is_wildling_culture = yes }
+			scope:host = employer
+			scope:host = liege
+		}
+	}
+	trigger_else = {
+		culture = { agot_is_wildling_culture = no }
+	}
+}

@@ -1,0 +1,606 @@
+﻿agot_commission_special_artifact_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_smith.dds"
+	}
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 12
+		empire = 12
+		hegemony = 12
+	}
+	desc = agot_commission_special_artifact_decision_desc
+	selection_tooltip = agot_commission_special_artifact_decision_tooltip
+	sort_order = 80
+
+	decision_group_type = artifact
+
+	is_shown = {
+		NOT = {
+			government_has_flag = government_is_nw
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		# Only valid for characters with a court smith.
+		employs_court_position = court_smith_court_position
+
+		custom_tooltip = {
+			text = agot_in_coronation
+			NOT = {
+				involved_activity ?= { has_activity_type = activity_agot_coronation }
+			}
+		}
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			add = 100
+
+			primary_title.tier >= tier_kingdom
+			agot_ai_unique_crown_character_trigger = yes
+			agot_is_independent_ruler = yes
+			agot_can_make_any_crown_trigger = yes
+			NOT = {
+				has_variable = agot_recently_commissioned_crown
+			}
+			NOT = {
+				any_equipped_character_artifact = {
+					artifact_slot_type = helmet
+				}
+			}
+		}
+
+		modifier = {
+			factor = 0
+			short_term_gold < agot_special_commission_cost
+		}
+	}
+
+	widget = {
+		gui = "decision_view_widget_commission_artifact"
+		controller = decision_option_list_controller
+		decision_to_second_step_button = "agot_commission_special_artifact_button"
+
+		# List
+		item = {
+			value = agot_commission_special_artifact_crown_choice
+			localization = {
+				desc = agot_commission_special_artifact_crown_choice_loc
+			}
+			icon = "gfx/interface/icons/duchy_crown.dds"
+			is_valid = {
+				primary_title.tier >= tier_kingdom
+				agot_ai_unique_crown_character_trigger = yes
+				agot_is_independent_ruler = yes
+				agot_can_make_any_crown_trigger = yes
+				custom_tooltip = {
+					text = agot_commissioned_personal_crown_recently
+					NOT = {
+						has_variable = agot_recently_commissioned_crown
+					}
+				}
+			}
+		}
+
+		item = {
+			value = agot_commission_special_artifact_crown_spouse_choice
+			localization = {
+				desc = agot_commission_special_artifact_crown_spouse_choice_loc
+			}
+			icon = "gfx/interface/icons/character_interactions/icon_marriage.dds"
+			is_valid = {
+				is_married = yes
+				is_ai = no
+				primary_title.tier >= tier_kingdom
+				agot_ai_unique_crown_character_trigger = yes
+				agot_is_independent_ruler = yes
+				primary_spouse ?= {
+					agot_can_make_any_crown_trigger = yes
+					save_temporary_scope_as = spouse_scope
+					custom_tooltip = {
+						text = agot_commissioned_spouse_crown_recently
+						NOT = {
+							has_variable = agot_recently_commissioned_crown
+						}
+					}
+				}
+			}
+		}
+
+		item = {
+			value = agot_commission_special_artifact_armor_choice
+			localization = {
+				desc = agot_commission_special_artifact_armor_choice_loc
+			}
+			icon = "gfx/interface/icons/inspirations/armor_inspiration.dds"
+			is_valid = {
+				is_ai = no
+				custom_tooltip = {
+					text = agot_commissioned_armor_recently
+					NOT = {
+						has_variable = agot_recently_commissioned_armor
+					}
+				}
+			}
+		}
+	}
+
+	effect = {
+		custom_tooltip = agot_commission_special_artifact_decision_effects_tooltip
+		random_court_position_holder = {
+			type = court_smith_court_position
+			save_scope_as = smith
+		}
+		if = {
+			limit = { scope:agot_commission_special_artifact_crown_choice = yes }
+			root = {
+				save_scope_as = artifact_recipient
+				trigger_event = agot_commission_special_artifact_crown.0001
+			}
+		}
+		else_if = {
+			limit = { scope:agot_commission_special_artifact_crown_spouse_choice = yes }
+			root = {
+				primary_spouse = { save_scope_as = artifact_recipient }
+				trigger_event = agot_commission_special_artifact_crown.0001
+			}
+		}
+		else_if = {
+			limit = { scope:agot_commission_special_artifact_armor_choice = yes }
+			root = {
+				save_scope_as = artifact_recipient
+				trigger_event = agot_commission_special_artifact_armor.0001
+			}
+		}
+	}
+
+	cost = { gold = agot_special_commission_cost }
+}
+
+agot_sell_artifacts_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_realm.dds"
+	}
+	desc = agot_sell_artifacts_decision_desc
+	sort_order = 75
+
+	decision_group_type = artifact
+
+	is_shown = {
+		agot_can_trade_artifacts_trigger = yes
+		NOT = { government_has_flag = government_is_first_ranger }
+	}
+
+	is_valid = {
+		custom_description = {
+			text = agot_stolen_artifact_from_artifact_keeper_dec_trigger
+			trigger_if = {
+				limit = {
+					exists = house
+				}
+				NOT = {
+					house = {
+						exists = var:agot_stolen_artifact_from_artifact_keeper
+					}
+				}
+			}
+		}
+		custom_description = {
+			text = agot_not_wilding_desc_trigger
+			culture = {
+				agot_is_wildling_culture = no
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		is_available = yes
+	}
+
+	ai_potential = {
+		always = yes
+	}
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 24
+		duchy = 24
+		kingdom = 24
+		empire = 24
+		hegemony = 24
+	}
+
+	effect = {
+		custom_tooltip = agot_sell_artifacts_decision_custom_tooltip_1
+
+		# Compatibility with old save
+		hidden_effect = {
+			if = {
+				limit = {
+					NOT = {
+						exists = global_var:agot_artifact_keeper
+					}
+				}
+				agot_get_artifact_keeper = yes
+			}
+			else_if = {
+				limit = {
+					global_var:agot_artifact_keeper = {
+						OR = {
+							is_alive = no
+							is_ai = no
+						}
+					}
+				}
+				agot_reload_artifact_keeper = yes
+			}
+			else_if = {
+				limit = {
+					NOT = {
+						global_var:agot_artifact_keeper_title.holder = global_var:agot_artifact_keeper
+					}
+				}
+				global_var:agot_artifact_keeper_title = {
+					create_title_and_vassal_change = {
+						type = conquest
+						save_scope_as = change
+						add_claim_on_loss = no
+					}
+					change_title_holder_include_vassals = {
+						holder = global_var:agot_artifact_keeper
+						change = scope:change
+					}
+
+					resolve_title_and_vassal_change = scope:change
+				}
+			}
+			if = {
+				limit = {
+					NOT = {
+						global_var:agot_artifact_keeper = {
+							is_independent_ruler = yes
+						}
+					}
+				}
+				global_var:agot_artifact_keeper = {
+					create_title_and_vassal_change = {
+						type = independency
+						save_scope_as = change
+						add_claim_on_loss = yes
+					}
+					becomes_independent = {
+						change = scope:change
+					}
+					resolve_title_and_vassal_change = scope:change
+				}
+			}
+		}
+
+		# Refersh market and owned artifacts
+		agot_get_market_artifacts_effect = yes
+		agot_get_owned_artifacts_effect = yes
+
+		if = {
+			limit = {
+				is_ai = yes
+				NOT = { government_has_flag = government_is_first_ranger }
+			}
+
+			# Either sell or buy an artifact
+			random_list = {
+				1 = {} # Do nothing
+				50 = { # Sell artifact
+					trigger = {
+						agot_ai_may_sell_artifact_trigger = yes
+					}
+
+					agot_ai_get_artifact_to_sell_effect = {
+						ARTIFACT = artifact_to_sell
+					}
+
+					if = {
+						limit = { exists = scope:artifact_to_sell }
+						agot_sell_artifact_effect = {
+							ARTIFACT = scope:artifact_to_sell
+						}
+					}
+				}
+				50 = { # Buy artifact
+					trigger = {
+						# Performance: Limit buying of artifacts to dukes and above
+						highest_held_title_tier >= tier_duchy
+						agot_ai_may_buy_artifact_trigger = yes
+					}
+
+					agot_ai_get_artifact_to_buy_effect = {
+						ARTIFACT = artifact_to_buy
+					}
+
+					if = {
+						limit = { exists = scope:artifact_to_buy }
+						agot_buy_artifact_effect = {
+							ARTIFACT = scope:artifact_to_buy
+						}
+					}
+				}
+			}
+		}
+		else = {
+			# Show artifact market window
+			set_variable = {
+				name = agot_artifact_market_window_open
+				value = 1
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}
+
+claim_dawn_worthy_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = major
+
+	sort_order = 1
+
+	desc = claim_dawn_worthy_decision_desc
+
+	is_shown = {
+		worthy_sword_of_the_morning_trigger = yes
+		any_character_artifact = {
+			has_artifact_modifier = vs_dawn_modifier
+		}
+		NOT = { has_character_flag = claimed_dawn }
+	}
+
+	is_valid = {
+		worthy_sword_of_the_morning_trigger = yes
+	}
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 60
+		duchy = 60
+		kingdom = 60
+		empire = 60
+		hegemony = 60
+	}
+
+	ai_potential = { always = yes }
+
+	ai_will_do = { base = 100 }
+
+	effect = {
+		give_nickname = nick_agot_the_sword_of_the_morning
+
+		add_character_flag = claimed_dawn
+		add_character_flag = is_sword_of_morning
+
+		random_character_artifact = {
+			limit = { has_artifact_modifier = vs_dawn_modifier }
+			save_scope_as = dawn
+		}
+
+		add_prestige = massive_prestige_value
+		add_prestige_level = 1
+
+		hidden_effect = {
+			scope:dawn = {
+				equip_artifact_to_owner_replace = yes
+			}
+		}
+	}
+}
+
+claim_dawn_unworthy_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	desc = claim_dawn_unworthy_decision_desc
+	sort_order = 1
+
+	decision_group_type = artifact
+
+	cost = { prestige = 1000 }
+
+	is_shown = {
+		worthy_sword_of_the_morning_trigger = no
+		any_character_artifact = {
+			has_artifact_modifier = vs_dawn_modifier
+		}
+		NOT = { has_character_flag = claimed_dawn }
+	}
+
+	is_valid = {
+		NAND = {
+			dynasty = dynasty:dynn_Dayne
+			OR = {
+				has_trait = education_martial_prowess_4
+				has_trait = education_martial_prowess_5
+			}
+			prowess >= 20
+			OR = {
+				has_trait = just
+				has_trait = brave
+			}
+			NOR = {
+				has_trait = murderer
+				has_trait = kinslayer
+				has_trait = gluttonous
+				has_trait = greedy
+				has_trait = lazy
+				has_trait = callous
+				has_trait = sadistic
+				has_trait = deceitful
+				has_trait = drunkard
+				has_trait = craven
+				has_trait = arbitrary
+				has_trait = torturer
+				has_trait = physique_bad
+			}
+		}
+	}
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	ai_potential = { always = no }
+
+	ai_will_do = { base = 100 }
+
+	effect = {
+		add_character_flag = claimed_dawn
+
+		random_character_artifact = {
+			limit = { has_artifact_modifier = vs_dawn_modifier }
+			save_scope_as = dawn
+		}
+
+		add_prestige_level = -1
+
+		hidden_effect = {
+			scope:dawn = {
+				equip_artifact_to_owner_replace = yes
+			}
+		}
+	}
+}
+
+retrieve_hidden_artifact_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	desc = retrieve_hidden_artifact_decision_desc
+	selection_tooltip = retrieve_hidden_artifact_decision_tooltip
+
+	decision_group_type = artifact
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	is_shown = {
+		any_secret = { secret_type = secret_agot_hidden_artifact }
+	}
+
+	is_valid_showing_failures_only = {
+		is_available = yes
+		age >= 10
+	}
+
+	effect = {
+		if = {
+			limit = { house ?= dynasty:dynn_Uller.dynasty_founder.house }
+			show_as_tooltip = {
+				agot_create_artifact_rhaenys_circlet_historical_effect = { OWNER = this }
+			}
+			trigger_event = agot_decisions_events.1000
+		}
+		else_if = {
+			limit = {
+				exists = dynasty:dynn_Mopatis
+				house ?= dynasty:dynn_Mopatis.dynasty_founder.house
+			}
+			show_as_tooltip = {
+				agot_create_artifact_vs_blackfyre_effect = { OWNER =this }
+			}
+			trigger_event = agot_decisions_events.1010
+		}
+	}
+
+	ai_potential = {
+		always = no
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+retrieve_stored_artifacts_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	desc = retrieve_stored_artifacts_decision_desc
+	selection_tooltip = retrieve_stored_artifacts_decision_tooltip
+
+	decision_group_type = artifact
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 12
+		duchy = 12
+		kingdom = 12
+		empire = 12
+		hegemony = 12
+	}
+
+	is_shown = {
+		exists = global_var:targ_artifacts_in_storage
+		has_title = title:c_kings_landing
+	}
+
+	effect = {
+		remove_global_variable = targ_artifacts_in_storage
+		agot_spawn_historical_dragon_skulls_effect = { OWNER = root }
+		agot_create_artifact_aenys_crown_historical_effect = { OWNER = root }
+		scope:newly_created_artifact ?= {
+			add_artifact_history = {
+				recipient = root
+				type = inherited
+			}
+		}
+		agot_create_artifact_aegon_iii_crown_historical_effect = { OWNER = root }
+		scope:newly_created_artifact ?= {
+			add_artifact_history = {
+				recipient = root
+				type = inherited
+			}
+		}
+		agot_create_artifact_aegon_iv_crown_historical_effect = { OWNER = root }
+		scope:newly_created_artifact ?= {
+			add_artifact_history = {
+				recipient = root
+				type = inherited
+			}
+		}
+		agot_create_artifact_maekars_crown_historical_effect = { OWNER = root }
+		scope:newly_created_artifact ?= {
+			add_artifact_history = {
+				recipient = root
+				type = inherited
+			}
+		}
+	}
+
+	ai_potential = {
+		dynasty ?= dynasty:dynn_Targaryen
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}

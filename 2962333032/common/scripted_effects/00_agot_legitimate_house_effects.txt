@@ -1,0 +1,1197 @@
+﻿agot_set_legitimate_house = {
+	# Description for loc
+	custom_tooltip = {
+		$TITLE$ = {
+			save_scope_as = TITLE_REF
+		}
+		$HOUSE$ = {
+			save_scope_as = HOUSE
+		}
+		text = agot_set_legitimate_house_effect
+	}
+	# Actual effect
+	$TITLE$ = {
+		set_variable = {
+			name = legitimate_house
+			value = $HOUSE$
+		}
+	}
+}
+
+agot_set_current_house = {
+	$TITLE$ = {
+		set_variable = {
+			name = current_house
+			value = $HOUSE$
+		}
+		# Finally, if they're the legitimate house, set the progress to 100 if it's not already
+		if = {
+			limit = {
+				exists = var:legitimate_house # To prevent errors on gamestart
+				$HOUSE$ = var:legitimate_house
+				NOT = { var:new_house_progress = 100 }
+			}
+			agot_set_new_house_progress = { # Note: This already handles the different title levels
+				TITLE = $TITLE$
+				PROGRESS = 100
+			}
+		}
+	}
+}
+
+agot_set_new_house_progress = {
+	$TITLE$ = {
+		set_variable = {
+			name = new_house_progress
+			value = $PROGRESS$
+		}
+	}
+}
+
+agot_add_new_house_progress = {
+	# Description for loc
+	$TITLE$ = {
+		save_scope_as = TITLE_REF
+		var:current_house = {
+			save_scope_as = CURRENT_HOUSE
+		}
+	}
+	if = {
+		limit = {
+			$CHANGE$ > 0
+		}
+		custom_tooltip = {
+			text = agot_add_new_house_progress_positive_effect
+		}
+	}
+	else_if = {
+		limit = {
+			$CHANGE$ < 0
+		}
+		custom_tooltip = {
+			text = agot_add_new_house_progress_negative_effect
+		}
+	}
+	else = {
+		custom_tooltip = {
+			text = agot_add_new_house_progress_zero_effect
+		}
+	}
+	# Calculate new value for new_house_progress
+	save_scope_value_as = {
+		name = new_house_progress_value
+		value = {
+			value = $TITLE$.var:new_house_progress
+			add = $CHANGE$
+			min = 0
+			max = 100
+		}
+	}
+	# Then, set the new value
+	agot_set_new_house_progress = {
+		TITLE = $TITLE$
+		PROGRESS = scope:new_house_progress_value
+	}
+}
+
+agot_update_new_house_yearly_progress = {
+	# Calculate new value for new_house_progress
+	# Remember that these need to sync up with the descriptions and values in
+	# agot_legitimate_house_contribution in agot_cooltip.gui and the script value
+	save_scope_value_as = {
+		# Base value add
+		name = new_house_progress_value
+		value = {
+			value = $TITLE$.var:new_house_progress
+			add = $TITLE$.agot_new_house_yearly_progress_change
+			min = 0
+			max = 100
+		}
+	}
+	# Then, set the new value
+	agot_set_new_house_progress = {
+		TITLE = $TITLE$
+		PROGRESS = scope:new_house_progress_value
+	}
+}
+
+agot_legitimate_house_init = {
+	every_hegemony = {
+		if = {
+			limit = {
+				this = title:h_the_iron_throne
+			}
+			set_variable = {
+				name = legitimate_house_title
+				value = 1
+			}
+			set_variable = {
+				name = new_house_progress
+				value = 0
+			}
+			add_to_global_variable_list = {
+				name = legitimate_house_titles
+				target = this
+			}
+		}
+		else = {
+			set_variable = {
+				name = legitimate_house_title
+				value = 0
+			}
+		}
+	}
+	every_empire = {
+		if = {
+			limit = {
+				OR = {
+					this = title:e_dorne
+					this = title:e_the_iron_islands
+					this = title:e_the_north
+					this = title:e_the_reach
+					this = title:e_the_stormlands
+					this = title:e_the_riverlands
+					this = title:e_the_vale
+					this = title:e_the_westerlands
+					AND = { # In case of shenanigans with shattered titles
+						title_capital_county.title_province = {
+							geographical_region = world_westeros_seven_kingdoms
+							NOT = { geographical_region = world_westeros_the_wall }
+						}
+						is_mercenary_company = no
+						is_holy_order = no
+						is_head_of_faith = no
+					}
+				}
+			}
+			set_variable = {
+				name = legitimate_house_title
+				value = 1
+			}
+			set_variable = {
+				name = new_house_progress
+				value = 0
+			}
+			add_to_global_variable_list = {
+				name = legitimate_house_titles
+				target = this
+			}
+		}
+		else = {
+			set_variable = {
+				name = legitimate_house_title
+				value = 0
+			}
+		}
+	}
+	every_kingdom = {
+		if = {
+			limit = {
+				OR = {
+					this = title:k_the_blackwater
+					this = title:k_dragonstone
+					this = title:k_the_greenblood
+					this = title:k_under_islands
+					this = title:k_winterfell
+					this = title:k_the_mander
+					this = title:k_shipbreaker_bay
+					this = title:k_armistia
+					this = title:k_the_vale
+					this = title:k_the_rock
+					this = title:k_oldtown
+					AND = { # In case of shenanigans with shattered titles
+						title_capital_county.title_province = {
+							geographical_region = world_westeros_seven_kingdoms
+							NOT = { geographical_region = world_westeros_the_wall }
+						}
+						is_mercenary_company = no
+						is_holy_order = no
+						is_head_of_faith = no
+					}
+				}
+			}
+			set_variable = {
+				name = legitimate_house_title
+				value = 1
+			}
+			set_variable = {
+				name = new_house_progress
+				value = 0
+			}
+			add_to_global_variable_list = {
+				name = legitimate_house_titles
+				target = this
+			}
+		}
+		else = {
+			set_variable = {
+				name = legitimate_house_title
+				value = 0
+			}
+		}
+	}
+	every_duchy = {
+		set_variable = {
+			name = legitimate_house_title
+			value = 0
+		}
+	}
+	every_county = {
+		set_variable = {
+			name = legitimate_house_title
+			value = 0
+		}
+	}
+	every_barony = {
+		set_variable = {
+			name = legitimate_house_title
+			value = 0
+		}
+	}
+	# Set up initial legitimate dynasties
+	# The below has to be done with references to founding members of the houses, as the houses themselves cannot be directly referenced in the script without a lot of extra work
+	# The Crownlands and Iron Throne
+	agot_set_legitimate_house = {
+		TITLE = title:h_the_iron_throne
+		HOUSE = dynasty:dynn_Targaryen.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:e_the_crownlands
+		HOUSE = dynasty:dynn_Targaryen.dynasty_founder.house
+	}
+	#Blackfyres
+	if = {
+		limit = { game_start_date >= 8195.3.7 }
+		agot_set_legitimate_house = {
+			TITLE = title:e_blackfyre_rebellion
+			HOUSE = house:house_Blackfyre
+		}
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_the_blackwater
+		HOUSE = dynasty:dynn_Targaryen.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_dragonstone
+		HOUSE = dynasty:dynn_Targaryen.dynasty_founder.house
+	}
+	# Dorne
+	agot_set_legitimate_house = {
+		TITLE = title:e_dorne
+		HOUSE = house:house_Martell
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_the_greenblood
+		HOUSE = house:house_Martell
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_yronwood
+		HOUSE = dynasty:dynn_Yronwood.dynasty_founder.house
+	}
+	# The North
+	agot_set_legitimate_house = {
+		TITLE = title:e_the_north
+		HOUSE = dynasty:dynn_Stark.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_winterfell
+		HOUSE = dynasty:dynn_Stark.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_the_neck
+		HOUSE = dynasty:dynn_Reed.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_the_white_knife
+		HOUSE = dynasty:dynn_Manderly.dynasty_founder.house
+	}
+	#The Reach
+	agot_set_legitimate_house = {
+		TITLE = title:e_the_reach
+		HOUSE = dynasty:dynn_Gardener.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_oldtown
+		HOUSE = dynasty:dynn_Hightower.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_the_arbor
+		HOUSE = dynasty:dynn_Redwyne.dynasty_founder.house
+	}
+	title:k_the_northmarch = {
+		if = {
+			limit = { game_start_date >= 8151.1.1 }
+			set_variable = {
+				name = legitimate_house
+				value = dynasty:dynn_Rowan.dynasty_founder.house
+			}
+		}
+	}
+	# The Stormlands
+	agot_set_legitimate_house = {
+		TITLE = title:e_the_stormlands
+		HOUSE = dynasty:dynn_Durrandon.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_shipbreaker_bay
+		HOUSE = dynasty:dynn_Durrandon.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:e_the_vale
+		HOUSE = dynasty:dynn_Arryn.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_the_vale
+		HOUSE = dynasty:dynn_Arryn.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:e_the_westerlands
+		HOUSE = dynasty:dynn_Lannister.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_the_rock
+		HOUSE = dynasty:dynn_Lannister.dynasty_founder.house
+	}
+	# The Riverlands
+	agot_set_legitimate_house = {
+		TITLE = title:e_the_riverlands
+		HOUSE = dynasty:dynn_Hoare.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_armistia
+		HOUSE = dynasty:dynn_Hoare.dynasty_founder.house
+	}
+	title:k_the_gods_eye = {
+		if = {
+			limit = {
+				game_start_date < 8123.7.1
+			}
+			set_variable = {
+				name = legitimate_house
+				value = dynasty:dynn_Hook.dynasty_founder.house
+			}
+		}
+		else = {
+			set_variable = {
+				name = legitimate_house
+				value = dynasty:dynn_Strong.dynasty_founder.house
+			}
+		}
+	}
+	# The Iron Islands
+	agot_set_legitimate_house = {
+		TITLE = title:e_the_iron_islands
+		HOUSE = dynasty:dynn_Hoare.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_under_islands
+		HOUSE = dynasty:dynn_Hoare.dynasty_founder.house
+	}
+	agot_set_legitimate_house = {
+		TITLE = title:k_ironmans_bay
+		HOUSE = dynasty:dynn_Hoare.dynasty_founder.house
+	}
+
+	if = { # Set up new house progress based on start date if the early days after Aegon's Conquest
+		limit = {
+			game_start_date > 8001.1.1 # Post Aegon's Conquest
+			game_start_date < 8050.1.1 # Before they're the legitimate house
+		}
+		agot_set_current_house = {
+			TITLE = title:e_the_reach
+			HOUSE = dynasty:dynn_Tyrell.dynasty_founder.house
+		}
+		agot_set_current_house = {
+			TITLE = title:k_the_mander
+			HOUSE = dynasty:dynn_Tyrell.dynasty_founder.house
+		}
+		agot_set_current_house = {
+			TITLE = title:e_the_stormlands
+			HOUSE = dynasty:dynn_Baratheon.dynasty_founder.house
+		}
+		agot_set_current_house = {
+			TITLE = title:k_shipbreaker_bay
+			HOUSE = dynasty:dynn_Baratheon.dynasty_founder.house
+		}
+		agot_set_current_house = {
+			TITLE = title:e_the_riverlands
+			HOUSE = dynasty:dynn_Tully.dynasty_founder.house
+		}
+		agot_set_current_house = {
+			TITLE = title:k_armistia
+			HOUSE = dynasty:dynn_Tully.dynasty_founder.house
+		}
+		agot_set_current_house = {
+			TITLE = title:e_the_iron_islands
+			HOUSE = dynasty:dynn_Greyjoy.dynasty_founder.house
+		}
+		agot_set_current_house = {
+			TITLE = title:k_under_islands
+			HOUSE = dynasty:dynn_Greyjoy.dynasty_founder.house
+		}
+		# Give progress every 10 years
+		if = {
+			limit = {
+				game_start_date < 8003.1.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_reach
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_stormlands
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_riverlands
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_iron_islands
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_mander
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_shipbreaker_bay
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_armistia
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_under_islands
+				PROGRESS = 3
+			}
+		}
+		else_if = {
+			limit = {
+				game_start_date < 8010.1.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_reach
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_stormlands
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_riverlands
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_iron_islands
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_mander
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_shipbreaker_bay
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_armistia
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_under_islands
+				PROGRESS = 12
+			}
+		}
+		else_if = {
+			limit = {
+				game_start_date < 8020.1.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_reach
+				PROGRESS = 32
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_stormlands
+				PROGRESS = 32
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_riverlands
+				PROGRESS = 32
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_iron_islands
+				PROGRESS = 32
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_mander
+				PROGRESS = 32
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_shipbreaker_bay
+				PROGRESS = 32
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_armistia
+				PROGRESS = 32
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_under_islands
+				PROGRESS = 32
+			}
+		}
+		else_if = {
+			limit = {
+				game_start_date < 8030.1.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_reach
+				PROGRESS = 50
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_stormlands
+				PROGRESS = 50
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_riverlands
+				PROGRESS = 50
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_iron_islands
+				PROGRESS = 50
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_mander
+				PROGRESS = 50
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_shipbreaker_bay
+				PROGRESS = 50
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_armistia
+				PROGRESS = 50
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_under_islands
+				PROGRESS = 50
+			}
+		}
+		else_if = {
+			limit = {
+				game_start_date < 8040.1.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_reach
+				PROGRESS = 77
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_stormlands
+				PROGRESS = 77
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_riverlands
+				PROGRESS = 77
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_iron_islands
+				PROGRESS = 77
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_mander
+				PROGRESS = 77
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_shipbreaker_bay
+				PROGRESS = 77
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_armistia
+				PROGRESS = 77
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_under_islands
+				PROGRESS = 77
+			}
+		}
+	}
+	else_if = { # If past the 50 year limit, set them as the legitimate dynasties
+		limit = {
+			game_start_date > 8050.1.1
+		}
+		agot_set_legitimate_house = {
+			TITLE = title:e_the_iron_islands
+			HOUSE = dynasty:dynn_Greyjoy.dynasty_founder.house
+		}
+		agot_set_legitimate_house = {
+			TITLE = title:k_under_islands
+			HOUSE = dynasty:dynn_Greyjoy.dynasty_founder.house
+		}
+		agot_set_legitimate_house = {
+			TITLE = title:e_the_stormlands
+			HOUSE = dynasty:dynn_Baratheon.dynasty_founder.house
+		}
+		agot_set_legitimate_house = {
+			TITLE = title:e_the_reach
+			HOUSE = dynasty:dynn_Tyrell.dynasty_founder.house
+		}
+		agot_set_legitimate_house = {
+			TITLE = title:e_the_riverlands
+			HOUSE = dynasty:dynn_Tully.dynasty_founder.house
+		}
+		agot_set_legitimate_house = {
+			TITLE = title:k_armistia
+			HOUSE = dynasty:dynn_Tully.dynasty_founder.house
+		}
+		agot_set_legitimate_house = {
+			TITLE = title:k_shipbreaker_bay
+			HOUSE = dynasty:dynn_Baratheon.dynasty_founder.house
+		}
+		agot_set_legitimate_house = {
+			TITLE = title:k_the_mander
+			HOUSE = dynasty:dynn_Tyrell.dynasty_founder.house
+		}
+	}
+
+	#Blursed Harrenhal
+	# Qoherys
+	if = {
+		limit = {
+			game_start_date >= 7999.8.15
+			game_start_date < 8037.9.9
+		}
+		agot_set_current_house = {
+			TITLE = title:k_the_gods_eye
+			HOUSE = dynasty:dynn_Qoherys.dynasty_founder.house
+		}
+		# Give progress every 10 years
+		if = {
+			limit = {
+				game_start_date < 8003.1.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_gods_eye
+				PROGRESS = 3
+			}
+		}
+		else_if = {
+			limit = {
+				game_start_date < 8010.1.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_gods_eye
+				PROGRESS = 12
+			}
+		}
+		else_if = {
+			limit = {
+				game_start_date < 8020.1.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_gods_eye
+				PROGRESS = 32
+			}
+		}
+		else = {
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_gods_eye
+				PROGRESS = 50
+			}
+		}
+	}
+	# Strong
+	if = {
+		limit = {
+			game_start_date >= 8073.7.1
+			game_start_date < 8123.7.1
+		}
+		agot_set_current_house = {
+			TITLE = title:k_the_gods_eye
+			HOUSE = dynasty:dynn_Strong.dynasty_founder.house
+		}
+		# Give progress every 10 years
+		if = {
+			limit = {
+				game_start_date >= 8083.7.1
+				game_start_date < 8093.7.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_gods_eye
+				PROGRESS = 20
+			}
+		}
+		else_if = {
+			limit = {
+				game_start_date < 8103.7.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_gods_eye
+				PROGRESS = 40
+			}
+		}
+		else_if = {
+			limit = {
+				game_start_date < 8113.7.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_gods_eye
+				PROGRESS = 60
+			}
+		}
+		else = {
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_gods_eye
+				PROGRESS = 80
+			}
+		}
+	}
+
+	# Now set current house for all relevant titles
+	every_in_global_list = {
+		variable = legitimate_house_titles
+		if = {
+			limit = {
+				exists = holder
+			}
+			agot_set_current_house = {
+				TITLE = this
+				HOUSE = holder.house
+			}
+			if = {
+				limit = {
+					OR = {
+						title_is_held_by_legitimate_house = yes
+						# Shattered world should have all as legitimate houses
+						agot_has_any_shattered_rule_trigger = yes
+					}
+				}
+				agot_set_new_house_progress = {
+					TITLE = this
+					PROGRESS = 100
+				}
+				if = {
+					limit = {
+						title_is_held_by_legitimate_house = no # We're in shattered world
+					}
+					agot_set_legitimate_house = {
+						TITLE = this
+						HOUSE = holder.house
+					}
+				}
+			}
+		}
+	}
+	# If we're post Robert's Rebellion, set the progress of the Baratheon's on IT, Crownlands, and Dragonstone
+	if = {
+		limit = {
+			game_start_date > 8283.9.1
+			agot_has_any_shattered_rule_trigger = no
+		}
+		agot_set_new_house_progress = {
+			TITLE = title:h_the_iron_throne
+			PROGRESS = 1
+		}
+		agot_set_new_house_progress = {
+			TITLE = title:e_the_crownlands
+			PROGRESS = 1
+		}
+		agot_set_new_house_progress = {
+			TITLE = title:k_the_blackwater
+			PROGRESS = 1
+		}
+		agot_set_new_house_progress = {
+			TITLE = title:k_dragonstone
+			PROGRESS = 1
+		}
+		if = {
+			limit = {
+				game_start_date > 8284.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 2
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 2
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 2
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 2
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8285.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 3
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 3
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8286.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 4
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 4
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 4
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 4
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8287.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 5
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 5
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 5
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 5
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8288.9.1 # Technically Greyjoy Rebellion, but it was so short/small relatively that it doesn't matter
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 6
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 6
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 6
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 6
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8289.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 7
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 7
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 7
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 7
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8290.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 8
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 8
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 8
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 8
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8291.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 9
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 9
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 9
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 9
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8292.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 10
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 10
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 10
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 10
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8293.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 11
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 11
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 11
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 11
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8294.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 12
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8295.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 13
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 13
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 13
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 13
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8296.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 14
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 14
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 14
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 14
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8297.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 15
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 15
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 15
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 15
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8298.9.1 # Robert died, WOTFK breaks out so start losing progress
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 15
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 15
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 15
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 15
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8299.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 14
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 14
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 14
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 14
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8300.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 13
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 13
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 13
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 13
+			}
+		}
+		if = {
+			limit = {
+				game_start_date > 8301.9.1
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:h_the_iron_throne
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:e_the_crownlands
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_the_blackwater
+				PROGRESS = 12
+			}
+			agot_set_new_house_progress = {
+				TITLE = title:k_dragonstone
+				PROGRESS = 12
+			}
+		}
+		# We're now up to date with the latest lore, so we can stop here
+	}
+	# Finally, if we're in shattered world the first holder of the title will be the legitimate house
+	every_in_global_list = {
+		variable = legitimate_house_titles
+		if = {
+			limit = {
+				agot_has_any_shattered_rule_trigger = yes
+			}
+			set_variable = shattered_world_start # Is picked up in the agot_title_on_actions
+		}
+	}
+}

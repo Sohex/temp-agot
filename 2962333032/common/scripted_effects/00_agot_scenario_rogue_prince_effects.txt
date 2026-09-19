@@ -1,0 +1,404 @@
+﻿agot_8106_4_18_scenario_setup = {
+	if = {
+		limit = {
+			NOT = { has_game_rule = agot_essos_disabled }
+		}
+		character:Targaryen_61 = {
+			create_story = story_agot_scenario_trp
+			if = {
+				limit = {
+					NOT = { has_realm_law = single_heir_succession_law }
+				}
+				add_realm_law_skip_effects = single_heir_succession_law
+			}
+		}
+	}
+	character:Targaryen_61 = {
+		add_character_flag = should_not_be_a_pirate
+	}
+
+	character:Royce_37 = {
+		create_story = story_agot_rhae_pregnancy_prevention
+
+		# Rhea assassination / death
+		if = {
+			limit = {
+				is_ai = yes
+			}
+			random_list = {
+				0 = {
+					modifier = {
+						add = agot_historic_event_chance
+					}
+					random_list = { # Can be killed by Daemon or just have accident
+						50 = { # Assassins
+							character:Targaryen_61 = {
+								trigger_event = {
+									id = agot_scenario_trp.1041
+									days = { 2500 4000 } # ~7-11 years, canonically 9 years
+								}
+							}
+						}
+						50 = { # Accident
+							trigger_event = {
+								id = agot_scenario_trp.1044
+								days = { 2500 4000 }
+							}
+						}
+					}
+				}
+				0 = {
+					#no assassination
+					modifier = {
+						add = agot_nonhistoric_event_chance
+					}
+				}
+			}
+		}
+		else_if = { # Assassins only
+			limit = {
+				character:Targaryen_61 = { is_ai = no }
+				has_game_rule = default_multiplayer_murder_schemes
+			}
+			character:Targaryen_61 = {
+				trigger_event = {
+					id = agot_scenario_trp.1041
+					days = { 2500 4000 }
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			character:Drahar_8 = { is_alive = yes }
+			character:Raharyen_70 = { is_alive = yes }
+		}
+		character:Drahar_8 = {
+			set_designated_heir_unsafe = character:Raharyen_70
+		}
+	}
+}
+
+agot_8106_daemon_abandons_stepstones_effect = {
+	# Call on Daemon to abandon the Stepstones
+	# Play iron throne if playing Daemon
+	if = {
+		limit = {
+			is_ai = no
+		}
+		set_player_character = title:h_the_iron_throne.holder
+	}
+	# Lose all wars
+	every_character_war = {
+		limit = {
+			primary_attacker = character:Targaryen_61
+		}
+		end_war = defender
+	}
+	every_character_war = {
+		limit = {
+			primary_defender = character:Targaryen_61
+		}
+		end_war = attacker
+	}
+	# Give all titles to pirates
+	custom_tooltip = {
+		text = agot_scenario_trp.daemon_leaves_tt
+		# Destroy the stepstones
+		destroy_title = title:k_the_stepstones
+		# Destroy all held duchies
+		every_held_title = {
+			limit = {
+				kingdom = title:k_the_stepstones
+				tier = tier_duchy
+			}
+			prev = {
+				destroy_title = prev
+			}
+		}
+		every_held_title = {
+			limit = {
+				agot_is_pirate_domicile_title_trigger = yes
+			}
+			prev = {
+				destroy_title = prev
+			}
+		}
+		# Give counties away
+		every_held_county = {
+			limit = {
+				kingdom = title:k_the_stepstones
+			}
+			create_character = {
+				age = { 20 50 }
+				gender_female_chance = 20
+				random_traits_list = {
+					count = 1
+					education_martial_2 = {}
+					education_martial_3 = {}
+					education_martial_4 = {}
+				}
+				random_traits = yes
+				random_traits_list = {
+					count = 1
+					education_martial_prowess_1 = {
+						weight = { base = 19 }
+					}
+					education_martial_prowess_2 = {
+						weight = { base = 70 }
+					}
+					education_martial_prowess_3 = {
+						weight = { base = 10 }
+					}
+					education_martial_prowess_4 = {
+						weight = { base = 1 }
+					}
+				}
+				location = title_province
+				culture = title_province.culture
+				faith = title_province.faith
+				save_scope_as = pirate
+			}
+			scope:pirate = {
+				get_title = prev
+			}
+		}
+		# If still ruler, depose self
+		if = {
+			limit = { is_landed = yes }
+			depose = yes
+		}
+	}
+	hidden_effect = {
+		# Employ daemon and dragon if alive
+		character:Targaryen_61 = {
+			if = {
+				limit = { NOT = { employer = title:h_the_iron_throne.holder } }
+				set_employer = title:h_the_iron_throne.holder
+			}
+			var:current_dragon ?= {
+				if = {
+					limit = { NOT = { employer = title:h_the_iron_throne.holder } }
+					set_employer = title:h_the_iron_throne.holder
+				}
+			}
+		}
+		# Set stepstones independent
+		title:k_the_stepstones = {
+			every_de_jure_county = {
+				holder = {
+					if = {
+						limit = {
+							is_independent_ruler = no
+							liege.primary_title = { tier >= tier_kingdom }
+							# All land is in the stepstones
+							any_sub_realm_title = {
+								NOT = { kingdom = title:k_the_stepstones }
+								count = 0
+							}
+						}
+						create_title_and_vassal_change = {
+							type = independency
+							save_scope_as = change
+							add_claim_on_loss = yes
+						}
+						becomes_independent = {
+							change = scope:change
+						}
+						resolve_title_and_vassal_change = scope:change
+					}
+				}
+			}
+		}
+		# If any co-admirals are still alive and independent, set them to be vassals of TD
+		character:Drahar_8 = {
+			if = {
+				limit = {
+					is_alive = yes
+					is_independent_ruler = yes
+				}
+				create_title_and_vassal_change = {
+					type = swear_fealty
+					save_scope_as = liege_change
+				}
+				change_liege = {
+					liege = title:k_tyrosh.holder
+					change = scope:liege_change
+				}
+				resolve_title_and_vassal_change = scope:liege_change
+			}
+		}
+		character:Naethys_113 = {
+			if = {
+				limit = {
+					is_alive = yes
+					is_independent_ruler = yes
+				}
+				create_title_and_vassal_change = {
+					type = swear_fealty
+					save_scope_as = liege_change
+				}
+				change_liege = {
+					liege = title:k_tyrosh.holder
+					change = scope:liege_change
+				}
+				resolve_title_and_vassal_change = scope:liege_change
+			}
+		}
+		character:Raharyen_70 = {
+			if = {
+				limit = {
+					is_alive = yes
+					is_independent_ruler = yes
+				}
+				create_title_and_vassal_change = {
+					type = swear_fealty
+					save_scope_as = liege_change
+				}
+				change_liege = {
+					liege = title:k_tyrosh.holder
+					change = scope:liege_change
+				}
+				resolve_title_and_vassal_change = scope:liege_change
+			}
+		}
+	}
+}
+
+agot_8106_first_daemon_war_end_effects = {
+	# Hidden war effects to set up second war
+	hidden_effect = {
+		# Kill co-admiral 1 if not already dead
+		character:Naethys_113 = {
+			if = {
+				limit = {
+					is_alive = yes
+				}
+				death = {
+					death_reason = death_battle_dragon_fire
+					killer = character:Targaryen_61
+				}
+			}
+		}
+		# Find stepstones person
+		if = {
+			limit = {
+				character:Drahar_8 = { is_alive = yes }
+			}
+			character:Drahar_8 = {
+				save_scope_as = stepstones_ruler
+			}
+		}
+		else_if = {
+			limit = {
+				character:Raharyen_70 = { is_alive = yes }
+			}
+			character:Raharyen_70 = {
+				save_scope_as = stepstones_ruler
+			}
+		}
+		else = {
+			global_var:three_daughters_confederation = {
+				random_confederation_member = {
+					save_scope_as = stepstones_ruler
+				}
+			}
+		}
+		if = {
+			limit = { character:Targaryen_61 = { is_ai = yes } }
+			character:Targaryen_61 = {
+				every_held_county = {
+					every_county_province = {
+						limit = { has_holding = yes }
+						agot_destroy_six_level_building_effect = { BUILDING = agot_pirate_control }
+						agot_destroy_six_level_building_effect = { BUILDING = agot_pirate_military }
+						agot_destroy_six_level_building_effect = { BUILDING = agot_pirate_economic }
+						agot_destroy_six_level_building_effect = { BUILDING = agot_pirate_fortification }
+						agot_destroy_six_level_building_effect = { BUILDING = agot_pirate_supply }
+						agot_destroy_six_level_building_effect = { BUILDING = agot_pirate_troop }
+					}
+				}
+			}
+		}
+		# Give the Stepstones and all swear fealty
+		scope:stepstones_ruler = {
+			get_title = title:k_the_stepstones
+		}
+		title:k_the_stepstones = {
+			every_de_jure_county = { # All of the Stepstones
+				limit = {
+					NOT = { holder.top_liege = character:Targaryen_61 } # Not reporting to Daemon
+					NOT = { holder.top_liege = scope:stepstones_ruler } # Not the new ruler themselves
+					NOT = { holder.top_liege = title:h_the_iron_throne.holder } # Not reporting to Iron Throne (somehow)
+					NOT = { holder.top_liege = title:e_dorne.holder } # Not reporting to Dorne (somehow)
+				}
+				holder = {
+					add_to_temporary_list = swearing_fealty
+				}
+			}
+		}
+		every_in_list = {
+			list = swearing_fealty
+			create_title_and_vassal_change = {
+				type = swear_fealty
+				save_scope_as = title_change
+			}
+			change_liege = {
+				liege = title:k_the_stepstones.holder
+				change = scope:title_change
+			}
+			resolve_title_and_vassal_change = scope:title_change
+		}
+	}
+
+	# Trigger win events (Delayed so that resolution effects happen in the correct order)
+	character:Targaryen_61 = {
+		trigger_event = {
+			id = agot_scenario_trp.0002
+			days = 1
+		}
+	}
+	# Other events 1 day later to ensure war is declared first
+	title:c_driftmark.holder = {
+		trigger_event = {
+			id = agot_scenario_trp.0104
+			days = 2
+		}
+	}
+	scope:stepstones_ruler = {
+		if = {
+			limit = {
+				NOT = { # Handled separately
+					is_member_of_confederation = global_var:three_daughters_confederation
+				}
+			}
+			trigger_event = {
+				id = agot_scenario_trp.0202
+				days = 2
+			}
+		}
+	}
+	character:Raharyen_70 = {
+		if = {
+			limit = {
+				is_alive = yes
+				NOT = { this = scope:stepstones_ruler } # Covered in this case
+			}
+			character:Raharyen_70 = {
+				trigger_event = {
+					id = agot_scenario_trp.1015
+					days = 2
+				}
+			}
+		}
+	}
+	global_var:three_daughters_confederation = {
+		random_confederation_member = {
+			trigger_event = {
+				id = agot_scenario_trp.1016
+				days = 2
+			}
+		}
+	}
+}

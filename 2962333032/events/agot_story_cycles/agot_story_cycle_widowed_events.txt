@@ -1,0 +1,1072 @@
+﻿
+namespace = agot_widowed_events
+
+###########################################
+# Widowed (0001-0999), by Badger
+#	agot_widowed_events.0001 - Base Event
+
+###########################################
+
+agot_widowed_events.999 = {
+	hidden = yes
+
+	immediate = {
+		save_scope_as = dead_character
+		# Widows become Dosh Khaleen and don't get the story cycle
+		if = {
+			limit = {
+				faith = { has_doctrine_parameter = dosh_khaleen }
+				exists = primary_spouse
+				primary_spouse = {
+					is_female = yes
+					faith = { has_doctrine_parameter = dosh_khaleen }
+					NOT = {
+						any_spouse = {
+							NOT = { this = scope:dead_character }
+							is_alive = yes
+						}
+					}
+				}
+			}
+			# AI Widows will join Dosh Khaleen, not players for now (AGOT TODO - when dothraki on map)
+			if = {
+				limit = { primary_spouse = { is_ai = yes } }
+				primary_spouse = { death = { death_reason = death_joined_dosh_khaleen } }
+			}
+		}
+		else_if = {
+			limit = {
+				exists = primary_spouse
+				primary_spouse = {
+					OR = {
+						has_relation_lover = scope:dead_character
+						has_relation_soulmate = scope:dead_character
+					}
+					NOT = {
+						any_spouse = {
+							NOT = { this = scope:dead_character }
+							is_alive = yes
+						}
+					}
+				}
+			}
+			primary_spouse = {
+				add_trait = widowed
+				create_story = story_agot_widowed
+				random_owned_story = {
+					limit = {
+						story_type = story_agot_widowed
+					}
+					set_variable = {
+						name = dead_lover
+						value = scope:dead_character
+					}
+				}
+			}
+		}
+	}
+}
+
+###########################################
+# Lost your Love
+#	0001-0999
+###########################################
+
+#You reminisce beginning the chain
+#Badger
+agot_widowed_events.0001 = {
+	type = character_event
+
+	title = agot_widowed_events.0001.t
+	desc = agot_widowed_events.0001.desc
+	theme = death
+
+	trigger = {
+		NOT = { has_character_flag = widow_story_began }
+	}
+
+
+	immediate = {
+		add_character_flag = widow_story_began
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			var:dead_lover = { save_scope_as = dead_lover }
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+
+	right_portrait = {
+		character = scope:dead_lover
+		animation = personality_compassionate
+		animate_if_dead = yes
+	}
+
+	option = {
+		name = agot_widowed_events.0001.a
+
+		ai_chance = {
+			base = 0
+		}
+	}
+
+}
+
+agot_widowed_events.0002 = { #Moving on while still heartbroken - trade agot_widowed_events for depressed
+
+	type = character_event
+
+	title = agot_widowed_events.0002.t
+	desc = agot_widowed_events.0002.desc
+	theme = death
+
+	trigger = {
+		any_memory = {
+			OR = {
+				has_memory_type = lover_died
+				has_memory_type = soulmate_died
+				has_memory_type = agot_widowed_memory
+			}
+		}
+	}
+
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			save_scope_as = widowed_story_scope
+			var:dead_lover = { save_scope_as = widowed_memory }
+		}
+		add_character_flag = widow_story_began
+	}
+
+
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+
+	right_portrait = {
+		character = scope:widowed_memory
+		animation = personality_compassionate
+		animate_if_dead = yes
+	}
+
+	option = { #I'll force myself to move on
+		name = agot_widowed_events.0002.a
+
+		remove_trait = widowed
+		add_trait = depressed_1
+
+
+		ai_chance = {
+			base = 100
+		}
+
+		scope:widowed_story_scope = { end_story = yes }
+	}
+
+}
+
+
+agot_widowed_events.0003 = { #Brothel encounter while sad
+
+	type = character_event
+
+	title = agot_widowed_events.0003.t
+	desc = agot_widowed_events.0003.desc
+	theme = death
+	override_background = { reference = tavern }
+
+	trigger = {
+		any_memory = {
+			OR = {
+				has_memory_type = lover_died
+				has_memory_type = soulmate_died
+				has_memory_type = agot_widowed_memory
+			}
+		}
+		NOR = {
+			has_trait = eunuch
+			has_trait = celibate
+			AND = { #to account for moms of child lords
+				is_female = yes
+				any_child = {
+					is_landed = yes
+					age < 16
+				}
+				NOR = {
+					has_trait = lustful
+					has_trait = rakish
+				}
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = { #More likely to trigger if you're horni
+			add = 2
+			OR = {
+				has_trait = lustful
+				has_trait = rakish
+			}
+		}
+	}
+
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			save_scope_as = widowed_story_scope
+			var:dead_lover = { save_scope_as = widowed_memory }
+		}
+		if = {
+			limit = { exists = capital_province }
+			capital_province = { save_scope_as = location } #for brothel location
+		}
+		else_if = {
+			limit = {
+				exists = court_owner
+				exists = court_owner.capital_province
+			}
+			court_owner.capital_province = { save_scope_as = location } #for brothel location
+		}
+		else = {
+			location = { save_scope_as = location } #for brothel location
+		}
+
+
+		create_character = {
+			template = agot_succubus
+			dynasty = none
+			location = root.location
+			save_scope_as = succubus
+		}
+	}
+
+
+	left_portrait = {
+		character = root
+		animation = admiration
+	}
+
+	right_portrait = {
+		character = scope:succubus
+		animation = flirtation
+		triggered_outfit = {
+			outfit_tags = { no_clothes }
+		}
+	}
+
+	lower_center_portrait = {
+		character = scope:widowed_memory
+	}
+
+	option = { #They'll fill the void
+		name = agot_widowed_events.0003.a
+
+		remove_trait = widowed
+		remove_short_term_gold = 15
+
+		if = {
+			limit = { is_landed = yes }
+			add_courtier = scope:succubus
+		}
+		else_if = {
+			limit = { exists = court_owner }
+			court_owner = { add_courtier = scope:succubus }
+		}
+
+		rakish_brothel_night_effect = yes
+
+		ai_chance = {
+			base = 100
+		}
+
+		scope:widowed_story_scope = { end_story = yes }
+
+		hidden_effect = {
+			set_relation_lover = { reason = lover_widowed_brothel target = scope:succubus province = scope:location }		rakish_brothel_night_effect = yes
+
+		}
+	}
+
+	option = { #No I cannot
+		name = agot_widowed_events.0003.b
+
+		ai_chance = {
+			base = 0
+		}
+
+		hidden_effect = {
+			scope:succubus = {
+				death = {
+					death_reason = death_vanished #Ripperoni
+				}
+			}
+		}
+	}
+}
+
+
+agot_widowed_events.0004 = { #Callous move on option Tywin-esque
+
+	type = character_event
+
+	title = agot_widowed_events.0004.t
+	desc = agot_widowed_events.0004.desc
+	theme = death
+
+	trigger = {
+		NOT = {
+			has_trait = compassionate
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = { #More likely to trigger if you're mean
+			add = 2
+			ai_compassion <= medium_negative_compassion
+		}
+	}
+
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			save_scope_as = widowed_story_scope
+			var:dead_lover = { save_scope_as = widowed_memory }
+		}
+	}
+
+
+	left_portrait = {
+		character = root
+		animation = dismissal
+	}
+
+	right_portrait = {
+		character = scope:widowed_memory
+		animation = flirtation
+		animate_if_dead = yes
+	}
+
+	option = { #This is nonsense
+		name = agot_widowed_events.0004.a
+
+		remove_trait = widowed
+
+		add_character_modifier = {
+			modifier = cold_hearted_modifier
+			years = 5
+		}
+
+		random_list = {
+			50 = {}
+			50 = { add_trait = refusing_marriage }
+		}
+
+		scope:widowed_story_scope = { end_story = yes }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { #No I cannot
+		name = agot_widowed_events.0004.b
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+
+agot_widowed_events.0005 = { #Nerdy Life
+
+	type = character_event
+
+	title = agot_widowed_events.0005.t
+	desc = agot_widowed_events.0005.desc
+	theme = death
+
+	weight_multiplier = {
+		base = 1
+		modifier = { #More likely to trigger if you're reclusive
+			add = 2
+			has_trait = shy
+		}
+	}
+
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			save_scope_as = widowed_story_scope
+			var:dead_lover = { save_scope_as = widowed_memory }
+		}
+
+		if = { #prioritise doctors
+			limit = {
+				any_courtier_or_guest = {
+					OR = {
+						has_court_position = maester_court_position
+						has_court_position = court_physician_court_position
+					}
+				}
+			}
+			random_courtier_or_guest = {
+				limit = {
+					OR = {
+						has_court_position = maester_court_position
+						has_court_position = court_physician_court_position
+					}
+				}
+				save_scope_as = learned_courtier
+			}
+		}
+		else_if = {
+			limit = {
+				any_courtier_or_guest = {
+					OR = {
+						learning >= high_skill_rating
+						has_trait = scholar
+						has_trait = shy
+						has_trait = maester
+						has_trait = lifestyle_physician
+					}
+				}
+			}
+			random_courtier_or_guest = {
+				limit = {
+					OR = {
+						learning >= high_skill_rating
+						has_trait = scholar
+						has_trait = shy
+						has_trait = maester
+						has_trait = lifestyle_physician
+					}
+				}
+				save_scope_as = learned_courtier
+			}
+		}
+	}
+
+
+	left_portrait = {
+		character = root
+		animation = personality_cynical
+	}
+
+	right_portrait = { #Tag in Maester/Learning courtier
+		character = scope:learned_courtier
+		animation = throne_room_writer
+	}
+
+	lower_center_portrait = { #Tag in Maester/Learning courtier
+		character = scope:widowed_memory
+		animation = flirtation
+	}
+
+	option = { #This is nonsense
+		name = agot_widowed_events.0005.a
+
+		remove_trait = widowed
+
+		ai_chance = {
+			base = 100
+		}
+
+		random_list = {
+			50 = { #You learn
+				add_learning_skill = 1
+			}
+			15 = { #You learn at a price
+				add_learning_skill = 1
+				add_trait = reclusive
+				#send interface toast
+			}
+			10 = { #big brainy
+				add_trait = shrewd
+			}
+			9 = { #discover foridden knowledge
+				ai_mystic_lifestyle_rank_up_effect = yes
+			}
+			1 = { #give up worldly possessions become a maester
+				trigger = {
+					culture = { has_innovation = innovation_maesters }
+					is_female = no
+					is_ai = yes
+				}
+				desc = agot_widowed_events.0005.maester.tt
+
+				agot_depose_effect = yes
+				agot_send_to_citadel_effect = { MAESTER_CANDIDATE = root }
+			}
+		}
+		scope:widowed_story_scope = { end_story = yes }
+	}
+
+	option = { #No I cannot
+		name = agot_widowed_events.0005.b
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+agot_widowed_events.0006 = { #Get Shitfaced
+
+	type = character_event
+
+	title = agot_widowed_events.0006.t
+	desc = agot_widowed_events.0006.desc
+	theme = death
+	override_background = { reference = tavern }
+
+	trigger = {
+		any_courtier_or_guest = {
+			is_available_adult = yes
+			OR = {
+				has_trait = gluttonous
+				has_trait = drunkard
+				has_trait = greedy
+				has_trait = lifestyle_reveler
+				has_trait = gregarious
+			}
+		}
+	}
+
+	weight_multiplier = {
+		base = 1
+		modifier = { #More likely to trigger if you're horni
+			add = 2
+			OR = {
+				has_trait = gluttonous
+				has_trait = drunkard
+				has_trait = greedy
+				has_trait = lifestyle_reveler
+				has_trait = gregarious
+			}
+		}
+	}
+
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			save_scope_as = widowed_story_scope
+			var:dead_lover = { save_scope_as = widowed_memory }
+		}
+		capital_province = { save_scope_as = location  } #for tavern location
+
+		random_courtier_or_guest = {
+			limit = {
+				is_available_adult = yes
+				OR = {
+					has_trait = gluttonous
+					has_trait = drunkard
+					has_trait = greedy
+					has_trait = lifestyle_reveler
+					has_trait = gregarious
+				}
+			}
+			save_scope_as = party_friend
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = toast_goblet
+	}
+
+	right_portrait = {
+		character = scope:party_friend
+		animation = drink_goblet
+	}
+
+	lower_center_portrait = {
+		character = scope:widowed_memory
+	}
+
+	option = { #They'll fill the void
+		name = agot_widowed_events.0006.a
+		custom_tooltip = agot_widowed_events.0006.a.tt
+
+		stress_impact = {
+			lifestyle_reveler = minor_stress_impact_loss
+			comfort_eater = minor_stress_impact_loss
+			drunkard = minor_stress_impact_loss
+			shy = minor_stress_impact_gain
+			temperate = major_stress_impact_gain
+		}
+
+		remove_trait = widowed
+
+		ai_chance = {
+			base = 100
+		}
+
+		scope:widowed_story_scope = { end_story = yes }
+
+		hidden_effect = {
+
+			random_list = { #hidden because the tooltip gets hideous
+				35 = {	#Have a fun time
+					set_relation_friend = { reason = friend_drinking_buddies target = scope:party_friend }
+					if = {
+						limit = {
+							NOT = { has_trait = gregarious }
+							number_of_personality_traits < personality_trait_limit
+						}
+						add_trait = gregarious
+					}
+				}
+				30 = {	#Your start taking care of yourself for your partying
+					add_diplomacy_skill = 1
+					add_trait = fashionable
+				}
+				15 = { #drunken singing sparks a passion
+					add_trait = lifestyle_poet
+					add_diplomacy_skill = 1
+				}
+				10 = {	#taste for the sauce
+					add_diplomacy_skill = 1
+					add_trait = drunkard
+					modifier = {
+						factor = 5
+						has_character_modifier = patron_drunken_god_modifier
+					}
+				}
+				5 = {	#spending too much
+					add_trait = improvident
+				}
+				5 = {	#spending too much
+					add_trait = profligate
+				}
+			}
+
+			if = {
+				limit = {
+					has_trait = lifestyle_reveler
+				}
+				add_trait_xp = {
+					trait = lifestyle_reveler
+					value = medium_trait_xp
+				}
+			}
+
+		}
+	}
+
+	option = { #No I cannot
+		name = agot_widowed_events.0006.b
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+
+agot_widowed_events.0007 = { #Gardener :)
+
+	type = character_event
+
+	title = agot_widowed_events.0007.t
+	desc = agot_widowed_events.0007.desc
+	theme = death
+
+	override_background = { reference = garden }
+
+	weight_multiplier = {
+		base = 1
+		modifier = { #More likely to trigger if you're a herbal culture
+			add = 3
+			OR = {
+				has_trait = lifestyle_gardener
+				has_trait = lifestyle_herbalist
+				culture = {	has_cultural_parameter = can_recruit_gardeners } #more likely to spend
+			}
+		}
+	}
+
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			save_scope_as = widowed_story_scope
+			var:dead_lover = { save_scope_as = widowed_memory }
+		}
+	}
+
+
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+
+	right_portrait = {
+		character = scope:widowed_memory
+		animation = personality_forgiving
+		animate_if_dead = yes
+	}
+
+	option = { #Plant a treet to remember lover it will grow in several years track that
+		name = agot_widowed_events.0007.a
+
+		remove_trait = widowed
+
+		scope:widowed_story_scope = { end_story = yes }
+
+		random_list = {
+			40 = {
+				add_trait = lifestyle_herbalist
+			}
+			30 = {
+				add_trait = lifestyle_gardener
+			}
+			30 = {
+				#something bad idk
+			}
+		}
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { #No I cannot
+		name = agot_widowed_events.0007.b
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+agot_widowed_events.0008 = { #Pupper
+
+	type = character_event
+
+	title = agot_widowed_events.0008.t
+	desc = agot_widowed_events.0008.desc
+	theme = death
+
+	override_background = { reference = garden }
+
+	weight_multiplier = {
+		base = 1
+		modifier = { #More likely to trigger if you're a herbal culture
+			add = 3
+			OR = {
+				has_trait = lifestyle_hunter
+				culture = {	has_cultural_parameter = hunting_traits_more_common } #more likely to spend
+			}
+		}
+	}
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			save_scope_as = widowed_story_scope
+			var:dead_lover = { save_scope_as = widowed_memory }
+		}
+
+		if = {
+			limit = {
+				employs_court_position = master_of_hunt_court_position
+				any_court_position_holder = {
+					type = master_of_hunt_court_position #Primary choice as they are also used for dog option
+					is_available_ai_adult = yes
+				}
+			}
+			random_court_position_holder = {
+				type = master_of_hunt_court_position
+				limit = {
+					is_available_ai_adult = yes
+				}
+				save_scope_as = pet_giver
+				court_event_character_flag_effect = yes
+			}
+		}
+		else_if = {
+			limit = {
+				any_close_family_member = {
+					is_available_ai_adult = yes
+				}
+			}
+			random_close_family_member = {
+				limit = {
+					is_available_ai_adult = yes
+				}
+				save_scope_as = pet_giver
+				court_event_character_flag_effect = yes
+			}
+		}
+		else_if = {
+			limit = {
+				any_vassal = {
+					is_available_ai_adult = yes
+				}
+			}
+			random_vassal = {
+				limit = {
+					is_available_ai_adult = yes
+				}
+				save_scope_as = pet_giver
+				court_event_character_flag_effect = yes
+			}
+		}
+	}
+
+
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+
+	right_portrait = {
+		character = scope:pet_giver
+	}
+
+	lower_center_portrait = {
+		character = scope:widowed_memory
+		animate_if_dead = yes
+	}
+
+	option = { #Good boi
+		name = agot_widowed_events.0008.a
+
+		remove_trait = widowed
+
+		start_dog_story_cycle_effect = yes
+
+		stress_impact = {
+			lifestyle_hunter = minor_stress_impact_loss
+		}
+
+		scope:widowed_story_scope = { end_story = yes }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { #No thank u
+		name = agot_widowed_events.0008.b
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+agot_widowed_events.0009 = { #Catto
+
+	type = character_event
+
+	title = agot_widowed_events.0009.t
+	desc = agot_widowed_events.0009.desc
+	theme = death
+
+	override_background = { reference = garden }
+
+	weight_multiplier = {
+		base = 1
+		modifier = { #More likely to trigger if you're a herbal culture
+			add = 3
+			OR = {
+				has_trait = lifestyle_hunter
+				culture = {	has_cultural_parameter = hunting_traits_more_common } #more likely to spend
+			}
+		}
+	}
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			save_scope_as = widowed_story_scope
+			var:dead_lover = { save_scope_as = widowed_memory }
+		}
+
+		if = {
+			limit = {
+				employs_court_position = master_of_hunt_court_position
+				any_court_position_holder = {
+					type = master_of_hunt_court_position #Primary choice as they are also used for dog option
+					is_available_ai_adult = yes
+				}
+			}
+			random_court_position_holder = {
+				type = master_of_hunt_court_position
+				limit = {
+					is_available_ai_adult = yes
+				}
+				save_scope_as = pet_giver
+				court_event_character_flag_effect = yes
+			}
+		}
+		else_if = {
+			limit = {
+				any_close_family_member = {
+					is_available_ai_adult = yes
+				}
+			}
+			random_close_family_member = {
+				limit = {
+					is_available_ai_adult = yes
+				}
+				save_scope_as = pet_giver
+				court_event_character_flag_effect = yes
+			}
+		}
+		else_if = {
+			limit = {
+				any_vassal = {
+					is_available_ai_adult = yes
+				}
+			}
+			random_vassal = {
+				limit = {
+					is_available_ai_adult = yes
+				}
+				save_scope_as = pet_giver
+				court_event_character_flag_effect = yes
+			}
+		}
+	}
+
+
+	left_portrait = {
+		character = root
+		animation = personality_forgiving
+	}
+
+	right_portrait = {
+		character = scope:pet_giver
+	}
+
+	lower_center_portrait = {
+		character = scope:widowed_memory
+		animate_if_dead = yes
+	}
+
+	option = { #el gatto
+		name = agot_widowed_events.0009.a
+
+		remove_trait = widowed
+
+		start_cat_story_cycle_effect = yes
+
+		stress_impact = {
+			lifestyle_hunter = minor_stress_impact_loss
+		}
+
+		scope:widowed_story_scope = { end_story = yes }
+
+		ai_chance = {
+			base = 100
+		}
+	}
+
+	option = { #No thank u
+		name = agot_widowed_events.0009.b
+
+		ai_chance = {
+			base = 0
+		}
+	}
+}
+
+agot_widowed_events.0010 = { #Actual lover gets refusing marriage
+
+	type = character_event
+
+	title = agot_widowed_events.0010.t
+	desc = agot_widowed_events.0010.desc
+	theme = death
+
+	trigger = {
+		any_memory = {
+			OR = {
+				has_memory_type = lover_died
+				has_memory_type = soulmate_died
+			}
+		}
+	}
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_widowed
+			}
+			save_scope_as = widowed_story_scope
+			var:dead_lover = { save_scope_as = widowed_memory }
+		}
+		add_character_flag = widow_story_began
+	}
+
+
+	left_portrait = {
+		character = root
+		animation = grief
+	}
+
+	right_portrait = {
+		character = scope:widowed_memory
+		animation = personality_compassionate
+		animate_if_dead = yes
+	}
+
+	option = { #I'll force myself to move on
+		name = agot_widowed_events.0010.a
+
+		remove_trait = widowed
+		add_trait = refusing_marriage
+
+
+		ai_chance = {
+			base = 100
+		}
+
+		scope:widowed_story_scope = { end_story = yes }
+	}
+
+	option = { #Player option in case so they don't get stuck refusing
+		name = agot_widowed_events.0010.b
+	}
+}
+
+#If Male Join Nightswatch
+
+#Join Silent Sisters
+
+#Relative Speaks to you
+
+#Liege Intervenes

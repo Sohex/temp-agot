@@ -1,0 +1,652 @@
+﻿# agot spy network by Ronko
+
+agot_invite_to_spy_network_interaction = {
+	category = interaction_category_friendly
+	icon = secret
+	desc = agot_invite_to_spy_network_interaction_desc
+	is_shown = {
+		NOT = {
+			scope:actor = {
+				is_target_in_variable_list = {
+					name = spy_network_members
+					target = scope:recipient
+				}
+			}
+		}
+		scope:recipient = {
+			is_courtier = yes
+			is_pool_guest = no
+			is_landed = no
+			court_owner = { is_ruler = yes }
+			OR = {
+				is_adult = yes
+				AND = {
+					age >= 8
+					scope:actor = { has_perk = little_birds_perk }
+				}
+			}
+			is_imprisoned = no
+			NOT = { has_trait = incapable }
+		}
+
+		# No non-human interactions
+		scope:actor = {
+			is_human = yes
+			agot_court_eligible_for_spy_network = yes
+		}
+		scope:recipient = {
+			is_human = yes
+			agot_court_eligible_for_spy_network = yes
+		}
+
+		### Cersei / Jaime Blocker
+		scope:recipient = {
+			NOR = {
+				this = character:Lannister_6
+				this = character:Lannister_7
+			}
+		}
+	}
+
+	is_valid = {
+		NOT = {
+			scope:actor = {
+				is_target_in_variable_list = {
+					name = spy_network_members
+					target = scope:recipient
+				}
+			}
+		}
+		scope:actor.highest_held_title_tier > scope:recipient.highest_held_title_tier
+		scope:recipient = {
+			is_courtier = yes
+			is_pool_guest = no
+			is_landed = no
+			court_owner = { is_ruler = yes }
+			OR = {
+				is_adult = yes
+				AND = {
+					age >= 8
+					scope:actor = { has_perk = little_birds_perk }
+				}
+			}
+			is_imprisoned = no
+			NOT = { has_trait = incapable }
+			agot_is_available_for_anything = yes
+			agot_court_eligible_for_spy_network = yes
+		}
+	}
+
+	#on_send = {
+	#	scope:actor = {
+	#		add_to_variable_list = {
+	#			name = spy_network_members
+	#			target = scope:recipient
+	#		}
+	#	}
+	#}
+
+	on_accept = {
+		scope:actor = {
+			# trigger_event = {
+			# 	id = agot_spy_network.0700
+			# }
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = invite_to_spy_network_toast_title
+				left_icon = scope:actor
+				right_icon = scope:recipient
+				custom_tooltip = invite_to_spy_network_toast_desc
+			}
+		}
+		scope:actor = {
+			add_to_variable_list = {
+				name = spy_network_members
+				target = scope:recipient
+			}
+		}
+		if = {
+			limit = { always = scope:gift }
+			scope:actor = {
+				pay_short_term_gold = {
+					gold = bribe_value	# Todo: Adjust this?
+					target = scope:recipient
+				}
+				stress_impact = {
+					greedy = minor_stress_impact_gain
+				}
+			}
+		}
+		if = {
+			limit = { always = scope:hook }
+			scope:actor = {
+				use_hook = scope:recipient
+			}
+		}
+		scope:actor = {
+			stress_impact = {
+				paranoid = miniscule_stress_impact_loss	# Paranoid characters like having informants
+				honest = minor_stress_impact_gain
+			}
+		}
+	}
+
+	ai_accept = {
+		base = -60
+
+		# Debug modifier: forces acceptance
+		#modifier = {
+		#	add = 1000
+		#
+		#	always = yes
+		#	debug_only = yes
+		#}
+
+		# family modifiers
+		modifier = {
+			trigger = {
+				NOT = { scope:recipient.liege = scope:actor }
+			}
+			scope:recipient = {
+				is_close_family_of = scope:recipient.liege
+			}
+
+			add = {
+				value = -25
+			}
+			desc = CLOSE_FAMILY_REASON
+		}
+
+		modifier = {
+			trigger = {
+				NOT = { scope:recipient.liege = scope:actor }
+			}
+			scope:recipient = {
+				is_spouse_of = scope:recipient.liege
+			}
+
+			add = {
+				value = -15
+			}
+			desc = SCHEME_AGAINST_SPOUSE
+		}
+
+		# tier modifier
+		modifier = {
+			scope:actor = {
+				has_perk = convincing_perk
+			}
+			add = {
+				value = 10
+			}
+			desc = CONVINCING_PERK
+		}
+		modifier = {
+			scope:actor = {
+				has_perk = charismatic_perk
+			}
+			scope:recipient = {
+				is_attracted_to_gender_of = scope:actor
+			}
+			add = {
+				value = 15
+			}
+			desc = CHARISMATIC_PERK
+		}
+		modifier = {
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient.liege
+					value >= 1
+				}
+			}
+			add = {
+				value = 5
+				if = {
+					limit = {
+						scope:actor = {
+							tier_difference = {
+								target = scope:recipient.liege
+								value >= 2
+							}
+						}
+					}
+					add = 5
+				}
+				if = {
+					limit = {
+						scope:actor = {
+							tier_difference = {
+								target = scope:recipient.liege
+								value >= 3
+							}
+						}
+					}
+					add = 5
+				}
+				if = {
+					limit = {
+						scope:actor = {
+							tier_difference = {
+								target = scope:recipient.liege
+								value >= 4
+							}
+						}
+					}
+					add = 5
+				}
+				if = {
+					limit = {
+						scope:actor = {
+							tier_difference = {
+								target = scope:recipient.liege
+								value >= 5
+							}
+						}
+					}
+					add = 5
+				}
+			}
+			desc = RANK_DIFFERENCE_REASON
+		}
+		modifier = {
+			scope:actor = {
+				tier_difference = {
+					target = scope:recipient.liege
+					value <= -1
+				}
+			}
+			add = {
+				value = -5
+				if = {
+					limit = {
+						scope:actor = {
+							tier_difference = {
+								target = scope:recipient.liege
+								value <= -2
+							}
+						}
+					}
+					add = -5
+				}
+				if = {
+					limit = {
+						scope:actor = {
+							tier_difference = {
+								target = scope:recipient.liege
+								value <= -3
+							}
+						}
+					}
+					add = -5
+				}
+				if = {
+					limit = {
+						scope:actor = {
+							tier_difference = {
+								target = scope:recipient.liege
+								value <= -4
+							}
+						}
+					}
+					add = -5
+				}
+				if = {
+					limit = {
+						scope:actor = {
+							tier_difference = {
+								target = scope:recipient.liege
+								value <= -5
+							}
+						}
+					}
+					add = -5
+				}
+			}
+			desc = RANK_DIFFERENCE_REASON
+		}
+
+		# Opinion Modifier - numbers chosen so that high opinion alone is never enough to recruit
+		opinion_modifier = {
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 0.5
+			desc = AI_OPINION_REASON
+		}
+
+		opinion_modifier = {
+			trigger = {
+				NOT = { scope:recipient.liege = scope:actor }
+			}
+			who = scope:recipient
+			opinion_target = scope:recipient.liege
+			multiplier = -0.5
+			desc = AI_OPINION_REASON
+		}
+
+
+		# Landed modifier; courtiers are easier to recruit
+		#modifier = {
+		#	add = -50
+		#
+		#	scope:recipient = {
+		#		is_landed = yes
+		#	}
+		#}
+
+		# Trait modifiers
+		modifier = {
+			add = 20
+			scope:recipient = {
+				has_trait = deceitful
+			}
+			desc = DECEITFUL_REASON
+		}
+		modifier = {
+			add = -20
+			scope:recipient = {
+				has_trait = honest
+			}
+			desc = HONEST_REASON
+		}
+		modifier = {
+			add = -30
+			scope:recipient = {
+				has_trait = shy
+			}
+			desc = SHY_REASON
+		}
+		modifier = {
+			add = -30
+			scope:recipient = {
+				has_trait = craven
+			}
+			desc = CRAVEN_REASON
+		}
+		modifier = {
+			add = -30
+			scope:recipient = {
+				has_trait = kingsguard
+			}
+			desc = AGOT_RECRUIT_SPY_KINGSGUARD_REASON
+		}
+		modifier = {
+			add = -20
+			scope:recipient = {
+				has_trait = lazy
+			}
+			desc = LAZY_REASON
+		}
+		modifier = {
+			add = -20
+			scope:recipient = {
+				has_trait = just
+			}
+			desc = JUST_REASON
+		}
+		modifier = {
+			add = -20
+			scope:recipient = {
+				has_trait = trusting
+			}
+			desc = TRUSTING_REASON
+		}
+		modifier = {
+			add = -10
+			scope:recipient = {
+				has_trait = paranoid
+			}
+			desc = PARANOID_REASON
+		}
+		modifier = {
+			add = 10
+			scope:recipient = {
+				has_trait = drunkard
+			}
+			desc = DRUNKARD_REASON
+		}
+		modifier = {
+			add = 40
+			scope:recipient = {
+				has_trait = contrite
+			}
+			desc = CONTRITE_REASON
+		}
+
+		modifier = { # Intimidated (minor dread)
+			add = 50
+			trigger = {
+				scope:recipient = {
+					target_is_liege_or_above = scope:actor
+					dread_modified_ai_boldness = {
+						dreaded_character = scope:actor
+						value < -20
+					}
+					NOT = {
+						dread_modified_ai_boldness = {
+							dreaded_character = scope:actor
+							value < -45
+						}
+					}
+					# Note: value is calculated manually because has_dread_level_towards only works for vassals
+				}
+			}
+			desc = INTIMIDATED_REASON
+		}
+
+		modifier = { # Cowed (major dread)
+			add = 100
+			trigger = {
+				scope:recipient = {
+					target_is_liege_or_above = scope:actor
+					dread_modified_ai_boldness = {
+						dreaded_character = scope:actor
+						value < -45
+					}
+					# Note: value is calculated manually because has_dread_level_towards only works for vassals
+				}
+			}
+			desc = COWED_REASON
+		}
+
+		# Modifier based on sender's intrigue skill
+		compare_modifier = {
+			trigger = {
+				always = yes
+			}
+			target = scope:actor
+			value = intrigue
+			multiplier = 2.0
+			offset = 0
+			min = 0
+			desc = AGOT_RECRUIT_SPY_SKILL_MOD
+		}
+
+		compare_modifier = {
+			trigger = {
+				scope:actor = {
+					spy_network_over_limit_recruitment_penalty > 0
+				}
+			}
+			target = scope:actor
+			value = spy_network_over_limit_recruitment_penalty
+			multiplier = -1.0
+			desc = AGOT_RECRUIT_SPY_CAP_MODIFIER
+		}
+
+		modifier = {
+			add = 50
+			scope:hook = yes
+			desc = SCHEME_HOOK_USED
+		}
+
+		modifier = {
+			add = bribe_acceptance_value
+			scope:gift = yes
+			desc = "SCHEME_WITH_GIFT"
+		}
+	}
+
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				gold >= bribe_value
+			}
+		}
+		flag = gift
+		localization = SPY_RECRUIT_GOLD
+		current_description = {
+			desc = SPY_RECRUIT_GOLD_VALID
+		}
+	}
+
+	send_option = {
+		is_valid = {
+			scope:actor = {
+				has_usable_hook = scope:recipient
+			}
+		}
+		flag = hook
+		localization = GENERIC_SPEND_A_HOOK
+	}
+
+	send_options_exclusive = no
+
+}
+
+agot_remove_from_spy_network_interaction = {
+	category = interaction_category_friendly
+	icon = secret
+	desc = agot_remove_from_spy_network_interaction_desc
+	is_shown = {
+		scope:actor = {
+			is_target_in_variable_list = {
+				name = spy_network_members
+				target = scope:recipient
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	on_accept = {
+		scope:actor = {
+			custom_tooltip = dismiss_from_spy_network_interaction_target_remove_from_network.tt
+		}
+		scope:recipient = {
+			custom_tooltip = dismiss_from_spy_network_interaction_target_loses_spy.tt
+		}
+	}
+
+	on_send = {
+		scope:actor = {
+			remove_list_variable = {
+				name = spy_network_members
+				target = scope:recipient
+			}
+			send_interface_toast = {
+				type = event_toast_effect_bad
+				title = dismiss_from_spy_network_toast_title
+				left_icon = scope:actor
+				right_icon = scope:recipient
+				custom_tooltip = dismiss_from_spy_network_toast_desc
+			}
+		}
+	}
+}
+
+agot_check_for_potential_spies_interaction = {
+	category = interaction_category_hostile
+	icon = secret
+	desc = agot_check_for_potential_spies_interaction_desc
+	is_shown = {
+		# No non-human interactions
+		scope:actor = { is_human = yes }
+		scope:recipient = { is_human = yes }
+	}
+
+	is_valid = {
+		exists = scope:actor.cp:councillor_spymaster
+		scope:recipient = {
+			agot_court_eligible_for_spy_network = yes
+			custom_tooltip = {
+				text = potential_spy_in_court
+				any_courtier = {
+					is_ai = yes
+					OR = {
+						is_adult = yes
+						AND = {
+							age >= 8
+							scope:actor = { has_perk = little_birds_perk }
+						}
+					}
+					is_human = yes
+					is_imprisoned = no
+					is_courtier = yes
+					is_pool_guest = no
+					is_playable_character = no
+					court_owner = { is_ruler = yes }
+					NOT = { has_trait = incapable }
+					scope:actor = {
+						is_character_interaction_potentially_accepted = {
+							recipient = PREV
+							interaction = agot_invite_to_spy_network_interaction
+						}
+					}
+				}
+			}
+		}
+	}
+
+	auto_accept = yes
+
+	on_accept = {
+		scope:actor = {
+			custom_tooltip = check_for_potential_spies_actor.tt
+		}
+	}
+
+	on_send = {
+		scope:recipient = {
+			random_courtier = {
+				limit = {
+					is_ai = yes
+					OR = {
+						is_adult = yes
+						AND = {
+							age >= 8
+							scope:actor = { has_perk = little_birds_perk }
+						}
+					}
+					is_imprisoned = no
+					is_courtier = yes
+					is_pool_guest = no
+					is_landed = no
+					court_owner = { is_ruler = yes }
+					NOT = { has_trait = incapable }
+					scope:actor = {
+						is_character_interaction_potentially_accepted = {
+							recipient = PREV
+							interaction = agot_invite_to_spy_network_interaction
+						}
+					}
+				}
+				weight = {
+					base = 1
+					modifier = {
+						add = {
+							value = 0
+							add = intrigue
+						}
+					}
+				}
+				save_scope_as = potential_new_spy
+				scope:actor = {
+					trigger_event = {
+						id = agot_spy_network.0800
+					}
+				}
+			}
+		}
+	}
+}

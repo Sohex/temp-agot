@@ -1,0 +1,2008 @@
+﻿namespace = agot_dragon_pits
+
+
+# 0001 - Event fired after the concusion of restoring the King's Landing Dragonpit
+# 0005 - Event fired from on_action when a generic dragonpit is built, establishing the dragonpit effect / dragonkeeper order
+#
+# 1000 - Event that is called from a button in the county window gui to view dragons stored in a dragonpit
+# 1100 - Event that triggers when a dragon is released from a dragonpit
+# 1200 - Event for storing wild dragons into dragonpit
+
+# Displays Dragons in a Dragonpit
+
+scripted_trigger dragonpit_has_dragons_in_it = {
+	custom_tooltip = {
+		text = dragonpit_has_dragons_in_it_trigger
+		scope:dp_county.county.holder = {
+			any_courtier = {
+				AND = {
+					has_character_flag = in_dragonpit
+					has_trait = dragon
+				}
+			}
+		}
+	}
+}
+
+scripted_trigger dragonpit_has_authorized_tamers = {
+	scope:dp_county.county = {
+		has_variable_list = authorized_tamers
+	}
+}
+
+scripted_trigger dragonpit_has_pitted_eggs = {
+	custom_tooltip = {
+		text = dragonpit_has_pitted_eggs_trigger
+		scope:dp_county.county.holder = {
+			court_position:head_dragonkeeper_court_position ?= {
+				any_character_artifact = {
+					has_variable = pitted_egg
+					var:pitted_egg = scope:dp_county.county
+				}
+			}
+		}
+	}
+}
+
+# KL Dragonpit Ruin is restored - Choose holding type (Taken from Ruin Restoration Event!)
+agot_dragon_pits.0001 = {
+	type = character_event
+	title = agot_dragon_pits.0001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					agot_is_any_dragon_alive = no
+				}
+				desc = agot_dragon_pits.0001.desc
+			}
+			triggered_desc = {
+				trigger = {
+					agot_is_any_dragon_alive = yes
+				}
+				desc = agot_dragon_pits.0002.desc
+			}
+		}
+	}
+
+	theme = stewardship_domain_focus
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+
+	immediate = {
+		every_realm_province = {
+			limit = {
+				has_building = dragonpit_ruins_03
+			}
+			save_scope_as = completed_ruin
+			# remove_province_modifier = agot_ruin_reconstruction
+		}
+	}
+
+	option = {
+		name = {
+			trigger = {
+				agot_is_any_dragon_alive = no
+			}
+			text = agot_dragon_pits.0001.a
+		}
+		name = {
+			trigger = {
+				agot_is_any_dragon_alive = yes
+			}
+			text = agot_dragon_pits.0002.a
+		}
+		add_prestige = 1000
+		# Restore King's Landing Dragonkeepers
+		if = {
+			limit = {
+				has_ep1_dlc_trigger = yes
+			}
+			if = {
+				limit = {
+					amenity_level = {
+						target = agot_dragonpit_amenities
+						value < 3
+					}
+				}
+				hidden_effect = { set_amenity_level = { type = agot_dragonpit_amenities value = 3 } }
+				custom_tooltip = agot_dragonpit_amenities_level_set_to_three_tt
+			}
+		}
+		if = {
+			limit = {
+				NOT = { employs_court_position = head_dragonkeeper_court_position }
+			}
+			trigger_event = {
+				id = agot_dragonkeepers.0100
+				days = 1
+			}
+		}
+		else = {
+			title:c_kings_landing = {
+				set_variable = { name = has_dragonkeeper_order }
+				holder = {
+					if = {
+						limit = {
+							agot_has_any_dragonpit_access_law = no
+						}
+						agot_dragonpit_access_law_close_family_effect = yes
+					}
+				}
+			}
+		}
+	}
+}
+
+# Generic Dragonpit is built
+agot_dragon_pits.0005 = {
+	type = character_event
+	title = agot_dragon_pits.0005.t
+	desc = {
+		desc = agot_dragon_pits.0005.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:generic_dragonpit = { geographical_region = world_westeros_seven_kingdoms }
+				}
+				desc = agot_dragon_pits.0005.westeros
+			}
+			desc = agot_dragon_pits.0005.elsewhere
+		}
+	}
+
+	theme = stewardship_domain_focus
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+
+	immediate = {
+		every_realm_province = {
+			limit = {
+				has_building = generic_dragon_pit_01
+			}
+			save_scope_as = generic_dragonpit
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.0005.a
+
+		add_prestige = 500
+		# Restore King's Landing Dragonkeepers
+		agot_create_generic_dragonpit_scripted_effect = { DRAGON_PIT_OWNER = root }
+	}
+}
+
+# Dragonpit Menu
+agot_dragon_pits.0999 = {
+	type = character_event
+	title = agot_dragon_pits.0999.t
+	desc = agot_dragon_pits.0999.desc
+	theme = dragon
+
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+	right_portrait = {
+		trigger = { exists = scope:hdk }
+		character = scope:hdk
+	}
+
+	immediate = {
+		scope:dp_county.county.holder.court_position:head_dragonkeeper_court_position ?= {
+			save_scope_as = hdk
+		}
+	}
+
+	# Show me the Dragons in this Pit
+	option = {
+		name = agot_dragon_pits.0999.a
+		trigger = {
+			dragonpit_has_dragons_in_it = yes
+		}
+		show_as_unavailable = {
+			dragonpit_has_dragons_in_it = no
+		}
+		trigger_event = agot_dragon_pits.1000
+	}
+	# Show me the Eggs
+	option = {
+		name = agot_dragon_pits.0999.d
+		trigger = {
+			dragonpit_has_pitted_eggs = yes
+		}
+		show_as_unavailable = {
+			dragonpit_has_pitted_eggs = no
+		}
+		trigger_event = agot_dragon_pits.1002
+	}
+	# Show me the Authorized Tamers
+	option = {
+		name = agot_dragon_pits.0999.b
+		trigger = {
+			dragonpit_has_authorized_tamers = yes
+		}
+		show_as_unavailable = {
+			dragonpit_has_authorized_tamers = no
+		}
+		trigger_event = agot_dragon_pits.1001
+	}
+	# Thank you, that's all
+	option = {
+		name = agot_dragon_pits.0999.c
+	}
+}
+
+# Displays Dragons in a Dragonpit
+agot_dragon_pits.1000 = {
+	type = character_event
+	title = agot_dragon_pits.1000.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					dragonpit_has_dragons_in_it = yes
+				}
+				desc = agot_dragon_pits.1000.desc
+			}
+			triggered_desc = {
+				trigger = {
+					dragonpit_has_dragons_in_it = no
+				}
+				desc = agot_dragon_pits.1000.empty_desc
+			}
+		}
+	}
+
+	theme = dragon
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+
+	right_portrait = {
+		trigger = {
+			NOT = { scope:dp_county.county.holder = ROOT }
+		}
+		character = scope:dp_county.county.holder
+		animation = personality_rational
+	}
+
+	lower_right_portrait = {
+		trigger = { exists = scope:dragonkeeper }
+		character = scope:dragonkeeper
+		animation = chancellor
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+			dragonpit_has_dragons_in_it = yes
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				dragonpit_has_dragons_in_it = yes
+			}
+			scope:dp_county.county.holder = {
+				every_courtier = {
+					limit = {
+						has_character_flag = in_dragonpit
+						var:pitted_dragon_location = scope:dp_county.county
+					}
+					root = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+				if = {
+					limit = {
+						employs_court_position = head_dragonkeeper_court_position
+					}
+					random_court_position_holder = {
+						type = head_dragonkeeper_court_position
+						save_scope_as = dragonkeeper
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.1000.a
+		trigger = {	dragonpit_has_dragons_in_it = yes }
+	}
+	option = {
+		name = agot_dragon_pits.1000.a
+		trigger = {	dragonpit_has_dragons_in_it = no }
+	}
+	after = {
+		if = {
+			limit = {
+				has_variable_list = possible_characters
+			}
+			clear_variable_list = possible_characters
+		}
+	}
+}
+
+# Show the Authorized Tamers
+agot_dragon_pits.1001 = {
+	type = character_event
+	title = agot_dragon_pits.1001.t
+	desc = agot_dragon_pits.1001.desc
+
+	theme = dragon
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+			dragonpit_has_dragons_in_it = yes
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				scope:dp_county.county = { dragonpit_has_authorized_tamers = yes }
+			}
+			scope:dp_county.county = {
+				every_in_list = {
+					variable = authorized_tamers
+					root = {
+						add_to_variable_list = {
+							name = possible_characters
+							target = prev
+						}
+					}
+				}
+			}
+			ordered_in_list = {
+				variable = possible_characters
+				order_by = prowess
+				root = { set_variable = { name = si_selected_character value = prev } }
+				save_scope_as = authorized_tamer
+			}
+		}
+	}
+	# XXX
+	option = {
+		name = agot_dragon_pits.1001.a
+		var:si_selected_character = {
+			save_scope_as = authorized_tamer
+			remove_variable = si_selecting_character
+		}
+		clear_variable_list = possible_characters
+	}
+	# Remove from authorized tamers list
+	option = {
+		name = agot_dragon_pits.1001.b
+		custom_tooltip = agot_dragon_pits.1001.b_tt
+		custom_tooltip = agot_dragon_pits.1001.b_tt_dp_access_lost
+		trigger = {
+			root = scope:dp_county.county.holder
+		}
+		var:si_selected_character = {
+			save_scope_as = authorized_tamer
+			remove_variable = si_selecting_character
+		}
+		clear_variable_list = possible_characters
+		scope:dp_county.county = {
+			agot_dragonpit_revoke_access_to_pit_effect = { RECIPIENT = scope:authorized_tamer }
+		}
+	}
+}
+
+agot_dragon_pits.1002 = {
+	type = character_event
+	title = agot_dragon_pits.1002.t
+	desc = agot_dragon_pits.1002.desc
+
+	theme = dragon
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+
+	right_portrait = {
+		trigger = {
+			NOT = { scope:dp_county.county.holder = ROOT }
+		}
+		character = scope:dp_county.county.holder
+		animation = personality_rational
+	}
+
+	lower_right_portrait = {
+		trigger = { exists = scope:dragonkeeper }
+		character = scope:dragonkeeper
+		animation = chancellor
+	}
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_dragon_egg_selection"
+		container = "custom_widgets_container"
+	}
+
+	immediate = {
+		every_artifact = {
+			limit = {
+				has_variable = pitted_egg
+				var:pitted_egg = scope:dp_county.county
+			}
+			root = {
+				add_to_variable_list = {
+					name = possible_dragon_eggs
+					target = prev
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.1002.a
+		clear_variable_list = possible_dragon_eggs
+	}
+}
+
+# Dragon released from the dragonpit
+agot_dragon_pits.1100 = {
+	type = character_event
+	title = agot_dragon_pits.1100.t
+	desc = agot_dragon_pits.1100.desc
+
+	theme = dragon
+	override_background = { reference = wilderness }
+
+	left_portrait = {
+		character = root
+		animation = chancellor
+	}
+
+	immediate = {
+		scope:dragon_pit_location = {
+			change_county_control = -25
+			add_county_modifier = {
+				modifier = agot_roaming_dragon
+				years = 10
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.1100.a
+	}
+}
+
+scripted_trigger vassal_can_be_used_to_force_dragon_into_pit = {
+	is_available = yes
+	is_human = yes
+	is_ai = yes
+	NOT = { is_vassal_of = root }
+	trigger_if = {
+		limit = {
+			NOT = {
+				has_trait = kingsguard
+			}
+		}
+		any_heir_title = {
+			exists = holder
+			place_in_line_of_succession = {
+				target = this
+				value > 3
+			}
+		}
+	}
+}
+scripted_trigger dragon_is_menacing_or_mean = {
+	OR = {
+		has_trait = dragon_aggressive
+		has_trait = dragon_defiant
+		has_trait = dragon_bloodthirsty
+		has_trait = education_dragon_2
+		has_trait = education_dragon_1
+		has_trait = dragon_imperious
+		dragon_size >= level_five_dragon_size
+		draconic_dread >= 30
+	}
+}
+scripted_trigger dragon_passes_vibe_check_for_capturing = {
+	OR = {
+		has_trait = dragon_friendly
+		has_trait = dragon_cooperative
+		has_trait = dragon_supporting
+		has_trait = dragon_accepting
+		has_trait = education_dragon_3
+		has_trait = education_dragon_4
+		has_trait = education_dragon_5
+	}
+}
+# Event for storing wild dragons into dragonpit
+agot_dragon_pits.1200 = {
+	type = character_event
+	title = agot_dragon_pits.1200.t
+	desc = agot_dragon_pits.1200.desc
+
+	theme = dragon
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				employs_court_position = head_dragonkeeper_court_position
+			}
+			random_court_position_holder = {
+				type = head_dragonkeeper_court_position
+				save_scope_as = head_dragonkeeper
+			}
+		}
+	}
+
+	# Have the Dragonkeepers face the beast
+	option = {
+		name = agot_dragon_pits.1200.a
+		trigger = {
+			employs_court_position = head_dragonkeeper_court_position
+		}
+		scope:head_dragonkeeper = {
+			duel = {
+				skills = { learning }
+				value = high_skill_rating
+				55 = {
+					desc = agot_dragon_pits.1200.a.success
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = 3.5
+						min = -25
+					}
+					modifier = {
+						add = 10
+						knows_language = language_agot_valyrian
+					}
+					modifier = {
+						add = {
+							value = 0
+							add = scope:head_dragonkeeper.aptitude:head_dragonkeeper_court_position
+							multiply = 6.5
+						}
+					}
+					modifier = {
+						add = {
+							value = 0
+							add = {
+								value = scope:head_dragonkeeper.dragonblood_percent
+							}
+							divide = 5
+						}
+						agot_is_dragonblood_character = yes
+					}
+					modifier = {
+						add = scope:wild_dragon.temperament
+					}
+					modifier = {
+						add = scope:wild_dragon.taming_chance
+					}
+					modifier = {
+						add = 30
+						scope:wild_dragon = { agot_dragon_is_wounded_or_ill_trigger = yes }
+					}
+					modifier = {
+						add = 20
+						scope:wild_dragon = {
+							dragon_passes_vibe_check_for_capturing = yes
+						}
+					}
+					root = {
+						send_interface_toast = {
+							title = agot_dragon_pits.1200.a.success
+							left_icon = scope:wild_dragon
+							scope:head_dragonkeeper = {
+								add_prestige = medium_prestige_gain
+							}
+						}
+					}
+					scope:wild_dragon = {
+						agot_set_as_owned_dragon = { OWNER = root DRAGON = scope:wild_dragon}
+						agot_send_to_dragonpit_effect = { DRAGON = scope:wild_dragon DRAGONPIT_HOLDER = root DRAGONPIT_COUNTY = scope:dragon_pit_location }
+					}
+				}
+				45 = {
+					desc = agot_dragon_pits.1200.a.failure
+					compare_modifier = {
+						value = scope:duel_value
+						multiplier = -3.5
+						min = -25
+					}
+					modifier = {
+						add = scope:wild_dragon.dread
+					}
+					modifier = {
+						add = 25
+						scope:wild_dragon = {
+							dragon_is_menacing_or_mean = yes
+						}
+					}
+					root = {
+						send_interface_toast = {
+							title = agot_dragon_pits.1200.a.failure
+							left_icon = scope:wild_dragon
+							random_list = {
+								60 = {
+									scope:head_dragonkeeper = {
+										custom_tooltip = {
+											text = reason_death_dragon_burned_keeper
+											death = {
+												death_reason = death_dragon_fire
+												killer = scope:wild_dragon
+											}
+										}
+									}
+								}
+								40 = {
+									scope:head_dragonkeeper = {
+										custom_tooltip = {
+											text = reason_death_dragon_ate_keeper
+											death = {
+												death_reason = death_dragon_ate
+												killer = scope:wild_dragon
+											}
+										}
+									}
+								}
+								10 = {
+									scope:head_dragonkeeper = {
+										increase_wounds_effect = { REASON = dragon }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		custom_tooltip = agot_capture_dragon_cd_tt
+		set_variable = {
+			name = capture_cd
+			value = yes
+			years = 1
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+	# Face the beast yourself
+	option = {
+		name = agot_dragon_pits.1200.b
+		trigger = {
+			is_adult = yes
+		}
+		duel = {
+			skills = { learning prowess }
+			value = high_skill_rating
+			50 = {
+				desc = agot_dragon_pits.1200.a.success
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -25
+				}
+				modifier = {
+					add = root.var:dragonlore
+					exists = root.var:dragonlore
+				}
+				modifier = {
+					add = {
+						value = 0
+						add = {
+							value = root.dragonblood_percent
+						}
+						divide = 3
+					}
+					agot_is_dragonblood_character = yes
+				}
+				modifier = {
+					add = 10
+					knows_language = language_agot_valyrian
+				}
+				modifier = {
+					add = scope:wild_dragon.temperament
+				}
+				modifier = {
+					add = scope:wild_dragon.taming_chance
+				}
+				modifier = {
+					add = 25
+					scope:wild_dragon = { agot_dragon_is_wounded_or_ill_trigger = yes }
+				}
+				modifier = {
+					add = 15
+					scope:wild_dragon = {
+						dragon_passes_vibe_check_for_capturing = yes
+					}
+				}
+				send_interface_toast = {
+					title = agot_dragon_pits.1200.a.success
+					left_icon = scope:wild_dragon
+					add_prestige = medium_prestige_gain
+				}
+				scope:wild_dragon = {
+					agot_set_as_owned_dragon = { OWNER = root DRAGON = scope:wild_dragon}
+					agot_send_to_dragonpit_effect = { DRAGON = scope:wild_dragon DRAGONPIT_HOLDER = root DRAGONPIT_COUNTY = scope:dragon_pit_location }
+				}
+
+			}
+			50 = {
+				desc = agot_dragon_pits.1200.a.failure
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -25
+				}
+				modifier = {
+					add = scope:wild_dragon.dread
+				}
+				modifier = {
+					add = 25
+					scope:wild_dragon = {
+						dragon_is_menacing_or_mean = yes
+					}
+				}
+				send_interface_toast = {
+					title = agot_dragon_pits.1200.a.failure
+					left_icon = scope:wild_dragon
+					random_list = {
+						60 = {
+							root = {
+								custom_tooltip = {
+									text = reason_death_dragon_burned
+									death = {
+										death_reason = death_dragon_fire
+										killer = scope:wild_dragon
+									}
+								}
+							}
+						}
+						40 = {
+							root = {
+								custom_tooltip = {
+									text = reason_death_dragon_ate
+									death = {
+										death_reason = death_dragon_ate
+										killer = scope:wild_dragon
+									}
+								}
+							}
+						}
+						10 = {
+							root = {
+								increase_wounds_effect = { REASON = dragon }
+							}
+						}
+					}
+				}
+			}
+		}
+		custom_tooltip = agot_capture_dragon_cd_tt
+		set_variable = {
+			name = capture_cd
+			value = yes
+			years = 1
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 5
+				has_trait = eccentric
+			}
+		}
+	}
+	# Have your captains try
+	option = {
+		name = agot_dragon_pits.1200.c
+		trigger = {
+			any_knight = {
+				vassal_can_be_used_to_force_dragon_into_pit = yes
+				count > 0
+			}
+			NOT = { exists = var:si_selected_character }
+		}
+		trigger_event = agot_dragon_pits.1201
+		ai_chance = {
+			base = 5
+		}
+	}
+	# Actually, nevermind
+	option = {
+		name = agot_dragon_pits.1200.d
+	}
+}
+# Event for storing wild dragons into dragonpit
+agot_dragon_pits.1201 = {
+	type = character_event
+	title = agot_dragon_pits.1201.t
+	desc = agot_dragon_pits.1201.desc
+
+	theme = dragon
+	override_background = { reference = agot_dragonpit }
+
+	widget = {
+		is_shown = {
+			is_ai = no
+		}
+		gui = "agot_character_selection_two_options"
+		container = "custom_widgets_container"
+	}
+
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				is_ai = no
+			}
+			every_knight = {
+				limit = {
+					vassal_can_be_used_to_force_dragon_into_pit = yes
+				}
+				root = {
+					add_to_variable_list = {
+						name = possible_characters
+						target = prev
+					}
+					set_variable = { name = si_selected_character value = prev }
+				}
+			}
+		}
+		else = {
+			random_knight = {
+				limit = {
+					vassal_can_be_used_to_force_dragon_into_pit = yes
+				}
+				save_scope_as = knight
+			}
+		}
+	}
+
+	# Have your captains try
+	option = {
+		name = agot_dragon_pits.1201.a
+		if = {
+			limit = {
+				is_ai = no
+			}
+			var:si_selected_character = {
+				save_scope_as = knight
+				remove_variable = si_selecting_character
+			}
+			remove_variable = si_selected_character
+			clear_variable_list = possible_characters
+		}
+		random_list = {
+			30 = {
+				trigger = {
+					scope:wild_dragon = { dragon_is_menacing_or_mean = yes }
+				}
+				send_interface_toast = {
+					title = agot_dragon_pits.1201.refusal.t
+					custom_tooltip = agot_dragon_pits.1201.refusal.desc
+					left_icon = scope:wild_dragon
+				}
+				modifier = {
+					add = 100
+					scope:knight = {
+						has_trait = craven
+					}
+				}
+			}
+			70 = {
+				scope:knight = {
+					duel = {
+						skills = { prowess }
+						target = scope:wild_dragon
+						45 = {
+							desc = agot_dragon_pits.1200.a.success
+							compare_modifier = {
+								value = scope:duel_value
+								multiplier = 3.5
+								min = -25
+							}
+							modifier = {
+								add = scope:knight.var:dragonlore
+								exists = scope:knight.var:dragonlore
+							}
+							# Dragonblood
+							modifier = {
+								add = {
+									value = 0
+									add = {
+										value = scope:knight.dragonblood_percent
+									}
+									divide = 5
+								}
+								agot_is_dragonblood_character = yes
+							}
+							modifier = {
+								add = 10
+								knows_language = language_agot_valyrian
+							}
+							modifier = {
+								add = scope:wild_dragon.temperament
+							}
+							modifier = {
+								add = scope:wild_dragon.taming_chance
+							}
+							modifier = {
+								add = 25
+								scope:wild_dragon = { agot_dragon_is_wounded_or_ill_trigger = yes }
+							}
+							modifier = {
+								add = 15
+								scope:wild_dragon = {
+									dragon_passes_vibe_check_for_capturing = yes
+								}
+							}
+							root = {
+								send_interface_toast = {
+									title = agot_dragon_pits.1200.a.success
+									left_icon = scope:wild_dragon
+									scope:knight = {
+										add_prestige = medium_prestige_gain
+									}
+								}
+							}
+							scope:wild_dragon = {
+								agot_set_as_owned_dragon = { OWNER = root DRAGON = scope:wild_dragon}
+								agot_send_to_dragonpit_effect = { DRAGON = scope:wild_dragon DRAGONPIT_HOLDER = root DRAGONPIT_COUNTY = scope:dragon_pit_location }
+							}
+						}
+						55 = {
+							desc = agot_dragon_pits.1200.a.failure
+							compare_modifier = {
+								value = scope:duel_value
+								multiplier = -3.5
+								min = -25
+							}
+							modifier = {
+								add = scope:wild_dragon.dread
+							}
+							modifier = {
+								add = 25
+								scope:wild_dragon = {
+									dragon_is_menacing_or_mean = yes
+								}
+							}
+							root = {
+								send_interface_toast = {
+									title = agot_dragon_pits.1200.a.failure
+									left_icon = scope:wild_dragon
+									random_list = {
+										60 = {
+											scope:knight = {
+												death = {
+													death_reason = death_dragon_fire
+													killer = scope:wild_dragon
+												}
+											}
+										}
+										40 = {
+											scope:knight = {
+												death = {
+													death_reason = death_dragon_ate
+													killer = scope:wild_dragon
+												}
+											}
+										}
+										10 = {
+											scope:knight = {
+												increase_wounds_effect = { REASON = dragon }
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				modifier = {
+					add = 50
+					scope:knight = {
+						OR = {
+							has_trait = loyal
+							root = {
+								has_usable_hook = this
+							}
+						}
+					}
+				}
+				modifier = {
+					add = 30
+					scope:knight = {
+						OR = {
+							has_trait = ambitious
+							has_trait = brave
+						}
+					}
+				}
+				modifier = {
+					add = 30
+					scope:knight = {
+						has_trait = dragonslayer
+					}
+				}
+				modifier = {
+					add = 20
+					dragon_passes_vibe_check_for_capturing = yes
+				}
+				modifier = {
+					add = 50
+					scope:wild_dragon = { dragon_is_menacing_or_mean = no }
+				}
+			}
+		}
+		custom_tooltip = agot_capture_dragon_cd_tt
+		set_variable = {
+			name = capture_cd
+			value = yes
+			years = 1
+		}
+	}
+	# Actually, nevermind
+	option = {
+		name = agot_dragon_pits.1200.d
+		if = {
+			limit = {
+				is_ai = no
+			}
+			var:si_selected_character = {
+				remove_variable = si_selecting_character
+			}
+			remove_variable = si_selected_character
+			clear_variable_list = possible_characters
+		}
+	}
+}
+
+agot_dragon_pits.1300 = {
+	hidden = yes
+
+	trigger = {
+		has_variable = current_rider
+		NOT = {
+			has_character_flag = in_dragonpit
+		}
+		NOT = {
+			owns_story_of_type = story_dragon_at_war
+		}
+		var:current_rider ?= {
+			agot_has_an_active_dragonpit = yes
+		}
+	}
+	immediate = {
+		var:current_rider = {
+			save_scope_as = dragonrider
+		}
+		save_scope_as = baby_dragon
+		scope:dragonrider = {
+			trigger_event = agot_dragon_pits.1301
+		}
+	}
+}
+
+agot_dragon_pits.1301 = {
+	type = character_event
+	title = agot_dragon_pits.1301.t
+	desc = agot_dragon_pits.1301.desc
+
+	theme = dragon
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+
+	immediate = {
+		random_held_title = {
+			limit = { agot_title_is_an_active_dragonpit = yes }
+			save_scope_as = dragonpit_title
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.1301.a
+		agot_send_to_dragonpit_effect = { DRAGON = scope:baby_dragon DRAGONPIT_HOLDER = root DRAGONPIT_COUNTY = scope:dragonpit_title }
+	}
+
+	option = {
+		name = agot_dragon_pits.1301.b
+		if = {
+			limit = {
+				NOT = {
+					location.county = { has_county_modifier = agot_roaming_dragon }
+				}
+			}
+			location.county = { add_county_modifier = { modifier = agot_roaming_dragon years = 10 } }
+		}
+	}
+}
+
+#Pitted Eggs
+
+#Decide where to send eggs
+agot_dragon_pits.2000 = {
+	type = character_event
+	title = agot_dragon_pits.2000.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					exists = scope:target
+				}
+				desc = agot_dragon_pits.2000.desc
+			}
+			desc = agot_dragon_pits.2000.desc_mult
+		}
+	}
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+
+	right_portrait = {
+		character = scope:recipient
+		animation = throne_room_writer
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				capital_county = { agot_title_is_an_active_dragonpit = yes }
+			}
+			capital_county = { save_scope_as = option_1 }
+		}
+		else = {
+			random_held_title = {
+				limit = {
+					agot_title_is_an_active_dragonpit = yes
+				}
+				save_scope_as = option_1
+			}
+		}
+
+		if = {
+			limit = {
+				any_held_title = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+				}
+			}
+			random_held_title = {
+				limit = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+				}
+				save_scope_as = option_2
+			}
+		}
+
+		if = {
+			limit = {
+				any_held_title = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+					NOT = { this = scope:option_2 }
+				}
+			}
+			random_held_title = {
+				limit = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+					NOT = { this = scope:option_2 }
+				}
+				save_scope_as = option_3
+			}
+		}
+
+		if = {
+			limit = {
+				any_held_title = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+					NOT = { this = scope:option_2 }
+					NOT = { this = scope:option_3 }
+				}
+			}
+			random_held_title = {
+				limit = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+					NOT = { this = scope:option_2 }
+					NOT = { this = scope:option_3 }
+				}
+				save_scope_as = option_4
+			}
+		}
+
+		if = {
+			limit = {
+				any_held_title = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+					NOT = { this = scope:option_2 }
+					NOT = { this = scope:option_3 }
+					NOT = { this = scope:option_4 }
+				}
+			}
+			random_held_title = {
+				limit = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+					NOT = { this = scope:option_2 }
+					NOT = { this = scope:option_3 }
+					NOT = { this = scope:option_4 }
+				}
+				save_scope_as = option_5
+			}
+		}
+
+		if = {
+			limit = {
+				any_held_title = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+					NOT = { this = scope:option_2 }
+					NOT = { this = scope:option_3 }
+					NOT = { this = scope:option_4 }
+					NOT = { this = scope:option_5 }
+				}
+			}
+			random_held_title = {
+				limit = {
+					agot_title_is_an_active_dragonpit = yes
+					NOT = { this = scope:option_1 }
+					NOT = { this = scope:option_2 }
+					NOT = { this = scope:option_3 }
+					NOT = { this = scope:option_4 }
+					NOT = { this = scope:option_5 }
+				}
+				save_scope_as = option_6
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.2000.a
+		scope:recipient = {
+			every_character_artifact = {
+				limit = {
+					has_variable = being_pitted
+				}
+				remove_variable = being_pitted
+				set_variable = {
+					name = pitted_egg
+					value = scope:option_1
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = { exists = scope:option_2 }
+		name = agot_dragon_pits.2000.b
+		scope:recipient = {
+			every_character_artifact = {
+				limit = {
+					has_variable = being_pitted
+				}
+				remove_variable = being_pitted
+				set_variable = {
+					name = pitted_egg
+					value = scope:option_2
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = { exists = scope:option_3 }
+		name = agot_dragon_pits.2000.c
+		scope:recipient = {
+			every_character_artifact = {
+				limit = {
+					has_variable = being_pitted
+				}
+				remove_variable = being_pitted
+				set_variable = {
+					name = pitted_egg
+					value = scope:option_3
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = { exists = scope:option_4 }
+		name = agot_dragon_pits.2000.d
+		scope:recipient = {
+			every_character_artifact = {
+				limit = {
+					has_variable = being_pitted
+				}
+				remove_variable = being_pitted
+				set_variable = {
+					name = pitted_egg
+					value = scope:option_4
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = { exists = scope:option_5 }
+		name = agot_dragon_pits.2000.e
+		scope:recipient = {
+			every_character_artifact = {
+				limit = {
+					has_variable = being_pitted
+				}
+				remove_variable = being_pitted
+				set_variable = {
+					name = pitted_egg
+					value = scope:option_5
+				}
+			}
+		}
+	}
+
+	option = {
+		trigger = { exists = scope:option_6 }
+		name = agot_dragon_pits.2000.f
+		scope:recipient = {
+			every_character_artifact = {
+				limit = {
+					has_variable = being_pitted
+				}
+				remove_variable = being_pitted
+				set_variable = {
+					name = pitted_egg
+					value = scope:option_6
+				}
+			}
+		}
+	}
+}
+
+#Return Pitted Eggs When Dragonkeeper Leaves
+agot_dragon_pits.2001 = {
+	hidden = yes
+
+	trigger = {
+		has_character_flag = head_dragonkeeper
+		any_character_artifact = {
+			has_variable = pitted_egg
+		}
+	}
+
+	immediate = {
+		save_scope_as = head_dragonkeeper
+		scope:old_employer = {
+			trigger_event = agot_dragon_pits.2002
+		}
+	}
+}
+
+agot_dragon_pits.2002 = {
+	type = character_event
+	title = agot_dragon_pits.2002.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:head_dragonkeeper = { is_alive = no }
+				}
+				desc = agot_dragon_pits.2002.desc_dead
+			}
+			desc = agot_dragon_pits.2002.desc_alive
+		}
+	}
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+
+	lower_right_portrait = {
+		character = scope:head_dragonkeeper
+		animation = throne_room_writer
+	}
+
+	trigger = {
+		scope:head_dragonkeeper = {
+			OR = {
+				is_alive = no
+				any_character_artifact = {
+					has_variable = pitted_egg
+				}
+			}
+			OR = {
+				has_character_flag = agot_currently_being_fired
+				NOT = { has_court_position = head_dragonkeeper_court_position }
+			}
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				scope:head_dragonkeeper = { is_alive = no }
+				exists = scope:moved_egg
+			}
+			custom_tooltip = agot_dragon_pits.2002.pitted_eggs_return
+		}
+		else = {
+			scope:head_dragonkeeper = {
+				remove_character_flag = head_dragonkeeper
+				every_character_artifact = {
+					limit = {
+						has_variable = pitted_egg
+					}
+					remove_variable = pitted_egg
+					remove_variable = agot_artifact_cannot_gift
+					set_owner = root
+				}
+				if = {
+					limit = {
+						has_character_flag = agot_currently_being_fired
+					}
+					remove_character_flag = agot_currently_being_fired
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.2002.a
+	}
+}
+
+#New ruler owns county and recieves eggs
+agot_dragon_pits.2003 = {
+	type = character_event
+	title = agot_dragon_pits.2003.t
+	desc = agot_dragon_pits.2003.desc
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = ecstasy
+	}
+
+	trigger = {
+		NOT = { scope:transfer_type = flag:inheritance }
+		any_artifact = {
+			has_variable = pitted_egg
+			var:pitted_egg = scope:title
+		}
+	}
+
+	immediate = {
+		every_artifact = {
+			limit = {
+				has_variable = pitted_egg
+				var:pitted_egg = scope:title
+			}
+			remove_variable = pitted_egg
+			remove_variable = agot_artifact_cannot_gift
+			remove_variable = agot_swiper_no_swiping
+			set_owner = root
+			if = {
+				limit = {
+					scope:previous_holder = { is_alive = yes }
+				}
+				scope:previous_holder = { add_personal_artifact_claim = prev }
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.2003.a
+	}
+}
+
+#Pitted Egg is Dud
+agot_dragon_pits.2004 = {
+	type = character_event
+	title = agot_dragon_pits.2004.t
+	desc = agot_dragon_pits.2004.desc
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = disappointed
+	}
+
+	right_portrait = {
+		character = scope:head_dragonkeeper
+		animation = worry
+	}
+
+	immediate = {
+		scope:egg = {
+			agot_dudify_egg = yes
+			set_owner = root
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.2004.a
+	}
+}
+
+#Pitted Egg Hatches
+agot_dragon_pits.2005 = {
+	hidden = yes
+
+	immediate = {
+		scope:egg = {
+			var:pitted_egg = { save_scope_as = dragonpit_county }
+		}
+		agot_spawn_owned_hatchling_from_egg_effect = { OWNER = root EGG = scope:egg }
+		agot_send_to_dragonpit_no_event = {
+			DRAGON = scope:dragon
+			DRAGONPIT_COUNTY = scope:dragonpit_county
+		}
+		agot_inform_pitted_dragon_egg_hatched_effect = yes
+		trigger_event = agot_dragon_pits.2006
+	}
+}
+
+agot_dragon_pits.2006 = {
+	type = character_event
+	title = agot_dragon_pits.2006.t
+	desc = agot_dragon_pits.2006.desc
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	#NAMING WIDGET
+	widget = {
+		is_shown = {
+			is_ai = no
+			is_landed = yes
+		}
+		gui = "event_window_widget_name_child"
+		container = "dynamic_birth_name"
+		controller = name_character
+		setup_scope = { scope:dragon = { save_scope_as = name_character_target } }
+	}
+
+	left_portrait = {
+		character = root
+		animation = ecstasy
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {}
+
+	option = {
+		name = agot_dragon_pits.2006.a
+		custom_tooltip = agot_dragon_egg_cradling_birth.0002.a_tt_dragon_born
+		show_as_tooltip = {
+			agot_send_to_dragonpit_no_event = {
+				DRAGON = scope:dragon
+				DRAGONPIT_COUNTY = scope:dragonpit_county
+			}
+		}
+		custom_tooltip = agot_dragon_egg_cradling_birth.0002.a_tt_egg_destroyed
+		hidden_effect = {
+			dragon_gender_reveal_calc = yes
+		}
+	}
+}
+
+#Dragonpit Visit, Choose County
+agot_dragon_pits.3000 = {
+	type = character_event
+	title = agot_dragon_pits.3000.t
+	desc = agot_dragon_pits.3000.desc
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = ecstasy
+	}
+
+	right_portrait = {
+		character = scope:recipient
+		animation = ecstasy
+	}
+
+	immediate = {
+		title:c_dragonstone = { save_scope_as = dragonstone }
+		random_held_county = {
+			limit = { agot_title_is_an_active_dragonpit = yes }
+			save_scope_as = dp_county_option
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.3000.a
+		title:c_dragonstone = { save_scope_as = dp_county }
+		trigger_event = agot_dragon_pits.3001
+	}
+
+	option = {
+		name = agot_dragon_pits.3000.b
+		scope:dp_county_option = { save_scope_as = dp_county }
+		trigger_event = agot_dragon_pits.3001
+	}
+}
+
+#Handler
+agot_dragon_pits.3001 = {
+	hidden = yes
+
+	immediate = {
+		scope:recipient = { save_scope_as = dragon_traits_in_common_human }
+		scope:dp_county.holder = {
+			random_courtier_or_guest = {
+				limit = {
+					has_trait = dragon
+					has_character_flag = in_dragonpit
+					NOR = {
+						has_variable = current_rider # No rider, no bonder
+						any_relation = {
+							type = agot_dragon
+						}
+					}
+					save_temporary_scope_as = dragon
+					agot_is_canon_rider_dragon_pair = { RIDER = scope:recipient DRAGON = scope:dragon }
+				}
+				alternative_limit = {
+					has_trait = dragon
+					has_character_flag = in_dragonpit
+					NOR = {
+						has_variable = current_rider # No rider, no bonder
+						any_relation = {
+							type = agot_dragon
+						}
+					}
+					save_temporary_scope_as = dragon
+					agot_can_tame_or_bond_or_etc_with_pitted_dragons = {
+						DRAGON = scope:dragon ACTOR = scope:recipient
+					}
+				}
+				weight = {
+					base = 1
+					modifier = {
+						add = {
+							save_temporary_scope_as = dragon_traits_in_common_dragon
+							value = dragon_traits_in_common
+							multiply = dragon_scheme_base_common_traits_value
+						}
+					}
+					modifier = {
+						add = scope:dragon.taming_chance
+					}
+				}
+				save_scope_as = dragon
+			}
+		}
+
+		if = {
+			limit = {
+				agot_is_canon_rider_dragon_pair = { RIDER = scope:recipient DRAGON = scope:dragon }
+			}
+			scope:dragon = { save_scope_as = canon_dragon }
+		}
+
+		random_list = {
+			0 = { #Gains Dragon Skittish
+				modifier = {
+					has_character_modifier = agot_child_terrified_by_dragons
+					add = 1000
+				}
+				modifier = {
+					add = {
+						value = scope:recipient.ai_boldness
+						multiply = -0.25
+					}
+				}
+				modifier = {
+					exists = scope:canon_dragon
+					factor = 0
+				}
+				trigger_event = agot_dragon_pits.3002
+			}
+			40 = { #Uninterested
+				modifier = {
+					exists = scope:canon_dragon
+					factor = 0
+				}
+				trigger_event = agot_dragon_pits.3003
+			}
+			40 = { #Starts Bonding
+				modifier = {
+					add = {
+						value = scope:recipient.ai_rationality
+						multiply = 0.5
+					}
+				}
+				modifier = {
+					exists = scope:canon_dragon
+					factor = 0
+				}
+				trigger_event = agot_dragon_pits.3004
+			}
+			20 = { #Attempts Taming
+				trigger = {
+					scope:dragon = { dragon_size >= dragon_taming_minimum_size }
+				}
+				modifier = {
+					add = {
+						value = scope:recipient.ai_boldness
+						multiply = 0.5
+					}
+				}
+				modifier = {
+					exists = scope:canon_dragon
+					add = 200
+				}
+				agot_try_tame_dragon_effect = {
+					TAMER = scope:recipient
+					DRAGON = scope:dragon
+				}
+				if = {
+					limit = { scope:recipient = { has_trait = dragonrider } }
+					trigger_event = agot_dragon_pits.3006
+				}
+				else = {
+					trigger_event = agot_dragon_pits.3005
+				}
+			}
+		}
+	}
+}
+
+#Scared of Dragons
+agot_dragon_pits.3002 = {
+	type = character_event
+	title = agot_dragon_pits.3002.t
+	desc = agot_dragon_pits.3002.desc
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = disapproval
+	}
+
+	right_portrait = {
+		character = scope:recipient
+		animation = fear
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				scope:recipient = { has_character_modifier = agot_child_terrified_by_dragons }
+			}
+			scope:recipient = {
+				remove_character_modifier = agot_child_terrified_by_dragons
+				add_character_modifier = agot_dragon_disinterest
+			}
+		}
+		else = {
+			random_list = {
+				80 = {
+					scope:recipient = { add_character_modifier = agot_child_terrified_by_dragons }
+				}
+				20 = {
+					modifier = {
+						scope:recipient = { has_trait = craven }
+						add = 60
+					}
+					scope:recipient = { add_character_modifier = agot_dragon_disinterest }
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_dragon_pits.3002.a
+	}
+}
+
+#Nothing Suits Me
+agot_dragon_pits.3003 = {
+	type = character_event
+	title = agot_dragon_pits.3003.t
+	desc = agot_dragon_pits.3003.desc
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = root
+		animation = disapproval
+	}
+
+	right_portrait = {
+		character = scope:recipient
+		animation = boredom
+	}
+
+	immediate = {
+
+	}
+
+	option = {
+		name = agot_dragon_pits.3003.a
+	}
+}
+
+#Bonding
+agot_dragon_pits.3004 = {
+	type = character_event
+	title = agot_dragon_pits.3004.t
+	desc = agot_dragon_pits.3004.desc
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = scope:recipient
+		animation = happiness
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {
+		custom_tooltip = child_is_bonding_dragon_tt
+	}
+
+	option = {
+		name = agot_dragon_pits.3004.a
+	}
+}
+
+#Taming - Failure
+agot_dragon_pits.3005 = {
+	type = character_event
+	title = agot_dragon_pits.3005.t
+	desc = agot_dragon_pits.3005.desc
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = scope:recipient
+		animation = fear
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {
+		custom_tooltip = child_failed_to_tame_tt
+	}
+
+	option = {
+		name = agot_dragon_pits.3005.a
+	}
+}
+
+#Taming - Success
+agot_dragon_pits.3006 = {
+	type = character_event
+	title = agot_dragon_pits.3006.t
+	desc = agot_dragon_pits.3006.desc
+
+	theme = dragon
+
+	override_background = { reference = agot_dragonpit }
+
+	left_portrait = {
+		character = scope:recipient
+		animation = happiness
+	}
+
+	right_portrait = {
+		character = scope:dragon
+		animation = dragon_main
+		camera = camera_dragon_event_standing
+
+		#Add this so dragon fits within event window
+		outfit_tags = { linear_camera_zoom }
+	}
+
+	immediate = {
+		custom_tooltip = child_succeeded_taming_tt
+	}
+
+	option = {
+		name = agot_dragon_pits.3006.a
+	}
+}

@@ -1,0 +1,669 @@
+﻿####################
+# Wastelands: effects
+####################
+
+add_random_wilderness_blocker_building = {
+	random_list = {
+		1 = {
+			trigger = {
+				NOT = { has_building = bandits }
+				NOT = { geographical_region = world_westeros_beyond_the_wall }
+			}
+			add_building = bandits
+		}
+		1 = {
+			trigger = {
+				NOT = { has_building = wolf_den }
+			}
+			add_building = wolf_den
+		}
+		1 = {
+			trigger = {
+				NOT = { has_building = bear_den }
+			}
+			add_building = bear_den
+		}
+		1 = {
+			trigger = {
+				NOR = {
+					has_building = dense_growth
+					agot_is_glacier_terrain = yes
+					agot_is_frozen_flats_terrain = yes
+				}
+			}
+			modifier = {
+				OR = {
+					agot_is_forest_terrain = yes
+					agot_is_taiga_terrain = yes
+				}
+				add = 3
+			}
+			add_building = dense_growth
+		}
+		1 = {
+			trigger = {
+				NOR = {
+					has_building = flooded_lands
+					agot_is_glacier_terrain = yes
+					agot_is_frozen_flats_terrain = yes
+				}
+				OR = {
+					is_riverside_province = yes
+					is_coastal = yes
+				}
+			}
+			add_building = flooded_lands
+		}
+	}
+}
+
+
+# Returns colony to a Wilderness / Wastelands
+make_settlement_county_wilderness = {
+	# Struggle Catalyst
+	#agot colonization to do - btw struggle
+	# Abandonment effect
+	$COUNTY$ = {
+		save_scope_as = new_wilderness_county
+		custom_tooltip = agot_return_to_wilderness.tt
+		# Decrease settlement upkeep modifier
+		if = {
+			limit = { holder = { has_variable = num_settled_wilderness } }
+			if = {
+				limit = { holder = { var:num_settled_wilderness > 0 } }
+				holder = { trigger_event = agot_colonization_events.0007 }
+			}
+			else = { holder = { remove_wilderness_tracker_variable = yes } }
+		}
+
+		hidden_effect = {
+			create_title_and_vassal_change = {
+				type = revoked
+				save_scope_as = change
+			}
+			change_title_holder = {
+				holder = title:c_wilderness.holder
+				change = scope:change
+				take_baronies = yes
+			}
+			resolve_title_and_vassal_change = scope:change
+			set_county_faith = faith:fg_unknown
+			set_county_culture = culture:unknown_culture
+			generate_coa = yes
+			every_county_province = {
+				limit = {
+					is_county_capital = no
+					has_holding = yes
+				}
+				remove_holding = yes
+			}
+			change_development_level = -100
+			every_county_province = {
+				limit = {
+					is_county_capital = yes
+					has_holding = yes
+				}
+				if = {
+					limit = { NOT = { has_holding_type = wilderness_holding } }
+					set_holding_type = wilderness_holding
+				}
+			}
+		}
+	}
+}
+
+# Colonize a wilderness county
+ai_colonization_effect = {
+	$WILDERNESS$ = { save_scope_as = wilderness }
+	$ROOT_SCOPE$ = { save_scope_as = new_holder }
+	# debug_log = "agot_wilderness_effects: -- COLONIZATION STARTED!" # Only needed for testing
+
+	scope:wilderness.county = { save_scope_as = wilderness_holder_title }
+	scope:wilderness_holder_title.holder = { save_scope_as = wilderness_holder }
+
+	create_title_and_vassal_change = {
+		type = returned
+		save_scope_as = change
+	}
+
+	scope:wilderness_holder_title = {
+		change_title_holder = {
+			holder = scope:new_holder
+			change = scope:change
+			take_baronies = yes
+		}
+		set_county_faith = scope:new_holder.faith
+		if = {
+			limit = { culture = culture:unknown_culture }
+			if = {
+				limit = {
+					scope:new_holder.culture = culture:high_valyrian
+					has_game_rule = agot_hv_conversion_offshoots
+					title_province = { geographical_region = world_westeros }
+				}
+				set_county_culture = culture:westerosi_valyrian
+			}
+			else_if = {
+				limit = {
+					scope:new_holder.culture = culture:high_valyrian
+					has_game_rule = agot_hv_conversion_offshoots
+					NOT = {
+						title_province = { geographical_region = world_westeros }
+					}
+				}
+				set_county_culture = culture:essosi_valyrian
+			}
+			else = {
+				set_county_culture = scope:new_holder.culture
+			}
+		}
+	}
+
+	resolve_title_and_vassal_change = scope:change
+
+	scope:wilderness_holder_title = {
+		generate_coa = yes
+		#set_color_from_title = scope:wilderness_holder_title.de_jure_liege
+		scope:wilderness_holder_title = { # Swap holding type to settlement holding as soon as county is colonized
+			if = {
+				limit = {
+					scope:new_holder = { has_government = pirate_government }
+				}
+				every_county_province = {
+					limit = {
+						has_holding = yes
+						has_holding_type = wilderness_holding
+					}
+					set_holding_type = pirate_den_holding
+				}
+			}
+			else = {
+				every_county_province = {
+					limit = {
+						has_holding = yes
+						has_holding_type = wilderness_holding
+					}
+					set_holding_type = settlement_holding
+				}
+			}
+			every_county_province = {
+				limit = {
+					has_holding = yes
+					is_county_capital = no
+					has_holding_type = wilderness_holding
+				}
+				remove_holding = yes
+			}
+			every_county_province = {
+				barony = { generate_coa = yes }
+			}
+		}
+	}
+
+	scope:wilderness_holder_title.holder = {
+		if = {
+			limit = { this = title:c_wilderness.holder }
+			hidden_effect = { remove_short_term_gold = colonize_cost_val }
+		}
+		else_if = {
+			limit = {
+				has_treasury = yes
+				treasury >= colonize_cost_val
+			}
+			remove_short_term_treasury = colonize_cost_val
+		}
+		else = {
+			remove_short_term_gold = colonize_cost_val
+		}
+		increase_variable = {
+			NAME = num_settled_wilderness
+			AMOUNT = 1
+		}
+		trigger_event = agot_colonization_events.0007
+	}
+
+	# Struggle catalyst
+	if = {
+		limit = {
+			exists = scope:wilderness_holder_title
+			scope:wilderness_holder_title.holder = {
+				any_character_struggle = {
+					involvement = involved
+					phase_has_catalyst = catalyst_new_colony_btw
+				}
+			}
+			scope:wilderness_holder_title = {
+				any_county_struggle = {
+					this = struggle:btw_struggle
+				}
+			}
+		}
+		scope:wilderness_holder_title.holder = {
+			every_character_struggle = {
+				involvement = involved
+				activate_struggle_catalyst = {
+					catalyst = catalyst_new_colony_btw
+					character = scope:wilderness_holder_title.holder
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			scope:new_holder = {
+				has_government = pirate_government
+				is_landed = yes
+			}
+		}
+		scope:new_holder = {
+			set_variable = {
+				name = colonization_cooldown
+				years = 4
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:wilderness_holder_title.title_province = { geographical_region = difficult_colonization_region }
+		}
+		scope:new_holder = {
+			set_variable = {
+				name = colonization_cooldown
+				years = 4
+			}
+		}
+	}
+	else = {
+		scope:new_holder = {
+			set_variable = {
+				name = colonization_cooldown
+				years = 2
+			}
+		}
+	}
+
+	# scope:wilderness_holder_title.holder = { debug_log_scopes = no } # Only needed for testing
+	# debug_log = "agot_wilderness_effects: -- COLONIZATION FINISHED!" # Only needed for testing
+}
+
+colonize_pirate_den_effect = {
+	$COLONIZER$ = { save_scope_as = new_holder }
+	$PIRATE_DEN$ = { save_scope_as = pirate_den }
+	scope:pirate_den.county = { save_scope_as = pirate_den_county }
+
+	set_holding_type = settlement_holding
+	add_building = pirate_remnants
+
+	scope:pirate_den_county = {
+		every_county_province = {
+			limit = {
+				has_holding = yes
+				NOT = { this = scope:pirate_den }
+				has_holding_type = pirate_den_holding
+			}
+			set_holding_type = settlement_holding
+			add_building = pirate_remnants
+		}
+	}
+
+	scope:pirate_den_county.holder = {
+		if = {
+			limit = { NOT = { any_owned_story = { story_type = story_conqueror } } }
+			remove_short_term_gold = colonize_cost_val
+		}
+		increase_variable = {
+			NAME = num_settled_wilderness
+			AMOUNT = 1
+		}
+		trigger_event = agot_colonization_events.0007
+	}
+
+	scope:new_holder = {
+		set_variable = {
+			name = colonization_cooldown
+			years = 2
+		}
+	}
+}
+
+pirate_takeover_effect = {
+	$PIRATE$ = { save_scope_as = new_pirate_holder }
+	$COUNTY$ = { save_scope_as = new_pirate_county }
+
+	$COUNTY$ = {
+		# Decrease settlement upkeep modifier
+		if = {
+			limit = { holder = { has_variable = num_settled_wilderness } }
+			if = {
+				limit = { holder = { var:num_settled_wilderness > 0 } }
+				holder = { trigger_event = agot_colonization_events.0007 }
+			}
+			else = { holder = { remove_wilderness_tracker_variable = yes } }
+		}
+
+		hidden_effect = {
+			create_title_and_vassal_change = {
+				type = conquered
+				save_scope_as = change
+			}
+			change_title_holder = {
+				holder = scope:new_pirate_holder
+				change = scope:change
+				take_baronies = yes
+			}
+			resolve_title_and_vassal_change = scope:change
+		}
+
+		every_county_province = {
+			limit = {
+				is_county_capital = no
+				has_holding = yes
+				limit = { NOT = { has_holding_type = pirate_den_holding } }
+			}
+			remove_holding = yes
+		}
+		every_county_province = {
+			limit = {
+				is_county_capital = yes
+				has_holding = yes
+			}
+			if = {
+				limit = { NOT = { has_holding_type = pirate_den_holding } }
+				set_holding_type = pirate_den_holding
+			}
+		}
+	}
+}
+
+halve_development = {
+	change_development_level = {
+		subtract = county.development_level
+		divide = 2
+	}
+}
+
+# If a character has settlement holdings at the start of the game, use this effect
+add_settlement_upkeep_in_history = {
+	every_ruler = {
+		limit = { NOT = { this = title:c_wilderness.holder }}
+		every_held_title = {
+			limit = {
+				tier = tier_county
+				title_province = { has_holding_type = settlement_holding }
+			}
+			if = {
+				limit = {
+					holder = { NOT = { has_variable = num_settled_wilderness } }
+				}
+				holder = { set_variable = { name = num_settled_wilderness value = 0 } }
+			}
+			holder = {
+				change_variable = {
+					name = num_settled_wilderness
+					add = 1
+				}
+			}
+			holder = { trigger_event = agot_colonization_events.0007 }
+		}
+	}
+}
+
+release_excess_colony = {
+	if = {
+		limit = {
+			is_ai = yes
+			scope:title ?= { tier = tier_county }
+			scope:title ?= { title_province ?= { has_holding_type = settlement_holding } }
+			above_settlement_limit = yes
+		}
+		scope:title ?= { make_settlement_county_wilderness = { COUNTY = this } }
+		correct_wilderness_tracker = yes
+	}
+}
+
+# Remove upkeep modifier
+remove_upkeep_modifier = {
+	if = {
+		limit = { has_character_modifier = holding_one_settlements }
+		remove_character_modifier = holding_one_settlements
+	}
+	if = {
+		limit = { has_character_modifier = holding_two_settlements }
+		remove_character_modifier = holding_two_settlements
+	}
+	if = {
+		limit = { has_character_modifier = holding_three_settlements }
+		remove_character_modifier = holding_three_settlements
+	}
+	if = {
+		limit = { has_character_modifier = holding_four_settlements }
+		remove_character_modifier = holding_four_settlements
+	}
+	if = {
+		limit = { has_character_modifier = holding_five_settlements }
+		remove_character_modifier = holding_five_settlements
+	}
+	if = {
+		limit = { has_character_modifier = holding_more_than_five_settlements }
+		remove_character_modifier = holding_more_than_five_settlements
+	}
+}
+
+remove_wilderness_tracker_variable = {
+	if = {
+		limit = { exists = var:num_settled_wilderness }
+		if = {
+			limit = { var:num_settled_wilderness < 0 }
+			remove_variable = num_settled_wilderness
+		}
+	}
+}
+
+correct_wilderness_tracker = {
+	if = {
+		limit = { any_held_county = { title_province ?= { has_holding_type = settlement_holding } } }
+		if = {
+			limit = { has_variable = correct_settlement_count }
+			remove_variable = correct_settlement_count
+		}
+		every_held_county = {
+			limit = { title_province ?= { has_holding_type = settlement_holding } }
+			holder = {
+				increase_variable = {
+					NAME = correct_settlement_count
+					AMOUNT = 1
+				}
+			}
+		}
+		if = {
+			limit = {
+				trigger_if = {
+					limit = { exists = var:num_settled_wilderness }
+					NOT = { var:num_settled_wilderness = var:correct_settlement_count }
+				}
+			}
+			set_variable = {
+				name = num_settled_wilderness
+				value = var:correct_settlement_count
+			}
+		}
+		remove_variable = correct_settlement_count
+		remove_upkeep_modifier = yes
+		trigger_event = agot_colonization_events.0007
+	}
+	else_if = { # Remove the upkeep modifier in-case
+		limit = {
+			is_alive = yes
+			has_variable = num_settled_wilderness
+		}
+		remove_variable = num_settled_wilderness
+		remove_upkeep_modifier = yes
+	}
+}
+
+cleanup_cleared_blockers_effect = {
+	county.holder = {
+		trigger_event = {
+			id = agot_colonization_events.9000
+			days = 2
+		}
+	}
+}
+
+agot_upgrade_settlement_to_full_holding_effect = {
+	$COUNTY$ = { save_scope_as = target_county }
+
+	if = {
+		limit = {
+			holder = { has_government = tribal_government }
+		}
+		title_province = { set_holding_type = tribal_holding }
+	}
+	else_if = {
+		limit = {
+			holder = { government_has_flag = government_is_pirate_trigger_check }
+		}
+		title_province = { set_holding_type = pirate_den_holding }
+	}
+	else = {
+		title_province = { set_holding_type = castle_holding }
+	}
+}
+
+
+agot_increase_settler_maa = {
+	$CHARACTER$ = {
+		if = {
+			limit = { any_maa_regiment = { is_maa_type = laamp_settler_maa } }
+			random_maa_regiment = {
+				limit = { is_maa_type = laamp_settler_maa }
+				change_maa_regiment_size = {
+					size = $SIZE$
+					reinforce = no
+				}
+			}
+		}
+		else = {
+			create_maa_regiment = {
+				type = laamp_settler_maa
+				check_can_recruit = no
+				size = 1
+			}
+			random_maa_regiment = {
+				limit = { is_maa_type = laamp_settler_maa }
+				change_maa_regiment_size = {
+					size = 1
+					reinforce = no
+				}
+				change_maa_troops_count = -100
+			}
+		}
+	}
+}
+
+agot_conqueror_settle_wilderness_effect = {
+	root.story_owner = { save_scope_as = root_scope }
+	every_held_county = {
+		limit = {
+			title_province = { has_holding_type = settlement_holding }
+		}
+		if = {
+			limit = {
+				title_province = { has_building = settlement_01 }
+			}
+			title_province = { add_building = settlement_02 }
+		}
+		else_if = {
+			limit = {
+				title_province = { has_building = settlement_02 }
+			}
+			title_province = { add_building = settlement_03 }
+		}
+		else_if = {
+			limit = {
+				title_province = { has_building = settlement_03 }
+			}
+			if = {
+				limit = {
+					scope:root_scope = { has_government = tribal_government }
+				}
+				title_province = { set_holding_type = tribal_holding }
+			}
+			else_if = {
+				limit = {
+				scope:root_scope = { government_has_flag = government_is_pirate_trigger_check }
+				}
+				title_province = { set_holding_type = pirate_den_holding }
+			}
+			else = {
+				title_province = { set_holding_type = castle_holding }
+			}
+		}
+	}
+	every_sub_realm_county = {
+		every_title_to_title_neighboring_and_across_water_county = {
+			limit = {
+				holder = { government_has_flag = government_is_wilderness }
+				save_temporary_scope_as = target
+				NOR = {
+					has_county_modifier = block_settlement_ability
+					holder = scope:root_scope
+				}
+			}
+			add_to_list = adjacent_wilderness
+		}
+	}
+
+	ordered_in_list = {
+		list = adjacent_wilderness
+		order_by = {
+			value = 0
+			every_neighboring_county = {
+				limit = { holder = scope:root_scope }
+				add = 2
+			}
+			every_neighboring_county = {
+				limit = {
+					holder = scope:root_scope
+					trigger_if = {
+						limit = { exists = scope:curr_county }
+						duchy = scope:curr_county.duchy
+					}
+					save_temporary_scope_as = curr_county
+				}
+				add = 16
+			}
+			every_neighboring_county = {
+				limit = {
+					holder = scope:root_scope
+					trigger_if = {
+						limit = { exists = scope:curr_county }
+						kingdom = scope:curr_county.kingdom
+					}
+					save_temporary_scope_as = curr_county
+				}
+				add = 8
+			}
+			every_neighboring_county = {
+				limit = {
+					holder = scope:root_scope
+					trigger_if = {
+						limit = { exists = scope:curr_county }
+						empire = scope:curr_county.empire
+					}
+					save_temporary_scope_as = curr_county
+				}
+				add = 4
+			}
+		}
+		save_scope_as = wilderness
+		if = {
+			limit = { scope:root_scope = { above_settlement_limit = no } }
+			scope:root_scope = {
+				ai_colonization_effect = { WILDERNESS = scope:wilderness ROOT_SCOPE = scope:root_scope }
+				correct_wilderness_tracker = yes
+			}
+		}
+	}
+}

@@ -1,0 +1,1063 @@
+﻿# Get the artifact keeper
+agot_get_artifact_keeper = {
+	if = {
+		limit = {
+			title:c_myr = {
+				holder = {
+					NOT = { government_has_flag = government_is_uninteractable }
+				}
+			}
+		}
+		title:c_myr = { save_scope_as = artifact_keeper_capital }
+
+		create_dynamic_title = {
+			tier = duchy
+			name = agot_artifact_keeper_title_essos
+		}
+	}
+	else = {
+		title:c_oldtown = { save_scope_as = artifact_keeper_capital }
+
+		create_dynamic_title = {
+			tier = duchy
+			name = agot_artifact_keeper_title_westeros
+		}
+	}
+
+	create_character = {
+		age = { 24 52 }
+
+		gender = male
+		trait = greedy
+		diplomacy	= { 6 16 }
+		martial		= { 8 15 }
+		stewardship = { 10 17 }
+		intrigue	= { 8 16 }
+
+		culture = scope:artifact_keeper_capital.culture
+		faith = scope:artifact_keeper_capital.faith
+
+		after_creation = {
+			add_gold = major_gold_value
+			add_prestige = major_prestige_gain
+			add_piety = minor_piety_gain
+		}
+
+		location = scope:artifact_keeper_capital.holder.location
+		save_scope_as = agot_artifact_keeper_temp
+	}
+
+	scope:agot_artifact_keeper_temp = {
+		set_global_variable = {
+			name = agot_artifact_keeper
+			value = this
+		}
+	}
+
+	set_global_variable = {
+		name = agot_artifact_keeper_title
+		value = scope:new_title
+	}
+	create_title_and_vassal_change = {
+		type = created
+		save_scope_as = change
+		add_claim_on_loss = no
+	}
+
+	scope:new_title = {
+		set_capital_county = scope:artifact_keeper_capital
+		set_landless_title = yes
+		set_delete_on_destroy = no
+		set_no_automatic_claims = no
+		set_destroy_if_invalid_heir = no
+		set_destroy_on_gain_same_tier = no
+		set_can_be_named_after_dynasty = no
+		set_destroy_on_succession = no
+		change_title_holder = {
+			holder = global_var:agot_artifact_keeper
+			change = scope:change
+		}
+		save_scope_as = new_duchy
+	}
+	resolve_title_and_vassal_change = scope:change
+	scope:new_title = { generate_coa = yes }
+
+
+
+	global_var:agot_artifact_keeper = {
+		add_gold = { 2600 3000 }
+		trigger_event = agot_events_artifacts_sell.0003
+		agot_artifact_keeper_trait_control = yes
+		if = {
+			limit = {
+				is_married = no
+			}
+			agot_create_artifact_market_spouse = yes
+		}
+	}
+
+	# Debug
+	agot_debug_artifact_market_initialize = yes
+}
+
+agot_reload_artifact_keeper = {
+	if = {
+		limit = {
+			title:c_myr = {
+				holder = {
+					NOT = { government_has_flag = government_is_uninteractable }
+				}
+			}
+		}
+		title:c_myr = { save_scope_as = artifact_keeper_capital }
+	}
+	else = {
+		title:c_oldtown = { save_scope_as = artifact_keeper_capital }
+	}
+
+	create_character = {
+		age = { 24 52 }
+
+		gender = male
+		trait = greedy
+		diplomacy	= { 6 16 }
+		martial		= { 8 15 }
+		stewardship = { 10 17 }
+		intrigue	= { 8 16 }
+
+		culture = scope:artifact_keeper_capital.culture
+		faith = scope:artifact_keeper_capital.faith
+
+		after_creation = {
+			add_gold = major_gold_value
+			add_prestige = major_prestige_gain
+			add_piety = minor_piety_gain
+		}
+
+		location = scope:artifact_keeper_capital.holder.location
+		save_scope_as = agot_artifact_keeper_temp
+	}
+
+	scope:agot_artifact_keeper_temp = {
+		set_global_variable = {
+			name = agot_artifact_keeper
+			value = this
+		}
+	}
+
+	if = {
+		limit = {
+			exists = global_var:agot_artifact_keeper_title.holder
+		}
+		global_var:agot_artifact_keeper_title.holder = {
+			every_character_artifact = {
+				set_owner = scope:agot_artifact_keeper_temp
+			}
+		}
+	}
+
+	# Make sure the title is owned by the artifact keeper
+	global_var:agot_artifact_keeper_title = {
+		create_title_and_vassal_change = {
+			type = conquest
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		change_title_holder_include_vassals = {
+			holder = global_var:agot_artifact_keeper
+			change = scope:change
+		}
+
+		resolve_title_and_vassal_change = scope:change
+	}
+
+	global_var:agot_artifact_keeper = {
+		add_gold = { 2600 3000 }
+		trigger_event = agot_events_artifacts_sell.0003
+		agot_artifact_keeper_trait_control = yes
+		if = {
+			limit = {
+				is_married = no
+			}
+			agot_create_artifact_market_spouse = yes
+		}
+	}
+
+	# Make sure the artifact keeper is independent
+	if = {
+		limit = {
+			NOT = {
+				global_var:agot_artifact_keeper = {
+					is_independent_ruler = yes
+				}
+			}
+		}
+		global_var:agot_artifact_keeper = {
+			create_title_and_vassal_change = {
+				type = independency
+				save_scope_as = change
+				add_claim_on_loss = yes
+			}
+			becomes_independent = {
+				change = scope:change
+			}
+			resolve_title_and_vassal_change = scope:change
+		}
+	}
+}
+
+agot_artifact_keeper_trait_control = {
+	# Rmove ALL trait that reduce greedy
+	if = {
+		limit = {
+			has_trait = generous
+		}
+		remove_trait = generous
+	}
+	if = {
+		limit = {
+			has_trait = content
+		}
+		remove_trait = content
+	}
+	if = {
+		limit = {
+			has_trait = humble
+		}
+		remove_trait = humble
+	}
+	if = {
+		limit = {
+			has_trait = temperate
+		}
+		remove_trait = temperate
+	}
+
+	# Add trait greedy
+	while = {
+		limit = {
+			number_of_personality_traits < 3
+		}
+		random_list = {
+			1 = {
+				trigger = {
+					NOT = {
+						has_trait = greedy
+					}
+				}
+				add_trait = greedy
+			}
+			1 = {
+				trigger = {
+					NOT = {
+						has_trait = ambitious
+					}
+				}
+				add_trait = ambitious
+			}
+			1 = {
+				trigger = {
+					NOT = {
+						has_trait = gluttonous
+					}
+				}
+				add_trait = gluttonous
+			}
+		}
+	}
+	if = {
+		limit = {
+			ai_greed <= 0
+		}
+		add_trait = avaricious
+	}
+
+	agot_reset_artifact_keeper_edu_trait = yes
+
+	if = {
+		limit = {
+			NOR = {
+				has_trait = education_stewardship_1
+				has_trait = education_stewardship_2
+				has_trait = education_stewardship_3
+				has_trait = education_stewardship_4
+				has_trait = education_stewardship_5
+			}
+		}
+		random_list = {
+			1 = {
+				add_trait = education_stewardship_1
+			}
+			5 = {
+				add_trait = education_stewardship_2
+			}
+			10 = {
+				add_trait = education_stewardship_3
+			}
+			5 = {
+				add_trait = education_stewardship_4
+			}
+			1 = {
+				add_trait = education_stewardship_5
+			}
+		}
+	}
+}
+
+agot_reset_artifact_keeper_edu_trait = {
+	remove_trait = education_martial_1
+	remove_trait = education_martial_2
+	remove_trait = education_martial_3
+	remove_trait = education_martial_4
+	remove_trait = education_martial_5
+	remove_trait = education_learning_1
+	remove_trait = education_learning_2
+	remove_trait = education_learning_3
+	remove_trait = education_learning_4
+	remove_trait = education_learning_5
+	remove_trait = education_intrigue_1
+	remove_trait = education_intrigue_2
+	remove_trait = education_intrigue_3
+	remove_trait = education_intrigue_4
+	remove_trait = education_intrigue_5
+	remove_trait = education_diplomacy_1
+	remove_trait = education_diplomacy_2
+	remove_trait = education_diplomacy_3
+	remove_trait = education_diplomacy_4
+	remove_trait = education_diplomacy_5
+	remove_trait = education_martial_prowess_1
+	remove_trait = education_martial_prowess_2
+	remove_trait = education_martial_prowess_3
+	remove_trait = education_martial_prowess_4
+	remove_trait = education_martial_prowess_5
+}
+
+# Get the list of artifacts for sale from the artifact keeper
+agot_get_market_artifacts_effect = {
+	if = {
+		limit = {
+			has_global_variable_list = agot_market_artifacts
+		}
+		clear_global_variable_list = agot_market_artifacts
+	}
+
+	global_var:agot_artifact_keeper = {
+		every_character_artifact = {
+			add_to_global_variable_list = {
+				name = agot_market_artifacts
+				target = this
+			}
+		}
+	}
+}
+
+# Get the list of artifacts owned by the current character
+agot_get_owned_artifacts_effect = {
+	if = {
+		limit = {
+			has_variable_list = agot_owned_artifacts
+		}
+		clear_variable_list = agot_owned_artifacts
+	}
+
+	every_character_artifact = {
+		limit = {
+			agot_artifact_can_be_sold_trigger = yes
+		}
+		root = {
+			add_to_variable_list = {
+				name = agot_owned_artifacts
+				target = prev
+			}
+		}
+	}
+}
+
+# Randomly create a personal artifact
+agot_create_random_character_artifact = {
+	random_list = {
+		1 = {
+			set_artifact_rarity_common = yes
+		}
+		2 = {
+			set_artifact_rarity_masterwork = yes
+		}
+		2 = {
+			set_artifact_rarity_famed = yes
+		}
+		1 = {
+			set_artifact_rarity_illustrious = yes
+		}
+	}
+
+	random_list = {
+		1 = {
+
+			create_artifact_weapon_effect = {
+				OWNER = scope:owner
+				CREATOR = scope:smith
+				SET_WEAPON_TYPE = flag:no
+			}
+		}
+		1 = {
+			create_artifact_armor_effect = {
+				OWNER = scope:owner
+				CREATOR = scope:smith
+				SET_ARMOR_TYPE = flag:no
+			}
+		}
+		1 = {
+			create_artifact_regalia_effect = {
+				OWNER = scope:owner
+				SMITH = scope:smith
+			}
+		}
+		1 = {
+			create_artifact_crown_effect = {
+				OWNER = scope:owner
+				SMITH = scope:smith
+			}
+		}
+		1 = {
+			create_artifact_brooch_effect = {
+				OWNER = scope:owner
+				SMITH = scope:smith
+			}
+		}
+	}
+
+	scope:newly_created_artifact = {
+		set_variable = {
+			name = agot_seller
+			value = root
+		}
+		if = {
+			limit = {
+				NOT = {
+					artifact_owner = root
+				}
+			}
+			set_owner = root
+		}
+	}
+}
+
+# Randomly create a court artifact
+agot_create_random_court_artifact = {
+	random_list = {
+		1 = {
+			set_artifact_rarity_common = yes
+		}
+		2 = {
+			set_artifact_rarity_masterwork = yes
+		}
+		2 = {
+			set_artifact_rarity_famed = yes
+		}
+		1 = {
+			set_artifact_rarity_illustrious = yes
+		}
+	}
+
+	random_list = {
+		1 = {
+			create_artifact_tapestry_effect = {
+				OWNER = scope:owner
+				WEAVER = scope:smith
+			}
+		}
+		1 = {
+			create_artifact_animal_hide_effect = {
+				OWNER = scope:owner
+				HUNTER = scope:smith
+				LEGENDARY = no
+				ANIMAL = flag:none
+			}
+			clear_saved_scope = animal_hide_size
+		}
+		1 = {
+			create_artifact_wall_skull_effect = {
+				OWNER = scope:owner
+				HUNTER = scope:smith
+				LEGENDARY = no
+				ANIMAL = flag:none
+			}
+			clear_saved_scope = big_local_game
+		}
+		1 = {
+			create_artifact_sculpture_effect = {
+				OWNER = scope:owner
+				SCULPTER = scope:smith
+			}
+		}
+		1 = {
+			create_artifact_wall_shield_effect = {
+				OWNER = scope:owner
+				TARGET = scope:owner.house
+				CREATOR = scope:smith
+			}
+		}
+	}
+
+	scope:newly_created_artifact = {
+		set_variable = {
+			name = agot_seller
+			value = root
+		}
+		if = {
+			limit = {
+				NOT = {
+					artifact_owner = root
+				}
+			}
+			set_owner = root
+		}
+	}
+}
+
+# Create a generic Valyrian steel sword
+agot_create_random_valyrian_steel_artifact = {
+	random_list = {
+		#Andal Variant
+		1 = {
+			agot_create_artifact_vs_andal_armingsword_gold_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_andal_armingsword_silver_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_andal_longsword_gold_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_andal_longsword_silver_historical_effect = { OWNER = ROOT }
+		}
+		# # First Man Variant
+		1 = {
+			agot_create_artifact_vs_firstman_armingsword_gold_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_firstman_armingsword_silver_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_firstman_armingsword_bronze_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_firstman_longsword_gold_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_firstman_longsword_silver_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_firstman_longsword_bronze_historical_effect = { OWNER = ROOT }
+		}
+		# Valyrian Variant
+		1 = {
+			agot_create_artifact_vs_valyrian_armingsword_gold_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_valyrian_armingsword_silver_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_valyrian_longsword_gold_historical_effect = { OWNER = ROOT }
+		}
+		1 = {
+			agot_create_artifact_vs_valyrian_longsword_silver_historical_effect = { OWNER = ROOT }
+		}
+	}
+	scope:newly_created_artifact = {
+		set_variable = {
+			name = agot_seller
+			value = root
+		}
+		if = {
+			limit = {
+				NOT = {
+					artifact_owner = root
+				}
+			}
+			set_owner = root
+		}
+	}
+}
+
+# Create a son to inherit the artifact
+agot_create_artifact_market_spouse = {
+	if = {
+		limit = {
+			title:c_myr = {
+				holder = {
+					NOT = { government_has_flag = government_is_uninteractable }
+				}
+			}
+		}
+		title:c_myr = { save_scope_as = artifact_keeper_capital }
+	}
+	else = {
+		title:c_oldtown = { save_scope_as = artifact_keeper_capital }
+	}
+
+	if = {
+		limit = {
+			global_var:agot_artifact_keeper = {
+				is_female = yes
+			}
+		}
+		create_character = {
+			age = { 16 20 }
+
+			gender = male
+			trait = greedy
+			diplomacy	= { 6 16 }
+			martial		= { 8 15 }
+			stewardship = { 10 17 }
+			intrigue	= { 8 16 }
+
+			culture = scope:artifact_keeper_capital.culture
+			faith = scope:artifact_keeper_capital.faith
+
+			after_creation = {
+				marry_matrilineal = global_var:agot_artifact_keeper
+			}
+
+			location = scope:artifact_keeper_capital.holder.location
+		}
+	}
+	else = {
+		create_character = {
+			age = { 16 30 }
+
+			gender = female
+			trait = greedy
+			diplomacy	= { 6 16 }
+			martial		= { 8 15 }
+			stewardship = { 10 17 }
+			intrigue	= { 8 16 }
+
+			culture = scope:artifact_keeper_capital.culture
+			faith = scope:artifact_keeper_capital.faith
+
+			after_creation = {
+				marry = global_var:agot_artifact_keeper
+			}
+
+			location = scope:artifact_keeper_capital.holder.location
+		}
+	}
+}
+
+# Debug Effect for selling an artifact
+
+# The counter
+agot_debug_sold_artifact_counter = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_sell_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_sell_artifact_number
+				value = 1
+			}
+		}
+		else = {
+			change_global_variable = {
+				name = agot_sell_artifact_number
+				add = 1
+			}
+		}
+	}
+}
+
+agot_debug_sold_special_artifact_counter = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_sell_special_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_sell_special_artifact_number
+				value = 1
+			}
+		}
+		else = {
+			change_global_variable = {
+				name = agot_sell_special_artifact_number
+				add = 1
+			}
+		}
+	}
+}
+
+agot_debug_buy_artifact_counter = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_buy_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_buy_artifact_number
+				value = 1
+			}
+		}
+		else = {
+			change_global_variable = {
+				name = agot_buy_artifact_number
+				add = 1
+			}
+		}
+	}
+}
+
+agot_debug_created_artifact_counter = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_created_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_created_artifact_number
+				value = 1
+			}
+		}
+		else = {
+			change_global_variable = {
+				name = agot_created_artifact_number
+				add = 1
+			}
+		}
+	}
+}
+
+agot_debug_created_character_artifact_counter = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_created_character_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_created_character_artifact_number
+				value = 1
+			}
+		}
+		else = {
+			change_global_variable = {
+				name = agot_created_character_artifact_number
+				add = 1
+			}
+		}
+	}
+}
+
+agot_debug_created_court_artifact_counter = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_created_court_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_created_court_artifact_number
+				value = 1
+			}
+		}
+		else = {
+			change_global_variable = {
+				name = agot_created_court_artifact_number
+				add = 1
+			}
+		}
+	}
+}
+
+agot_debug_created_valyrian_artifact_counter = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_created_valyrian_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_created_valyrian_artifact_number
+				value = 1
+			}
+		}
+		else = {
+			change_global_variable = {
+				name = agot_created_valyrian_artifact_number
+				add = 1
+			}
+		}
+	}
+}
+
+agot_debug_created_dragon_egg_artifact_counter = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_created_dragon_egg_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_created_dragon_egg_artifact_number
+				value = 1
+			}
+		}
+		else = {
+			change_global_variable = {
+				name = agot_created_dragon_egg_artifact_number
+				add = 1
+			}
+		}
+	}
+}
+agot_debug_artifact_market_initialize = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_created_dragon_egg_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_created_dragon_egg_artifact_number
+				value = 0
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_created_valyrian_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_created_valyrian_artifact_number
+				value = 0
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_created_court_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_created_court_artifact_number
+				value = 0
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_created_character_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_created_character_artifact_number
+				value = 0
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_buy_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_buy_artifact_number
+				value = 0
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_sell_special_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_sell_special_artifact_number
+				value = 0
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = agot_sell_artifact_number
+				}
+			}
+			set_global_variable = {
+				name = agot_sell_artifact_number
+				value = 0
+			}
+		}
+	}
+}
+
+# The transaction Recording
+agot_debug_artifact_market_transaction_recording = {
+	if = {
+		limit = {
+			debug_only = yes
+		}
+
+		if = {
+			limit = {
+				title:c_myr = {
+					holder = {
+						NOT = { government_has_flag = government_is_uninteractable }
+					}
+				}
+			}
+			title:c_myr = { save_scope_as = artifact_keeper_capital }
+		}
+		else = {
+			title:c_oldtown = { save_scope_as = artifact_keeper_capital }
+		}
+
+		create_character = {
+			age = 1
+
+			gender = male
+			random_traits = yes
+			diplomacy	= { 6 16 }
+			martial		= { 8 15 }
+			stewardship = { 10 17 }
+			intrigue	= { 8 16 }
+
+			culture = scope:artifact_keeper_capital.culture
+			faith = scope:artifact_keeper_capital.faith
+			location = scope:artifact_keeper_capital.holder.location
+			save_scope_as = agot_artifact_market_transaction_recording_temp
+		}
+
+		create_character = {
+			age = 1
+
+			gender = male
+
+			trait = agot_dummy_trait
+
+			diplomacy	= 1
+			martial		= 1
+			stewardship = 1
+			intrigue	= 1
+
+			culture = scope:artifact_keeper_capital.culture
+			faith = scope:artifact_keeper_capital.faith
+			location = scope:artifact_keeper_capital.holder.location
+			save_scope_as = agot_artifact_market_transaction_recording_date_temp
+		}
+
+		scope:agot_artifact_market_transaction_recording_date_temp = {
+			death = {
+				death_reason = death_vanished
+			}
+		}
+
+		if = {
+			limit = { flag:$TRANSACTION_TYPE$ = flag:agot_sold_artifact_debug_log }
+			save_temporary_scope_value_as = {
+				name = transaction_character_gold_before
+				value = {
+					add = $TRANSACTION_CHARACTER$.gold
+					subtract = $TRANSACTION_ARTIFACT_PRICE$
+				}
+			}
+		}
+		else = {
+			save_temporary_scope_value_as = {
+				name = transaction_character_gold_before
+				value = {
+					add = $TRANSACTION_CHARACTER$.gold
+					add = $TRANSACTION_ARTIFACT_PRICE$
+				}
+			}
+		}
+
+		scope:agot_artifact_market_transaction_recording_temp = {
+			set_variable = {
+				name = transaction_type
+				value = flag:$TRANSACTION_TYPE$
+			}
+			set_variable = {
+				name = transaction_character
+				value = $TRANSACTION_CHARACTER$
+			}
+			set_variable = {
+				name = transaction_artifact
+				value = $TRANSACTION_ARTIFACT$
+			}
+			set_variable = {
+				name = transaction_character_gold_before
+				value = scope:transaction_character_gold_before
+			}
+			set_variable = {
+				name = transaction_character_gold_after
+				value = $TRANSACTION_CHARACTER$.gold
+			}
+			set_variable = {
+				name = transaction_date
+				value = scope:agot_artifact_market_transaction_recording_date_temp
+			}
+			if = { # Prevent error log spawn
+				limit = {
+					exists = var:transaction_type
+					exists = var:transaction_character
+					exists = var:transaction_artifact
+					exists = var:transaction_character_gold_before
+					exists = var:transaction_character_gold_after
+					exists = var:transaction_date
+				}
+			}
+		}
+
+		scope:agot_artifact_market_transaction_recording_temp = {
+			add_to_global_variable_list = {
+				name = agot_artifact_market_transaction_recording
+				target = this
+			}
+			every_in_global_list = { # Prevent error log spawn
+				variable = agot_artifact_market_transaction_recording
+			}
+		}
+	}
+}

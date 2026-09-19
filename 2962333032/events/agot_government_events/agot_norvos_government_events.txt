@@ -1,0 +1,403 @@
+﻿namespace = norvos_government_events
+
+norvos_government_events.0001 = {
+	type = character_event
+	title = norvos_government_events.0001.t
+	desc = norvos_government_events.0001.desc
+	left_portrait = {
+		character = scope:shadowy_priests
+		animation = disapproval
+	}
+	right_portrait = {
+		character = root
+		animation = worry
+	}
+	theme = faith
+	immediate = {
+		play_music_cue = mx_cue_negative
+		title:d_norvos_high_priesthood.holder = {
+			save_scope_as = shadowy_priests
+		}
+		add_character_modifier = {
+			modifier = disfavored_by_bearded_priests_modifier
+			years = 10
+		}
+		if = {
+			limit = {
+				has_character_modifier = political_schemes_blessed_by_bearded_priests
+			}
+			remove_character_modifier = political_schemes_blessed_by_bearded_priests
+		}
+		change_influence = medium_influence_loss
+	}
+	option = {
+		name = norvos_government_events.0001.a
+	}
+}
+
+norvos_government_events.0050 = {
+	type = character_event
+	title = norvos_government_events.0050.t
+	desc = norvos_government_events.0050.desc
+	left_portrait = {
+		character = scope:shadowy_priests
+		animation = disapproval
+	}
+	right_portrait = {
+		character = root
+		animation = prisonhouse
+	}
+	lower_center_portrait = {
+		trigger = {
+			exists = scope:child_to_be_imprisoned
+		}
+		character = scope:child_to_be_imprisoned
+		animation = prisonhouse
+	}
+	theme = faith
+	immediate = {
+		play_music_cue = mx_cue_negative
+		title:d_norvos_high_priesthood.holder = {
+			save_scope_as = shadowy_priests
+		}
+		root.faith = {
+			save_scope_as = converted_faith
+		}
+		rightfully_imprison_character_less_verbose_effect = {
+			TARGET = root
+			IMPRISONER = scope:shadowy_priests
+		}
+		if = {
+			limit = {
+				any_child = {
+					is_alive = yes
+					faith = root.faith
+					is_adult = yes
+					is_ai = yes
+				}
+			}
+			ordered_child = {
+				limit = {
+					is_alive = yes
+					faith = root.faith
+					is_adult = yes
+					is_ai = yes
+					is_player_heir_of = root
+				}
+				alternative_limit = {
+					is_alive = yes
+					faith = root.faith
+					is_adult = yes
+					is_ai = yes
+					is_courtier_of = root
+				}
+				alternative_limit = {
+					is_alive = yes
+					faith = root.faith
+					is_adult = yes
+					is_ai = yes
+				}
+				position = 0
+				order_by = age
+				save_scope_as = child_to_be_imprisoned
+				rightfully_imprison_character_less_verbose_effect = {
+					TARGET = scope:child_to_be_imprisoned
+					IMPRISONER = scope:shadowy_priests
+				}
+			}
+		}
+	}
+	option = {
+		name = norvos_government_events.0050.a
+		custom_tooltip = norvos_government_events.0050.a_tt
+		trigger_event = {
+			id = norvos_government_events.0051
+			days = 1
+		}
+	}
+}
+
+norvos_government_events.0051 = {
+	type = character_event
+	title = norvos_government_events.0051.t
+	desc = {
+		desc = norvos_government_events.0051.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = local_var:reason_execution }
+				desc = norvos_government_events.0051.desc_judgement_death
+			}
+			triggered_desc = {
+				trigger = { exists = local_var:reason_reconversion }
+				desc = norvos_government_events.0051.desc_judgement_conversion
+			}
+		}
+	}
+	left_portrait = {
+		character = scope:shadowy_priests
+		animation = disapproval
+	}
+	right_portrait = {
+		character = root
+		animation = prisonhouse
+	}
+	lower_center_portrait = {
+		trigger = {
+			exists = scope:child_to_be_imprisoned
+		}
+		character = scope:child_to_be_imprisoned
+		animation = prisonhouse
+	}
+	theme = faith
+	immediate = {
+		save_scope_as = accused
+		random_list = {
+			# Execution
+			1 = {
+				set_local_variable = reason_execution
+				ai_value_modifier = {
+					who = scope:shadowy_priests
+					ai_zeal = 1
+					ai_vengefulness = 0.5
+				}
+				modifier = {
+					add = 75
+					has_title = title:k_norvos
+				}
+			}
+			# Chance to Reconvert
+			1 = {
+				set_local_variable = reason_reconversion
+				ai_value_modifier = {
+					who = scope:shadowy_priests
+					ai_compassion = 0.75
+				}
+				modifier = {
+					add = 25
+					house ?= {
+						OR = {
+							is_powerful_family = yes
+							is_dominant_family = yes
+						}
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = norvos_government_events.0051.a
+		trigger = {
+			exists = local_var:reason_execution
+		}
+		death = {
+			death_reason = death_execution
+			killer = scope:shadowy_priests
+		}
+		scope:shadowy_priests = {
+			every_prisoner = {
+				limit = {
+					is_close_family_of = root
+					is_landed = no
+				}
+				death = {
+					death_reason = death_execution
+					killer = scope:shadowy_priests
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+	option = {
+		trigger = {
+			exists = local_var:reason_reconversion
+		}
+		name = norvos_government_events.0051.b
+		set_character_faith = scope:shadowy_priests.faith
+		release_from_prison = yes
+		add_character_modifier = {
+			modifier = disfavored_by_bearded_priests_modifier
+			years = 20
+		}
+		scope:shadowy_priests = {
+			every_prisoner = {
+				limit = {
+					is_close_family_of = root
+					is_landed = no
+				}
+				set_character_faith = scope:shadowy_priests.faith
+				add_character_modifier = {
+					modifier = disfavored_by_bearded_priests_modifier
+					years = 20
+				}
+				release_from_prison = yes
+			}
+		}
+		every_courtier = {
+			limit = {
+				faith = scope:converted_faith
+				is_close_or_extended_family_of = root
+			}
+			set_character_faith = scope:shadowy_priests.faith
+		}
+		depose = yes
+		ai_chance = {
+			base = 0
+			ai_value_modifier = {
+				ai_rationality = 0.5
+			}
+		}
+	}
+	option = {
+		trigger = {
+			exists = local_var:reason_reconversion
+		}
+		name = norvos_government_events.0051.d
+		custom_tooltip = norvos_government_events.0502_secret_conversion_tt
+		set_character_faith = scope:shadowy_priests.faith
+		make_character_crypto_religionist_effect = { CRYPTO_RELIGION = scope:converted_faith }
+		release_from_prison = yes
+		add_character_modifier = {
+			modifier = disfavored_by_bearded_priests_modifier
+			years = 20
+		}
+		scope:shadowy_priests = {
+			every_prisoner = {
+				limit = {
+					is_close_family_of = root
+					is_landed = no
+				}
+				set_character_faith = scope:shadowy_priests.faith
+				add_character_modifier = {
+					modifier = disfavored_by_bearded_priests_modifier
+					years = 20
+				}
+				release_from_prison = yes
+			}
+		}
+		every_courtier = {
+			limit = {
+				faith = scope:converted_faith
+				is_close_or_extended_family_of = root
+			}
+			set_character_faith = scope:shadowy_priests.faith
+		}
+		depose = yes
+		ai_chance = {
+			base = 0
+			ai_value_modifier = {
+				ai_rationality = 0.5
+			}
+		}
+	}
+	# Refuse
+	option = {
+		trigger = {
+			exists = local_var:reason_reconversion
+		}
+		name = norvos_government_events.0051.c
+		death = {
+			death_reason = death_execution
+			killer = scope:shadowy_priests
+		}
+		scope:shadowy_priests = {
+			every_prisoner = {
+				limit = {
+					is_close_family_of = root
+					is_landed = no
+				}
+				death = {
+					death_reason = death_execution
+					killer = scope:shadowy_priests
+				}
+			}
+		}
+		ai_chance = {
+			base = 0
+			ai_value_modifier = {
+				ai_zeal = 0.5
+			}
+		}
+	}
+	after = {
+		# Maintenance on mostly courtiers & successors who converted alongside you
+		if = {
+			limit = {
+				scope:accused = {
+					is_alive = no
+				}
+			}
+			scope:accused = {
+				every_close_or_extended_family_member = {
+					limit = {
+						top_liege = title:k_norvos.holder
+						faith = scope:converted_faith
+					}
+					trigger_event = norvos_government_events.0502
+				}
+			}
+		}
+	}
+}
+
+norvos_government_events.0502 = {
+	type = character_event
+	title = norvos_government_events.0502.t
+	desc = norvos_government_events.0502.desc
+	left_portrait = {
+		character = scope:shadowy_priests
+		animation = disapproval
+	}
+	right_portrait = {
+		character = root
+		animation = worry
+	}
+	lower_center_portrait = {
+		character = scope:accused
+		animation = dead
+	}
+	theme = faith
+	immediate = {}
+	option = {
+		name = norvos_government_events.0502.a
+		set_character_faith = scope:shadowy_priests.faith
+		if = {
+			limit = {
+				is_imprisoned_by = scope:shadowy_priests
+			}
+			release_from_prison = yes
+		}
+		ai_chance = {
+			base = 79
+		}
+	}
+	option = {
+		name = norvos_government_events.0502.b
+		custom_tooltip = norvos_government_events.0502_secret_conversion_tt
+		set_character_faith = scope:shadowy_priests.faith
+		make_character_crypto_religionist_effect = { CRYPTO_RELIGION = scope:converted_faith }
+		if = {
+			limit = {
+				is_imprisoned_by = scope:shadowy_priests
+			}
+			release_from_prison = yes
+		}
+		ai_chance = {
+			base = 20
+			ai_value_modifier = {
+				ai_zeal = 0.5
+			}
+		}
+	}
+	option = {
+		name = norvos_government_events.0502.c
+		death = {
+			death_reason = death_execution
+			killer = scope:shadowy_priests
+		}
+		ai_chance = {
+			base = 1
+		}
+	}
+}

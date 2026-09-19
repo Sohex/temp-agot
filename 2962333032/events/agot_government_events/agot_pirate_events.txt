@@ -1,0 +1,1459 @@
+﻿namespace = agot_pirate_events
+
+# agot_pirate_convert_whole_realm_to_feudalism_decision
+agot_pirate_events.0001 = {
+	type = character_event
+	title = agot_pirate_events.0001.t
+	desc = agot_pirate_events.0001.desc
+	theme = stewardship
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+
+	immediate = {
+		show_as_tooltip = {
+			agot_pirate_convert_whole_realm_to_feudalism_effect = yes
+		}
+		hidden_effect = {
+			if = {
+				limit = {
+					OR = {
+						agot_is_valid_lp_feudal_government_target = yes
+						any_liege_or_above = { agot_is_valid_lp_feudal_government_target = yes }
+					}
+					NOT = {
+						any_liege_or_above = { has_trait = nightswatch }
+					}
+				}
+				every_liege_or_above = {
+					limit = {
+						NOT = { is_independent_ruler = yes }
+					}
+					send_interface_message = {
+						type = event_stewardship_neutral_with_text
+						title = msg_vassal_lp_feudalised
+						desc = msg_vassal_lp_feudalised_desc
+						right_icon = root
+					}
+				}
+			}
+			else = {
+				every_liege_or_above = {
+					limit = {
+						NOT = { is_independent_ruler = yes }
+					}
+					send_interface_message = {
+						type = event_stewardship_neutral_with_text
+						title = msg_vassal_common_feudalised
+						desc = msg_vassal_common_feudalised_desc
+						right_icon = root
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = agot_pirate_events.0001.a
+	}
+}
+
+agot_pirate_events.0002 = {
+	type = letter_event
+	opening = agot_pirate_events.0002.opening
+	desc = agot_pirate_events.0001.desc
+	sender = {
+		character = scope:actor
+		animation = personality_rational
+	}
+
+	immediate = {
+		show_as_tooltip = {
+			if = {
+				limit = {
+					OR = {
+						agot_is_valid_lp_feudal_government_target = yes
+						any_liege_or_above = { agot_is_valid_lp_feudal_government_target = yes }
+					}
+					NOT = {
+						any_liege_or_above = { has_trait = nightswatch }
+					}
+				}
+				change_government = lp_feudal_government
+			}
+			else = {
+				change_government = feudal_government
+			}
+		}
+	}
+
+	option = {
+		name = agot_pirate_events.0001.a
+	}
+}
+
+scripted_trigger should_pay_pirate_rates = {
+	is_alive = yes
+	is_landed = no
+	domicile ?= {
+		is_domicile_type = agot_pirate_ship
+		domicile_location = {
+			has_building_or_higher = pirate_den_01
+			county.holder = {
+				is_human = yes
+			}
+		}
+	}
+	trigger_if = {
+		limit = {
+			has_variable = ports_visited_variable
+		}
+		var:ports_visited_variable = scope:ports_visited_scope_value
+	}
+}
+
+# Arrival to new Port
+agot_pirate_events.0003 = {
+	type = character_event
+	title = agot_pirate_events.0003.t
+	desc = agot_pirate_events.0003.desc
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	override_background = {
+		reference = docks
+	}
+	trigger = {
+		is_alive = yes
+		is_landed = no
+		domicile ?= {
+			is_domicile_type = agot_pirate_ship
+			domicile_location = {
+				has_building_or_higher = pirate_den_01
+				county.holder = {
+					is_human = yes
+				}
+			}
+		}
+	}
+	theme = travel
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:port_holder
+		animation = acknowledging
+	}
+	immediate = {
+		save_scope_as = pirate
+		domicile = {
+			save_scope_as = pirate_domicile
+			domicile_location = {
+				save_scope_as = port_name
+				county.holder = {
+					save_scope_as = port_holder
+				}
+			}
+		}
+		if = {
+			limit = {
+				has_variable = one_time_rd_pirate_cheap_fee
+			}
+			save_scope_value_as = { # RD Characters are poor, give them a 1 time discount
+				name = port_docking_fee
+				value = 5
+			}
+			domicile.domicile_location.county.holder = {
+				switch = {
+					trigger = has_realm_law
+					pirate_tax_rate_01 = {
+						save_scope_value_as = {
+							name = yearly_port_fee
+							value = agot_pirate_yearly_port_fee_01_value
+						}
+					}
+					pirate_tax_rate_02 = {
+						save_scope_value_as = {
+							name = yearly_port_fee
+							value = agot_pirate_yearly_port_fee_02_value
+						}
+					}
+					pirate_tax_rate_03 = {
+						save_scope_value_as = {
+							name = yearly_port_fee
+							value = agot_pirate_yearly_port_fee_03_value
+						}
+					}
+					pirate_tax_rate_04 = {
+						save_scope_value_as = {
+							name = yearly_port_fee
+							value = agot_pirate_yearly_port_fee_04_value
+						}
+					}
+				}
+			}
+			remove_variable = one_time_rd_pirate_cheap_fee
+		}
+		else = {
+			domicile.domicile_location.county.holder = {
+				switch = {
+					trigger = has_realm_law
+					pirate_tax_rate_01 = {
+						save_scope_value_as = {
+							name = port_docking_fee
+							value = agot_pirate_docking_port_fee_01_value
+						}
+						save_scope_value_as = {
+							name = yearly_port_fee
+							value = agot_pirate_yearly_port_fee_01_value
+						}
+					}
+					pirate_tax_rate_02 = {
+						save_scope_value_as = {
+							name = port_docking_fee
+							value = agot_pirate_docking_port_fee_02_value
+						}
+						save_scope_value_as = {
+							name = yearly_port_fee
+							value = agot_pirate_yearly_port_fee_02_value
+						}
+					}
+					pirate_tax_rate_03 = {
+						save_scope_value_as = {
+							name = port_docking_fee
+							value = agot_pirate_docking_port_fee_03_value
+						}
+						save_scope_value_as = {
+							name = yearly_port_fee
+							value = agot_pirate_yearly_port_fee_03_value
+						}
+					}
+					pirate_tax_rate_04 = {
+						save_scope_value_as = {
+							name = port_docking_fee
+							value = agot_pirate_docking_port_fee_04_value
+						}
+						save_scope_value_as = {
+							name = yearly_port_fee
+							value = agot_pirate_yearly_port_fee_04_value
+						}
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				has_variable = ports_visited_variable
+			}
+			change_variable = {
+				name = ports_visited_variable
+				add = 1
+			}
+			save_scope_value_as = {
+				name = ports_visited_scope_value
+				value = var:ports_visited_variable
+			}
+		}
+		else = {
+			set_variable = {
+				name = ports_visited_variable
+				value = 1
+			}
+			save_scope_value_as = {
+				name = ports_visited_scope_value
+				value = var:ports_visited_variable
+			}
+		}
+	}
+	option = {
+		name = agot_pirate_events.0003.a
+		if = {
+			limit = {
+				NOT = {
+					exists = scope:port_docking_fee
+				}
+			}
+			save_scope_value_as = {
+				name = port_docking_fee
+				value = 25
+			}
+		}
+		show_as_tooltip = {
+			pay_short_term_gold = {
+				target = scope:port_holder
+				gold = scope:port_docking_fee
+			}
+		}
+		hidden_effect = {
+			scope:port_holder = {
+				send_interface_message = {
+					type = msg_pirate_ship_arrived_in_port
+					title = agot_pirate_domicile_arrived_in_port.t
+					desc = agot_pirate_domicile_arrived_in_port.desc
+					scope:pirate = {
+						pay_short_term_gold = {
+							target = scope:port_holder
+							gold = scope:port_docking_fee
+						}
+					}
+					right_icon = scope:pirate
+				}
+			}
+		}
+		trigger_event = {
+			id = agot_pirate_events.0004
+			years = 1
+		}
+	}
+}
+
+# Yearly Docking Fee
+agot_pirate_events.0004 = {
+	type = character_event
+	title = agot_pirate_events.0004.t
+	desc = agot_pirate_events.0004.desc
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	override_background = {
+		reference = docks
+	}
+	theme = travel
+	trigger = {
+		should_pay_pirate_rates = yes
+	}
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:port_holder
+		animation = acknowledging
+	}
+	immediate = {
+		save_scope_as = pirate
+		domicile = {
+			save_scope_as = pirate_domicile
+		}
+		domicile.domicile_location.county.holder = {
+			save_scope_as = port_holder
+			switch = {
+				trigger = has_realm_law
+				pirate_tax_rate_01 = {
+					save_scope_value_as = {
+						name = yearly_port_fee
+						value = agot_pirate_yearly_port_fee_01_value
+					}
+				}
+				pirate_tax_rate_02 = {
+					save_scope_value_as = {
+						name = yearly_port_fee
+						value = agot_pirate_yearly_port_fee_02_value
+					}
+				}
+				pirate_tax_rate_03 = {
+					save_scope_value_as = {
+						name = yearly_port_fee
+						value = agot_pirate_yearly_port_fee_03_value
+					}
+				}
+				pirate_tax_rate_04 = {
+					save_scope_value_as = {
+						name = yearly_port_fee
+						value = agot_pirate_yearly_port_fee_04_value
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_pirate_events.0004.a
+		show_as_tooltip = {
+			pay_short_term_gold = {
+				target = scope:port_holder
+				gold = scope:yearly_port_fee
+			}
+		}
+		hidden_effect = {
+			scope:port_holder = {
+				send_interface_message = {
+					type = msg_pirate_ship_paid_port_taxes
+					title = agot_pirate_tax_results.t
+					desc = agot_pirate_tax_results.desc
+					scope:pirate = {
+						pay_short_term_gold = {
+							target = scope:port_holder
+							gold = scope:yearly_port_fee
+						}
+					}
+					right_icon = scope:pirate
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+	option = {
+		name = agot_pirate_events.0004.b
+		scope:port_holder = {
+			add_opinion = {
+				target = root
+				modifier = agot_refused_pirate_haven_fee
+			}
+			trigger_event = agot_pirate_events.0300
+		}
+		ai_chance = {
+			base = 0
+		}
+	}
+	option = {
+		name = agot_pirate_events.0004.c
+		custom_tooltip = agot_pirate_events.0004.c_tt
+		trigger = {
+			has_strong_usable_hook = scope:port_holder
+		}
+		show_as_unavailable = {
+			NOT = { has_strong_usable_hook = scope:port_holder }
+		}
+		show_as_tooltip = {
+			use_hook = scope:port_holder
+		}
+		hidden_effect = {
+			scope:port_holder = {
+				send_interface_message = {
+					type = msg_pirate_ship_paid_port_taxes
+					title = agot_pirate_tax_results.t
+					desc = agot_pirate_tax_results.desc_used_hook_to_skip_taxes
+					right_icon = scope:pirate
+					scope:pirate = {
+						use_hook = scope:port_holder
+					}
+				}
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+	after = {
+		trigger_event = {
+			id = agot_pirate_events.0004
+			years = 1
+		}
+	}
+}
+
+agot_pirate_events.0100 = {
+	type = character_event
+	title = agot_pirate_events.0100.t
+	desc = agot_pirate_events.0100.desc
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = landless_adventurer
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		trigger = {
+			exists = scope:laamp_inheritor
+		}
+		character = scope:laamp_inheritor
+		animation = acknowledging
+	}
+	immediate = {
+	}
+	option = {
+		name = agot_pirate_events.0100.a
+		add_dread = minor_dread_gain
+	}
+}
+
+agot_pirate_events.0101 = {
+	type = character_event
+	title = agot_pirate_events.0101.t
+	desc = agot_pirate_events.0101.desc
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	theme = landless_adventurer
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		trigger = {
+			exists = scope:laamp_inheritor
+		}
+		character = scope:laamp_inheritor
+		animation = acknowledging
+	}
+	immediate = {
+		if = {
+			limit = {
+				exists = scope:laamp_inheritor
+			}
+			every_held_title = {
+				limit = {
+					tier >= tier_county
+					NOT = {
+						agot_is_pirate_domicile_title_trigger = yes
+					}
+				}
+				add_to_list = target_titles
+			}
+			create_title_and_vassal_change = {
+				type = conquest
+				save_scope_as = change
+				add_claim_on_loss = no
+			}
+			hidden_effect = {
+				every_in_list = {
+					list = target_titles
+					change_title_holder_include_vassals = {
+						holder = scope:laamp_inheritor
+						change = scope:change
+					}
+				}
+				resolve_title_and_vassal_change = scope:change
+			}
+			scope:laamp_inheritor = {
+				custom_tooltip = become_landless_adventurer_decision_title_scope_tt
+			}
+		}
+	}
+	option = {
+		name = agot_pirate_events.0101.a
+		add_dread = minor_dread_gain
+	}
+}
+
+# Results calculating event for the Raid Pirate Ship scheme. Scope: scheme_owner
+agot_pirate_events.8031 = {
+	hidden = yes
+
+	immediate = {
+		scope:scheme = {
+			scheme_target_character = {
+				save_scope_as = target
+				domicile ?= { save_scope_as = target_domicile }
+			}
+			scheme_owner = {
+				save_scope_as = owner
+				#DISCOVERY ROLL
+				random = {
+					chance = scope:scheme.scheme_secrecy
+					save_scope_value_as = {
+						name = scheme_discovered
+						value = yes
+					}
+				}
+				#SUCCESS ROLL
+				random = {
+					chance = scope:scheme.scheme_success_chance
+					save_scope_value_as = {
+						name = scheme_successful
+						value = yes
+					}
+				}
+				if = {
+					limit = { exists = scope:scheme_successful }
+					save_scope_value_as = {
+						name = gold
+						value = {
+							value = scope:target.minor_gold_value
+							multiply = scope:target_domicile.num_domicile_buildings
+							add = scope:target.minor_gold_value
+						}
+					}
+					scope:target_domicile = { agot_destroy_random_pirate_ship_building_variable_effect = yes }
+					scope:target = {
+						if = {
+							limit = {
+								any_courtier = {
+									count > 0
+								}
+							}
+							every_courtier = {
+								limit = {
+									age >= 5
+								}
+								add_to_list = targets_for_death
+							}
+							ordered_in_list = {
+								list = targets_for_death
+								order_by = {
+									value = 1
+									if = {
+										limit = { is_adult = yes }
+										add = 10
+									}
+									if = {
+										limit = { this = scope:target.player_heir }
+										add = -5
+									}
+									if = {
+										limit = {
+											can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:target }
+										}
+										add = 5
+									}
+								}
+								check_range_bounds = no
+								max = 3
+								add_to_list = target_victims
+							}
+						}
+					}
+					random = {
+						chance = {
+							value = scope:scheme.scheme_success_chance
+							divide = 2
+						}
+						save_scope_value_as = {
+							name = scheme_critical_success
+							value = yes
+						}
+					}
+					# Bonus Rewards
+					random_list = {
+						10 = { # Steal an Artifact
+							trigger = {
+								scope:target = {
+									any_character_artifact = { is_equipped = no }
+								}
+							}
+							modifier = {
+								exists = scope:scheme_critical_success
+								factor = 2
+							}
+							scope:target = {
+								random_character_artifact = {
+									limit = { is_equipped = no }
+									weight = {
+										base = 1
+										# Prefer equippable artifacts
+										modifier = {
+											scope:owner = { can_equip_artifact = prev }
+											factor = 2
+										}
+										# Don't like banners
+										modifier = {
+											exists = var:banner_dynasty
+											factor = 0.1
+										}
+										modifier = {
+											exists = var:banner_house
+											factor = 0.1
+										}
+									}
+									save_scope_as = stolen_artifact
+								}
+							}
+						}
+						10 = { # Steal an Artifact from Courtier
+							trigger = {
+								scope:target = {
+									any_courtier = {
+										any_character_artifact = { is_equipped = no }
+									}
+								}
+							}
+							modifier = {
+								exists = scope:scheme_critical_success
+								factor = 2
+							}
+							scope:target = {
+								random_courtier = {
+									limit = {
+										any_character_artifact = { is_equipped = no }
+									}
+									random_character_artifact = {
+										limit = { is_equipped = no }
+										weight = {
+											base = 1
+											# Prefer equippable artifacts
+											modifier = {
+												scope:owner = { can_equip_artifact = prev }
+												factor = 2
+											}
+											# Don't like banners
+											modifier = {
+												exists = var:banner_dynasty
+												factor = 0.1
+											}
+											modifier = {
+												exists = var:banner_house
+												factor = 0.1
+											}
+										}
+										save_scope_as = stolen_artifact
+									}
+								}
+							}
+						}
+						10 = {
+							save_scope_value_as = {
+								name = bonus_gold
+								value = {
+									value = scope:target.tiny_gold_value
+									add = { 25 100 }
+								}
+							}
+						}
+					}
+					trigger_event = {
+						id = agot_pirate_events.8032
+						days = 1
+					}
+				}
+				else = {
+					scope:scheme = {
+						if = {
+							limit = { exists = scope:scheme_discovered }
+							random_scheme_agent_character = {
+								limit = { is_alive = yes }
+								weight = {
+									base = 1
+									modifier = {
+										add = {
+											value = 20
+											subtract = intrigue
+											subtract = prowess
+										}
+									}
+								}
+								save_scope_as = captured
+							}
+						}
+					}
+					trigger_event = {
+						id = agot_pirate_events.8033
+						days = 1
+					}
+				}
+			}
+		}
+	}
+}
+
+scripted_effect raid_pirate_ship_opinion_effect = {
+	$TARGET$ = {
+		add_opinion = {
+			target = $OWNER$
+			modifier = agot_raided_pirate_ship_crime
+		}
+		progress_towards_rival_effect = {
+			REASON = rival_raid_pirate_ship
+			CHARACTER = $OWNER$
+			OPINION = 0
+		}
+	}
+}
+
+scripted_effect raid_pirate_ship_success_public_effect = {
+	if = {
+		limit = { exists = scope:stolen_artifact }
+		scope:stolen_artifact = {
+			set_owner = {
+				target = scope:owner
+				history = {
+					location = scope:target_domicile.domicile_location
+					actor = scope:owner
+					recipient = scope:owner
+					type = stolen
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			exists = scope:bonus_gold
+		}
+		scope:owner = { add_short_term_gold = scope:bonus_gold }
+	}
+	scope:owner = { add_short_term_gold = scope:gold }
+	every_in_list = {
+		list = target_victims
+		death = {
+			death_reason = death_raid_estate
+			killer = scope:owner
+		}
+	}
+	scope:target_domicile = { agot_destroy_random_pirate_ship_building_effect = yes }
+	raid_pirate_ship_opinion_effect = {
+		OWNER = scope:owner
+		TARGET = scope:target
+	}
+	scope:owner = {
+		add_dread = medium_dread_gain
+	}
+	scope:target = {
+		add_dread = medium_dread_loss
+	}
+}
+
+scripted_effect raid_pirate_ship_failure_effect = {
+	if = {
+		limit = { exists = scope:scheme_discovered }
+		if = {
+			limit = { exists = scope:captured }
+			scope:captured = {
+				add_character_flag = {
+					flag = was_abducted_block_notification_event
+					days = 2
+				}
+			}
+			rightfully_imprison_character_less_verbose_effect = {
+				TARGET = scope:captured
+				IMPRISONER = scope:target
+			}
+		}
+		scope:target = {
+			add_opinion = {
+				target = scope:owner
+				modifier = attempted_raid_pirate_ship_crime
+			}
+		}
+	}
+}
+
+# Success, Scope: scheme_owner
+agot_pirate_events.8032 = {
+	type = character_event
+	title = scheme_critical_moments.8032.t
+	desc = {
+		desc = agot_pirate_events.8032.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					any_in_list = {
+						list = target_victims
+						count > 0
+					}
+				}
+				desc = agot_pirate_events.8032.kill
+			}
+			desc = scheme_critical_moments.8032.fallback
+		}
+	}
+	theme = intrigue
+	right_portrait = {
+		character = scope:target
+		triggered_animation = {
+			trigger = {
+				any_in_list = {
+					list = target_victims
+					count > 0
+				}
+			}
+			animation = grief
+		}
+		animation = disbelief
+	}
+	override_background = { reference = burning_building }
+
+	immediate = {
+		play_music_cue = "mx_cue_murder"
+
+		scope:target = { trigger_event = agot_pirate_events.8034 } # Trigger the response event for the target
+		raid_pirate_ship_success_public_effect = yes
+	}
+
+	option = {
+		name = {
+			trigger = { exists = scope:scheme_discovered }
+			text = scheme_critical_moments.8032.a
+		}
+		name = {
+			trigger = {
+				NOT = { exists = scope:scheme_discovered }
+			}
+			text = scheme_critical_moments.8032.a.secret
+		}
+		scope:scheme = { end_scheme = yes }
+	}
+}
+
+# Target Notification, Scope: target
+agot_pirate_events.8034 = {
+	type = character_event
+	title = agot_pirate_events.8034.t
+	desc = {
+		desc = agot_pirate_events.8034.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:scheme_successful }
+				desc = scheme_critical_moments.8034.success
+			}
+			desc = scheme_critical_moments.8034.failure
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					any_in_list = {
+						list = target_victims
+						count > 0
+					}
+				}
+				desc = agot_pirate_events.8034.kill
+			}
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:scheme_discovered }
+				desc = agot_pirate_events.8034.discovered
+			}
+			desc = scheme_critical_moments.8034.fallback
+		}
+	}
+	theme = intrigue
+	left_portrait = {
+		character = scope:target
+		triggered_animation = {
+			trigger = { exists = scope:scheme_successful }
+			animation = disbelief
+		}
+		animation = anger
+	}
+	lower_center_portrait = {
+		character = scope:owner
+		trigger = { exists = scope:scheme_discovered }
+	}
+	override_background = {
+		trigger = { exists = scope:scheme_successful }
+		reference = burning_building
+	}
+	override_background = {
+		trigger = {
+			NOT = { exists = scope:scheme_successful }
+		}
+		reference = docks
+	}
+
+	immediate = {
+		play_music_cue = "mx_cue_murder"
+		show_as_tooltip = {
+			if = {
+				limit = { exists = scope:scheme_successful }
+				raid_pirate_ship_success_public_effect = yes
+			}
+			else = { raid_pirate_ship_failure_effect = yes }
+		}
+	}
+
+	option = {
+		name = scheme_critical_moments.8034.a
+	}
+}
+
+# Failure
+agot_pirate_events.8033 = {
+	type = character_event
+	title = scheme_critical_moments.8033.t
+	desc = {
+		desc = agot_pirate_events.8033.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:captured }
+				desc = agot_pirate_events.8033.captured
+			}
+			desc = agot_pirate_events.8033.fallback
+		}
+	}
+	theme = intrigue
+	left_portrait = {
+		character = scope:target
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:captured
+		animation = prisonhouse
+		override_imprisonment_visuals = yes
+	}
+	override_background = { reference = docks }
+
+	immediate = {
+		play_music_cue = "mx_cue_murder"
+		scope:target = { trigger_event = agot_pirate_events.8034 } # Trigger the response event for the target
+		raid_pirate_ship_failure_effect = yes
+		stress_impact = {
+			base = minor_stress_impact_gain
+			ambitious = minor_stress_impact_gain
+			deceitful = minor_stress_impact_gain
+		}
+	}
+
+	option = {
+		name = scheme_critical_moments.8033.a
+		scope:scheme = { end_scheme = yes }
+	}
+}
+
+# Expelled
+agot_pirate_events.0200 = {
+	type = character_event
+	title = agot_pirate_events.0200.t
+	desc = agot_pirate_events.0200.desc
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	override_background = docks
+	theme = travel
+	left_portrait = {
+		character = root
+		animation = thinking
+	}
+	right_portrait = {
+		character = scope:actor
+		animation = anger
+	}
+	immediate = {
+		domicile.domicile_location = {
+			county = {
+				save_scope_as = port_name
+			}
+		}
+		if = {
+			limit = {
+				scope:port_name = {
+					any_title_to_title_neighboring_and_across_water_county = {
+						holder != scope:actor
+						title_province = {
+							has_holding_type = pirate_den_holding
+						}
+					}
+				}
+			}
+			scope:port_name = {
+				random_title_to_title_neighboring_and_across_water_county = {
+					limit = {
+						holder != scope:actor
+						title_province = {
+							has_holding_type = pirate_den_holding
+						}
+					}
+					save_scope_as = new_destination
+				}
+			}
+		}
+	}
+	option = {
+		name = agot_pirate_events.0200.a
+		trigger = {
+			scope:port_name = {
+				any_title_to_title_neighboring_and_across_water_county = {
+					holder != scope:actor
+					title_province = {
+						has_holding_type = pirate_den_holding
+					}
+				}
+			}
+		}
+		start_travel_plan = {
+			destination = scope:new_destination.title_province
+			travel_with_domicile = yes
+			return_trip = no
+			on_arrival_destinations = all
+		}
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_good
+				title = agot_pirate_events.0200.msg_pirate_moved_title
+				custom_tooltip = agot_pirate_events.0200.msg_pirate_moved_desc
+				left_icon = scope:port_name
+				right_icon = scope:recipient
+			}
+		}
+		ai_chance = {
+			base = 100
+		}
+	}
+	option = {
+		name = agot_pirate_events.0200.b
+		scope:actor = {
+			add_opinion = {
+				target = root
+				modifier = refused_pirate_expulsion
+			}
+		}
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_bad
+				title = agot_pirate_events.0200.msg_pirate_squatting_title
+				custom_tooltip = agot_pirate_events.0200.msg_pirate_squatting_desc
+				left_icon = scope:port_name
+				right_icon = scope:recipient
+			}
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				NOT = {
+					scope:port_name = {
+						any_title_to_title_neighboring_and_across_water_county = {
+							holder != scope:actor
+							title_province = {
+								has_holding_type = pirate_den_holding
+							}
+						}
+					}
+				}
+				add = 175
+			}
+		}
+	}
+	option = {
+		name = agot_pirate_events.0200.c
+		trigger = {
+			has_dlc_feature = landless_playable
+		}
+		create_landless_adventurer_title_effect = {
+			REASON = flag:voluntary
+			FLAVOR_CHAR = root
+		}
+		scope:port_name = {
+			random_title_to_title_neighboring_and_across_water_county = {
+				limit = {
+					holder != scope:actor
+				}
+				save_scope_as = new_destination
+			}
+		}
+		start_travel_plan = {
+			destination = scope:new_destination.title_province
+			travel_with_domicile = yes
+			return_trip = no
+			on_arrival_destinations = all
+		}
+		scope:actor = {
+			send_interface_toast = {
+				type = event_toast_effect_bad
+				title = agot_pirate_events.0200.msg_pirate_renouncd_piracy_title
+				custom_tooltip = agot_pirate_events.0200.msg_pirate_renouncd_piracy_desc
+				left_icon = scope:port_name
+				right_icon = scope:recipient
+			}
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				NOT = {
+					scope:port_name = {
+						any_title_to_title_neighboring_and_across_water_county = {
+							holder != scope:actor
+							title_province = {
+								has_holding_type = pirate_den_holding
+							}
+						}
+					}
+				}
+				add = 25
+			}
+		}
+	}
+}
+
+# Notify port holder when a pirate refuses to pay yearly fees
+agot_pirate_events.0300 = {
+	type = character_event
+	title = agot_pirate_events.0300.t
+	desc = agot_pirate_events.0300.desc
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	override_background = docks
+	theme = travel
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:pirate
+		animation = personality_bold
+	}
+	immediate = {
+	}
+
+	option = {
+		name = agot_pirate_events.0300.a
+		ai_chance = {
+			base = 75
+			modifier = {
+				scope:pirate.current_military_strength >= twenty_percent_of_max_military_strength
+				add = 25
+			}
+		}
+	}
+	option = {
+		name = agot_pirate_events.0300.b
+		rightfully_imprison_character_effect = {
+			TARGET = scope:pirate
+			IMPRISONER = root
+		}
+		ai_chance = {
+			base = 25
+			ai_value_modifier = {
+				ai_greed = 1.1
+				ai_compassion = -0.5
+			}
+		}
+	}
+}
+
+
+# Ship Change via on_death jank.
+agot_pirate_events.9000 = {
+	type = character_event
+	title = agot_pirate_events.9000.t
+	desc = {
+		desc = agot_pirate_events.9000.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					number_of_maa_regiments > 0
+					is_landed = no
+				}
+				desc = agot_pirate_events.9000.desc_maa_reset
+			}
+		}
+	}
+	left_portrait = root
+	right_portrait = { character = scope:dying_pirate_predecessor animation = dead }
+	override_background = docks
+	theme = death
+	immediate = {}
+	option = {
+		name = agot_pirate_events.9000.a
+		if = {
+			limit = {
+				number_of_maa_regiments > 0
+				is_landed = no
+			}
+			show_as_tooltip = {
+				add_character_modifier = {
+					modifier = maa_recruitment_boon
+					years = 3
+				}
+			}
+		}
+	}
+}
+
+agot_pirate_events.9100 = {
+	hidden = yes
+
+	trigger = {
+		government_has_flag = government_is_wilderness
+	}
+
+	immediate = {
+		agot_get_potential_pirate_effect = yes
+		ai_colonization_effect = { WILDERNESS = scope:wilderness_county.title_province ROOT_SCOPE = scope:potential_pirate }
+		scope:wilderness_county.title_province = { set_holding_type = pirate_den_holding }
+		if = {
+			limit = {
+				agot_dlc_check_for_landless_pirates = yes
+			}
+			scope:potential_pirate = { change_government = pirate_government }
+		}
+		else = {
+			scope:potential_pirate = { change_government = pirate_no_dlc_government }
+		}
+	}
+}
+
+agot_pirate_events.9200 = {
+	hidden = yes
+
+	trigger = {
+		NOT = { has_character_flag = recently_compensated }
+		NOT = { government_has_flag = government_is_pirate_trigger_check }
+		any_held_title = {
+			tier = tier_county
+			title_province = {
+				geographical_region = historical_pirate_region
+				OR = {
+					has_holding_type = pirate_den_holding
+					AND = {
+						has_holding_type = settlement_holding
+						has_building = pirate_remnants
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				is_independent_ruler = no
+				liege ?= { is_ai = no }
+			}
+			if = {
+				limit = { gold < 500 }
+				save_scope_as = colonist
+				liege = { trigger_event = agot_pirate_events.9201 }
+			}
+		}
+		else_if = {
+			limit = {
+				any_held_county = {
+					title_province = {
+						geographical_region = historical_pirate_region
+						has_holding_type = pirate_den_holding
+					}
+					count = all
+				}
+			}
+
+			if = {
+				limit = { is_independent_ruler = no }
+
+				create_title_and_vassal_change = {
+					type = independency
+					save_scope_as = independence_change
+					add_claim_on_loss = no
+				}
+				becomes_independent = {
+					change = scope:independence_change
+				}
+				resolve_title_and_vassal_change = scope:independence_change
+			}
+
+			if = {
+				limit = {
+					agot_dlc_check_for_landless_pirates = yes
+				}
+				scope:potential_pirate = { change_government = pirate_government }
+			}
+			else = {
+				scope:potential_pirate = { change_government = pirate_no_dlc_government }
+			}
+		}
+		else = {
+			every_held_title = {
+				limit = {
+					tier = tier_county
+					title_province = {
+						geographical_region = historical_pirate_region
+						OR = {
+							has_holding_type = pirate_den_holding
+							AND = {
+								has_holding_type = settlement_holding
+								has_building = pirate_remnants
+							}
+						}
+					}
+				}
+				save_scope_as = current_county
+				make_settlement_county_wilderness = { COUNTY = scope:current_county }
+			}
+		}
+	}
+}
+
+agot_pirate_events.9201 = {
+	title = agot_pirate_events.9201.t
+	desc = agot_pirate_events.9201.desc
+	theme = stewardship
+
+	left_portrait = {
+		character = root
+		animation = personality_rational
+	}
+
+	right_portrait = {
+		character = scope:colonist
+		animation = beg
+	}
+
+	option = {
+		name = agot_pirate_events.9201.a
+		pay_short_term_gold = {
+			target = scope:colonist
+			gold = 500
+		}
+		scope:colonist = {
+			add_character_flag = recently_compensated
+		}
+	}
+
+	option = {
+		name = agot_pirate_events.9201.b
+		custom_tooltip = agot_pirate_events.9201.b.tt
+		hidden_effect = {
+			scope:colonist = {
+				if = {
+					limit = {
+						any_held_county = {
+							title_province = {
+								geographical_region = historical_pirate_region
+								has_holding_type = pirate_den_holding
+							}
+							count = all
+						}
+					}
+					create_title_and_vassal_change = {
+						type = independency
+						save_scope_as = independence_change
+						add_claim_on_loss = yes
+					}
+					becomes_independent = {
+						change = scope:independence_change
+					}
+					resolve_title_and_vassal_change = scope:independence_change
+					if = {
+						limit = {
+							agot_dlc_check_for_landless_pirates = yes
+						}
+						scope:potential_pirate = { change_government = pirate_government }
+					}
+					else = {
+						scope:potential_pirate = { change_government = pirate_no_dlc_government }
+					}
+				}
+				else = {
+					every_held_title = {
+						limit = {
+							tier = tier_county
+							title_province = {
+								geographical_region = historical_pirate_region
+								has_holding_type = settlement_holding
+								has_building = pirate_remnants
+							}
+						}
+						save_scope_as = current_county
+						make_settlement_county_wilderness = { COUNTY = scope:current_county }
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_pirate_events.9300 = {
+	title = agot_pirate_events.9300.t
+	desc = agot_pirate_events.9300.desc
+	theme = war
+
+	override_icon = {
+		reference = "gfx/interface/icons/event_types/type_war.dds"
+	}
+	override_background = docks
+
+	left_portrait = { character = scope:attacker animation = war_defender }
+	lower_center_portrait = root
+	right_portrait = { character = scope:attacker animation = war_attacker }
+
+	immediate = {}
+
+	option = {
+		name = agot_pirate_events.9300.a
+	}
+}

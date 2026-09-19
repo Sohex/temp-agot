@@ -1,0 +1,2258 @@
+﻿###############################
+# Fourth Blackfyre Rebellion #
+###############################
+namespace = agot_fourth_blackfyre_rebellion
+
+### 0001 - 0009 # Aegor Events
+### 0010 - 0019 # Daemon Events
+### 1000 - 1009 # Introductory Events
+### 1010 - 1019 # AegonV Events
+### 1020 - 1029 # Duncan Events
+### 1030 - 1039 # Lyonel Events
+### 9900 - 9999 # Duel-Related Events/Misc
+
+# Aegor Rivers (Daemon has declared war on IT, time to help!)
+agot_fourth_blackfyre_rebellion.0001 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.0001.t
+	desc = agot_fourth_blackfyre_rebellion.0001.desc
+
+	theme = war
+
+	override_background = {
+		reference = AGOT_beach
+	}
+	left_portrait = {
+		character = root
+		animation = map_rage
+	}
+	lower_left_portrait = {
+		character = scope:daemon
+	}
+	right_portrait = {
+		character = scope:aegonv
+		animation = personality_compassionate
+	}
+	trigger = {
+		this = character:Targaryen_95
+	}
+	lower_right_portrait = {
+		character = scope:duncansmall
+		animation = personality_content
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = {
+		name = agot_fourth_blackfyre_rebellion.0001.a
+	}
+}
+
+# Aegor Rivers (We have won the war! I'll ask for a reward for my loyal service)
+agot_fourth_blackfyre_rebellion.0002 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.0002.t
+	desc = agot_fourth_blackfyre_rebellion.0002.desc
+
+	theme = vassal
+
+	override_background = {
+		reference = agot_iron_throne
+	}
+	right_portrait = {
+		character = scope:daemon
+		animation = chancellor
+	}
+	left_portrait = {
+		character = root
+		animation = throne_room_kneel_1
+	}
+	trigger = {
+		root = character:Targaryen_95
+		exists = title:h_the_iron_throne.holder
+		title:h_the_iron_throne.holder = character:Blackfyre_11
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = { # The Hand of the King would be a suitable position
+		name = agot_fourth_blackfyre_rebellion.0002.a
+		trigger = {
+			# AI Aegor can do this option, Player only if Daemon is AI
+			OR = {
+				is_ai = yes
+				has_multiple_players = no
+			}
+		}
+		show_as_tooltip = {
+			custom_tooltip = agot_fourth_blackfyre_rebellion.0002.gc_tt
+			# Switch Player Aegor to Daemon if singleplayer
+			if = {
+				limit = {
+					is_ai = no
+					has_multiple_players = no
+				}
+				set_player_character = scope:daemon
+			}
+			destroy_laamp_effect = { ADVENTURER = scope:aegor }
+
+			scope:daemon = {
+				add_courtier ?= scope:aegor
+				assign_councillor_type = {
+					type = councillor_castellan
+					target = scope:aegor
+					remove_existing_councillor = yes
+				}
+				block_firing_councillor_effect = { COURT_OWNER = scope:aegor }
+			}
+
+		}
+		scope:daemon = {
+			add_character_flag = { flag = bittersteel_requests_hotk months = 6 }
+		}
+		ai_chance = { base = 100 }
+	}
+	option = { # I want a place on your Kingsguard... as the Lord Commander
+		name = agot_fourth_blackfyre_rebellion.0002.b
+		ai_chance = { base = 100 }
+		trigger = {
+			scope:daemon = {
+				ruler_primary_title_has_kingsguard_trigger = yes
+			}
+			# AI Aegor can always do this option, Player only if Daemon is AI
+			OR = {
+				is_ai = yes
+				has_multiple_players = no
+			}
+		}
+		scope:daemon = {
+			add_character_flag = { flag = bittersteel_requests_lc months = 6 }
+		}
+		show_as_tooltip = {
+			# Switch Player Aegor to Daemon if singleplayer
+			if = {
+				limit = {
+					is_ai = no
+					has_multiple_players = no
+				}
+				set_player_character = scope:daemon
+			}
+			destroy_laamp_effect = { ADVENTURER = scope:aegor }
+			hidden_effect = {
+				agot_join_kingsguard_effect = {
+					KINGSGUARD = scope:aegor
+					KING = scope:daemon
+				}
+			}
+			# Assign Aegor as LC
+			scope:daemon = {
+				if = {
+					limit = { has_council_position = kingsguard_lord_commander }
+					cp:kingsguard_lord_commander = { add_character_flag = can_fire_kingsguard }
+					fire_councillor = cp:kingsguard_lord_commander
+				}
+				custom_tooltip = agot_fourth_blackfyre_rebellion.0002.gc_tt
+				if = {
+					limit = { NOT = { has_council_position = kingsguard_lord_commander }  }
+					agot_assign_lord_commander_effect = {
+						COMMANDER = scope:aegor
+						KING = scope:daemon
+					}
+				}
+			}
+		}
+	}
+	option = { # I want Summerhall
+		name = agot_fourth_blackfyre_rebellion.0002.c
+		ai_chance = { base = 100 }
+		scope:daemon = { add_character_flag = { flag = bittersteel_requests_summerhall months = 6 } }
+		trigger = {
+			OR = {
+				title:c_summerfield.holder = { is_vassal_or_below_of = title:h_the_iron_throne.holder } # Summerhall is in the Iron Throne
+				scope:daemon = { has_title = title:c_summerfield }
+			}
+			NOT = { title:c_summerfield.holder = { is_at_war_with = title:h_the_iron_throne.holder } } # And not at war with the throne
+		}
+		show_as_tooltip = {
+			custom_tooltip = agot_fourth_blackfyre_rebellion.0002.gc_tt
+			title:c_summerfield = {
+				save_scope_as = target
+				add_to_list = granted_titles
+				holder = { save_scope_as = old_summerhall_holder }
+			}
+			scope:aegor = {
+				# Resolve title, liege, government changes
+				# Determine hierarchy
+				ep3_become_landed_save_liege_effect = {
+					TITLE_GIVER = scope:daemon
+					ALWAYS_INDEPENDENT = no
+					TITLE_LIST = granted_titles
+				}
+				ep3_become_landed_transfer_effect = {
+					TITLE_RECEIVER = scope:aegor
+					TITLE_LIST = granted_titles
+					TYPE = granted
+					REASON = flag:negotiated
+					ENNOBLED_ADVENTURER = flag:no
+				}
+				# Messages for nearby players
+				create_landed_ruler_message_effect = {
+					LANDED = scope:aegor
+					FLAVOR_CHAR = scope:aegor
+					FLAVOR_TITLE = scope:target
+					REASON = flag:negotiated
+				}
+				every_courtier = {
+					custom = every_follower_custom
+					limit = { is_human = yes }
+					set_variable = {
+						name = former_camp_leader
+						value = root
+					}
+					add_trait = adventurer_follower
+				}
+			}
+			# If relative lost title, come home
+			scope:old_summerhall_holder = {
+				if = {
+					limit = {
+						is_ruler = no
+						is_close_or_extended_family_of = root
+						NOT = { employer = root }
+					}
+					set_employer = root
+				}
+			}
+		}
+	}
+	option = { # I would appreciate some gold...
+		name = agot_fourth_blackfyre_rebellion.0002.d
+		ai_chance = { base = 100 }
+		scope:daemon = { add_character_flag = { flag = bittersteel_requests_gold months = 6 } }
+		show_as_tooltip = {
+			scope:daemon = {
+				save_scope_value_as = {
+					name = gold_amount
+					value = 1000
+				}
+				remove_short_term_gold = scope:gold_amount
+				scope:aegor = {
+					add_gold = scope:gold_amount
+					add_prestige = major_prestige_value
+				}
+			}
+		}
+	}
+	option = { # Nothing, I have simply served my liege
+		# AI Bittersteel should always ask for something
+		ai_chance = { base = 0 }
+		name = agot_fourth_blackfyre_rebellion.0002.e
+		add_character_flag = requests_nothing
+		stress_impact = {
+			base = major_stress_impact_loss
+		}
+	}
+	after = {
+		if = {
+			limit = { has_character_flag = requests_nothing }
+			remove_character_flag = requests_nothing
+		}
+		else = { scope:daemon = { trigger_event = agot_fourth_blackfyre_rebellion.0015  } }
+	}
+}
+
+### 0010 - 0019 # Daemon Events
+# Daemon Becomes King!
+agot_fourth_blackfyre_rebellion.0010 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.0010.t
+	desc = agot_fourth_blackfyre_rebellion.0010.desc
+
+	theme = court
+
+	override_background = {
+		reference = agot_iron_throne
+	}
+
+	left_portrait = {
+		character = root
+		animation = war_over_win
+	}
+
+	right_portrait = scope:deposed
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		title:h_the_iron_throne = {
+			previous_holder = {
+				save_scope_as = deposed
+			}
+		}
+		if = {
+			limit = {
+				has_trait = refusing_marriage
+			}
+			remove_trait = refusing_marriage
+		}
+		trigger_event = agot_fourth_blackfyre_rebellion.9989
+		# Aegor Request Event
+		scope:aegor = {
+			add_character_flag = blocked_from_spoils_of_war
+			trigger_event = { id = agot_fourth_blackfyre_rebellion.0002 days = 14 }
+		}
+	}
+
+	option = {
+		name = agot_fourth_blackfyre_rebellion.0010.a
+	}
+}
+
+# Daemon III (The Invasion)
+agot_fourth_blackfyre_rebellion.0011 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.0011.t
+	desc = agot_fourth_blackfyre_rebellion.0011.desc
+
+	theme = war
+
+	override_background = {
+		reference = AGOT_beach
+	}
+	left_portrait = {
+		character = root
+		animation = war_attacker
+	}
+	right_portrait = {
+		character = scope:aegonv
+		animation = personality_compassionate
+	}
+	lower_right_portrait = {
+		character = scope:duncansmall
+		animation = personality_content
+	}
+	lower_left_portrait = {
+		character = scope:aegor
+		animation = personality_content
+	}
+	trigger = {
+		NOT = { has_title = title:h_the_iron_throne }
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+
+		random_character_artifact = {
+			limit = { has_artifact_modifier = vs_blackfyre_modifier }
+			save_scope_as = blackfyre
+		}
+	}
+
+	option = { # To King's Landing!
+		name = agot_fourth_blackfyre_rebellion.0011.a
+		flavor = agot_fourth_blackfyre_rebellion.0011.a.tt
+		add_character_flag = { flag = mw_init_event_blocker days = 2 }
+		start_war = {
+			casus_belli = agot_blackfyre_claim
+			claimant = root
+			target = title:h_the_iron_throne.holder
+			target_title = title:h_the_iron_throne
+			target_title = title:e_the_crownlands
+			target_title = title:d_kings_landing
+			target_title = title:c_kings_landing
+			target_title = title:k_dragonstone
+			target_title = title:d_dragonstone
+			target_title = title:c_dragonstone
+		}
+		hidden_effect = { agot_fourth_blackfyre_loyalists_alliance_effect = yes }
+		random_character_war = {
+			limit = { using_cb = agot_blackfyre_claim }
+			save_scope_as = fourth_bf_war
+		}
+		# Store the War
+		scope:fourth_blackfyre_rebellion_story ?= {
+			set_variable = {
+				name = fourth_bf_war
+				value = scope:fourth_bf_war
+			}
+		}
+		# Notification Event for Players
+		every_player = {
+			limit = {
+				capital_province = {
+					geographical_region = world_westeros_seven_kingdoms
+				}
+				NOR = {
+					this ?= character:Blackfyre_11
+					this ?= title:d_laamp_merc_golden_company.holder
+				}
+			}
+			trigger_event = agot_fourth_blackfyre_rebellion.0012
+		}
+		if = {
+			limit = { has_dlc_feature = roads_to_power }
+			# Call in Golden Company
+			if = {
+				limit = {
+					title:d_laamp_merc_golden_company.holder ?= {
+						has_really_bad_opinion_of_root_trigger = no
+						NOR = {
+							is_allied_to =  title:h_the_iron_throne.holder
+							has_strong_hook =  title:h_the_iron_throne.holder
+							has_relation_friend =  title:h_the_iron_throne.holder
+							has_truce =  title:h_the_iron_throne.holder
+						}
+					}
+				}
+				# Aegor Event
+				title:d_laamp_merc_golden_company.holder ?= {
+					trigger_event = agot_fourth_blackfyre_rebellion.0001
+				}
+				every_character_war = {
+					limit = {
+						primary_defender = title:h_the_iron_throne.holder
+					}
+					add_attacker = title:d_laamp_merc_golden_company.holder
+				}
+			}
+		}
+		else_if = {
+			limit = { NOT = { has_dlc_feature = roads_to_power } }
+			# Spawn Special Troops
+			if = {
+				limit = {
+					is_landed = yes
+				}
+				generate_golden_company_special_troops = { LOCATION = scope:daemon.capital_province ORIGIN = scope:daemon.capital_province ARMY_NAME = blackfyre_dynamic_revolt_army }
+			}
+			else = {
+				generate_golden_company_special_troops = { LOCATION = scope:daemon.location ORIGIN = scope:daemon.location ARMY_NAME = blackfyre_dynamic_revolt_army }
+			}
+		}
+		scope:aegonv = {
+			# Call in Duncan Small to war
+			if = {
+				limit = {
+					character:Targaryen_126 = { is_alive = yes }
+					title:k_dragonstone.holder = character:Targaryen_126
+				}
+				every_character_war = {
+					limit = {
+						primary_defender = title:h_the_iron_throne.holder
+					}
+					add_defender = title:k_dragonstone.holder
+				}
+				# If Lyonel is alive, and Duncan is betrothed with Cassandra, then add Lyonel to the war
+				if = {
+					limit = {
+						character:Baratheon_71 = {
+							is_alive = yes
+							is_allied_to = scope:duncansmall
+						}
+						title:e_the_stormlands.holder = character:Baratheon_71
+						scope:duncansmall = {
+							is_betrothed = yes
+						}
+						scope:cassandra = {
+							is_alive = yes
+							is_betrothed = yes
+						}
+					}
+					every_character_war = {
+						limit = {
+							primary_defender = title:h_the_iron_throne.holder
+						}
+						add_defender = title:e_the_stormlands.holder
+					}
+				}
+			}
+			# If Duncan abdicated, call in Jaehaerys
+			else_if = {
+				limit = {
+					character:Targaryen_126 = { is_alive = yes }
+					title:k_dragonstone.holder = character:Targaryen_127
+				}
+				every_character_war = {
+					limit = {
+						primary_defender = title:h_the_iron_throne.holder
+					}
+					add_defender = title:k_dragonstone.holder
+				}
+			}
+		}
+	}
+}
+
+# Daemon's Landing Notification Event
+agot_fourth_blackfyre_rebellion.0012 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.0012.t
+	desc = agot_fourth_blackfyre_rebellion.0012.desc
+
+	theme = crown
+	override_background = {
+		reference = agot_iron_throne
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:daemon
+		animation = personality_bold
+	}
+	lower_left_portrait = {
+		character = scope:aegonv
+		animation = personality_content
+		trigger = { NOT = { this = title:h_the_iron_throne.holder } }
+	}
+	lower_right_portrait = {
+		character = scope:aegor
+		animation = personality_content
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		root = {
+			play_music_cue = "mood_the_others"
+		}
+	}
+
+	option = {
+		trigger = { this = title:h_the_iron_throne.holder }
+		name = agot_fourth_blackfyre_rebellion.0012.a
+	}
+
+	option = {
+		trigger = { NOT = { this = title:h_the_iron_throne.holder } }
+		name = agot_fourth_blackfyre_rebellion.0012.b
+	}
+
+	option = {
+		trigger = {
+			is_ai = no
+			has_multiple_players = no
+		}
+		name = agot_fourth_blackfyre_rebellion.0012.c
+		set_player_character = scope:daemon
+	}
+}
+
+# Daemon Blackfyre Alliances are Called in (One Year Later)
+agot_fourth_blackfyre_rebellion.0013 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.0013.t
+	desc = agot_fourth_blackfyre_rebellion.0013.desc
+
+	theme = war
+
+	override_background = {
+		reference = AGOT_beach
+	}
+
+	left_portrait = {
+		character = root
+		animation = war_over_win
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		random_character_war = {
+			limit = {
+				using_cb = agot_blackfyre_claim
+			}
+			add_to_list = blackfyre_wars
+		}
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_fourth_blackfyre_rebellion
+			}
+			save_scope_as = fourth_blackfyre_rebellion_story
+		}
+	}
+
+	option = {
+		name = agot_fourth_blackfyre_rebellion.0013.a
+
+		agot_mw_start_mid_war_effect = { ATTACKER = root DEFENDER = scope:aegonv WAR = scope:story.var:fourth_bf_war }
+
+		# Call in the Loyalists who joined the initial invasion
+		scope:fourth_blackfyre_rebellion_story = {
+			every_in_list = {
+				variable = blackfyre_loyalist_story_content_ally
+				limit = {
+					is_alive = yes
+					is_ai = yes
+				}
+				every_in_list = {
+					list = blackfyre_wars
+					limit = {
+						NOT = { is_participant = prev }
+					}
+					add_attacker = prev
+				}
+			}
+		}
+	}
+}
+
+# Daemon Blackfyre Alliances are Called in (After Killing Duncan Tall in Duel)
+agot_fourth_blackfyre_rebellion.0014 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.0014.t
+	desc = agot_fourth_blackfyre_rebellion.0014.desc
+
+	theme = war
+
+	override_background = {
+		reference = AGOT_beach
+	}
+
+	left_portrait = {
+		character = root
+		animation = war_over_win
+	}
+
+	right_portrait = {
+		character = scope:duncantall
+		animation = dead
+	}
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		random_character_war = {
+			limit = {
+				using_cb = agot_blackfyre_claim
+			}
+			add_to_list = blackfyre_wars
+		}
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_fourth_blackfyre_rebellion
+			}
+			save_scope_as = fourth_blackfyre_rebellion_story
+		}
+		add_prestige = medium_prestige_gain
+	}
+
+	option = {
+		name = agot_fourth_blackfyre_rebellion.0014.a
+
+		agot_mw_start_mid_war_effect = { ATTACKER = root DEFENDER = scope:aegonv WAR = scope:story.var:fourth_bf_war }
+
+		# Call in the Loyalists who joined the initial invasion
+		scope:fourth_blackfyre_rebellion_story = {
+			every_in_list = {
+				variable = blackfyre_loyalist_story_content_ally
+				limit = {
+					is_alive = yes
+					is_ai = yes
+				}
+				every_in_list = {
+					list = blackfyre_wars
+					limit = {
+						NOT = { is_participant = prev }
+					}
+					add_attacker = prev
+				}
+			}
+		}
+	}
+}
+
+scripted_effect disband_golden_company_to_daemon_effect = {
+	if = {
+		limit = { has_dlc_feature = roads_to_power }
+		hidden_effect = {
+			every_maa_regiment = {
+				destroy_maa_regiment = yes
+			}
+		}
+		scope:daemon = {
+			# Spawn Special Troops for Daemon
+			custom_tooltip = {
+				text = agot_fourth_blackfyre_rebellion.0015.gc_tt
+				if = {
+					limit = {
+						is_landed = yes
+					}
+					generate_golden_company_special_troops = { LOCATION = scope:daemon.capital_province ORIGIN = scope:daemon.capital_province ARMY_NAME = the_golden_company_name }
+				}
+				else = {
+					generate_golden_company_special_troops = { LOCATION = scope:daemon.location ORIGIN = scope:daemon.location ARMY_NAME = the_golden_company_name }
+				}
+			}
+		}
+	}
+}
+# Daemon Blackfyre: Response to Aegor's Request
+agot_fourth_blackfyre_rebellion.0015 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.0015.t
+	desc = {
+		desc = agot_fourth_blackfyre_rebellion.0015.desc
+		first_valid = {
+			triggered_desc = {
+				trigger = { has_character_flag = bittersteel_requests_gold }
+				desc = agot_fourth_blackfyre_rebellion.0015.gold
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = bittersteel_requests_hotk }
+				desc = agot_fourth_blackfyre_rebellion.0015.hotk
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = bittersteel_requests_summerhall }
+				desc = agot_fourth_blackfyre_rebellion.0015.summerhall
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = bittersteel_requests_lc }
+				desc = agot_fourth_blackfyre_rebellion.0015.lc
+			}
+		}
+	}
+
+	theme = vassal
+	override_background = {
+		reference = agot_iron_throne
+	}
+	right_portrait = {
+		character = root
+		animation = chancellor
+	}
+	left_portrait = {
+		character = scope:aegor
+		animation = throne_room_kneel_1
+	}
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = { # Sure
+		name = agot_fourth_blackfyre_rebellion.0015.a
+		ai_chance = {
+			base = 90
+		}
+		# Bittersteel requests to be made Lord Commander of KG
+		if = {
+			limit = { has_character_flag = bittersteel_requests_lc }
+			# Switch Player Aegor to Daemon if singleplayer
+			scope:aegor = {
+				disband_golden_company_to_daemon_effect = yes
+				if = {
+					limit = {
+						is_ai = no
+						has_multiple_players = no
+					}
+					set_player_character = scope:daemon
+				}
+				if = {
+					limit = {
+						is_married = yes
+					}
+					every_spouse = {
+						divorce = prev
+					}
+				}
+				if = {
+					limit = {
+						exists = betrothed
+					}
+					break_betrothal = betrothed
+				}
+			}
+			destroy_laamp_effect = { ADVENTURER = scope:aegor }
+			# Assign Aegor as LC
+			scope:daemon = {
+				# If there is a KG Lc, remove them
+				random_councillor = {
+					limit = {
+						has_council_position = kingsguard_lord_commander
+					}
+					hidden_effect = {
+						white_book_transfer = yes
+						agot_kingsguard_destroy_artifacts = yes
+					}
+					remove_trait = kingsguard
+					add_character_flag = can_fire_kingsguard
+					save_scope_as = former_lc_kg
+					title:h_the_iron_throne = {
+						holder = {
+							if = {
+								limit = {
+									scope:former_lc_kg = { is_councillor_of = title:h_the_iron_throne.holder }
+								}
+								fire_councillor = scope:former_lc_kg
+							}
+						}
+						if = {
+							limit = {
+								exists = var:kingsguard_lord_commander
+								var:kingsguard_lord_commander = scope:former_lc_kg
+							}
+							remove_variable = kingsguard_lord_commander
+						}
+					}
+				}
+				# Set Aegor to join KG with LC position
+				hidden_effect = {
+					scope:aegor = {
+						remove_character_flag = cannot_be_knight_and_commander
+						agot_join_kingsguard_effect = {
+							KINGSGUARD = scope:aegor
+							KING = scope:daemon
+						}
+					}
+				}
+				scope:aegor = {
+					save_scope_as = kingsguard_candidate
+					save_scope_as = new_lord_commander
+				}
+				save_scope_as = king
+				trigger_event = agot_kingsguard.1008
+				agot_assign_lord_commander_effect = {
+					COMMANDER = scope:aegor
+					KING = scope:daemon
+				}
+			}
+		}
+		# Bittersteel requests Summerhall
+		else_if = {
+			limit = { has_character_flag = bittersteel_requests_summerhall }
+			title:c_summerfield = {
+				save_scope_as = target
+				add_to_list = granted_titles
+				holder = { save_scope_as = old_summerhall_holder }
+			}
+			scope:aegor = {
+				add_character_flag = ai_should_not_transfer
+				disband_golden_company_to_daemon_effect = yes
+				# Determine hierarchy
+				ep3_become_landed_save_liege_effect = {
+					TITLE_GIVER = scope:daemon
+					ALWAYS_INDEPENDENT = no
+					TITLE_LIST = granted_titles
+				}
+				# Resolve title, liege, government changes
+				ep3_become_landed_transfer_effect = {
+					TITLE_RECEIVER = scope:aegor
+					TITLE_LIST = granted_titles
+					TYPE = granted
+					REASON = flag:negotiated
+					ENNOBLED_ADVENTURER = flag:no
+				}
+				# Messages for nearby players
+				create_landed_ruler_message_effect = {
+					LANDED = scope:aegor
+					FLAVOR_CHAR = scope:aegor
+					FLAVOR_TITLE = scope:target
+					REASON = flag:negotiated
+				}
+				every_courtier = {
+					custom = every_follower_custom
+					limit = { is_human = yes }
+					set_variable = {
+						name = former_camp_leader
+						value = root
+					}
+					add_trait = adventurer_follower
+				}
+			}
+			hidden_effect = {
+				scope:calla ?= {
+					if = {
+						limit = { NOT = { employer ?= scope:aegor } }
+						set_employer = scope:aegor
+					}
+				}
+			}
+			# If relative lost title, come home
+			scope:old_summerhall_holder = {
+				if = {
+					limit = {
+						is_ruler = no
+						is_close_or_extended_family_of = root
+						NOT = { employer = root }
+					}
+					set_employer = root
+				}
+			}
+		}
+		# Bittersteel requests to be made Hand of the King
+		else_if = {
+			limit = { has_character_flag = bittersteel_requests_hotk }
+			# Switch Player Aegor to Daemon if singleplayer
+			scope:aegor = {
+				disband_golden_company_to_daemon_effect = yes
+				if = {
+					limit = {
+						is_ai = no
+						has_multiple_players = no
+					}
+					set_player_character = scope:daemon
+				}
+			}
+			destroy_laamp_effect = { ADVENTURER = scope:aegor }
+			scope:daemon = { add_courtier ?= scope:aegor }
+			hidden_effect = {
+				scope:calla ?= {
+					if = {
+						limit = { NOT = { employer ?= scope:daemon } }
+						set_employer = scope:daemon
+					}
+				}
+			}
+			assign_councillor_type = {
+				type = councillor_castellan
+				target = scope:aegor
+				remove_existing_councillor = yes
+			}
+			scope:aegor = {
+				block_firing_councillor_effect = { COURT_OWNER = root }
+			}
+		}
+		# Bittersteel requests Gold & Glory
+		else_if = {
+			limit = { has_character_flag = bittersteel_requests_gold }
+			remove_short_term_gold = 1000
+			scope:aegor = {
+				add_gold = 1000
+				add_prestige = major_prestige_value
+			}
+		}
+		# Aegor is grateful
+		scope:aegor = {
+			add_opinion = {
+				target = scope:daemon
+				modifier = grateful_opinion
+				opinion = 40
+			}
+		}
+	}
+	option = { # Nah
+		name = agot_fourth_blackfyre_rebellion.0015.b
+		ai_chance = {
+			base = 10
+		}
+		# Aegor feels insulted
+		scope:aegor = {
+			add_opinion = {
+				target = scope:daemon
+				modifier = insulted_opinion
+				opinion = -40
+			}
+		}
+	}
+}
+
+### 1000 - 1009 # Introductory Events
+#Daemon III Introduction Event
+agot_fourth_blackfyre_rebellion.1000 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1000.t
+	desc = agot_fourth_blackfyre_rebellion.1000.desc
+
+	theme = war
+
+	override_background = {
+		reference = AGOT_beach
+	}
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:aegor
+		animation = marshal
+	}
+	lower_left_portrait = {
+		character = character:Targaryen_94
+	}
+	lower_center_portrait = {
+		character = character:Blackfyre_5
+	}
+	lower_right_portrait = {
+		character = character:Blackfyre_6
+	}
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_fourth_blackfyre_rebellion
+			}
+			save_scope_as = fourth_blackfyre_rebellion_story
+		}
+		# Bring Aegor to court if no DLC
+		if = {
+			limit = {
+				NOT = { has_dlc_feature = roads_to_power }
+			}
+			if = {
+				limit = {
+					scope:aegor ?= {
+						is_alive = yes
+						NOT = { scope:employer ?= scope:daemon }
+					}
+				}
+				add_courtier ?= scope:aegor
+			}
+			if = {
+				limit = {
+					scope:calla ?= {
+						is_alive = yes
+						NOT = { scope:employer ?= scope:daemon }
+					}
+				}
+				add_courtier ?= scope:calla
+			}
+		}
+		# Daemon Starter Gold & Prestige
+		hidden_effect = {
+			add_gold = 500
+			add_prestige = 500
+		}
+	}
+
+	option = { # We'll go forward with the invasion in two weeks.
+		name = agot_fourth_blackfyre_rebellion.1000.a
+		flavor = agot_fourth_blackfyre_rebellion.1000.a.tt
+		trigger_event = { id = agot_fourth_blackfyre_rebellion.0011 days = 14 }
+		scope:tion ?= { hidden_effect = { set_knight_status = force } }
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_historic_event_chance
+			}
+		}
+	}
+	option = { # This rebellion stuff... isn't for me
+		name = agot_fourth_blackfyre_rebellion.1000.b
+		flavor = agot_fourth_blackfyre_rebellion.1000.b.tt
+		if = {
+			limit = {
+				has_trait = refusing_marriage
+			}
+			remove_trait = refusing_marriage
+		}
+		scope:fourth_blackfyre_rebellion_story = {
+			end_story = yes
+		}
+		if = {
+			limit = { has_title = title:e_blackfyre_rebellion }
+			destroy_title = title:e_blackfyre_rebellion
+		}
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_nonhistoric_event_chance
+			}
+		}
+	}
+}
+
+#Aegor Rivers Introduction Event
+agot_fourth_blackfyre_rebellion.1001 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1001.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					character:Blackfyre_11 ?= { is_alive = yes }
+					OR = {
+						title:e_blackfyre_rebellion.holder = character:Blackfyre_11
+						title:d_laamp_blackfyre.holder = character:Blackfyre_11
+					}
+				}
+				desc = agot_fourth_blackfyre_rebellion.1001.desc
+			}
+			triggered_desc = {
+				trigger = {
+					NOR = {
+						character:Blackfyre_11 ?= { is_alive = yes }
+						OR = {
+							title:e_blackfyre_rebellion.holder = character:Blackfyre_11
+							title:d_laamp_blackfyre.holder = character:Blackfyre_11
+						}
+					}
+				}
+				desc = agot_fourth_blackfyre_rebellion.1001.desc.b
+			}
+		}
+	}
+
+	theme = war
+
+	override_background = {
+		reference = AGOT_beach
+	}
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+	right_portrait = {
+		character = scope:daemon
+		animation = personality_bold
+	}
+	lower_left_portrait = {
+		character = scope:aegonv
+		animation = personality_compassionate
+	}
+	lower_right_portrait = {
+		character = scope:duncansmall
+		animation = personality_content
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		# Bittersteel Gold
+		hidden_effect = { add_gold = 500 }
+		# Ally Daemon
+		agot_fourth_blackfyre_rebellion_aegor_daemon_friendship_alliance_effect = yes
+		character:Targaryen_94 = {
+			save_scope_as = daemoni
+		}
+	}
+
+	option = {
+		name = {
+			trigger = {
+				character:Blackfyre_11 ?= { is_alive = yes }
+				OR = {
+					title:e_blackfyre_rebellion.holder = character:Blackfyre_11
+					title:d_laamp_blackfyre.holder = character:Blackfyre_11
+				}
+			}
+			text = agot_fourth_blackfyre_rebellion.1001.a
+		}
+		name = {
+			trigger = {
+				NOR = {
+					character:Blackfyre_11 ?= { is_alive = yes }
+					OR = {
+						title:e_blackfyre_rebellion.holder = character:Blackfyre_11
+						title:d_laamp_blackfyre.holder = character:Blackfyre_11
+					}
+				}
+			}
+			text = agot_fourth_blackfyre_rebellion.1001.a.b
+		}
+	}
+}
+
+scripted_trigger is_duncan_cassandra_betrothal_possible_trigger = {
+	character:Targaryen_126 = {
+		is_alive = yes
+		is_betrothed = no
+	}
+	character:Baratheon_76 = {
+		is_alive = yes
+		is_betrothed = no
+	}
+	character:Targaryen_122 = {
+		is_alive = yes
+		has_title = title:h_the_iron_throne
+	}
+	character:Baratheon_71 = {
+		is_alive = yes
+		has_title = title:e_the_stormlands
+	}
+}
+#Aegon V Introduction Event
+agot_fourth_blackfyre_rebellion.1002 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1002.t
+	desc = agot_fourth_blackfyre_rebellion.1002.desc
+
+	theme = crown
+
+	override_background = {
+		reference = throne_room
+	}
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+	right_portrait = {
+		character = scope:daemon
+		animation = personality_bold
+	}
+	lower_left_portrait = {
+		character = scope:duncantall
+		animation = personality_content
+	}
+	lower_right_portrait = {
+		character = scope:duncansmall
+		animation = personality_content
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = {
+		name = agot_fourth_blackfyre_rebellion.1002.a
+	}
+	after = {
+		trigger_event = { id = agot_fourth_blackfyre_rebellion.1010 days = 7}
+	}
+}
+
+# Duncan the Small Introduction Event
+agot_fourth_blackfyre_rebellion.1003 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1003.t
+	desc = agot_fourth_blackfyre_rebellion.1003.desc
+
+	theme = realm
+
+	override_background = {
+		reference = AGOT_beach
+	}
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+	right_portrait = {
+		character = scope:daemon
+		animation = personality_bold
+	}
+	lower_left_portrait = {
+		character = scope:aegonv
+		animation = personality_content
+	}
+	lower_right_portrait = {
+		character = scope:aegor
+		animation = personality_content
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = {
+		name = agot_fourth_blackfyre_rebellion.1003.a
+	}
+}
+
+# Gerold Lannister Introduction Event
+agot_fourth_blackfyre_rebellion.1004 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1004.t
+	desc = agot_fourth_blackfyre_rebellion.1004.desc
+
+	theme = realm
+
+	override_background = {
+		reference = AGOT_beach
+	}
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+	right_portrait = {
+		character = scope:daemon
+		animation = personality_bold
+	}
+	lower_left_portrait = {
+		character = scope:aegonv
+		animation = personality_content
+	}
+	lower_right_portrait = {
+		character = scope:aegor
+		animation = personality_content
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = {
+		name = agot_fourth_blackfyre_rebellion.1004.a
+	}
+}
+
+# Lyonel Baratheon Introduction Event
+agot_fourth_blackfyre_rebellion.1005 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1005.t
+	desc = agot_fourth_blackfyre_rebellion.1005.desc
+
+	theme = realm
+
+	override_background = {
+		reference = AGOT_beach
+	}
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+	right_portrait = {
+		character = scope:daemon
+		animation = personality_bold
+	}
+	lower_left_portrait = {
+		character = scope:aegonv
+		animation = personality_content
+	}
+	lower_right_portrait = {
+		character = scope:aegor
+		animation = personality_content
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = {
+		name = agot_fourth_blackfyre_rebellion.1005.a
+	}
+}
+
+### 1010 - 1019 # AegonV Events
+# A Potential Match
+agot_fourth_blackfyre_rebellion.1010 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1010.t
+	desc = agot_fourth_blackfyre_rebellion.1010.desc
+
+	theme = diplomacy_family_focus
+
+	trigger = {
+		is_duncan_cassandra_betrothal_possible_trigger = yes
+	}
+	on_trigger_fail = {
+		agot_duncan_cassandra_remove_trait_effect = yes
+	}
+	left_portrait = {
+		character = scope:lyonel
+		animation = marshal
+	}
+	lower_left_portrait = {
+		character = scope:duncansmall
+	}
+	lower_right_portrait = {
+		character = scope:daemon
+	}
+	right_portrait = {
+		character = scope:cassandra
+		animation = personality_rational
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = { # Ask Duncan for permission
+		name = agot_fourth_blackfyre_rebellion.1010.a
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_historic_event_chance
+			}
+		}
+		if = {
+			limit = { scope:duncansmall = { is_ruler = yes } }
+			scope:duncansmall = { trigger_event = agot_fourth_blackfyre_rebellion.1020 }
+		}
+		else = {
+			scope:lyonel = {
+				trigger_event = agot_fourth_blackfyre_rebellion.1030
+			}
+		}
+	}
+	option = { # Forget this alliance stuff...
+		name = agot_fourth_blackfyre_rebellion.1010.b
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_nonhistoric_event_chance
+			}
+		}
+		agot_duncan_cassandra_remove_trait_effect = yes
+	}
+}
+
+# Refusal (Aegon POV of Duncan refusing)
+agot_fourth_blackfyre_rebellion.1011 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1011.t
+	desc = agot_fourth_blackfyre_rebellion.1011.desc
+
+	theme = diplomacy_family_focus
+
+	left_portrait = {
+		character = root
+		animation = disapproval
+	}
+	right_portrait = {
+		character = scope:duncansmall
+		animation = personality_rational
+	}
+	lower_right_portrait = {
+		character = scope:cassandra
+	}
+	lower_left_portrait = {
+		character = scope:lyonel
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		show_as_tooltip = { scope:duncansmall ?= { remove_trait_force_tooltip = refusing_marriage } }
+	}
+
+	option = { # There is no hope for this one
+		name = agot_fourth_blackfyre_rebellion.1011.a
+		custom_tooltip = agot_fourth_blackfyre_rebellion.1011.a.tt
+		scope:duncansmall = { trigger_event = { id = agot_fourth_blackfyre_rebellion.1021 } }
+	}
+}
+
+# Acceptance (Aegon POV of Duncan accepting)
+agot_fourth_blackfyre_rebellion.1012 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1012.t
+	desc = agot_fourth_blackfyre_rebellion.1012.desc
+
+	theme = diplomacy_family_focus
+
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:duncansmall
+		animation = personality_rational
+	}
+	lower_right_portrait = {
+		character = scope:cassandra
+	}
+	lower_left_portrait = {
+		character = scope:lyonel
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = { # Surely the Stag will agree?
+		name = agot_fourth_blackfyre_rebellion.1012.a
+		scope:lyonel = { trigger_event = { id = agot_fourth_blackfyre_rebellion.1030 days = 3 } }
+	}
+}
+
+# The Stag's Response (Aegon POV of Lyonel accepting/refusing)
+agot_fourth_blackfyre_rebellion.1013 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1013.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { has_character_flag = lyonel_accepts }
+				desc = agot_fourth_blackfyre_rebellion.1013.desc.a
+			}
+			triggered_desc = {
+				trigger = { has_character_flag = lyonel_refuses }
+				desc = agot_fourth_blackfyre_rebellion.1013.desc.r
+			}
+		}
+	}
+
+	theme = diplomacy_family_focus
+
+	left_portrait = {
+		character = root
+		animation = personality_bold
+		triggered_animation = {
+			trigger = { has_character_flag = lyonel_refuses }
+			animation = stress
+		}
+	}
+	right_portrait = {
+		character = scope:duncansmall
+		animation = personality_rational
+	}
+	lower_right_portrait = {
+		character = scope:cassandra
+	}
+	lower_left_portrait = {
+		character = scope:lyonel
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		if = {
+			limit = { has_character_flag = lyonel_refuses }
+			show_as_tooltip = {
+				scope:duncansmall = {
+					remove_trait_force_tooltip = refusing_marriage
+				}
+			}
+		}
+	}
+
+	option = {
+		name = { # Exactly as planned
+			trigger = { has_character_flag = lyonel_accepts }
+			text = agot_fourth_blackfyre_rebellion.1013.a.a
+		}
+		name = { # Such a shame
+			trigger = { has_character_flag = lyonel_refuses }
+			text = agot_fourth_blackfyre_rebellion.1013.a.r
+		}
+	}
+}
+
+# The Prince of Dragonflies (Duncan abdicates and becomes a LAAMP)
+agot_fourth_blackfyre_rebellion.1014 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1014.t
+	desc = agot_fourth_blackfyre_rebellion.1014.desc
+
+	theme = diplomacy_family_focus
+
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+	right_portrait = {
+		character = scope:duncansmall
+		animation = personality_rational
+	}
+	lower_right_portrait = {
+		character = scope:jaehaerys
+		trigger = { scope:jaehaerys = { NOT = { this = scope:aegonv } } }
+	}
+	lower_left_portrait = {
+		character = scope:lyonel
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		show_as_tooltip = {
+			scope:duncansmall = {
+				add_trait_force_tooltip = disinherited
+			}
+		}
+		title:k_dragonstone.holder = { save_scope_as = jaehaerys }
+	}
+
+	option = { #
+		name = agot_fourth_blackfyre_rebellion.1014.a
+	}
+}
+
+### 1020 - 1029 # Duncan Events
+# A Parental Request
+agot_fourth_blackfyre_rebellion.1020 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1020.t
+	desc = agot_fourth_blackfyre_rebellion.1020.desc
+
+	theme = diplomacy_family_focus
+
+	trigger = {
+		is_duncan_cassandra_betrothal_possible_trigger = yes
+	}
+	on_trigger_fail = {
+		agot_duncan_cassandra_remove_trait_effect = yes
+	}
+	left_portrait = {
+		character = root
+		animation = disbelief
+	}
+	lower_left_portrait = {
+		character = scope:aegonv
+	}
+	lower_right_portrait = {
+		character = scope:lyonel
+	}
+	right_portrait = {
+		character = scope:cassandra
+		animation = flirtation
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = { # Duncan agrees
+		name = agot_fourth_blackfyre_rebellion.1020.a
+		flavor = agot_fourth_blackfyre_rebellion.1020.a.tt
+		scope:aegonv = { trigger_event = agot_fourth_blackfyre_rebellion.1012 }
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_historic_outcome_2
+			}
+		}
+	}
+	option = { # Duncan refuses
+		name = agot_fourth_blackfyre_rebellion.1020.b
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_nonhistoric_outcome_2
+			}
+		}
+		agot_duncan_cassandra_remove_trait_effect = yes
+		add_internal_flag = dangerous
+		flavor = agot_fourth_blackfyre_rebellion.1020.b.tt
+		hidden_effect = {
+			add_character_flag = can_disinherit
+			add_character_modifier = {
+				modifier = lust_for_adventure
+				years = 5
+			}
+			if = {
+				limit = { is_ai = yes }
+				add_trait_force_tooltip = refusing_marriage
+				create_story = {
+					type = lmf_will_not_wed_story_cycle
+				}
+			}
+			add_opinion = { target = scope:cassandra modifier = ended_engagement_opinion }
+			reverse_add_opinion = { target = scope:cassandra modifier = ended_engagement_opinion }
+		}
+		scope:aegonv = {
+			trigger_event = agot_fourth_blackfyre_rebellion.1011
+			add_opinion = {
+				target = scope:duncansmall
+				modifier = disappointed_opinion
+				opinion = -20
+			}
+		}
+		# Lyonel's Reaction to Duncan Refusal
+		scope:lyonel ?= {
+			trigger_event = agot_fourth_blackfyre_rebellion.1031
+			add_opinion = {
+				target = scope:duncansmall
+				modifier = disappointed_opinion
+				opinion = -20
+			}
+		}
+		mother ?= {
+			add_opinion = {
+				target = scope:duncansmall
+				modifier = disappointed_opinion
+				opinion = -20
+			}
+		}
+	}
+}
+
+# Disappointed (Duncan POV from refusing to betroth Cassandra)
+agot_fourth_blackfyre_rebellion.1021 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1021.t
+	desc = agot_fourth_blackfyre_rebellion.1021.desc
+
+	theme = mental_break
+
+	left_portrait = {
+		character = root
+		animation = shame
+	}
+	right_portrait = {
+		character = scope:aegonv
+		animation = disappointed
+	}
+	lower_left_portrait = {
+		character = scope:lyonel
+	}
+	lower_right_portrait = {
+		character = scope:cassandra
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = { # I... did what I had to do!
+		name = agot_fourth_blackfyre_rebellion.1021.a
+		ai_chance = {
+			base = 0
+			modifier = { add = agot_historic_outcome_2 }
+		}
+	}
+
+	option = { # Play as Aegon
+		name = agot_fourth_blackfyre_rebellion.1021.b
+		trigger = {
+			is_ai = no
+			has_multiple_players = no
+			exists = scope:aegonv
+		}
+		set_player_character = scope:aegonv
+		ai_chance = { base = 0 }
+	}
+
+	option = { # I c-can't deal with this! I abdicate! (DLC)
+		name = agot_fourth_blackfyre_rebellion.1021.c
+		trigger = {
+			has_ep3_dlc_trigger = yes
+		}
+		add_stress = minor_stress_gain
+		add_trait = disinherited
+		hidden_effect = { remove_nickname = yes }
+		set_nickname_effect = {
+			NICKNAME = nick_agot_historical_the_prince_of_dragonflies
+		}
+		show_as_tooltip = { give_nickname = nick_agot_historical_the_prince_of_dragonflies }
+		agot_quick_laamp = yes
+		hidden_effect = {
+			random_list = {
+				1 = {
+					primary_title = {
+						save_title_name_change_data = { TRANSFER_VAR = yes }
+						reset_title_prefix = yes
+						set_title_prefix = AGOT_PREFIX_THE
+						set_title_name = duncan_the_small_laamp_name_1
+					}
+				}
+				1 = {
+					primary_title = {
+						save_title_name_change_data = { TRANSFER_VAR = yes }
+						reset_title_prefix = yes
+						set_title_prefix = AGOT_PREFIX_THE
+						set_title_name = duncan_the_small_laamp_name_2
+					}
+				}
+				1 = {
+					primary_title = {
+						save_title_name_change_data = { TRANSFER_VAR = yes }
+						reset_title_prefix = yes
+						set_title_prefix = AGOT_PREFIX_THE
+						set_title_name = duncan_the_small_laamp_name_3
+					}
+				}
+				1 = {
+					primary_title = {
+						save_title_name_change_data = { TRANSFER_VAR = yes }
+						reset_title_prefix = yes
+						set_title_prefix = AGOT_PREFIX_THE
+						set_title_name = duncan_the_small_laamp_name_4
+					}
+				}
+			}
+		}
+		domicile ?= {
+			change_provisions = major_provisions_gain
+		}
+		add_internal_flag = special
+		# Notify Aegon
+		scope:aegonv = { trigger_event = agot_fourth_blackfyre_rebellion.1014 }
+		ai_chance = {
+			base = 0
+			modifier = { add = agot_nonhistoric_outcome_2 }
+		}
+	}
+}
+
+# Relieved (Duncan POV from Lyonel refusing to betroth Cassandra to him)
+agot_fourth_blackfyre_rebellion.1022 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1022.t
+	desc = agot_fourth_blackfyre_rebellion.1022.desc
+
+	theme = diplomacy_family_focus
+
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	right_portrait = {
+		character = scope:lyonel
+		animation = dismissal
+	}
+	lower_left_portrait = {
+		character = scope:aegonv
+	}
+	lower_right_portrait = {
+		character = scope:cassandra
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		remove_trait_force_tooltip = refusing_marriage
+		stress_impact = {
+			base = major_stress_impact_loss
+		}
+	}
+
+	option = { # I... did what I had to do!
+		name = agot_fourth_blackfyre_rebellion.1022.a
+	}
+}
+
+### 1030 - 1039 # Lyonel Events
+## A Potential Alliance
+agot_fourth_blackfyre_rebellion.1030 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1030.t
+	desc = agot_fourth_blackfyre_rebellion.1030.desc
+
+	theme = diplomacy_family_focus
+
+	trigger = {
+		is_duncan_cassandra_betrothal_possible_trigger = yes
+	}
+	on_trigger_fail = {
+		agot_duncan_cassandra_remove_trait_effect = yes
+	}
+	left_portrait = {
+		character = root
+		animation = marshal
+	}
+	lower_left_portrait = {
+		character = scope:duncansmall
+	}
+	lower_right_portrait = {
+		character = scope:cassandra
+	}
+	right_portrait = {
+		character = scope:aegonv
+		animation = personality_bold
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+	}
+
+	option = { # I accept this proposal
+		name = agot_fourth_blackfyre_rebellion.1030.a
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_historic_outcome_2
+			}
+		}
+		scope:aegonv = {
+			add_character_flag = { flag = lyonel_accepts months = 6 }
+			trigger_event = agot_fourth_blackfyre_rebellion.1013
+		}
+		scope:duncansmall = {
+			if = {
+				limit = { is_ai = no }
+				send_interface_toast = {
+					type = event_toast_effect_good
+					title = agot_fourth_blackfyre_rebellion.1030.a.notification
+					left_icon = scope:duncansmall
+					right_icon = scope:lyonel
+				}
+			}
+		}
+		custom_tooltip = {
+			text = agot_fourth_blackfyre_rebellion.1030.a.tt
+		}
+		# Immediately Remove Duncan/Cassandra Losing Marriage Trait
+		agot_duncan_cassandra_remove_trait_effect = yes
+
+		scope:duncansmall = { create_betrothal = scope:cassandra }
+
+		# Create an alliance
+		scope:aegonv = { save_temporary_scope_as = recipient }
+		custom_tooltip = negotiate_alliance_effect_tooltip
+		scope:aegonv = {
+			create_alliance = {
+				target = scope:lyonel
+				allied_through_owner = scope:cassandra
+				allied_through_target = scope:duncansmall
+			}
+		}
+		create_alliance = {
+			target = scope:duncansmall
+			allied_through_owner = scope:cassandra
+			allied_through_target = scope:duncansmall
+		}
+	}
+	option = { # I refuse this proposal
+		name = agot_fourth_blackfyre_rebellion.1030.b
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = agot_nonhistoric_outcome_2
+			}
+		}
+		custom_tooltip = {
+			text = agot_fourth_blackfyre_rebellion.1030.b.tt
+		}
+
+		# Immediately Remove Duncan/Cassandra Losing Marriage Trait
+		agot_duncan_cassandra_remove_trait_effect = yes
+
+		scope:aegonv = {
+			add_character_flag = lyonel_refuses
+			trigger_event = agot_fourth_blackfyre_rebellion.1013
+			add_opinion = {
+				target = scope:lyonel
+				modifier = disappointed_opinion
+				opinion = -20
+			}
+		}
+		# Relieved (Duncan POV from Lyonel refusing to betroth Cassandra to him)
+		scope:duncansmall = {
+			trigger_event = agot_fourth_blackfyre_rebellion.1022
+		}
+	}
+}
+
+# Refusal (Lyonel POV of Duncan refusing)
+agot_fourth_blackfyre_rebellion.1031 = {
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.1031.t
+	desc = agot_fourth_blackfyre_rebellion.1031.desc
+
+	theme = diplomacy_family_focus
+
+	left_portrait = {
+		character = root
+		animation = disapproval
+	}
+	right_portrait = {
+		character = scope:duncansmall
+		animation = personality_rational
+	}
+	lower_right_portrait = {
+		character = scope:cassandra
+	}
+	lower_left_portrait = {
+		character = scope:aegonv
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		show_as_tooltip = {
+			scope:duncansmall = {
+				remove_trait_force_tooltip = refusing_marriage
+			}
+			scope:cassandra = {
+				remove_trait_force_tooltip = refusing_marriage
+			}
+		}
+	}
+
+	option = { # There is no hope for this one
+		name = agot_fourth_blackfyre_rebellion.1031.a
+	}
+}
+
+### 9990 - 9993 # Duel-Related Events/Misc
+agot_fourth_blackfyre_rebellion.9989 = { # Purge BF loyalists
+	hidden = yes
+	trigger = { root = character:Blackfyre_11 }
+	immediate = {
+		hidden_effect = {
+			character:Blackfyre_11 ?= {
+				if = {
+					limit = { has_trait = refusing_marriage }
+					remove_trait = refusing_marriage
+				}
+				if = {
+					limit = { has_character_flag = agot_claimant_king }
+					remove_character_flag = agot_claimant_king
+				}
+				remove_character_flag = bf_loyalists_call_in
+			}
+		}
+	}
+}
+
+
+agot_fourth_blackfyre_rebellion.9990 = { #Daemon-Tall duel - Daemon POV
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.9990.t
+	desc = agot_fourth_blackfyre_rebellion.9990.desc
+
+	theme = battle
+
+	left_portrait = {
+		character = root
+		animation = sword_coup_degrace
+	}
+
+	right_portrait = {
+		character = scope:tall
+		animation = aggressive_sword
+	}
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_fourth_blackfyre_rebellion
+			}
+			save_scope_as = fourth_blackfyre_rebellion_story
+		}
+		character:Blackfyre_11 = {
+			save_scope_as = daemon
+		}
+		character:Tall_1 = {
+			save_scope_as = tall
+			add_character_flag = no_hat #So I can see his face
+		}
+		location = {
+			save_scope_as = location
+		}
+	}
+
+	option = { #The Duel of Fates
+		name = agot_fourth_blackfyre_rebellion.9990.a
+
+		scope:tall = {
+			trigger_event = agot_fourth_blackfyre_rebellion.9991
+		}
+	}
+}
+
+agot_fourth_blackfyre_rebellion.9991 = { #Daemon-Tall duel - Tall POV
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.9991.t
+	desc = agot_fourth_blackfyre_rebellion.9991.desc
+
+	theme = battle
+
+	left_portrait = {
+		character = scope:tall
+		animation = aggressive_sword
+	}
+
+	right_portrait = {
+		character = scope:daemon
+		animation = sword_coup_degrace
+	}
+
+	immediate = {
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_fourth_blackfyre_rebellion
+			}
+			save_scope_as = fourth_blackfyre_rebellion_story
+		}
+		character:Blackfyre_11 = {
+			save_scope_as = daemon
+		}
+		character:Tall_1 = {
+			save_scope_as = tall
+			add_character_flag = no_hat #So I can see his face
+		}
+	}
+
+	option = { #The Duel of Fates
+		name = agot_fourth_blackfyre_rebellion.9991.a
+
+		configure_start_single_combat_effect = {
+			SC_INITIATOR = scope:daemon
+			SC_ATTACKER = scope:daemon
+			SC_DEFENDER = scope:tall
+			FATALITY = always
+			FIXED = no
+			LOCALE = battlefield
+			OUTPUT_EVENT = agot_fourth_blackfyre_rebellion.9992
+			INVALIDATION_EVENT = single_combat.1006	#In a real event, this would obviously be a different event to the output.
+		}
+	}
+}
+
+#Daemon-Tall Duel Processing
+agot_fourth_blackfyre_rebellion.9992 = {
+	hidden = yes
+
+	immediate = {
+		# Did Daemon win?
+		if = {
+			limit = {
+				scope:sc_victor = scope:daemon
+			}
+			scope:daemon = {
+				remove_character_flag = currently_in_duel
+				add_character_flag = { flag = bf_loyalists_call_in months = 1 }
+			}
+		}
+		# Otherwise, Tall won.
+		else = {
+			scope:tall = {
+			}
+		}
+	}
+}
+
+agot_fourth_blackfyre_rebellion.9993 = { #AI Duel for Daemon and Tall
+	hidden = yes
+
+	immediate = {
+		location = { save_scope_as = location }
+	}
+
+	option = {
+		random_list = {
+			0 = {
+				modifier = { #Tall_1 wins
+					add = agot_historic_outcome_2
+				}
+				character:Blackfyre_11 = {
+					death = {
+						death_reason = death_duel
+						killer = character:Tall_1
+					}
+				}
+			}
+			0 = {
+				modifier = { #Daemon wins
+					add = agot_nonhistoric_outcome_2
+				}
+				character:Blackfyre_11 ?= { add_character_flag = { flag = bf_loyalists_call_in months = 1 } }
+				character:Tall_1 = {
+					death = {
+						death_reason = death_duel
+						killer = character:Blackfyre_11
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_fourth_blackfyre_rebellion.9994 = { #Aegor-Tion duel - Aegor POV
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.9994.t
+	desc = agot_fourth_blackfyre_rebellion.9994.desc
+
+	theme = battle
+
+	left_portrait = {
+		character = root
+		animation = sword_coup_degrace
+	}
+
+	right_portrait = {
+		character = scope:tion
+		animation = aggressive_sword
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_fourth_blackfyre_rebellion
+			}
+			save_scope_as = fourth_blackfyre_rebellion_story
+		}
+		character:Targaryen_95 = {
+			save_scope_as = aegor
+		}
+		character:Lannister_128 = {
+			save_scope_as = tion
+			add_character_flag = no_hat #So I can see his face
+		}
+		location = {
+			save_scope_as = location
+		}
+	}
+
+	option = { #The Duel of Fates
+		name = agot_fourth_blackfyre_rebellion.9994.a
+
+		scope:tion = {
+			trigger_event = agot_fourth_blackfyre_rebellion.9995
+		}
+	}
+}
+
+agot_fourth_blackfyre_rebellion.9995 = { #Aegor-Tion duel - Tion POV
+	type = character_event
+	title = agot_fourth_blackfyre_rebellion.9995.t
+	desc = agot_fourth_blackfyre_rebellion.9995.desc
+
+	theme = battle
+
+	left_portrait = {
+		character = root
+		animation = sword_coup_degrace
+	}
+
+	right_portrait = {
+		character = scope:aegor
+		animation = aggressive_sword
+	}
+
+	immediate = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		random_owned_story = {
+			limit = {
+				story_type = story_agot_fourth_blackfyre_rebellion
+			}
+			save_scope_as = fourth_blackfyre_rebellion_story
+		}
+		character:Targaryen_95 = {
+			save_scope_as = aegor
+		}
+		character:Lannister_128 = {
+			save_scope_as = tion
+			add_character_flag = no_hat #So I can see his face
+		}
+		location = {
+			save_scope_as = location
+		}
+	}
+
+	option = { #The Duel of Fates
+		name = agot_fourth_blackfyre_rebellion.9995.a
+
+		configure_start_single_combat_effect = {
+			SC_INITIATOR = scope:aegor
+			SC_ATTACKER = scope:aegor
+			SC_DEFENDER = scope:tion
+			FATALITY = always
+			FIXED = no
+			LOCALE = battlefield
+			OUTPUT_EVENT = agot_fourth_blackfyre_rebellion.9996
+			INVALIDATION_EVENT = single_combat.1006	#In a real event, this would obviously be a different event to the output.
+		}
+	}
+}
+
+#Aegor-Tion Duel Processing
+agot_fourth_blackfyre_rebellion.9996 = {
+	hidden = yes
+
+	immediate = {
+		# Did Aegor win?
+		if = {
+			limit = {
+				scope:sc_victor = scope:aegor
+			}
+			scope:aegor = {
+				remove_character_flag = currently_in_duel
+			}
+		}
+		# Otherwise, Tion won.
+		else = {
+			scope:tion = {
+				remove_character_flag = currently_in_duel
+			}
+		}
+	}
+}
+
+agot_fourth_blackfyre_rebellion.9997 = { #AI Duel for Aegor  and Tion
+	hidden = yes
+
+	immediate = {
+		location = { save_scope_as = location }
+	}
+
+	option = {
+		agot_fourth_blackfyre_rebellion_scopes_effect = yes
+		agot_duel_effect = { DUELIST_1 = scope:aegor DUELIST_2 = scope:tion }
+		scope:winner = { save_scope_as = sc_victor }
+		scope:loser = {
+			save_scope_as = sc_loser
+			death = {
+				killer = scope:winner
+				death_reason = death_duel
+			}
+		}
+	}
+}

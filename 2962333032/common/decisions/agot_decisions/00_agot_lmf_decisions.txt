@@ -1,0 +1,368 @@
+﻿ai_ruler_marry_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_dynasty_house.dds"
+	}
+
+	sort_order = 1
+
+	desc = ai_ruler_marry_decision_desc
+	selection_tooltip = ai_ruler_marry_decision_effect_tooltip
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 0
+		duchy = 0
+		kingdom = 36
+		empire = 36
+		hegemony = 36
+	}
+
+	is_shown = {
+		age >= 25
+		is_married = no
+		is_betrothed = no
+		has_been_promised_grand_wedding = no
+
+		can_marry_common_trigger = yes
+		is_physically_able_ai_adult = yes
+		has_contagious_deadly_disease_trigger = no
+		is_landed = yes
+		exists = capital_province
+
+		is_imprisoned = no
+		bp2_valid_for_standard_interactions_trigger = yes
+
+		NOR = {
+			has_variable = use_introduction
+			has_government = mercenary_government
+			has_government = republic_government
+			has_government = theocracy_government
+			has_government = holy_order_government
+			#not impossible for the below to get married, but they'll use the regular system
+			has_trait = depressed
+			has_trait = lunatic
+			has_trait = possessed
+		}
+
+		# This is pretty performance intensive to resolve so for AGOT we're restricting it for kings and up
+		highest_held_title_tier >= tier_kingdom
+	}
+
+	cooldown = { days = 1825 }
+
+	effect = {
+		root = {
+			save_scope_as = actor
+			save_scope_as = secondary_actor
+		}
+		# create a list of suitable candidates within a medium distance
+		every_opposite_sex_spouse_candidate = {
+			limit = { is_good_ai_marriage_candidate = yes }
+			add_to_list = potential_candidates
+		}
+
+		# proceed if there are any candidates to choose from
+		if = {
+			limit = {
+				list_size = { name = potential_candidates value > 0 }
+			}
+			save_scope_value_as = { name = hook value = no }
+			save_scope_value_as = { name = grand_wedding_promise value = no }
+			save_scope_value_as = { name = influence_send_option value = no }
+			save_scope_value_as = { name = herd_send_option value = no }
+			# do we need a matrilineal marriage?
+			if = {
+				limit = {
+					is_female = yes
+					NOT = { has_personality_submissive_trigger = yes }
+					trigger_if = {
+						limit = { has_game_rule = matrilineal_marriages_never }
+						OR = {
+							has_realm_law = female_only_law
+							has_realm_law = female_preference_law
+							faith = { has_doctrine_parameter = female_dominated_law }
+						}
+					}
+					trigger_if = {
+						limit = { has_game_rule = matrilineal_marriages_female_and_equal }
+						OR = {
+							has_realm_law = female_only_law
+							has_realm_law = female_preference_law
+							faith = { has_doctrine_parameter = female_dominated_law }
+							root = { has_realm_law = equal_law }
+						}
+					}
+				}
+				save_scope_value_as = { name = matrilineal value = yes }
+			}
+			else = {
+				save_scope_value_as = { name = matrilineal value = no }
+			}
+
+			# now whittle them down to only those who the ruler approves of and who would also accept a proposal
+			every_in_list = {
+				list = potential_candidates
+
+				save_temporary_scope_as = candidate
+				root = {
+					save_temporary_opinion_value_as = { name = match_opinion target = prev }
+					save_temporary_scope_as = match
+				}
+
+				if = {
+					limit = {
+						introduction_candidate_interest_value > 0
+						# female rulers can't marry lowborn unless it's a matrilineal match
+						trigger_if = {
+							limit = {
+								root = { is_female = yes }
+							}
+							OR = {
+								scope:matrilineal = yes
+								has_dynasty = yes
+							}
+						}
+						# only take ones within a medium range
+						location = {
+							squared_distance = { target = root.capital_province value < 500000 }
+						}
+					}
+					set_variable = {
+						name = marriage_interest_value
+						value = introduction_candidate_interest_value
+						days = 1
+					}
+
+					save_temporary_scope_as = secondary_recipient
+					if = {
+						limit = { exists = matchmaker }
+						matchmaker = { save_temporary_scope_as = recipient }
+					}
+					else = { save_temporary_scope_as = recipient }
+
+					random = {
+						chance = 0
+						marriage_ai_accept_modifier = yes
+						evaluate_action_increasing_house_unity = { VALUE = 100 }
+						modifier = { factor = 100 }
+
+						add_to_list = shortlist_candidates
+					}
+				}
+			}
+
+			# now pick out the top one and marry them
+			if = {
+				limit = {
+					list_size = { name = shortlist_candidates value > 0 }
+				}
+				ordered_in_list = {
+					list = shortlist_candidates
+					order_by = {
+						value = var:marriage_interest_value
+						if = {
+							limit = { any_heir_title = {} }
+							add = 50
+						}
+						if = {
+							limit = {
+								NOT = { any_heir_title = {} }
+								exists = matchmaker
+								is_close_or_extended_family_of = matchmaker
+								matchmaker = { is_landed = yes }
+							}
+							add = 25
+						}
+						if = {
+							limit = {
+								NOT = { any_heir_title = {} }
+								exists = matchmaker
+								is_close_or_extended_family_of = matchmaker
+								matchmaker = {
+									is_landed = yes
+									is_vassal_of = root
+								}
+							}
+							add = 25
+						}
+						if = {
+							limit = { is_lowborn = yes }
+							multiply = 0.5
+						}
+						if = {
+							limit = { dynasty ?= root.dynasty }
+							add = -25
+						}
+						if = {
+							limit = {
+								is_ruler = no
+								exists = matchmaker
+								matchmaker = {
+									is_ruler = yes
+									highest_held_title_tier < tier_county
+								}
+							}
+							add = -25
+						}
+						if = {
+							limit = {
+								is_ruler = yes
+								highest_held_title_tier < tier_county
+							}
+							add = -50
+						}
+					}
+					save_scope_as = secondary_recipient
+					if = {
+						limit = { exists = matchmaker }
+						matchmaker = { save_scope_as = recipient }
+					}
+					else = { save_scope_as = recipient }
+					if = {
+						limit = { scope:recipient = scope:actor }
+						if = {
+							limit = {
+								scope:matrilineal = yes
+								is_adult = no
+							}
+							create_betrothal_matrilineal = root
+						}
+						else_if = {
+							limit = {
+								scope:matrilineal = yes
+								is_adult = yes
+							}
+							marry_matrilineal = root
+						}
+						else_if = {
+							limit = { is_adult = no }
+							create_betrothal = root
+						}
+						else = {
+							marry = root
+						}
+					}
+					else_if = {
+						limit = {
+							scope:matrilineal = yes
+							is_adult = no
+						}
+						create_betrothal_matrilineal = root
+						check_alliance_set_up_effect = { PROPOSER_LIEGE = root TARGET_LIEGE = scope:recipient PROPOSER = root TARGET = scope:secondary_recipient }
+					}
+					else_if = {
+						limit = { scope:matrilineal = yes }
+						marry_matrilineal = root
+						check_alliance_set_up_effect = { PROPOSER_LIEGE = root TARGET_LIEGE = scope:recipient PROPOSER = root TARGET = scope:secondary_recipient }
+					}
+					else = {
+						scope:actor = {
+							run_interaction = {
+								interaction = marry_off_interaction
+								actor = scope:actor
+								recipient = scope:recipient
+								secondary_actor = scope:secondary_actor
+								secondary_recipient = scope:secondary_recipient
+								send_threshold = decline
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ai_potential = {
+		is_adult = yes
+		is_landed = yes
+		highest_held_title_tier > tier_barony
+	}
+
+	ai_will_do = {
+		base = 25
+		# really need a child like right right now
+		modifier = {
+			add = 75
+			needs_child_quickly_trigger = yes
+		}
+		# need a child at some point
+		modifier = {
+			add = 25
+			needs_child_quickly_trigger = no
+			NOT = {
+				any_child = {
+					count > 0
+					is_alive = yes
+					NOT = { has_trait = bastard }
+				}
+			}
+		}
+		# eventually it will be time
+		modifier = {
+			add = 25
+			years_as_ruler >= 3
+			needs_child_quickly_trigger = no
+		}
+		# they just  don't wanna
+		modifier = {
+			factor = 0.5
+			OR = {
+				has_sexuality = homosexual
+				has_sexuality = asexual
+				ai_sociability <= medium_negative_ai_value
+				AND = {
+					is_male = yes
+					age < 30
+				}
+			}
+		}
+		# give them a bit more chance to spend time seducing
+		modifier = {
+			factor = 0.5
+			OR = {
+				has_trait = lustful
+				has_trait = seducer
+				is_deviant_trigger = yes
+				has_trait = rakish
+				has_focus = intrigue_temptation_focus
+			}
+		}
+		# they already have a lover or concubine that can make baby
+		modifier = {
+			factor = 0.5
+			fertility > 0.1
+			OR = {
+				any_relation = {
+					type = lover
+					fertility > 0.1
+					sex_opposite_of = root
+				}
+				any_consort = {
+					fertility > 0.1
+					sex_opposite_of = root
+				}
+			}
+		}
+		# kings and emperors should be less likely to use this
+		modifier = {
+			factor = 0.5
+			highest_held_title_tier > tier_duchy
+		}
+		# the AI has a year after taking on the title to find a spouse normally
+		modifier = {
+			factor = 0
+			years_as_ruler < 1
+			needs_child_quickly_trigger = no
+		}
+		# give them at least a year if their spouse recently died
+		modifier = {
+			factor = 0
+			any_spouse = {
+				even_if_dead = yes
+				is_alive = no
+				time_since_death = { months < 12 }
+			}
+			needs_child_quickly_trigger = no
+		}
+	}
+}

@@ -1,0 +1,198 @@
+﻿on_arrive_from_pool_nights_watch = {
+	effect = {
+		if = {
+			limit = {
+				exists = title:k_the_wall.holder
+				has_trait = nightswatch
+				NOT = {
+					scope:host = { has_trait = nightswatch }
+				}
+				title:k_the_wall.holder = { has_trait = nightswatch }
+			}
+			title:k_the_wall.holder = {
+				add_courtier ?= root
+			}
+		}
+		else_if = {
+			limit = {
+				scope:host = { has_trait = nightswatch }
+				is_female = yes
+			}
+			move_to_pool_at = title:c_winterfell.holder.capital_province
+		}
+	}
+}
+
+on_arrive_from_pool_wildlings = {
+	effect = {
+		#Wildlings coming to the north become secret wildlings
+		if = {
+			limit = {
+				culture = { agot_is_wildling_culture = yes }
+				is_lowborn = yes
+				any_traveling_family_member = { count = 1 }
+				scope:host = {
+					OR = {
+						AND = {
+							exists = capital_province
+							capital_province = { geographical_region = world_westeros_the_north }
+						}
+						AND = {
+							NOT = { exists = capital_province }
+							location = { geographical_region = world_westeros_the_north }
+						}
+					}
+				}
+				NOT = { has_trait = nightswatch }
+			}
+
+			if = {
+				limit = { is_female = yes }
+				change_first_name = Alarra
+			}
+			else = {
+				change_first_name = Alaric
+			}
+			set_variable = {
+				name = orig_culture
+				value = culture
+			}
+			set_variable = {
+				name = orig_faith
+				value = faith
+			}
+			culture:northman = {
+				random_culture_county = {
+					limit = { holder.culture = culture:northman }
+					holder = {
+						random_courtier = {
+							limit = {
+								culture = culture:northman
+								OR = {
+									AND = {
+										is_male = yes
+										root = { is_male = yes }
+									}
+									AND = {
+										is_female = yes
+										root = { is_female = yes }
+									}
+								}
+							}
+							save_scope_as = identity_theft_target
+						}
+					}
+				}
+			}
+			if = {
+				limit = { exists = scope:identity_theft_target }
+				change_first_name = { template_character = scope:identity_theft_target }
+			}
+			set_culture = culture:northman
+			set_character_faith = faith:old_gods_wnw
+			add_secret = { type = secret_agot_wildling }
+		}
+		else_if = {
+			limit = {
+				culture = { agot_is_wildling_culture = yes }
+				scope:host = {
+					culture = { agot_is_wildling_culture = no }
+				}
+				NOT = { has_trait = nightswatch }
+			}
+			every_traveling_family_member = {
+				if = {
+					limit = {
+						title:c_whitetree.holder = {
+							culture = { agot_is_wildling_culture = yes }
+						}
+					}
+					move_to_pool_at = title:c_whitetree.holder.capital_province
+				}
+				else = {
+					move_to_pool = yes
+				}
+			}
+		}
+		#westeros stay in westeros
+		if = {
+			limit = {
+				culture = { agot_is_wildling_culture = no }
+				scope:host = {
+					culture = { agot_is_wildling_culture = yes }
+				}
+				NOT = {
+					any_traveling_family_member = {
+						culture = { agot_is_wildling_culture = yes }
+					}
+				}
+				# Allow banished characters, maesters, recruited prisoners, and nightswatch to stay
+				NOR = {
+					has_variable = agot_banisher
+					trigger_if = {
+						limit = { exists = scope:new_employer }
+						is_imprisoned_by = scope:new_employer
+					}
+					has_trait = nightswatch
+					has_character_flag = recruited_maester
+				}
+				NAND = {
+					scope:new_employer ?= title:h_the_iron_throne.holder
+					OR = {
+						has_trait = kingsguard
+						has_inactive_trait = grandmaester
+					}
+				}
+			}
+			every_traveling_family_member = {
+				if = {
+					limit = {
+						title:c_sullen_hills.holder = {
+							culture = { agot_is_wildling_culture = no }
+						}
+					}
+					move_to_pool_at = title:c_sullen_hills.holder.capital_province
+				}
+				else = {
+					move_to_pool = yes
+				}
+			}
+		}
+	}
+}
+
+on_arrive_from_pool_culture_conversion = {
+	effect = {
+		every_traveling_family_member = {
+			agot_automatic_culture_conversion = yes
+		}
+	}
+}
+
+on_arrive_from_pool_faith_conversion = {
+	effect = {
+		every_traveling_family_member = {
+			agot_automatic_faith_conversion = yes
+		}
+	}
+}
+
+on_arrive_from_pool_uninteractable = {
+	effect = {
+		if = {
+			limit = {
+				exists = scope:host
+				scope:host = {
+					government_has_flag = government_is_uninteractable
+				}
+			}
+			agot_redirect_to_appropiate_court_effect = yes
+		}
+	}
+}
+
+on_move_birthplace = {
+	effect = {
+		agot_birthplace_effect = yes
+	}
+}

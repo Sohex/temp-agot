@@ -1,0 +1,300 @@
+﻿# Statics
+agot_legitimate_house_base_value = 0.1
+
+# TOTAL CALC
+agot_new_house_yearly_progress_change = {
+	value = agot_legitimate_house_base_value
+	# Direct modifiers
+	if = { # Same dynasty
+		limit = {
+			var:legitimate_house.house_founder.dynasty = var:current_house.house_founder.dynasty
+		}
+		add = 1
+	}
+	if = { # Legitimate house is extinct
+		limit = {
+			agot_legitimate_house_extinct = 1
+		}
+		add = 2
+	}
+	if = { # Difficult for empire tier
+		limit = {
+			tier = tier_empire
+		}
+		subtract = 0.25
+	}
+	if = { # Difficult for hegemony tier
+		limit = {
+			tier = tier_hegemony
+		}
+		subtract = 0.5
+	}
+	# Script value based modifiers
+	add = agot_legitimate_house_holders_of_current_dynasty
+	add = agot_legitimate_house_parentage_level
+	add = agot_legitimate_house_spouse_level
+	add = agot_legitimate_house_popular_opinion
+	add = agot_legitimate_house_vassal_opinion
+	add = agot_legitimate_house_missing_de_jure_holdings
+}
+
+# NUMBER OF HOUSE MEMBERS IN TITLE HISTORY
+agot_legitimate_house_holders_of_current_dynasty = {
+	value = 0
+	var:current_house = { save_temporary_scope_as = temp_title_check_current_house }
+	every_past_holder = {
+		limit = {
+			house = scope:temp_title_check_current_house
+		}
+		add = 1
+	}
+	subtract = 1 # Because the current holder is already counted
+	divide = 10 # Because we add 0.1 per holder of the same house
+}
+
+# PARENTAGE BOOST LEVEL
+agot_legitimate_house_parentage_level = {
+	value = 0
+	# Both parents are of the legitimate house (idk how this happens but...)
+	if = {
+		limit = {
+			exists = holder.mother
+			exists = holder.father
+			exists = holder.mother.house
+			exists = holder.father.house
+			holder.mother.house = var:legitimate_house
+			holder.father.house = var:legitimate_house
+		}
+		add = 2
+	}
+	# One parent is of the legitimate house
+	else_if = {
+		limit = {
+			exists = holder.mother
+			exists = holder.mother.house
+			holder.mother.house = var:legitimate_house
+		}
+		add = 1
+	}
+	else_if = {
+		limit = {
+			exists = holder.father
+			exists = holder.father.house
+			holder.father.house = var:legitimate_house
+		}
+		add = 1
+	}
+	# Has grandparent(s) of the legitimate house
+	else_if = {
+		limit = {
+			OR = {
+				AND = {
+					exists = holder.mother
+					exists = holder.mother.mother
+					exists = holder.mother.mother.house
+					holder.mother.mother.house = var:legitimate_house
+				}
+				AND = {
+					exists = holder.mother
+					exists = holder.mother.father
+					exists = holder.mother.father.house
+					holder.mother.father.house = var:legitimate_house
+				}
+				AND = {
+					exists = holder.father
+					exists = holder.father.mother
+					exists = holder.father.mother.house
+					holder.father.mother.house = var:legitimate_house
+				}
+				AND = {
+					exists = holder.father
+					exists = holder.father.father
+					exists = holder.father.father.house
+					holder.father.father.house = var:legitimate_house
+				}
+			}
+		}
+		add = 0.5
+	}
+}
+
+# SPOUSE BOOST LEVEL
+agot_legitimate_house_spouse_level = {
+	value = 0
+	save_temporary_scope_as = temp_title_spouse_check
+	# Spouse is of the legitimate house
+	if = {
+		limit = {
+			exists = holder
+			holder = {
+				any_spouse = {
+					house = scope:temp_title_spouse_check.var:legitimate_house
+				}
+			}
+		}
+		add = 0.5
+	}
+}
+
+# POPULAR OPINION
+agot_legitimate_house_popular_opinion = {
+	# Used directly on the title in question
+	value = 0
+	add = agot_legitimate_house_county_average_opinion
+	# There is a slight positive average, so subtract 10
+	subtract = 10
+	# Currently this is between -110 and 90, but in practice this is VERY skewed to 0
+	# at realms of the size we're talking, so divide by 25 rather than 100
+	divide = 25
+	# Harder to gain legitimacy than lose it, so divide by 2 if it's positive
+	if = {
+		limit = {
+			agot_legitimate_house_county_average_opinion > 0
+		}
+		divide = 2
+	}
+	# Then just cap it at 1 and -2
+	max = 1
+	min = -2
+}
+
+agot_legitimate_house_county_count = {
+	value = 0
+	every_de_jure_county = {
+		add = 1
+	}
+}
+
+agot_legitimate_house_county_average_opinion = {
+	value = 0
+	every_de_jure_county = {
+		add = county_opinion
+	}
+	divide = agot_legitimate_house_county_count
+}
+
+# VASSAL OPINION
+agot_legitimate_house_vassal_opinion = {
+	value = 0
+	add = agot_legitimate_house_vassal_average_opinion
+	# This isn't skewed to 0, so just divide by 50 to get a -2 to 2 range
+	divide = 50
+	# Harder to gain legitimacy than lose it, so divide by 2 if it's positive
+	if = {
+		limit = {
+			agot_legitimate_house_vassal_average_opinion > 0
+		}
+		divide = 2
+	}
+	# Then just cap it at 1 and -2
+	max = 1
+	min = -2
+}
+
+agot_legitimate_house_vassal_count = {
+	value = 0
+	save_temporary_scope_as = temp_title_vassal_check
+	holder = {
+		every_vassal = {
+			limit = { # At least count vassals who are in the de jure hierarchy
+				primary_title = {
+					tier > tier_barony
+					any_this_title_or_de_jure_above = { this = scope:temp_title_vassal_check }
+				}
+			}
+			add = 1
+		}
+	}
+	min = 1 # To prevent division by 0 - mathematically it doesn't matter anyway since X/1 = X
+}
+
+agot_legitimate_house_vassal_average_opinion = {
+	value = 0
+	save_temporary_scope_as = temp_title_vassal_check
+	holder = {
+		every_vassal = {
+			limit = { # At least count vassals who are in the de jure hierarchy
+				primary_title = {
+					tier > tier_barony
+					any_this_title_or_de_jure_above = { this = scope:temp_title_vassal_check }
+				}
+			}
+			add = calc_rough_liege_opinion_value # ty paradox 4 script value
+		}
+	}
+	divide = agot_legitimate_house_vassal_count
+}
+
+# DE JURE HOLDINGS
+agot_legitimate_house_missing_de_jure_holdings = {
+	# This is basically "What percentage of the de jure counties are you missing?"
+	value = 0
+	save_temporary_scope_as = temp_title_de_jure_check
+	every_de_jure_county = {
+		limit = {
+			exists = scope:temp_title_de_jure_check.holder
+			holder = {
+				NOT = { this = scope:temp_title_de_jure_check.holder }
+				NOT = { government_has_flag = government_is_uninteractable }
+			}
+			NOT = { holder = { is_vassal_or_below_of = scope:temp_title_de_jure_check.holder } }
+		}
+		add = 1
+	}
+	divide = agot_legitimate_house_de_jure_holdings
+	multiply = -4 # Negative because we want to subtract from the total, 4x for impact
+}
+
+agot_legitimate_house_de_jure_holdings = {
+	value = 0
+	save_temporary_scope_as = temp_title_de_jure_check_count
+	every_de_jure_county = {
+		limit = {
+			exists = scope:temp_title_de_jure_check_count.holder
+			holder = {
+				NOT = { this = scope:temp_title_de_jure_check_count.holder }
+				NOT = { government_has_flag = government_is_uninteractable }
+			}
+		}
+		add = 1
+	}
+	min = 1 # To prevent division by 0 - mathematically it doesn't matter anyway since X/1 = X
+}
+
+# EXTINCT HOUSE
+agot_legitimate_house_extinct = {
+	value = 1
+	if = {
+		limit = {
+			var:legitimate_house = {
+				any_house_member = { is_alive = yes }
+			}
+		}
+		subtract = 1
+	}
+}
+
+# SPECIFIC STUFF
+agot_legitimate_house_the_north_remembers_value = {
+	if = {
+		limit = {
+			title_capital_county.title_province = { geographical_region = world_westeros_the_north }
+		}
+		value = -0.2
+	}
+	else = {
+		value = 0
+	}
+}
+
+agot_legitimate_house_the_iron_price_value = {
+	if = {
+		limit = {
+			title_capital_county.title_province = { geographical_region = world_westeros_the_iron_islands }
+		}
+		value = 0.2
+	}
+	else = {
+		value = 0
+	}
+}

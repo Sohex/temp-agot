@@ -1,0 +1,923 @@
+﻿# used to determine which lover should "own" the lover story
+should_be_primary_lover = {
+	save_temporary_scope_as = primary_lover_check
+	# players are always primary
+	trigger_if = {
+		limit = { is_ai = no }
+		always = yes
+	}
+	trigger_else_if = {
+		limit = {
+			is_ai = yes
+			$TARGET$ = { is_ai = no }
+		}
+		always = no
+	}
+	# lieges are always primary
+	trigger_else_if = {
+		limit = { is_liege_or_above_of = $TARGET$ }
+		always = yes
+	}
+	trigger_else_if = {
+		limit = { is_vassal_or_below_of = $TARGET$ }
+		always = no
+	}
+	# rulers are always primary vs. non-rulers
+	trigger_else_if = {
+		limit = {
+			is_playable_character = yes
+			$TARGET$ = { is_playable_character = no }
+		}
+		always = yes
+	}
+	# nobles are always primary vs. non-nobles
+	trigger_else_if = {
+		limit = {
+			has_dynasty = yes
+			$TARGET$ = { is_lowborn = yes }
+		}
+		always = yes
+	}
+	# dominant gender of faith vs. non-dominant gender of theirs
+	trigger_else_if = {
+		limit = {
+			OR = {
+				AND = {
+					is_male = yes
+					faith = { has_doctrine_parameter = male_dominated_law }
+				}
+				AND = {
+					is_female = yes
+					faith = { has_doctrine_parameter = female_dominated_law }
+				}
+			}
+			$TARGET$ = {
+				NOR = {
+					AND = {
+						is_male = yes
+						faith = { has_doctrine_parameter = male_dominated_law }
+					}
+					AND = {
+						is_female = yes
+						faith = { has_doctrine_parameter = female_dominated_law }
+					}
+				}
+			}
+		}
+		always = yes
+	}
+	# gender that can fight vs. gender that can't
+	trigger_else_if = {
+		limit = {
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = scope:primary_lover_check }
+			$TARGET$ = {
+				NOT = { can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = $TARGET$ } }
+			}
+		}
+		always = yes
+	}
+	# dominant personality vs. non-dominant
+	trigger_else_if = {
+		limit = {
+			has_personality_dominant_trigger = yes
+			$TARGET$ = { has_personality_dominant_trigger = no }
+		}
+		always = yes
+	}
+	# non-submissive personality vs. submissive
+	trigger_else_if = {
+		limit = {
+			has_personality_submissive_trigger = no
+			$TARGET$ = { has_personality_submissive_trigger = yes }
+		}
+		always = yes
+	}
+	# failing all that, the bolder of the two
+	trigger_else_if = {
+		limit = { ai_boldness > $TARGET$.ai_boldness }
+		always = yes
+	}
+	trigger_else = {
+		always = no
+	}
+}
+
+# does the lover event game rule permit the scoped character to have lover events?
+game_rule_permits_lover_events = {
+	trigger_if = {
+		limit = { has_game_rule = lmf_lover_event_frequency_none }
+		always = no
+	}
+	trigger_else_if = {
+		limit = { has_game_rule = lmf_lover_event_eligibility_player_only }
+		is_ai = no
+	}
+	trigger_else_if = {
+		limit = { has_game_rule = lmf_lover_event_eligibility_player_realm }
+		save_temporary_scope_as = lover_rule_check
+		OR = {
+			is_ai = no
+			is_player_realm_ruler = { RULER = scope:lover_rule_check }
+		}
+	}
+	trigger_else_if = {
+		limit = { has_game_rule = lmf_lover_event_eligibility_tier }
+		save_temporary_scope_as = lover_rule_check
+		OR = {
+			is_ai = no
+			is_player_realm_ruler = { RULER = scope:lover_rule_check }
+			highest_held_title_tier >= tier_duchy
+		}
+	}
+	trigger_else = {
+		always = yes
+	}
+}
+
+# is the character valid to receive a lover story? (is a lover and not a consort)
+is_valid_for_lover_story = {
+	is_alive = yes
+	NOT = { is_consort_of = $LOVER$ }
+	has_relation_lover = $LOVER$
+}
+
+# is the character valid to receive full lover events? (as opposed to simple ones)
+is_valid_for_full_lover_events = {
+	trigger_if = {
+		limit = { is_ai = no }
+		always = yes
+	}
+	trigger_else_if = {
+		limit = {
+			is_playable_character = yes
+			highest_held_title_tier > tier_county
+		}
+		always = yes
+	}
+	trigger_else = {
+		always = no
+	}
+}
+
+# specifically checking lover_target variable in lover story
+is_lover_within_diplo_range = {
+	root.var:lover_target = { exists = location }
+	in_diplomatic_range = root.var:lover_target
+}
+
+# these expand the "is this a forbidden relationship?" checks to include WLM pairings
+relation_with_character_is_samesex_forbidden_in_faith_trigger = {
+	sex_same_as = $TARGET$
+	$FAITH$ = {
+		OR = {
+			has_doctrine_parameter = homosexuality_shunned
+			has_doctrine_parameter = homosexuality_illegal
+		}
+	}
+}
+
+relation_with_character_is_samesex_forbidden_in_my_or_lieges_faith_trigger = {
+	OR = {
+		AND = {
+			faith = { #My faith doesn't approve
+				save_temporary_scope_as = check_faith
+			}
+			relation_with_character_is_samesex_forbidden_in_faith_trigger = { TARGET = $CHARACTER$ FAITH = scope:check_faith }
+		}
+		AND = { #Liege's faith doesn't approve
+			exists = liege
+			liege = {
+				faith = {
+					save_temporary_scope_as = check_faith
+				}
+			}
+			relation_with_character_is_samesex_forbidden_in_faith_trigger = { TARGET = $CHARACTER$ FAITH = scope:check_faith }
+		}
+	}
+}
+
+relationship_with_character_is_forbidden_trigger = {
+	save_temporary_scope_as = lover_check
+	NOT = { is_consort_of = $CHARACTER$ }
+	OR = {
+		relation_with_character_is_samesex_forbidden_in_my_or_lieges_faith_trigger = { CHARACTER = $CHARACTER$ }
+		relation_with_character_is_incestuous_in_my_or_lieges_faith_trigger = { CHARACTER = $CHARACTER$ }
+		AND = {
+			trait_is_shunned_or_criminal_in_my_or_lieges_faith_trigger = { TRAIT = trait:adulterer GENDER_CHARACTER = scope:lover_check }
+			is_married = yes
+		}
+		AND = {
+			trait_is_shunned_or_criminal_in_my_or_lieges_faith_trigger = { TRAIT = trait:adulterer GENDER_CHARACTER = $CHARACTER$ }
+			$CHARACTER$ = { is_married = yes }
+		}
+	}
+}
+
+# lover in scope is known about by CHARACTER and their adultery/fornicator is wrong
+character_knows_about_lover = {
+	save_temporary_scope_as = family_lover
+	OR = {
+		# has a secret lover who isn't the character
+		any_secret = {
+			secret_type = secret_lover
+			is_known_by = $CHARACTER$
+			NOT = { secret_target = $CHARACTER$ }
+		}
+		# has a publicly-known lover who isn't the character or their consort
+		any_relation = {
+			type = lover
+			NOR = {
+				this = $CHARACTER$
+				is_consort_of = scope:family_lover
+				any_secret = {
+					secret_type = secret_lover
+					secret_target = scope:family_lover
+				}
+			}
+		}
+	}
+	# them having a lover is wrong
+	OR = {
+		AND = {
+			is_married = yes
+			trait_is_shunned_or_criminal_in_faith_trigger = { TRAIT = trait:adulterer GENDER_CHARACTER = scope:family_lover FAITH = $CHARACTER$.faith }
+		}
+		AND = {
+			is_married = no
+			trait_is_shunned_or_criminal_in_faith_trigger = { TRAIT = trait:fornicator GENDER_CHARACTER = scope:family_lover FAITH = $CHARACTER$.faith }
+		}
+	}
+}
+
+# CHARACTER is aware of LOVER, either public or a known secret
+is_lover_known_to_character = {
+	OR = {
+		any_secret = {
+			secret_type = secret_lover
+			is_known_by = $CHARACTER$
+			secret_target = $LOVER$
+		}
+		NOR = {
+			this = $CHARACTER$
+			is_consort_of = $LOVER$
+			any_secret = {
+				secret_type = secret_lover
+				secret_target = $LOVER$
+			}
+		}
+	}
+}
+
+# characters who very willing to be seduced - separate from their willingness to cheat on existing partners
+likely_to_take_lover_trigger = {
+	OR = {
+		has_trait = lustful
+		has_trait = seducer
+		has_trait = rakish
+		is_deviant_trigger = yes
+		has_focus = intrigue_temptation_focus
+		faith = { trait_is_virtue = lustful }
+		#has_trait = maiden
+	}
+	NOR = {
+		has_trait = chaste
+		has_trait = celibate
+	}
+}
+
+# is the character willing to cheat on the character? This is AT ALL - it still won't be automatic
+willing_to_cheat_on_character = {
+	OR = {
+		# these characters are always willing to cheat, no matter what
+		is_deviant_trigger = yes
+		has_trait = lustful
+		has_trait = seducer
+		has_trait = rakish
+		has_trait = disloyal
+		has_focus = intrigue_temptation_focus
+		AND = {
+			# otherwise, characters with these traits will NEVER cheat, no matter what
+			NOR = {
+				has_trait = chaste
+				has_trait = honest
+				has_trait = content
+				has_trait = just
+				has_trait = celibate
+				has_trait = loyal
+				AND = {
+					has_trait = zealous
+					faith = { trait_is_virtue = chaste }
+				}
+			}
+			# so long as they don't have one of the above, one of these must be true
+			OR = {
+				has_trait = gluttonous
+				has_trait = arrogant
+				has_trait = deceitful
+				has_trait = arbitrary
+				has_trait = cynical
+				has_trait = callous
+				has_trait = sadistic
+				has_trait = fickle
+				has_trait = lunatic
+				has_trait = drunkard
+				has_trait = schemer
+				has_trait = adulterer
+				has_trait = fornicator
+				AND = {
+					has_sexuality = homosexual
+					sex_opposite_of = $CHARACTER$
+				}
+				AND = {
+					has_trait = zealous
+					faith = { trait_is_virtue = lustful }
+				}
+				has_relation_rival = $CHARACTER$
+				$CHARACTER$ = { has_trait = celibate }
+				AND = {
+					ai_vengefulness >= 0
+					OR = {
+						has_opinion_modifier = { modifier = imprisoned_me target = $CHARACTER$ }
+						has_opinion_modifier = { modifier = attempted_murder_me_crime target = $CHARACTER$ }
+						has_opinion_modifier = { modifier = tortured_me target = $CHARACTER$ }
+						has_opinion_modifier = { modifier = unfaithful_spouse_discovered_opinion target = $CHARACTER$ }
+						has_opinion_modifier = { modifier = unfaithful_spouse_exposed_opinion target = $CHARACTER$ }
+						has_opinion_modifier = { modifier = refused_to_renounce_lover_opinion target = $CHARACTER$ }
+					}
+				}
+			}
+		}
+		# player should be able to do it anyways
+		is_ai = no
+	}
+}
+
+# did CHARACTER betray their marriage vows to character in scope?
+hurt_by_marriage_betrayal_trigger = {
+	OR = {
+		has_opinion_modifier = { target = $CHARACTER$ modifier = betrayed_our_promise }
+		has_opinion_modifier = { target = $CHARACTER$ modifier = unfaithful_spouse_exposed_opinion }
+		has_opinion_modifier = { target = $CHARACTER$ modifier = unfaithful_spouse_discovered_opinion }
+	}
+}
+
+# is the character willing to take character as a lover? - separate from their willingness to cheat on existing partners
+willing_to_take_character_as_lover = {
+	save_temporary_scope_as = willing_check
+	trigger_if = {
+		limit = {
+			OR = {
+				likely_to_take_lover_trigger = yes
+				is_consort_of = $LOVER$
+			}
+		}
+		is_attracted_to_gender_of = $LOVER$
+	}
+	trigger_else = {
+		is_attracted_to_gender_of = $LOVER$
+		# must not be too cowardly
+		ai_boldness >= low_negative_ai_value
+		NOR = {
+			has_trait = chaste
+			has_trait = celibate
+			has_sexuality = asexual
+			# has a liege who is close family and won't betray their trust
+			AND = {
+				OR = {
+					has_trait = honest
+					has_trait = just
+					has_trait = loyal
+				}
+				exists = liege
+				is_close_family_of = scope:willing_check.liege
+			}
+			# too honorable to become adulterer
+			AND = {
+				trait_is_criminal_in_faith_trigger = { TRAIT = trait:adulterer FAITH = scope:willing_check.faith GENDER_CHARACTER = scope:willing_check }
+				is_married = yes
+				OR = {
+					ai_honor > 0
+					ai_boldness < 0
+				}
+			}
+			AND = {
+				trait_is_shunned_in_faith_trigger = { TRAIT = trait:adulterer FAITH = scope:willing_check.faith GENDER_CHARACTER = scope:willing_check }
+				is_married = yes
+				ai_honor > 0
+			}
+			# too honorable to become fornicator
+			AND = {
+				trait_is_criminal_in_faith_trigger = { TRAIT = trait:fornicator FAITH = scope:willing_check.faith GENDER_CHARACTER = scope:willing_check }
+				is_married = no
+				OR = {
+					ai_honor > 0
+					ai_boldness < 0
+				}
+			}
+			AND = {
+				trait_is_shunned_in_faith_trigger = { TRAIT = trait:fornicator FAITH = scope:willing_check.faith GENDER_CHARACTER = scope:willing_check }
+				is_married = no
+				ai_honor > 0
+			}
+			# too honorable to become sodomite
+			AND = {
+				sex_same_as = $LOVER$
+				trait_is_criminal_in_faith_trigger = { TRAIT = trait:sodomite FAITH = scope:willing_check.faith GENDER_CHARACTER = scope:willing_check }
+				OR = {
+					ai_honor > 0
+					ai_boldness < 0
+				}
+			}
+			AND = {
+				sex_same_as = $LOVER$
+				trait_is_shunned_in_faith_trigger = { TRAIT = trait:sodomite FAITH = scope:willing_check.faith GENDER_CHARACTER = scope:willing_check }
+				ai_honor > 0
+			}
+			# clergy who is too faithful to take a lover
+			AND = {
+				OR = {
+					is_clergy = yes
+					agot_has_religious_trait = yes
+					has_council_position = councillor_court_chaplain
+				}
+				ai_zeal >= 0
+				faith = {
+					NOR = {
+						has_doctrine_parameter = clergy_can_marry
+						trait_is_virtue = lustful
+					}
+				}
+			}
+		}
+	}
+}
+
+# checking stress levels for certain stress traits
+is_rakish_and_stressed = {
+	has_trait = rakish
+	stress_level >= 1
+}
+
+is_drunk_and_stressed = {
+	has_trait = drunkard
+	stress_level >= 1
+}
+
+# used in courtier courtship & seduction schemes
+is_involved_in_any_romantic_scheme = {
+	OR = {
+		any_scheme = {
+			OR = {
+				scheme_type = seduce
+				scheme_type = courting
+				scheme_type = elope
+			}
+		}
+		any_targeting_scheme = {
+			OR = {
+				scheme_type = seduce
+				scheme_type = courting
+				scheme_type = elope
+			}
+		}
+	}
+}
+
+is_appropriate_ai_courtship_courtier = {
+	is_physically_able_ai_adult = yes
+	num_of_relation_soulmate < 1
+
+	# not every courtier gets to do this
+	exists = dynasty
+	exists = location
+	OR = {
+		diplomacy >= 8
+		has_focus = martial_chivalry_focus
+		is_married = yes
+		any_relation = { type = potential_lover }
+		any_relation = { type = crush }
+		#has_trait = maiden
+		AND = {
+			has_trait = refusing_marriage
+			any_owned_story = { story_type = lmf_will_not_wed_story_cycle }
+		}
+	}
+
+	NOR = {
+		num_of_relation_lover > 1
+		has_trait = celibate
+		has_trait = infirm
+		is_malformed_trigger = yes
+		has_sexuality = asexual
+		is_healthy = no
+		is_involved_in_any_romantic_scheme = yes
+		has_character_flag = made_recent_courtship_check
+	}
+
+	# romance is for the young, excepting only those pursuing chivalry
+	OR = {
+		is_old_age_or_not_have_children = no
+		has_focus = martial_chivalry_focus
+	}
+	trigger_if = {
+		limit = {
+			culture ?= {
+				NOT = { has_cultural_parameter = ai_romance_scheme_increase }
+			}
+		}
+		ai_honor >= 0
+		ai_compassion >= 0
+	}
+
+	# must be liege's faith or astray
+	trigger_if = {
+		limit = { exists = liege }
+		OR = {
+			faith = liege.faith
+			liege.faith = {
+				faith_hostility_level = {
+					target = prev.faith
+					value <= faith_astray_level
+				}
+			}
+		}
+	}
+}
+
+is_appropriate_ai_courtship_target = {
+	is_physically_able_ai_adult = yes
+	can_set_relation_soulmate_trigger = { CHARACTER = $LOVER$ }
+	exists = location
+	opinion = { target = $LOVER$ value >= -10 }
+	reverse_opinion = { target = $LOVER$ value >= 0 }
+	trigger_if = {
+		limit = {
+			$LOVER$ = {
+				is_female = yes
+				age < 25
+			}
+		}
+		age <= $LOVER$.age_plus_25
+		age >= $LOVER$.age_minus_10
+	}
+	trigger_else_if = {
+		limit = {
+			$LOVER$ = { is_female = yes }
+		}
+		age <= $LOVER$.age_plus_10
+		age >= $LOVER$.age_minus_10
+	}
+	trigger_else = {
+		age <= $LOVER$.age_plus_5
+		age >= $LOVER$.age_minus_25
+	}
+	# female targets must be within acceptable age range
+	trigger_if = {
+		limit = { is_female = yes }
+		age <= marriage_female_fertility_cutoff_age_value
+	}
+	# either has no lover or they're the courter's lover
+	trigger_if = {
+		limit = { has_relation_lover = $LOVER$ }
+		num_of_relation_lover < 2
+	}
+	trigger_else = {
+		is_interesting_character_trigger = yes
+		is_below_ai_lover_soft_cap_trigger = yes
+	}
+	# no adulterers wooing their spouses
+	trigger_if = {
+		limit = { is_consort_of = $LOVER$ }
+		NOR = {
+			has_trait = adulterer
+			$LOVER$ = { has_trait = adulterer }
+		}
+	}
+	NOR = {
+		is_malformed_trigger = yes
+		is_involved_in_any_romantic_scheme = yes
+		has_any_debilitating_illness = yes
+		has_trait = pregnant
+	}
+	accepts_incest_with_each_other_trigger = {
+		CHARACTER_1 = $LOVER$
+		CHARACTER_2 = $TARGET$
+	}
+	trigger_if = {
+		limit = {
+			$LOVER$ = {
+				NOR = {
+					is_deviant_trigger = yes
+					ai_zeal <= low_negative_ai_value
+					faith = { has_doctrine = tenet_carnal_exaltation }
+				}
+			}
+		}
+		NOR = {
+			is_clergy = yes
+			agot_has_religious_trait = yes
+			has_council_position = councillor_court_chaplain
+		}
+	}
+	OR = {
+		is_consort_of = $LOVER$
+		betrothed ?= $LOVER$
+		has_relation_lover = $LOVER$
+		AND = {
+			might_cheat_on_every_partner_trigger = yes
+			$LOVER$ = { might_cheat_on_every_partner_trigger = yes }
+		}
+	}
+	$LOVER$ = {
+		can_start_scheme = {
+			type = courting
+			target_character = $TARGET$
+		}
+	}
+	# maximum distance away
+	OR = {
+		is_at_same_location = $LOVER$
+		location = {
+			squared_distance = { target = $LOVER$.location value < 300000 }
+		}
+	}
+
+	is_human = yes
+	agot_is_available_for_anything = yes
+}
+
+is_appropriate_ai_seduction_courtier = {
+	is_physically_able_ai_adult = yes
+	is_below_ai_lover_soft_cap_trigger = yes
+
+	# not every courtier gets to do this
+	exists = dynasty
+	OR = {
+		intrigue >= 8
+		has_trait = lustful
+		has_trait = seducer
+		is_deviant_trigger = yes
+		has_trait = rakish
+		has_focus = intrigue_temptation_focus
+		any_relation = { type = potential_lover }
+		has_trait = refusing_marriage
+	}
+	might_cheat_on_every_partner_trigger = yes
+
+	# someone must be bold to initiate seduction if they're not the dominant gender
+	trigger_if = {
+		limit = {
+			OR = {
+				#has_trait = maiden
+				AND = {
+					faith = { has_doctrine = doctrine_gender_male_dominated }
+					is_male = yes
+				}
+				AND = {
+					faith = { has_doctrine = doctrine_gender_female_dominated }
+					is_female = yes
+				}
+			}
+		}
+		ai_boldness >= low_negative_ai_value
+	}
+	trigger_else = {
+		OR = {
+			ai_boldness >= medium_positive_ai_value
+			has_trait = seducer
+			has_trait = rakish
+			is_deviant_trigger = yes
+		}
+	}
+
+	# seduction is for the young, excepting only deviants and the lustful
+	OR = {
+		is_old_age_or_not_have_children = no
+		is_deviant_trigger = yes
+		has_focus = intrigue_temptation_focus
+		faith = { has_doctrine = tenet_carnal_exaltation }
+	}
+	save_temporary_scope_as = potential_seduction_courtier
+	NOR = {
+		has_trait = chaste
+		has_trait = celibate
+		has_trait = infirm
+		has_sexuality = asexual
+		is_malformed_trigger = yes
+		is_involved_in_any_romantic_scheme = yes
+		primary_spouse ?= { has_strong_hook = scope:potential_seduction_courtier }
+		has_any_illness = yes
+		has_character_flag = made_recent_seduction_check
+		# has a spouse/love/liege who is close family and is honest
+		AND = {
+			has_trait = honest
+			OR = {
+				is_married = yes
+				any_relation = { type = lover }
+				liege = { is_close_family_of = scope:potential_seduction_courtier }
+			}
+		}
+		# too honorable to become adulterer
+		AND = {
+			trait_is_criminal_in_faith_trigger = { TRAIT = trait:adulterer FAITH = scope:potential_seduction_courtier.faith GENDER_CHARACTER = scope:potential_seduction_courtier }
+			is_married = yes
+			ai_honor >= 0
+			NOT = { has_trait = adulterer }
+		}
+		AND = {
+			trait_is_shunned_in_faith_trigger = { TRAIT = trait:adulterer FAITH = scope:potential_seduction_courtier.faith GENDER_CHARACTER = scope:potential_seduction_courtier }
+			is_married = yes
+			ai_honor >= medium_positive_ai_value
+			NOT = { has_trait = adulterer }
+		}
+		# too honorable to become fornicator
+		AND = {
+			trait_is_criminal_in_faith_trigger = { TRAIT = trait:fornicator FAITH = scope:potential_seduction_courtier.faith GENDER_CHARACTER = scope:potential_seduction_courtier }
+			is_married = no
+			ai_honor >= 0
+			NOT = { has_trait = fornicator }
+		}
+		AND = {
+			trait_is_shunned_in_faith_trigger = { TRAIT = trait:fornicator FAITH = scope:potential_seduction_courtier.faith GENDER_CHARACTER = scope:potential_seduction_courtier }
+			is_married = no
+			ai_honor >= medium_positive_ai_value
+			NOT = { has_trait = fornicator }
+		}
+		# clergy who either isn't lustful or too faithful to take a lover
+		AND = {
+			OR = {
+				is_clergy = yes
+				agot_has_religious_order_trait = yes
+				has_council_position = councillor_court_chaplain
+				agot_has_clergy_trait = yes
+			}
+			ai_zeal >= medium_negative_ai_value
+			faith = {
+				NOT = { has_doctrine = tenet_carnal_exaltation }
+			}
+			NOR = {
+				has_trait = lustful
+				has_focus = intrigue_temptation_focus
+			}
+		}
+	}
+}
+
+is_appropriate_ai_seduction_target = {
+	is_physically_able_ai_adult = yes
+	$LOVER$ = { is_attracted_to_gender_of = $TARGET$ }
+	is_below_ai_lover_soft_cap_trigger = yes
+	is_interesting_character_trigger = yes
+	exists = location
+	trigger_if = {
+		limit = {
+			$LOVER$ = {
+				is_female = yes
+				age < 25
+			}
+		}
+		age <= $LOVER$.age_plus_25
+		age >= $LOVER$.age_minus_10
+	}
+	trigger_else_if = {
+		limit = {
+			$LOVER$ = { is_female = yes }
+		}
+		age <= $LOVER$.age_plus_10
+		age >= $LOVER$.age_minus_10
+	}
+	trigger_else = {
+		age <= $LOVER$.age
+		age >= $LOVER$.age_minus_25
+	}
+	# female targets must be within acceptable age range
+	trigger_if = {
+		limit = { is_female = yes }
+		age <= marriage_female_fertility_cutoff_age_value
+	}
+	might_cheat_on_every_partner_trigger = yes
+	can_set_relation_lover_trigger = { CHARACTER = $LOVER$ }
+	willing_to_take_character_as_lover = { LOVER = $LOVER$ }
+	accepts_incest_with_each_other_trigger = { CHARACTER_1 = $LOVER$ CHARACTER_2 = $TARGET$ }
+	# Are they seducing someone who is too high station for them?
+	trigger_if = {
+		limit = { $LOVER$.ai_boldness < 20 }
+		NOR = {
+			primary_spouse ?= { is_liege_or_above_of = $LOVER$ }
+			any_parent = { is_liege_or_above_of = $LOVER$ }
+		}
+	}
+	trigger_if = {
+		limit = { $LOVER$.ai_honor > 0 }
+		OR = {
+			is_married = no
+			is_consort_of = $LOVER$
+		}
+		OR = {
+			is_betrothed = no
+			betrothed = { this = $LOVER$ }
+		}
+	}
+	# Are they holy?
+	trigger_if = {
+		limit = {
+			$LOVER$ = {
+				NOR = {
+					is_deviant_trigger = yes
+					ai_zeal <= low_negative_ai_value
+					faith = { has_doctrine = tenet_carnal_exaltation }
+				}
+			}
+		}
+		NOR = {
+			is_clergy = yes
+			agot_has_clergy_trait = yes
+			agot_has_religious_trait = yes
+			has_council_position = councillor_court_chaplain
+		}
+	}
+	# No weird stuff
+	NOR = {
+		this = $LOVER$
+		is_malformed_trigger = yes
+		is_unattractive_trigger = yes
+		has_short_disease_trigger = yes
+		has_trait = chaste
+		has_trait = infirm
+		is_involved_in_any_romantic_scheme = yes
+	}
+	trigger_if = {
+		limit = {
+			$LOVER$ = { is_courtier = yes }
+		}
+		NOT = { has_character_flag = blocked_courtier_seductions }
+	}
+	reverse_opinion = { target = $LOVER$ value >= -10 }
+	# Can I seduce them?
+	$LOVER$ = {
+		can_start_scheme = {
+			type = seduce
+			target_character = $TARGET$
+		}
+	}
+	# maximum distance away
+	OR = {
+		is_at_same_location = $LOVER$
+		location = {
+			squared_distance = { target = $LOVER$.location value < 200000 }
+		}
+	}
+	is_human = yes
+	agot_is_available_for_anything = yes
+}
+
+# used to validate AI lover pairs
+should_not_have_lover = {
+	OR = {
+		# have a primary spouse that I would not cheat on
+		AND = {
+			exists = primary_spouse
+			NOT = {
+				might_cheat_on_partner_trigger = { PARTNER = primary_spouse }
+			}
+		}
+		# am not sexually attracted to my lover
+		NOT = {
+			is_attracted_to_gender_of = $LOVER$
+		}
+		# otherwise unwilling to have a lover
+		NOT = {
+			willing_to_take_character_as_lover = { LOVER = $LOVER$ }
+		}
+	}
+	$LOVER$ = {
+		intrigue < 20
+		NOT = { has_trait = seducer }
+	}
+}
+
+# used in lover/spouse events
+lover_kick_from_court_validity_trigger = {
+	NOR = {
+		is_spouse_of = root
+		is_concubine_of = root
+		is_close_family_of = root
+		has_council_position = councillor_court_chaplain
+		is_diarch = yes
+		# Marriage major partners of diarchs.
+		## Female.
+		AND = {
+			is_married = yes
+			is_female = yes
+			matrilinear_marriage = yes
+			any_consort = { is_diarch = yes }
+		}
+		## Male.
+		AND = {
+			is_married = yes
+			is_male = yes
+			patrilinear_marriage = yes
+			any_consort = { is_diarch = yes }
+		}
+	}
+}

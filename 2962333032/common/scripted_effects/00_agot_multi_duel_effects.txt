@@ -1,0 +1,4880 @@
+﻿# General Multi Duel effects
+# Trial of Seven effects
+
+############################# ################################## #############################
+############################# ################################## #############################
+################################# GENERAL MULTI DUEL EFFECTS #################################
+############################# ################################## #############################
+############################# ################################## #############################
+
+###################
+### TEAM SETUPS ###
+###################
+
+### LEADER SETUP
+# There has to be 2 leaders
+# This should be the first of the Multi Duel System
+# SIDE_A_LEADER - leader of the A side
+# SIDE_B_LEADER - leader of the B side
+# DUEL_BACKGROUND - terrain_type / army_camp / battlefield
+# EVENT_BACKGROUND_REFERENCE_CHARACTER - this character's location will be used for certain event backgrounds (currently used only if DUEL_BACKGROUND is "tos_bg") (Needs to be landed.)
+# terrain_type - Terrain of your current location.
+# army_camp - Usual army camp background.
+# battlefield - Usual battlefield background.
+# SIDE_A_TEAM_SELECTION - Team setup event for team A. Should be unique for every feature.
+# SIDE_B_TEAM_SELECTION - Team setup event for team B. Should be unique for every feature.
+# UNIQUE_STORY_NAME - This is the story identifier. Should be unique for every feature.
+# STORY_VARIANT - #Put "none" if not needed.
+# END_STORY_ON - dead_leader / dead_every
+# dead_leader - Ends the the story for everyone when one of the leader dies.
+# dead_every - Ends the story when everyone died on one side.
+
+multi_duel_leaders_effect = {
+	$SIDE_A_LEADER$ = { save_scope_as = side_a_leader }
+	$SIDE_B_LEADER$ = { save_scope_as = side_b_leader }
+	save_scope_value_as = {
+		name = leader_a_event
+		value = event_id:$SIDE_A_TEAM_SELECTION$
+	}
+	save_scope_value_as = {
+		name = leader_b_event
+		value = event_id:$SIDE_B_TEAM_SELECTION$
+	}
+
+	multi_duel_participant_effect = {
+		DUELIST = scope:side_a_leader
+		LEADER = yes
+		SIDE = side_a
+		DUELIST_NUM = 0
+	}
+
+	multi_duel_participant_effect = {
+		DUELIST = scope:side_b_leader
+		LEADER = yes
+		SIDE = side_b
+		DUELIST_NUM = 0
+	}
+
+	scope:side_a_leader = {
+		add_character_flag = multi_duel_sudden_death_protection
+		set_variable = {
+			name = opponent_multi_duel_leader
+			value = scope:side_b_leader
+		}
+		set_variable = {
+			name = match_rule
+			value = flag:$END_STORY_ON$
+		}
+		set_variable = {
+			name = unqiue_story_name
+			value = flag:$UNIQUE_STORY_NAME$
+		}
+		set_variable = {
+			name = count_of_team_members
+			value = 1
+		}
+		set_variable = {
+			name = duel_background
+			value = flag:$DUEL_BACKGROUND$
+		}
+		set_variable = {
+			name = event_bg_ref_char_capital
+			value = $EVENT_BACKGROUND_REFERENCE_CHARACTER$.capital_county
+			years = 3
+		}
+		set_variable = {
+			name = og_side_a_leader
+			value = scope:side_a_leader
+		}
+		set_variable = {
+			name = og_side_b_leader
+			value = scope:side_b_leader
+		}
+		set_variable = {
+			name = story_variant
+			value = flag:$STORY_VARIANT$
+		}
+		#ToS
+		if = {
+			limit = {
+				exists = var:unqiue_story_name
+				var:unqiue_story_name = flag:tos_story
+			}
+			add_to_variable_list = {
+				name = potential_multi_duel_bonding_list
+				target = scope:side_a_leader
+				years = 5
+			}
+			add_to_variable_list = {
+				name = potential_multi_duel_bonding_opponent_list
+				target = scope:side_b_leader
+				years = 5
+			}
+		}
+		#ToS Succession Crisis
+		if = {
+			limit = {
+				exists = var:story_variant
+				var:story_variant = flag:usurpation
+			}
+			set_variable = {
+				name = usurpation_primary_title
+				value = scope:side_a_leader.primary_title
+			}
+		}
+		if = {
+			limit = {
+				exists = var:tos_true_heir
+				exists = var:tos_true_heir.var:usurped_my_birthright
+			}
+			var:tos_true_heir = {
+				if = {
+					limit = {
+						any_claim = {
+							tier > tier_barony
+							holder = scope:side_a_leader.var:tos_true_heir.var:usurped_my_birthright
+							count > 0
+						}
+					}
+					every_claim = {
+						limit = {
+							tier > tier_barony
+							holder = scope:side_a_leader.var:tos_true_heir.var:usurped_my_birthright
+						}
+						scope:side_a_leader = {
+							add_to_variable_list = {
+								name = usurpation_titles
+								target = prev
+							}
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				exists = var:story_variant
+				var:story_variant = flag:usurpation
+				scope:side_b_leader = { has_variable_list = usurpation_titles }
+			}
+			scope:side_b_leader = {
+				every_in_list = {
+					variable = usurpation_titles
+					scope:side_a_leader = {
+						add_to_variable_list = {
+							name = usurpation_titles
+							target = prev
+						}
+					}
+				}
+			}
+		}
+	}
+	scope:side_b_leader = {
+		add_character_flag = multi_duel_sudden_death_protection
+		set_variable = {
+			name = opponent_multi_duel_leader
+			value = scope:side_a_leader
+		}
+		set_variable = {
+			name = match_rule
+			value = flag:$END_STORY_ON$
+		}
+		set_variable = {
+			name = unqiue_story_name
+			value = flag:$UNIQUE_STORY_NAME$
+		}
+		set_variable = {
+			name = count_of_team_members
+			value = 1
+		}
+		set_variable = {
+			name = duel_background
+			value = flag:$DUEL_BACKGROUND$
+		}
+		set_variable = {
+			name = event_bg_ref_char_capital
+			value = $EVENT_BACKGROUND_REFERENCE_CHARACTER$.capital_county
+			years = 3
+		}
+		set_variable = {
+			name = og_side_a_leader
+			value = scope:side_a_leader
+		}
+		set_variable = {
+			name = og_side_b_leader
+			value = scope:side_b_leader
+		}
+		set_variable = {
+			name = story_variant
+			value = flag:$STORY_VARIANT$
+		}
+		#ToS
+		if = {
+			limit = {
+				exists = var:unqiue_story_name
+				var:unqiue_story_name = flag:tos_story
+			}
+			add_to_variable_list = {
+				name = potential_multi_duel_bonding_list
+				target = scope:side_b_leader
+				years = 5
+			}
+			add_to_variable_list = {
+				name = potential_multi_duel_bonding_opponent_list
+				target = scope:side_a_leader
+				years = 5
+			}
+		}
+		#ToS Succession Crisis
+		if = {
+			limit = {
+				exists = var:story_variant
+				var:story_variant = flag:usurpation
+			}
+			set_variable = {
+				name = usurpation_primary_title
+				value = scope:side_a_leader.primary_title
+			}
+		}
+		if = {
+			limit = {
+				exists = var:tos_true_heir
+				exists = var:tos_true_heir.var:usurped_my_birthright
+			}
+			var:tos_true_heir = {
+				if = {
+					limit = {
+						any_claim = {
+							tier > tier_barony
+							holder = scope:side_b_leader.var:tos_true_heir.var:usurped_my_birthright
+							count > 0
+						}
+					}
+					every_claim = {
+						limit = {
+							tier > tier_barony
+							holder = scope:side_b_leader.var:tos_true_heir.var:usurped_my_birthright
+						}
+						scope:side_b_leader = {
+							add_to_variable_list = {
+								name = usurpation_titles
+								target = prev
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Story Initiators
+	scope:side_a_leader = { trigger_event = { saved_event_id = scope:leader_a_event } }
+	scope:side_b_leader = { trigger_event = { saved_event_id = scope:leader_b_event } }
+}
+
+# $DUELIST$ is character
+# $LEADER$ is only yes/no, sets a flag
+# $SIDE$ is only side_a/side_b, sets a flag
+# $DUELIST_NUM$ is a number, the identifier of the duelist for easier check, set to 0 if not needed
+multi_duel_participant_effect = {
+	$DUELIST$ = {
+		set_variable = {
+			name = duelist_side
+			value = flag:$SIDE$
+		}
+		set_variable = {
+			name = duelist_role
+			value = flag:$LEADER$
+		}
+		set_variable = {
+			name = duelist_num
+			value = $DUELIST_NUM$
+		}
+		set_signature_weapon_effect = yes
+	}
+	if = {
+		limit = {
+			exists = $DUELIST$.var:duelist_role
+			$DUELIST$.var:duelist_role = flag:no
+		}
+		$DUELIST$ = {
+			create_story = multi_duel_duelist_story
+			if = {
+				limit = {
+					exists = $DUELIST$.var:duelist_side
+					$DUELIST$.var:duelist_side = flag:side_a
+				}
+				scope:side_a_leader = {
+					if = {
+						limit = { any_owned_story = { story_type = multi_duel_leader_story } }
+						random_owned_story = {
+							limit = { story_type = multi_duel_leader_story }
+							save_scope_as = multi_duel_leader_story
+						}
+					}
+				}
+				scope:multi_duel_leader_story = {
+					add_to_variable_list = {
+						name = side_a_duelists
+						target = $DUELIST$
+					}
+				}
+				$DUELIST$ = {
+					set_variable = {
+						name = my_multi_side_leader
+						value = scope:side_a_leader
+					}
+					set_variable = {
+						name = opponent_multi_side_leader
+						value = scope:side_b_leader
+					}
+					set_variable = {
+						name = match_rule
+						value = scope:side_a_leader.var:match_rule
+					}
+					set_variable = {
+						name = unqiue_story_name
+						value = scope:side_a_leader.var:unqiue_story_name
+					}
+					set_variable = {
+						name = duel_background
+						value = scope:side_a_leader.var:duel_background
+					}
+					set_variable = {
+						name = event_bg_ref_char_capital
+						value = scope:side_a_leader.var:event_bg_ref_char_capital
+						years = 3
+					}
+					set_variable = {
+						name = og_side_a_leader
+						value = scope:side_a_leader
+					}
+					set_variable = {
+						name = og_side_b_leader
+						value = scope:side_b_leader
+					}
+					set_variable = {
+						name = story_variant
+						value = scope:side_a_leader.var:story_variant
+					}
+					if = {
+						limit = { NOT = { this = scope:side_a_leader } }
+						scope:side_a_leader = {
+							change_variable = {
+								name = count_of_team_members
+								add = 1
+							}
+						}
+					}
+					#ToS
+					if = {
+						limit = {
+							exists = scope:side_a_leader.var:unqiue_story_name
+							scope:side_a_leader.var:unqiue_story_name = flag:tos_story
+							scope:side_a_leader = {
+								has_variable_list = potential_multi_duel_bonding_list
+								NOT = { is_target_in_variable_list = { name = potential_multi_duel_bonding_list target = $DUELIST$ } }
+							}
+						}
+						scope:side_a_leader = {
+							add_to_variable_list = {
+								name = potential_multi_duel_bonding_list
+								target = $DUELIST$
+								years = 5
+							}
+						}
+					}
+					if = {
+						limit = {
+							exists = scope:side_b_leader.var:unqiue_story_name
+							scope:side_b_leader.var:unqiue_story_name = flag:tos_story
+							scope:side_b_leader = {
+								has_variable_list = potential_multi_duel_bonding_opponent_list
+								NOT = { is_target_in_variable_list = { name = potential_multi_duel_bonding_opponent_list target = $DUELIST$ } }
+							}
+						}
+						scope:side_b_leader = {
+							add_to_variable_list = {
+								name = potential_multi_duel_bonding_opponent_list
+								target = $DUELIST$
+								years = 5
+							}
+						}
+					}
+					#Usurpation Titles for Succession Crisis Trial of Seven
+					if = {
+						limit = {
+							scope:side_a_leader = {
+								exists = var:story_variant
+								var:story_variant = flag:usurpation
+								has_variable_list = usurpation_titles
+							}
+						}
+						scope:side_a_leader = {
+							every_in_list = {
+								variable = usurpation_titles
+								$DUELIST$ = {
+									add_to_variable_list = {
+										name = usurpation_titles
+										target = prev
+									}
+								}
+							}
+						}
+					}
+					if = {
+						limit = { exists = scope:side_a_leader.var:usurpation_primary_title }
+						set_variable = {
+							name = usurpation_primary_title
+							value = scope:side_a_leader.var:usurpation_primary_title
+						}
+					}
+					#ToS Succession Crisis - Helper Exists
+					if = {
+						limit = { exists = scope:side_a_leader.var:tos_true_heir }
+						set_variable = {
+							name = tos_true_heir
+							value = scope:side_a_leader.var:tos_true_heir
+							years = 2
+						}
+					}
+					#Accuser and Accused
+					if = {
+						limit = { exists = scope:side_a_leader.var:tos_accuser }
+						set_variable = {
+							name = tos_accuser
+							value = scope:side_a_leader.var:tos_accuser
+						}
+					}
+					if = {
+						limit = { exists = scope:side_a_leader.var:tos_accused }
+						set_variable = {
+							name = tos_accused
+							value = scope:side_a_leader.var:tos_accused
+						}
+					}
+					if = {
+						limit = { exists = scope:side_a_leader.var:tos_accuser_ruler }
+						set_variable = {
+							name = tos_accuser_ruler
+							value = scope:side_a_leader.var:tos_accuser_ruler
+						}
+					}
+					if = {
+						limit = { exists = scope:side_a_leader.var:tos_accuser_ruler_title }
+						set_variable = {
+							name = tos_accuser_ruler_title
+							value = scope:side_a_leader.var:tos_accuser_ruler_title
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					exists = $DUELIST$.var:duelist_side
+					$DUELIST$.var:duelist_side = flag:side_b
+				}
+				scope:side_b_leader = {
+					if = {
+						limit = { any_owned_story = { story_type = multi_duel_leader_story } }
+						random_owned_story = {
+							limit = { story_type = multi_duel_leader_story }
+							save_scope_as = multi_duel_leader_story
+						}
+					}
+				}
+				scope:multi_duel_leader_story = {
+					add_to_variable_list = {
+						name = side_b_duelists
+						target = $DUELIST$
+					}
+				}
+				$DUELIST$ = {
+					set_variable = {
+						name = my_multi_side_leader
+						value = scope:side_b_leader
+					}
+					set_variable = {
+						name = opponent_multi_side_leader
+						value = scope:side_a_leader
+					}
+					set_variable = {
+						name = match_rule
+						value = scope:side_b_leader.var:match_rule
+					}
+					set_variable = {
+						name = unqiue_story_name
+						value = scope:side_b_leader.var:unqiue_story_name
+					}
+					set_variable = {
+						name = duel_background
+						value = scope:side_a_leader.var:duel_background
+					}
+					set_variable = {
+						name = event_bg_ref_char_capital
+						value = scope:side_a_leader.var:event_bg_ref_char_capital
+						years = 3
+					}
+					set_variable = {
+						name = og_side_a_leader
+						value = scope:side_a_leader
+					}
+					set_variable = {
+						name = og_side_b_leader
+						value = scope:side_b_leader
+					}
+					set_variable = {
+						name = story_variant
+						value = scope:side_b_leader.var:story_variant
+					}
+					if = {
+						limit = { NOT = { this = scope:side_b_leader } }
+						scope:side_b_leader = {
+							change_variable = {
+								name = count_of_team_members
+								add = 1
+							}
+						}
+					}
+					#ToS
+					if = {
+						limit = {
+							exists = scope:side_b_leader.var:unqiue_story_name
+							scope:side_b_leader.var:unqiue_story_name = flag:tos_story
+							scope:side_b_leader = {
+								has_variable_list = potential_multi_duel_bonding_list
+								NOT = { is_target_in_variable_list = { name = potential_multi_duel_bonding_list target = $DUELIST$ } }
+							}
+						}
+						scope:side_b_leader = {
+							add_to_variable_list = {
+								name = potential_multi_duel_bonding_list
+								target = $DUELIST$
+								years = 5
+							}
+						}
+					}
+					if = {
+						limit = {
+							exists = scope:side_a_leader.var:unqiue_story_name
+							scope:side_a_leader.var:unqiue_story_name = flag:tos_story
+							scope:side_a_leader = {
+								has_variable_list = potential_multi_duel_bonding_opponent_list
+								NOT = { is_target_in_variable_list = { name = potential_multi_duel_bonding_opponent_list target = $DUELIST$ } }
+							}
+						}
+						scope:side_a_leader = {
+							add_to_variable_list = {
+								name = potential_multi_duel_bonding_opponent_list
+								target = $DUELIST$
+								years = 5
+							}
+						}
+					}
+					#Usurpation Titles for Succession Crisis Trial of Seven
+					if = {
+						limit = {
+							scope:side_b_leader = {
+								exists = var:story_variant
+								var:story_variant = flag:usurpation
+								has_variable_list = usurpation_titles
+							}
+						}
+						scope:side_b_leader = {
+							every_in_list = {
+								variable = usurpation_titles
+								$DUELIST$ = {
+									add_to_variable_list = {
+										name = usurpation_titles
+										target = prev
+									}
+								}
+							}
+						}
+					}
+					if = {
+						limit = { exists = scope:side_b_leader.var:usurpation_primary_title }
+						set_variable = {
+							name = usurpation_primary_title
+							value = scope:side_b_leader.var:usurpation_primary_title
+						}
+					}
+					#ToS Succession Crisis - Helper Exists
+					if = {
+						limit = { exists = scope:side_a_leader.var:tos_true_heir }
+						set_variable = {
+							name = tos_true_heir
+							value = scope:side_a_leader.var:tos_true_heir
+							years = 2
+						}
+					}
+					#Accuser and Accused
+					if = {
+						limit = { exists = scope:side_b_leader.var:tos_accuser }
+						set_variable = {
+							name = tos_accuser
+							value = scope:side_b_leader.var:tos_accuser
+						}
+					}
+					if = {
+						limit = { exists = scope:side_b_leader.var:tos_accused }
+						set_variable = {
+							name = tos_accused
+							value = scope:side_b_leader.var:tos_accused
+						}
+					}
+					if = {
+						limit = { exists = scope:side_b_leader.var:tos_accuser_ruler }
+						set_variable = {
+							name = tos_accuser_ruler
+							value = scope:side_b_leader.var:tos_accuser_ruler
+						}
+					}
+					if = {
+						limit = { exists = scope:side_a_leader.var:tos_accuser_ruler_title }
+						set_variable = {
+							name = tos_accuser_ruler_title
+							value = scope:side_a_leader.var:tos_accuser_ruler_title
+						}
+					}
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			exists = $DUELIST$.var:duelist_role
+			$DUELIST$.var:duelist_role = flag:yes
+		}
+		$DUELIST$ = {
+			create_story = multi_duel_leader_story
+			create_story = multi_duel_duelist_story
+			if = {
+				limit = {
+					exists = $DUELIST$.var:duelist_side
+					$DUELIST$.var:duelist_side = flag:side_a
+				}
+				random_owned_story = {
+					limit = { story_type = multi_duel_leader_story }
+					save_scope_as = multi_duel_leader_story
+				}
+				scope:multi_duel_leader_story = {
+					add_to_variable_list = {
+						name = side_a_duelists
+						target = $DUELIST$
+					}
+				}
+				$DUELIST$ = {
+					set_variable = {
+						name = my_multi_side_leader
+						value = scope:side_a_leader
+					}
+					set_variable = {
+						name = opponent_multi_side_leader
+						value = scope:side_b_leader
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					exists = $DUELIST$.var:duelist_side
+					$DUELIST$.var:duelist_side = flag:side_b
+				}
+				random_owned_story = {
+					limit = { story_type = multi_duel_leader_story }
+					save_scope_as = multi_duel_leader_story
+				}
+				scope:multi_duel_leader_story = {
+					add_to_variable_list = {
+						name = side_b_duelists
+						target = $DUELIST$
+					}
+				}
+				$DUELIST$ = {
+					set_variable = {
+						name = my_multi_side_leader
+						value = scope:side_b_leader
+					}
+					set_variable = {
+						name = opponent_multi_side_leader
+						value = scope:side_a_leader
+					}
+				}
+			}
+		}
+	}
+}
+
+########################
+### DUEL MATCHMAKING ###
+########################
+
+multi_duel_battle_theme_effect = {
+	#Handle Observers
+	if = {
+		limit = {
+			any_player = {
+				has_character_flag = multi_duel_just_observed
+			}
+		}
+		every_player = {
+			limit = { has_character_flag = multi_duel_just_observed }
+			remove_character_flag = multi_duel_just_observed
+		}
+	}
+
+	#TOS STORY
+	if = {
+		limit = {
+			exists = var:unqiue_story_name
+			var:unqiue_story_name = flag:tos_story
+			exists = var:story_variant
+			OR = {
+				var:story_variant = flag:usurpation
+				var:story_variant = flag:dishonorable_imprisonment
+			}
+		}
+		multi_duel_battle_effect = {
+			SIDE_A_LEADER = scope:side_a_leader #Shouldn't be changed.
+			SIDE_B_LEADER = scope:side_b_leader #Shouldn't be changed.
+			PLAYER_DUEL_EVENT = agot_multi_duel.0030 #Can be set to a different event for thematic purposes, but effects should be copied.
+			DUEL_FATALITY = possible #possible or always or no
+			DUEL_YIELD = yes #yes or no
+		}
+	}
+}
+
+#Has to be set in multi_duel_battle_theme_effect with scenario specific condition
+multi_duel_battle_effect = {
+	save_scope_value_as = {
+		name = duel_fatality
+		value = flag:$DUEL_FATALITY$
+	}
+	save_scope_value_as = {
+		name = duel_yield
+		value = flag:$DUEL_YIELD$
+	}
+
+	random_list = {
+		#30% chance for Leader v Leader
+		30 = {
+			trigger = {
+				$SIDE_A_LEADER$ = {
+					NOT = { agot_multi_duelist_cant_continue = yes }
+					NOT = { has_character_flag = in_multi_duel }
+					NOT = { has_character_flag = last_man_standing }
+					NOT = { has_character_flag = multi_duel_sudden_death_protection }
+				}
+				$SIDE_B_LEADER$ = {
+					NOT = { agot_multi_duelist_cant_continue = yes }
+					NOT = { has_character_flag = in_multi_duel }
+					NOT = { has_character_flag = last_man_standing }
+					NOT = { has_character_flag = multi_duel_sudden_death_protection }
+				}
+			}
+			$SIDE_A_LEADER$ = {
+				add_character_flag = {
+					flag = chance_to_fight_in_multiduel
+					days = 1
+				}
+			}
+			$SIDE_B_LEADER$ = {
+				add_character_flag = {
+					flag = chance_to_fight_in_multiduel
+					days = 1
+				}
+			}
+		}
+		#70% chance for Duelist v Duelist (including the Leaders)
+		70 = {
+			$SIDE_A_LEADER$ = {
+				if = {
+					limit = { any_owned_story = { story_type = multi_duel_leader_story } }
+					random_owned_story = {
+						limit = {
+							story_type = multi_duel_leader_story
+							has_variable_list = side_a_duelists
+						}
+						every_in_list = {
+							variable = side_a_duelists
+							limit = {
+								NOT = { agot_multi_duelist_cant_continue = yes }
+								NOT = { has_character_flag = in_multi_duel }
+								NOT = { has_character_flag = multi_duel_sudden_death_protection }
+							}
+							add_character_flag = {
+								flag = chance_to_fight_in_multiduel
+								days = 1
+							}
+						}
+					}
+				}
+			}
+			$SIDE_B_LEADER$ = {
+				if = {
+					limit = { any_owned_story = { story_type = multi_duel_leader_story } }
+					random_owned_story = {
+						limit = {
+							story_type = multi_duel_leader_story
+							has_variable_list = side_b_duelists
+						}
+						every_in_list = {
+							variable = side_b_duelists
+							limit = {
+								NOT = { agot_multi_duelist_cant_continue = yes }
+								NOT = { has_character_flag = in_multi_duel }
+								NOT = { has_character_flag = multi_duel_sudden_death_protection }
+							}
+							add_character_flag = {
+								flag = chance_to_fight_in_multiduel
+								days = 1
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	$SIDE_A_LEADER$ = {
+		save_scope_as = side_a_leader
+		if = {
+			limit = { any_owned_story = { story_type = multi_duel_leader_story } }
+			if = {
+				limit = { has_character_flag = last_man_standing }
+				save_scope_as = duelist_in_side_a
+			}
+			else = {
+				random_owned_story = {
+					limit = {
+						story_type = multi_duel_leader_story
+						has_variable_list = side_a_duelists
+					}
+					random_in_list = {
+						variable = side_a_duelists
+						limit = {
+							NOT = { agot_multi_duelist_cant_continue = yes }
+							NOT = { has_character_flag = in_multi_duel }
+							has_character_flag = chance_to_fight_in_multiduel
+						}
+						add_character_flag = in_multi_duel
+						save_scope_as = duelist_in_side_a
+					}
+					every_in_list = {
+						variable = side_a_duelists
+						limit = {
+							NOT = { agot_multi_duelist_cant_continue = yes }
+							NOT = { has_character_flag = in_multi_duel }
+						}
+						add_character_flag = idle_in_multi_duel
+						if = {
+							limit = { has_character_flag = chance_to_fight_in_multiduel }
+							remove_character_flag = chance_to_fight_in_multiduel
+						}
+						if = {
+							limit = { has_character_flag = multi_duel_sudden_death_protection }
+							remove_character_flag = multi_duel_sudden_death_protection
+						}
+					}
+				}
+			}
+			scope:duelist_in_side_a = {
+				if = {
+					limit = {
+						this = scope:side_a_leader
+						NOT = { has_character_flag = last_man_standing }
+					}
+					set_new_multi_duel_leader = yes
+				}
+			}
+		}
+	}
+	$SIDE_B_LEADER$ = {
+		save_scope_as = side_b_leader
+		if = {
+			limit = { any_owned_story = { story_type = multi_duel_leader_story } }
+			if = {
+				limit = { has_character_flag = last_man_standing }
+				save_scope_as = duelist_in_side_b
+			}
+			else = {
+				random_owned_story = {
+					limit = {
+						story_type = multi_duel_leader_story
+						has_variable_list = side_b_duelists
+					}
+					random_in_list = {
+						variable = side_b_duelists
+						limit = {
+							NOT = { agot_multi_duelist_cant_continue = yes }
+							NOT = { has_character_flag = in_multi_duel }
+							has_character_flag = chance_to_fight_in_multiduel
+						}
+						add_character_flag = in_multi_duel
+						save_scope_as = duelist_in_side_b
+					}
+					every_in_list = {
+						variable = side_b_duelists
+						limit = {
+							NOT = { agot_multi_duelist_cant_continue = yes }
+							NOT = { has_character_flag = in_multi_duel }
+						}
+						add_character_flag = idle_in_multi_duel
+						if = {
+							limit = { has_character_flag = chance_to_fight_in_multiduel }
+							remove_character_flag = chance_to_fight_in_multiduel
+						}
+						if = {
+							limit = { has_character_flag = multi_duel_sudden_death_protection }
+							remove_character_flag = multi_duel_sudden_death_protection
+						}
+					}
+				}
+			}
+			scope:duelist_in_side_b = {
+				if = {
+					limit = {
+						this = scope:side_b_leader
+						NOT = { has_character_flag = last_man_standing }
+					}
+					set_new_multi_duel_leader = yes
+				}
+			}
+		}
+	}
+	scope:duelist_in_side_a.var:opponent_multi_side_leader = { save_scope_as = side_b_leader }
+	scope:duelist_in_side_b.var:opponent_multi_side_leader = { save_scope_as = side_a_leader }
+	scope:duelist_in_side_a = {
+		if = {
+			limit = { has_character_flag = last_man_standing }
+			scope:side_b_leader = { add_character_flag = check_for_dead_leader }
+		}
+	}
+	scope:duelist_in_side_b = {
+		if = {
+			limit = { has_character_flag = last_man_standing }
+			scope:side_a_leader = { add_character_flag = check_for_dead_leader }
+		}
+	}
+
+	save_scope_value_as = {
+		name = player_duel_event
+		value = event_id:$PLAYER_DUEL_EVENT$
+	}
+
+	#Duel Events
+	if = {
+		limit = {
+			OR = {
+				AND = {
+					exists = scope:duelist_in_side_a
+					scope:duelist_in_side_a = { is_ai = no }
+				}
+				AND = {
+					exists = scope:duelist_in_side_b
+					scope:duelist_in_side_b = { is_ai = no }
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:duelist_in_side_a
+				scope:duelist_in_side_a = { is_ai = no }
+			}
+			scope:duelist_in_side_a = { trigger_event = { saved_event_id = scope:player_duel_event } }
+		}
+		else_if = {
+			limit = {
+				exists = scope:duelist_in_side_b
+				scope:duelist_in_side_b = { is_ai = no }
+			}
+			scope:duelist_in_side_b = { trigger_event = { saved_event_id = scope:player_duel_event } }
+		}
+	}
+	else_if = {
+		limit = {
+			AND = {
+				exists = scope:duelist_in_side_a
+				scope:duelist_in_side_a = { is_ai = yes }
+				exists = scope:duelist_in_side_b
+				scope:duelist_in_side_b = { is_ai = yes }
+			}
+		}
+		scope:duelist_in_side_a = { multi_duel_battle_ai = yes }
+	}
+}
+
+multi_duel_battle_ai = {
+	save_scope_value_as = {
+		name = team_size_difference
+		value = {
+			value = scope:side_a_leader.var:count_of_team_members
+			subtract = scope:side_b_leader.var:count_of_team_members
+		}
+	}
+
+	random_list = {
+		#duelist_in_side_a wins
+		1 = {
+			### Power Modifiers
+			# Stats
+			modifier = { add = prowess }
+			modifier = {
+				add = {
+					value = diplomacy #you heared about the enemy dueling style through your connections
+					multiply = 0.1
+				}
+			}
+			modifier = {
+				add = {
+					value = martial #a part of your strategy knowledge can be applied on your dueling strategy
+					multiply = 0.7
+				}
+			}
+			modifier = {
+				add = {
+					value = stewardship #if your mind is as sharp as your blade you can pull out some unexpected tricks
+					multiply = 0.2
+				}
+			}
+			modifier = {
+				add = {
+					value = intrigue #playing dirty is also a valid strategy
+					multiply = 0.5
+				}
+			}
+			modifier = {
+				add = {
+					value = learning #once you read a paragraph about a duel
+					multiply = 0.001
+				}
+			}
+			# Negative Traits
+			modifier = {
+				factor = 0.9
+				has_trait = weak
+			}
+			modifier = {
+				factor = 0.9
+				has_trait = physique_bad_1
+			}
+			modifier = {
+				factor = 0.75
+				has_trait = physique_bad_2
+			}
+			modifier = {
+				factor = 0.5
+				has_trait = physique_bad_3
+			}
+			# Positive Traits
+			modifier = {
+				factor = 1.1
+				has_trait = strong
+			}
+			modifier = {
+				factor = 1.1
+				has_trait = physique_good_1
+			}
+			modifier = {
+				factor = 1.25
+				has_trait = physique_good_2
+			}
+			modifier = {
+				factor = 1.5
+				has_trait = physique_good_3
+			}
+			modifier = {
+				factor = 1.1
+				has_trait = education_martial_prowess_2
+			}
+			modifier = {
+				factor = 1.3
+				has_trait = education_martial_prowess_3
+			}
+			modifier = {
+				factor = 1.6
+				has_trait = education_martial_prowess_4
+			}
+			modifier = {
+				factor = 2
+				has_trait = education_martial_prowess_5
+			}
+			# Morale Impact
+			modifier = {
+				factor = 1.2
+				scope:team_size_difference > 2
+			}
+			modifier = {
+				factor = 0.8
+				scope:team_size_difference < -2
+			}
+			#Canon (if needed)
+			modifier = {
+				factor = 0
+				scope:duelist_in_side_a = { NOT = { has_character_flag = multi_duelist_plot_armor } }
+				scope:duelist_in_side_b = { has_character_flag = multi_duelist_plot_armor }
+			}
+			### Effects
+			# Enable the next duel
+			scope:duelist_in_side_a = {
+				if = {
+					limit = {
+						is_alive = yes
+						has_variable = opponent_multi_duel_duelist
+					}
+					remove_variable = opponent_multi_duel_duelist
+				}
+				if = {
+					limit = {
+						NOT = { agot_multi_duelist_cant_continue = yes }
+					}
+					next_duel_can_start_effect = yes
+				}
+				multi_duel_wound_low_chance_effect = yes
+			}
+			scope:duelist_in_side_b = {
+				if = {
+					limit = {
+						is_alive = yes
+						has_variable = opponent_multi_duel_duelist
+					}
+					remove_variable = opponent_multi_duel_duelist
+				}
+				if = {
+					limit = {
+						NOT = { agot_multi_duelist_cant_continue = yes }
+					}
+					next_duel_can_start_effect = yes
+				}
+				# Wound roll
+				multi_duel_wound_chance_effect = yes
+				# Death or Yield
+				multi_duel_defeat_or_yield_effect = yes
+			}
+			# Post-Duel Handler
+			scope:duelist_in_side_a = { trigger_event = agot_multi_duel.7777 }
+		}
+		#duelist_in_side_b wins
+		1 = {
+			### Power Modifiers
+			# Stats
+			modifier = { add = prowess }
+			modifier = {
+				add = {
+					value = diplomacy #you heared about the enemy dueling style through your connections
+					multiply = 0.1
+				}
+			}
+			modifier = {
+				add = {
+					value = martial #a part of your strategy knowledge can be applied on your dueling strategy
+					multiply = 0.7
+				}
+			}
+			modifier = {
+				add = {
+					value = stewardship #if your mind is as sharp as your blade you can pull out some unexpected tricks
+					multiply = 0.2
+				}
+			}
+			modifier = {
+				add = {
+					value = intrigue #playing dirty is also a valid strategy
+					multiply = 0.5
+				}
+			}
+			modifier = {
+				add = {
+					value = learning #once you read a paragraph about a duel
+					multiply = 0.001
+				}
+			}
+			# Negative Traits
+			modifier = {
+				factor = 0.9
+				has_trait = weak
+			}
+			modifier = {
+				factor = 0.9
+				has_trait = physique_bad_1
+			}
+			modifier = {
+				factor = 0.75
+				has_trait = physique_bad_2
+			}
+			modifier = {
+				factor = 0.5
+				has_trait = physique_bad_3
+			}
+			# Positive Traits
+			modifier = {
+				factor = 1.1
+				has_trait = strong
+			}
+			modifier = {
+				factor = 1.1
+				has_trait = physique_good_1
+			}
+			modifier = {
+				factor = 1.25
+				has_trait = physique_good_2
+			}
+			modifier = {
+				factor = 1.5
+				has_trait = physique_good_3
+			}
+			modifier = {
+				factor = 1.1
+				has_trait = education_martial_prowess_2
+			}
+			modifier = {
+				factor = 1.3
+				has_trait = education_martial_prowess_3
+			}
+			modifier = {
+				factor = 1.6
+				has_trait = education_martial_prowess_4
+			}
+			modifier = {
+				factor = 2
+				has_trait = education_martial_prowess_5
+			}
+			modifier = {
+				factor = 1.2
+				scope:team_size_difference < -2
+			}
+			modifier = {
+				factor = 0.8
+				scope:team_size_difference > 2
+			}
+			# Canon (if needed)
+			modifier = {
+				factor = 0
+				scope:duelist_in_side_a = { has_character_flag = multi_duelist_plot_armor }
+				scope:duelist_in_side_b = { NOT = { has_character_flag = multi_duelist_plot_armor } }
+			}
+			### Effects
+			# Enable the next duel
+			scope:duelist_in_side_b = {
+				if = {
+					limit = {
+						is_alive = yes
+						has_variable = opponent_multi_duel_duelist
+					}
+					remove_variable = opponent_multi_duel_duelist
+				}
+				if = {
+					limit = {
+						NOT = { agot_multi_duelist_cant_continue = yes }
+					}
+					next_duel_can_start_effect = yes
+				}
+				multi_duel_wound_low_chance_effect = yes
+			}
+			scope:duelist_in_side_a = {
+				if = {
+					limit = {
+						is_alive = yes
+						has_variable = opponent_multi_duel_duelist
+					}
+					remove_variable = opponent_multi_duel_duelist
+				}
+				if = {
+					limit = {
+						NOT = { agot_multi_duelist_cant_continue = yes }
+					}
+					next_duel_can_start_effect = yes
+				}
+				# Wound roll
+				multi_duel_wound_chance_effect = yes
+				# Death or Yield
+				multi_duel_defeat_or_yield_effect = yes
+			}
+			# Post-Duel Handler
+			scope:duelist_in_side_b = { trigger_event = agot_multi_duel.7777 }
+		}
+	}
+}
+
+multi_duel_team_member_count_effect = {
+	if = {
+		limit = {
+			scope:duelist_in_side_b = {
+				agot_multi_duelist_cant_continue = yes
+				exists = scope:duelist_in_side_a.var:opponent_multi_side_leader
+				scope:duelist_in_side_a.var:opponent_multi_side_leader = {
+					NOT = { agot_multi_duelist_cant_continue = yes }
+				}
+			}
+		}
+		scope:duelist_in_side_a.var:opponent_multi_side_leader = {
+			change_variable = {
+				name = count_of_team_members
+				subtract = 1
+			}
+		}
+	}
+	if = {
+		limit = {
+			scope:duelist_in_side_a = {
+				agot_multi_duelist_cant_continue = yes
+				exists = scope:duelist_in_side_b.var:opponent_multi_side_leader
+				scope:duelist_in_side_b.var:opponent_multi_side_leader = {
+					NOT = { agot_multi_duelist_cant_continue = yes }
+				}
+			}
+		}
+		scope:duelist_in_side_b.var:opponent_multi_side_leader = {
+			change_variable = {
+				name = count_of_team_members
+				subtract = 1
+			}
+		}
+	}
+}
+
+multi_duel_yield_downed_stand_event_effect = {
+	save_scope_as = current_character
+	#Opponent Event (Stands Up)
+	if = {
+		limit = {
+			OR = {
+				scope:duelist_in_side_a = { has_character_flag = agot_multi_duel_stands_up }
+				scope:duelist_in_side_b = { has_character_flag = agot_multi_duel_stands_up }
+			}
+			OR = {
+				scope:duelist_in_side_a = { is_ai = no }
+				scope:duelist_in_side_b = { is_ai = no }
+			}
+		}
+		if = {
+			limit = { scope:duelist_in_side_a = { is_ai = no } }
+			scope:duelist_in_side_a = { trigger_event = agot_multi_duel.1002 }
+		}
+		if = {
+			limit = { scope:duelist_in_side_b = { is_ai = no } }
+			scope:duelist_in_side_b = { trigger_event = agot_multi_duel.1002 }
+		}
+	}
+	#Opponent Event (Downed)
+	if = {
+		limit = {
+			OR = {
+				scope:duelist_in_side_a = { has_character_flag = agot_multi_duel_downed }
+				scope:duelist_in_side_b = { has_character_flag = agot_multi_duel_downed }
+			}
+			OR = {
+				scope:duelist_in_side_a = { is_ai = no }
+				scope:duelist_in_side_b = { is_ai = no }
+			}
+		}
+		if = {
+			limit = { scope:duelist_in_side_a = { is_ai = no } }
+			scope:duelist_in_side_a = { trigger_event = agot_multi_duel.1003 }
+		}
+		if = {
+			limit = { scope:duelist_in_side_b = { is_ai = no } }
+			scope:duelist_in_side_b = { trigger_event = agot_multi_duel.1003 }
+		}
+	}
+	#Accuser yielded
+	if = {
+		limit = {
+			exists = scope:duel_yield
+			scope:duel_yield = flag:yes
+			exists = var:tos_accuser
+			OR = {
+				scope:duelist_in_side_a = var:tos_accuser
+				scope:duelist_in_side_b = var:tos_accuser
+			}
+			var:tos_accuser = { has_character_flag = agot_multi_duel_yielded }
+		}
+		if = {
+			limit = {
+				exists = scope:duelist_in_side_a.var:opponent_multi_side_leader
+				exists = scope:duelist_in_side_b.var:opponent_multi_side_leader
+			}
+			scope:duelist_in_side_a.var:opponent_multi_side_leader = {
+				if = {
+					limit = {
+						any_owned_story = {
+							story_type = multi_duel_leader_story
+							any_in_list = {
+								variable = side_a_duelists
+								is_alive = yes
+								NOT = { this = scope:duelist_in_side_b.var:opponent_multi_side_leader.var:tos_accuser }
+							}
+						}
+					}
+					random_owned_story = {
+						limit = { story_type = multi_duel_leader_story }
+						every_in_list = {
+							variable = side_a_duelists
+							limit = {
+								is_alive = yes
+								NOT = { this = scope:duelist_in_side_b.var:opponent_multi_side_leader.var:tos_accuser }
+							}
+							trigger_event = agot_multi_duel.1004
+						}
+					}
+				}
+			}
+			scope:duelist_in_side_b.var:opponent_multi_side_leader = {
+				if = {
+					limit = {
+						any_owned_story = {
+							story_type = multi_duel_leader_story
+							any_in_list = {
+								variable = side_b_duelists
+								is_alive = yes
+								NOT = { this = scope:duelist_in_side_b.var:opponent_multi_side_leader.var:tos_accuser }
+							}
+						}
+					}
+					random_owned_story = {
+						limit = { story_type = multi_duel_leader_story }
+						every_in_list = {
+							variable = side_b_duelists
+							limit = {
+								is_alive = yes
+								NOT = { this = scope:duelist_in_side_b.var:opponent_multi_side_leader.var:tos_accuser }
+							}
+							trigger_event = agot_multi_duel.1004
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+multi_duel_defeat_or_yield_effect = {
+	random_list = {
+		# YIELD
+		1 = {
+			trigger = {
+				exists = scope:duel_yield
+				scope:duel_yield = flag:yes
+				exists = var:tos_accuser
+				this = var:tos_accuser
+				OR = {
+					has_character_flag = agot_multi_duel_rises_once
+					has_character_flag = agot_multi_duel_rises_twice
+					has_character_flag = agot_multi_duel_rises_last_time
+				}
+			}
+			add_character_flag = {
+				flag = agot_multi_duel_yielded
+				days = 30
+			}
+
+			# higher than 0 team_size_difference means more duelists in side_a
+			modifier = {
+				this = scope:duelist_in_side_a
+				NOT = { scope:team_size_difference = 0 }
+				add = { # maximum is 180
+					value = scope:team_size_difference
+					multiply = -30
+				}
+			}
+			modifier = {
+				this = scope:duelist_in_side_b
+				NOT = { scope:team_size_difference = 0 }
+				add = { # maximum is 180
+					value = scope:team_size_difference
+					multiply = 30
+				}
+			}
+		}
+		# DEFEAT
+		1 = {
+			if = {
+				limit = {
+					exists = scope:duel_fatality
+					scope:duel_fatality = flag:always
+				}
+				multi_duel_death_chance_guaranteed_effect = yes
+			}
+			else_if = {
+				limit = {
+					exists = scope:duel_fatality
+					scope:duel_fatality = flag:possible
+				}
+				multi_duel_death_chance_possible_effect = yes
+			}
+			#Modifiers
+			modifier = {
+				add = {
+					value = ai_boldness # Gloryhound
+					multiply = 1
+				}
+			}
+			modifier = {
+				add = {
+					value = ai_rationality # Rational characters will not choose death
+					multiply = -0.5
+				}
+			}
+			modifier = {
+				add = {
+					value = ai_vengefulness # Vengeful characters are unlikely to yield to their enemies
+					multiply = 0.5
+				}
+			}
+			modifier = {
+				add = {
+					value = ai_honor # Honorable characters would rather die than be proven guilty, while dishonorable characters value their lives more
+					multiply = 1
+				}
+			}
+		}
+	}
+}
+
+multi_duel_wound_low_chance_effect = {
+	random_list = {
+		50 = {
+			#No Wound
+		}
+		10 = {
+			trigger = {
+				NOT = { has_trait = wounded_1 }
+				NOT = { has_trait = wounded_2 }
+				NOT = { has_trait = wounded_3 }
+			}
+			random_list = {
+				40 = {
+					#No Wound
+				}
+				20 = {
+					add_trait = wounded_1
+				}
+				5 = {
+					add_trait = wounded_2
+				}
+				1 = {
+					add_trait = wounded_3
+				}
+			}
+		}
+		10 = {
+			trigger = {
+				has_trait = wounded_1
+			}
+			random_list = {
+				20 = {
+					#No Change
+				}
+				10 = {
+					remove_trait = wounded_1
+					add_trait = wounded_2
+				}
+				5 = {
+					remove_trait = wounded_1
+					add_trait = wounded_3
+				}
+			}
+		}
+		10 = {
+			trigger = {
+				has_trait = wounded_2
+			}
+			random_list = {
+				20 = {
+					#No Change
+				}
+				10 = {
+					remove_trait = wounded_2
+					add_trait = wounded_3
+				}
+			}
+		}
+	}
+}
+
+multi_duel_wound_chance_effect = {
+	random_list = {
+		1 = {
+			#No Wound
+		}
+		1 = {
+			trigger = {
+				NOT = { has_trait = wounded_1 }
+				NOT = { has_trait = wounded_2 }
+				NOT = { has_trait = wounded_3 }
+			}
+			random_list = {
+				40 = {
+					#No Wound
+				}
+				20 = {
+					add_trait = wounded_1
+				}
+				5 = {
+					add_trait = wounded_2
+				}
+				1 = {
+					add_trait = wounded_3
+				}
+			}
+		}
+		1 = {
+			trigger = {
+				has_trait = wounded_1
+			}
+			random_list = {
+				20 = {
+					#No Change
+				}
+				10 = {
+					remove_trait = wounded_1
+					add_trait = wounded_2
+				}
+				5 = {
+					remove_trait = wounded_1
+					add_trait = wounded_3
+				}
+			}
+		}
+		1 = {
+			trigger = {
+				has_trait = wounded_2
+			}
+			random_list = {
+				20 = {
+					#No Change
+				}
+				10 = {
+					remove_trait = wounded_2
+					add_trait = wounded_3
+				}
+			}
+		}
+	}
+}
+
+multi_duel_downed_chance = {
+	#Can they get up and go again?
+	random_list = {
+		#Rises
+		50 = {
+			trigger = { NOT = { has_character_flag = agot_multi_duel_rises_last_time } }
+			if = {
+				limit = { NOT = { has_character_flag = agot_multi_duel_rises_once } }
+				add_character_flag = agot_multi_duel_rises_once
+				add_character_flag = {
+					flag = agot_multi_duel_stands_up
+					days = 2
+				}
+			}
+			else_if = {
+				limit = { NOT = { has_character_flag = agot_multi_duel_rises_twice } }
+				add_character_flag = agot_multi_duel_rises_twice
+				add_character_flag = {
+					flag = agot_multi_duel_stands_up
+					days = 2
+				}
+			}
+			else_if = {
+				limit = { NOT = { has_character_flag = agot_multi_duel_rises_last_time } }
+				add_character_flag = agot_multi_duel_rises_last_time
+				add_character_flag = {
+					flag = agot_multi_duel_stands_up
+					days = 2
+				}
+			}
+			#Modifiers
+			modifier = {
+				factor = 0.9
+				has_trait = weak
+			}
+			modifier = {
+				factor = 0.9
+				has_trait = physique_bad_1
+			}
+			modifier = {
+				factor = 0.75
+				has_trait = physique_bad_2
+			}
+			modifier = {
+				factor = 0.5
+				has_trait = physique_bad_3
+			}
+			modifier = {
+				factor = 1.1
+				has_trait = strong
+			}
+			modifier = {
+				factor = 1.1
+				has_trait = physique_good_1
+			}
+			modifier = {
+				factor = 1.25
+				has_trait = physique_good_2
+			}
+			modifier = {
+				factor = 1.5
+				has_trait = physique_good_3
+			}
+		}
+		#Downed
+		50 = {
+			add_character_flag = agot_multi_duel_downed
+			#Modifiers
+			modifier = {
+				factor = 1.25
+				has_character_flag = agot_multi_duel_rises_once
+			}
+			modifier = {
+				factor = 1.5
+				has_character_flag = agot_multi_duel_rises_twice
+			}
+			modifier = {
+				factor = 1.1
+				has_trait = wounded_1
+			}
+			modifier = {
+				factor = 1.5
+				has_trait = wounded_2
+			}
+			modifier = {
+				factor = 2
+				has_trait = wounded_3
+			}
+			modifier = {
+				factor = 1.1
+				has_trait = weak
+			}
+			modifier = {
+				factor = 1.1
+				has_trait = physique_bad_1
+			}
+			modifier = {
+				factor = 1.25
+				has_trait = physique_bad_2
+			}
+			modifier = {
+				factor = 1.5
+				has_trait = physique_bad_3
+			}
+			modifier = {
+				factor = 0.9
+				has_trait = strong
+			}
+			modifier = {
+				factor = 0.9
+				has_trait = physique_good_1
+			}
+			modifier = {
+				factor = 0.75
+				has_trait = physique_good_2
+			}
+			modifier = {
+				factor = 0.5
+				has_trait = physique_good_3
+			}
+		}
+	}
+}
+
+multi_duel_death_chance_possible_effect = {
+	if = {
+		limit = { this = scope:duelist_in_side_a }
+		random_list = {
+			#No Death
+			50 = {
+				#Modifiers
+				modifier = {
+					factor = 0.9
+					has_trait = weak
+				}
+				modifier = {
+					factor = 0.9
+					has_trait = physique_bad_1
+				}
+				modifier = {
+					factor = 0.75
+					has_trait = physique_bad_2
+				}
+				modifier = {
+					factor = 0.5
+					has_trait = physique_bad_3
+				}
+				modifier = {
+					factor = 1.1
+					has_trait = strong
+				}
+				modifier = {
+					factor = 1.1
+					has_trait = physique_good_1
+				}
+				modifier = {
+					factor = 1.25
+					has_trait = physique_good_2
+				}
+				modifier = {
+					factor = 1.5
+					has_trait = physique_good_3
+				}
+				#Can they get up and go again?
+				multi_duel_downed_chance = yes
+			}
+			#Death
+			50 = {
+				trigger = { NOT = { has_character_flag = multi_duelist_plot_armor } }
+				if = {
+					limit = {
+						exists = scope:duelist_in_side_b.var:my_multi_side_leader.var:unqiue_story_name
+						scope:duelist_in_side_b.var:my_multi_side_leader.var:unqiue_story_name = flag:tos_story
+					}
+					remove_duelist_effect = yes
+					if = {
+						limit = {
+							exists = scope:duelist_in_side_a.house
+							exists = scope:duelist_in_side_b.house
+							scope:duelist_in_side_a.house = scope:duelist_in_side_b.house
+						}
+						scope:duelist_in_side_b = {
+							save_opinion_value_as = {
+								name = opinion_on_the_other_duelist
+								target = scope:duelist_in_side_a
+							}
+						}
+					}
+					death = {
+						death_reason = death_duel_trial_by_seven
+						killer = scope:duelist_in_side_b
+					}
+					scope:duelist_in_side_b = {
+						if = {
+							limit = {
+								exists = scope:duelist_in_side_a.house
+								exists = scope:duelist_in_side_b.house
+								scope:duelist_in_side_a.house = scope:duelist_in_side_b.house
+								exists = scope:opinion_on_the_other_duelist
+								scope:opinion_on_the_other_duelist >= 25
+								NOT = { has_trait = kinslayer_1 }
+								NOT = { has_trait = kinslayer_2 }
+								NOT = { has_trait = kinslayer_3 }
+								NOT = { has_trait = accidental_kinslayer }
+							}
+							add_trait = accidental_kinslayer
+						}
+						else_if = {
+							limit = {
+								NOT = { has_trait = kinslayer_1 }
+								NOT = { has_trait = kinslayer_2 }
+								NOT = { has_trait = kinslayer_3 }
+								NOT = { has_trait = accidental_kinslayer }
+							}
+							add_kinslayer_trait_or_nothing_effect = { VICTIM = scope:duelist_in_side_a }
+						}
+					}
+				}
+				else = {
+					remove_duelist_effect = yes
+					death = {
+						death_reason = death_duel
+						killer = scope:duelist_in_side_b
+					}
+				}
+				#Modifiers
+				modifier = {
+					factor = 1.1
+					has_character_flag = agot_multi_duel_rises_last_time
+				}
+				modifier = {
+					factor = 1.1
+					has_trait = wounded_1
+				}
+				modifier = {
+					factor = 1.5
+					has_trait = wounded_2
+				}
+				modifier = {
+					factor = 2
+					has_trait = wounded_3
+				}
+				modifier = {
+					factor = 1.1
+					has_trait = weak
+				}
+				modifier = {
+					factor = 1.1
+					has_trait = physique_bad_1
+				}
+				modifier = {
+					factor = 1.25
+					has_trait = physique_bad_2
+				}
+				modifier = {
+					factor = 1.5
+					has_trait = physique_bad_3
+				}
+				modifier = {
+					factor = 0.9
+					has_trait = strong
+				}
+				modifier = {
+					factor = 0.9
+					has_trait = physique_good_1
+				}
+				modifier = {
+					factor = 0.75
+					has_trait = physique_good_2
+				}
+				modifier = {
+					factor = 0.5
+					has_trait = physique_good_3
+				}
+			}
+		}
+	}
+	else = {
+		random_list = {
+			#No Death
+			50 = {
+				#Modifiers
+				modifier = {
+					factor = 0.9
+					has_trait = weak
+				}
+				modifier = {
+					factor = 0.9
+					has_trait = physique_bad_1
+				}
+				modifier = {
+					factor = 0.75
+					has_trait = physique_bad_2
+				}
+				modifier = {
+					factor = 0.5
+					has_trait = physique_bad_3
+				}
+				modifier = {
+					factor = 1.1
+					has_trait = strong
+				}
+				modifier = {
+					factor = 1.1
+					has_trait = physique_good_1
+				}
+				modifier = {
+					factor = 1.25
+					has_trait = physique_good_2
+				}
+				modifier = {
+					factor = 1.5
+					has_trait = physique_good_3
+				}
+				#Can they get up and go again?
+				multi_duel_downed_chance = yes
+			}
+			#Death
+			50 = {
+				if = {
+					limit = {
+						exists = scope:duelist_in_side_a.var:my_multi_side_leader.var:unqiue_story_name
+						scope:duelist_in_side_a.var:my_multi_side_leader.var:unqiue_story_name = flag:tos_story
+					}
+					remove_duelist_effect = yes
+					if = {
+						limit = {
+							exists = scope:duelist_in_side_a.house
+							exists = scope:duelist_in_side_b.house
+							scope:duelist_in_side_a.house = scope:duelist_in_side_b.house
+						}
+						scope:duelist_in_side_a = {
+							save_opinion_value_as = {
+								name = opinion_on_the_other_duelist
+								target = scope:duelist_in_side_b
+							}
+						}
+					}
+					death = {
+						death_reason = death_duel_trial_by_seven
+						killer = scope:duelist_in_side_a
+					}
+					scope:duelist_in_side_a = {
+						save_temporary_opinion_value_as = {
+							name = opinion_on_the_other_duelist
+							target = scope:duelist_in_side_b
+						}
+						if = {
+							limit = {
+								exists = scope:duelist_in_side_a.house
+								exists = scope:duelist_in_side_b.house
+								scope:duelist_in_side_a.house = scope:duelist_in_side_b.house
+								exists = scope:opinion_on_the_other_duelist
+								scope:opinion_on_the_other_duelist >= 25
+								NOT = { has_trait = kinslayer_1 }
+								NOT = { has_trait = kinslayer_2 }
+								NOT = { has_trait = kinslayer_3 }
+								NOT = { has_trait = accidental_kinslayer }
+							}
+							add_trait = accidental_kinslayer
+						}
+						else_if = {
+							limit = {
+								NOT = { has_trait = kinslayer_1 }
+								NOT = { has_trait = kinslayer_2 }
+								NOT = { has_trait = kinslayer_3 }
+								NOT = { has_trait = accidental_kinslayer }
+							}
+							add_kinslayer_trait_or_nothing_effect = { VICTIM = scope:duelist_in_side_b }
+						}
+					}
+				}
+				else = {
+					remove_duelist_effect = yes
+					death = {
+						death_reason = death_duel
+						killer = scope:duelist_in_side_a
+					}
+				}
+				#Modifiers
+				modifier = {
+					factor = 1.1
+					has_trait = wounded_1
+				}
+				modifier = {
+					factor = 1.5
+					has_trait = wounded_2
+				}
+				modifier = {
+					factor = 2
+					has_trait = wounded_3
+				}
+				modifier = {
+					factor = 1.1
+					has_trait = weak
+				}
+				modifier = {
+					factor = 1.1
+					has_trait = physique_bad_1
+				}
+				modifier = {
+					factor = 1.25
+					has_trait = physique_bad_2
+				}
+				modifier = {
+					factor = 1.5
+					has_trait = physique_bad_3
+				}
+				modifier = {
+					factor = 0.9
+					has_trait = strong
+				}
+				modifier = {
+					factor = 0.9
+					has_trait = physique_good_1
+				}
+				modifier = {
+					factor = 0.75
+					has_trait = physique_good_2
+				}
+				modifier = {
+					factor = 0.5
+					has_trait = physique_good_3
+				}
+			}
+		}
+	}
+}
+
+multi_duel_death_chance_guaranteed_effect = {
+	if = {
+		limit = { this = scope:duelist_in_side_a }
+		random_list = {
+			#No Death
+			0 = {
+				#Modifiers
+			}
+			#Death
+			50 = {
+				if = {
+					limit = {
+						exists = scope:duelist_in_side_b.var:my_multi_side_leader.var:unqiue_story_name
+						scope:duelist_in_side_b.var:my_multi_side_leader.var:unqiue_story_name = flag:tos_story
+					}
+					remove_duelist_effect = yes
+					death = {
+						death_reason = death_duel_trial_by_seven
+						killer = scope:duelist_in_side_b
+					}
+				}
+				else = {
+					remove_duelist_effect = yes
+					death = {
+						death_reason = death_duel
+						killer = scope:duelist_in_side_b
+					}
+				}
+			}
+		}
+	}
+	else = {
+		random_list = {
+			#No Death
+			0 = {
+				#Modifiers
+			}
+			#Death
+			50 = {
+				if = {
+					limit = {
+						exists = scope:duelist_in_side_a.var:my_multi_side_leader.var:unqiue_story_name
+						scope:duelist_in_side_a.var:my_multi_side_leader.var:unqiue_story_name = flag:tos_story
+					}
+					remove_duelist_effect = yes
+					death = {
+						death_reason = death_duel_trial_by_seven
+						killer = scope:duelist_in_side_a
+					}
+				}
+				else = {
+					remove_duelist_effect = yes
+					death = {
+						death_reason = death_duel
+						killer = scope:duelist_in_side_a
+					}
+				}
+			}
+		}
+	}
+}
+
+########################
+### CLEANING EFFECTS ###
+########################
+
+next_duel_can_start_effect = {
+	if = {
+		limit = { has_character_flag = in_multi_duel }
+		remove_character_flag = in_multi_duel
+	}
+	if = {
+		limit = { exists = var:my_multi_side_leader }
+		var:my_multi_side_leader = {
+			#Release the block from my side (version: side a)
+			if = {
+				limit = {
+					any_owned_story = {
+						story_type = multi_duel_leader_story
+						has_variable_list = side_a_duelists
+					}
+				}
+				random_owned_story = {
+					limit = {
+						story_type = multi_duel_leader_story
+						has_variable_list = side_a_duelists
+					}
+					every_in_list = {
+						variable = side_a_duelists
+						limit = {
+							NOT = { agot_multi_duelist_cant_continue = yes }
+						}
+						if = {
+							limit = { has_character_flag = idle_in_multi_duel }
+							remove_character_flag = idle_in_multi_duel
+							add_character_flag = {
+								flag = idle_in_multi_duel
+								days = 3
+							}
+						}
+					}
+				}
+			}
+			#Release the block from my side (version: side b)
+			if = {
+				limit = {
+					any_owned_story = {
+						story_type = multi_duel_leader_story
+						has_variable_list = side_b_duelists
+					}
+				}
+				random_owned_story = {
+					limit = {
+						story_type = multi_duel_leader_story
+						has_variable_list = side_b_duelists
+					}
+					every_in_list = {
+						variable = side_b_duelists
+						limit = {
+							NOT = { agot_multi_duelist_cant_continue = yes }
+						}
+						if = {
+							limit = { has_character_flag = idle_in_multi_duel }
+							remove_character_flag = idle_in_multi_duel
+							add_character_flag = {
+								flag = idle_in_multi_duel
+								days = 3
+							}
+						}
+					}
+				}
+			}
+			if = {
+				limit = { exists = var:opponent_multi_side_leader }
+				var:my_multi_side_leader.var:opponent_multi_side_leader = {
+					#Release the block from opponent's side (version: side b)
+					if = {
+						limit = {
+							any_owned_story = {
+								story_type = multi_duel_leader_story
+								has_variable_list = side_b_duelists
+							}
+						}
+						random_owned_story = {
+							limit = {
+								story_type = multi_duel_leader_story
+								has_variable_list = side_b_duelists
+							}
+							every_in_list = {
+								variable = side_b_duelists
+								limit = {
+									NOT = { agot_multi_duelist_cant_continue = yes }
+								}
+								if = {
+									limit = { has_character_flag = idle_in_multi_duel }
+									remove_character_flag = idle_in_multi_duel
+									add_character_flag = {
+										flag = idle_in_multi_duel
+										days = 3
+									}
+								}
+							}
+						}
+					}
+					#Release the block from opponent's side (version: side a)
+					else_if = {
+						limit = {
+							any_owned_story = {
+								story_type = multi_duel_leader_story
+								has_variable_list = side_a_duelists
+							}
+						}
+						random_owned_story = {
+							limit = {
+								story_type = multi_duel_leader_story
+								has_variable_list = side_a_duelists
+							}
+							every_in_list = {
+								variable = side_a_duelists
+								limit = {
+									NOT = { agot_multi_duelist_cant_continue = yes }
+								}
+								if = {
+									limit = { has_character_flag = idle_in_multi_duel }
+									remove_character_flag = idle_in_multi_duel
+									add_character_flag = {
+										flag = idle_in_multi_duel
+										days = 3
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+remove_duelist_effect = {
+	if = {
+		limit = {
+			is_target_in_variable_list = {
+				name = side_a_duelists
+				target = this
+			}
+		}
+		remove_list_variable = {
+			name = side_a_duelists
+			target = this
+		}
+	}
+	else_if = {
+		limit = {
+			is_target_in_variable_list = {
+				name = side_b_duelists
+				target = this
+			}
+		}
+		remove_list_variable = {
+			name = side_b_duelists
+			target = this
+		}
+	}
+}
+
+clear_every_duelist_variables = {
+	if = {
+		limit = { has_variable = opponent_multi_duel_leader }
+		remove_variable = opponent_multi_duel_leader
+	}
+	if = {
+		limit = { has_variable = duelist_side }
+		remove_variable = duelist_side
+	}
+	if = {
+		limit = { has_variable = duelist_role }
+		remove_variable = duelist_role
+	}
+	if = {
+		limit = { has_variable = duelist_num }
+		remove_variable = duelist_num
+	}
+	if = {
+		limit = { has_variable = my_multi_side_leader }
+		remove_variable = my_multi_side_leader
+	}
+	if = {
+		limit = { has_variable = opponent_multi_side_leader }
+		remove_variable = opponent_multi_side_leader
+	}
+	if = {
+		limit = { has_variable = match_rule }
+		remove_variable = match_rule
+	}
+	if = {
+		limit = { has_variable = duelist_liege }
+		remove_variable = duelist_liege
+	}
+	if = {
+		limit = { has_variable = duelist_heir }
+		remove_variable = duelist_heir
+	}
+	if = {
+		limit = { has_variable = unqiue_story_name }
+		remove_variable = unqiue_story_name
+	}
+	if = {
+		limit = { has_variable = count_of_team_members }
+		remove_variable = count_of_team_members
+	}
+	if = {
+		limit = { has_variable = duel_background }
+		remove_variable = duel_background
+	}
+	if = {
+		limit = { has_variable = og_side_a_leader }
+		remove_variable = og_side_a_leader
+	}
+	if = {
+		limit = { has_variable = og_side_b_leader }
+		remove_variable = og_side_b_leader
+	}
+	if = {
+		limit = { has_variable = story_variant }
+		remove_variable = story_variant
+	}
+	if = {
+		limit = { has_variable = usurpation_primary_title }
+		remove_variable = usurpation_primary_title
+	}
+	if = {
+		limit = { has_variable = tos_accuser }
+		remove_variable = tos_accuser
+	}
+	if = {
+		limit = { has_variable = tos_accused }
+		remove_variable = tos_accused
+	}
+	if = {
+		limit = { has_variable = tos_accuser_ruler }
+		remove_variable = tos_accuser_ruler
+	}
+	if = {
+		limit = { has_variable = tos_accuser_ruler_title }
+		remove_variable = tos_accuser_ruler_title
+	}
+	if = {
+		limit = { has_variable_list = usurpation_titles }
+		clear_variable_list = usurpation_titles
+	}
+}
+
+end_duelist_stories = {
+	if = {
+		limit = {
+			any_owned_story = { story_type = multi_duel_duelist_story }
+		}
+		random_owned_story = {
+			limit = { story_type = multi_duel_duelist_story }
+			end_story = yes
+		}
+	}
+	if = {
+		limit = {
+			any_owned_story = { story_type = multi_duel_leader_story }
+		}
+		random_owned_story = {
+			limit = { story_type = multi_duel_leader_story }
+			end_story = yes
+		}
+	}
+}
+
+remove_duelist_on_leader_death_effect = {
+	if = {
+		limit = {
+			has_variable = duelist_side
+			has_variable = my_multi_side_leader
+			has_variable = opponent_multi_side_leader
+			OR = {
+				var:my_multi_side_leader = { agot_multi_duelist_cant_continue = yes }
+				var:opponent_multi_side_leader = { agot_multi_duelist_cant_continue = yes }
+			}
+		}
+		clear_every_duelist_variables = yes
+		end_duelist_stories = yes
+	}
+	if = {
+		limit = { is_alive = yes }
+		if = {
+			limit = { has_character_flag = end_story_note }
+			remove_character_flag = end_story_note
+			add_character_flag = {
+				flag = end_story_note_safe
+				years = 1
+			}
+		}
+		if = {
+			limit = { has_character_flag = in_multi_duel }
+			remove_character_flag = in_multi_duel
+		}
+		if = {
+			limit = { has_character_flag = has_duelist_heir }
+			remove_character_flag = has_duelist_heir
+		}
+		if = {
+			limit = { has_character_flag = check_for_dead_leader }
+			remove_character_flag = check_for_dead_leader
+		}
+		if = {
+			limit = { has_character_flag = last_man_standing }
+			remove_character_flag = last_man_standing
+		}
+		if = {
+			limit = { has_character_flag = duel_starting_soon }
+			remove_character_flag = duel_starting_soon
+		}
+		if = {
+			limit = { has_character_flag = agot_multi_duel_rises_once }
+			remove_character_flag = agot_multi_duel_rises_once
+		}
+		if = {
+			limit = { has_character_flag = agot_multi_duel_rises_twice }
+			remove_character_flag = agot_multi_duel_rises_twice
+		}
+		if = {
+			limit = { has_character_flag = agot_multi_duel_rises_last_time }
+			remove_character_flag = agot_multi_duel_rises_last_time
+		}
+		if = {
+			limit = { has_character_flag = agot_multi_duel_downed }
+			remove_character_flag = agot_multi_duel_downed
+		}
+		if = {
+			limit = { has_character_flag = multi_duel_should_invalidate }
+			remove_character_flag = multi_duel_should_invalidate
+		}
+		if = {
+			limit = { has_character_flag = multi_duel_sudden_death_protection }
+			remove_character_flag = multi_duel_sudden_death_protection
+		}
+	}
+}
+
+multi_duel_the_end_effect = {
+	if = {
+		limit = {
+			any_owned_story = {
+				story_type = multi_duel_leader_story
+			}
+		}
+		random_owned_story = {
+			limit = { story_type = multi_duel_leader_story }
+			end_story = yes
+		}
+	}
+	if = {
+		limit = {
+			any_owned_story = {
+				story_type = multi_duel_duelist_story
+			}
+		}
+		random_owned_story = {
+			limit = { story_type = multi_duel_duelist_story }
+			end_story = yes
+		}
+	}
+	clear_every_duelist_variables = yes
+	add_character_flag = {
+		flag = end_story_note
+		days = 3
+	}
+}
+
+####################
+### MISC EFFECTS ###
+####################
+
+set_new_multi_duel_leader = {
+	if = {
+		limit = {
+			exists = var:duelist_heir
+			exists = var:match_rule
+			var:match_rule = flag:dead_every
+		}
+		if = {
+			limit = { has_character_flag = last_man_standing }
+			remove_variable = duelist_heir
+		}
+		else = {
+			save_scope_as = multi_duel_leader_story_owner
+			var:opponent_multi_duel_leader = { save_scope_as = opponent_multi_duel_leader }
+			var:duelist_heir = { save_scope_as = duelist_heir }
+			#Next Leader
+			scope:duelist_heir = {
+				if = {
+					limit = {
+						exists = var:duelist_liege
+						exists = var:duelist_role
+					}
+					remove_variable = duelist_liege
+					remove_variable = duelist_role
+				}
+				set_variable = {
+					name = duelist_role
+					value = flag:yes
+				}
+				set_variable = {
+					name = opponent_multi_duel_leader
+					value = scope:opponent_multi_duel_leader
+				}
+				set_variable = {
+					name = opponent_multi_side_leader
+					value = scope:opponent_multi_duel_leader
+				}
+				set_variable = {
+					name = count_of_team_members
+					value = scope:multi_duel_leader_story_owner.var:count_of_team_members
+				}
+				if = {
+					limit = {
+						exists = var:duelist_side
+						var:duelist_side = flag:side_b
+					}
+					add_character_flag = duel_starting_soon
+				}
+				else = {
+					add_character_flag = {
+						flag = duel_starting_soon
+						days = 5
+					}
+				}
+			}
+			#Opponent Leader
+			scope:opponent_multi_duel_leader = {
+				remove_variable = opponent_multi_duel_leader
+				set_variable = {
+					name = opponent_multi_duel_leader
+					value = scope:duelist_heir
+				}
+				set_variable = {
+					name = opponent_multi_side_leader
+					value = scope:duelist_heir
+				}
+
+				if = {
+					limit = {
+						any_owned_story = {
+							story_type = multi_duel_leader_story
+							any_in_list = {
+								variable = side_a_duelists
+								is_alive = yes
+							}
+						}
+					}
+					random_owned_story = {
+						limit = { story_type = multi_duel_leader_story }
+						every_in_list = {
+							variable = side_a_duelists
+							limit = { is_alive = yes }
+							remove_variable = opponent_multi_side_leader
+
+							set_variable = {
+								name = opponent_multi_side_leader
+								value = scope:duelist_heir
+							}
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						any_owned_story = {
+							story_type = multi_duel_leader_story
+							any_in_list = {
+								variable = side_b_duelists
+								is_alive = yes
+							}
+						}
+					}
+					random_owned_story = {
+						limit = { story_type = multi_duel_leader_story }
+						every_in_list = {
+							variable = side_b_duelists
+							limit = { is_alive = yes }
+							remove_variable = opponent_multi_side_leader
+
+							set_variable = {
+								name = opponent_multi_side_leader
+								value = scope:duelist_heir
+							}
+						}
+					}
+				}
+			}
+			#Current Leader
+			scope:multi_duel_leader_story_owner = {
+				remove_variable = duelist_heir
+				remove_variable = opponent_multi_duel_leader
+				remove_character_flag = duel_starting_soon
+				remove_character_flag = has_duelist_heir
+				remove_variable = duelist_role
+				remove_variable = count_of_team_members
+				set_variable = {
+					name = duelist_role
+					value = flag:no
+				}
+
+				if = {
+					limit = {
+						any_owned_story = {
+							story_type = multi_duel_leader_story
+							any_in_list = {
+								variable = side_a_duelists
+								is_alive = yes
+							}
+						}
+					}
+					random_owned_story = {
+						limit = { story_type = multi_duel_leader_story }
+						every_in_list = {
+							variable = side_a_duelists
+							limit = { is_alive = yes }
+							remove_variable = my_multi_side_leader
+
+							scope:duelist_heir = {
+								add_to_variable_list = {
+									name = side_a_duelists_temp
+									target = prev
+								}
+							}
+
+							set_variable = {
+								name = my_multi_side_leader
+								value = scope:duelist_heir
+							}
+						}
+						make_story_owner = scope:duelist_heir
+					}
+				}
+				else_if = {
+					limit = {
+						any_owned_story = {
+							story_type = multi_duel_leader_story
+							any_in_list = {
+								variable = side_b_duelists
+								is_alive = yes
+							}
+						}
+					}
+					random_owned_story = {
+						limit = { story_type = multi_duel_leader_story }
+						every_in_list = {
+							variable = side_b_duelists
+							limit = { is_alive = yes }
+							remove_variable = my_multi_side_leader
+
+							scope:duelist_heir = {
+								add_to_variable_list = {
+									name = side_b_duelists_temp
+									target = prev
+								}
+							}
+
+							set_variable = {
+								name = my_multi_side_leader
+								value = scope:duelist_heir
+							}
+						}
+						make_story_owner = scope:duelist_heir
+					}
+				}
+			}
+			#Next Leader Again
+			scope:duelist_heir = {
+				if = {
+					limit = {
+						any_owned_story = {
+							story_type = multi_duel_leader_story
+						}
+						exists = var:duelist_side
+						var:duelist_side = flag:side_a
+						has_variable_list = side_a_duelists_temp
+					}
+					random_owned_story = {
+						limit = { story_type = multi_duel_leader_story }
+						save_scope_as = new_leader_story
+						scope:duelist_heir = {
+							every_in_list = {
+								variable = side_a_duelists_temp
+								limit = { is_alive = yes }
+								scope:new_leader_story = {
+									add_to_variable_list = {
+										name = side_a_duelists
+										target = prev
+									}
+								}
+							}
+							clear_variable_list = side_a_duelists_temp
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						any_owned_story = {
+							story_type = multi_duel_leader_story
+						}
+						exists = var:duelist_side
+						var:duelist_side = flag:side_b
+						has_variable_list = side_b_duelists_temp
+					}
+					random_owned_story = {
+						limit = { story_type = multi_duel_leader_story }
+						save_scope_as = new_leader_story
+						scope:duelist_heir = {
+							every_in_list = {
+								variable = side_b_duelists_temp
+								limit = { is_alive = yes }
+								scope:new_leader_story = {
+									add_to_variable_list = {
+										name = side_b_duelists
+										target = prev
+									}
+								}
+							}
+							clear_variable_list = side_b_duelists_temp
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+send_duel_story_events_effect = {
+	scope:side_a_leader = {
+		if = {
+			limit = {
+				any_owned_story = {
+					story_type = multi_duel_leader_story
+					any_in_list = {
+						variable = side_a_duelists
+						is_alive = yes
+						NOT = { this = scope:side_a_leader }
+					}
+				}
+			}
+			random_owned_story = {
+				limit = { story_type = multi_duel_leader_story }
+				every_in_list = {
+					variable = side_a_duelists
+					limit = {
+						is_alive = yes
+						#NOT = { this = scope:side_a_leader }
+					}
+					preparation_for_multi_duel_notification = yes
+				}
+			}
+		}
+	}
+	scope:side_b_leader = {
+		if = {
+			limit = {
+				any_owned_story = {
+					story_type = multi_duel_leader_story
+					any_in_list = {
+						variable = side_b_duelists
+						is_alive = yes
+						NOT = { this = scope:side_b_leader }
+					}
+				}
+			}
+			random_owned_story = {
+				limit = { story_type = multi_duel_leader_story }
+				every_in_list = {
+					variable = side_b_duelists
+					limit = {
+						is_alive = yes
+						#NOT = { this = scope:side_b_leader }
+					}
+					preparation_for_multi_duel_notification = yes
+				}
+			}
+		}
+	}
+}
+
+preparation_for_multi_duel_notification = {
+	location ?= { save_scope_as = background_terrain_scope }
+
+	scope:duelist_in_side_a = {
+		if = {
+			limit = { has_character_flag = in_multi_duel }
+			remove_character_flag = in_multi_duel
+		}
+	}
+	scope:duelist_in_side_b = {
+		if = {
+			limit = { has_character_flag = in_multi_duel }
+			remove_character_flag = in_multi_duel
+		}
+	}
+
+	if = {
+		limit = {
+			scope:duelist_in_side_a = {
+				NOT = { agot_multi_duelist_cant_continue = yes }
+			}
+			scope:duelist_in_side_b = {
+				agot_multi_duelist_cant_continue = yes
+			}
+		}
+		scope:duelist_in_side_a = { save_scope_as = winner_duelist }
+		scope:duelist_in_side_b = { save_scope_as = loser_duelist }
+	}
+	else_if = {
+		limit = {
+			scope:duelist_in_side_a = {
+				agot_multi_duelist_cant_continue = yes
+			}
+			scope:duelist_in_side_b = {
+				NOT = { agot_multi_duelist_cant_continue = yes }
+			}
+		}
+		scope:duelist_in_side_a = { save_scope_as = loser_duelist }
+		scope:duelist_in_side_b = { save_scope_as = winner_duelist }
+	}
+	else = {
+		random_list = {
+			10 = {
+				scope:duelist_in_side_a = { save_scope_as = winner_duelist }
+				scope:duelist_in_side_b = { save_scope_as = loser_duelist }
+			}
+			10 = {
+				scope:duelist_in_side_a = { save_scope_as = loser_duelist }
+				scope:duelist_in_side_b = { save_scope_as = winner_duelist }
+			}
+		}
+	}
+	save_scope_as = this_multi_duel_participant
+	random_flavor_event_effect = yes
+}
+
+post_multi_duel_handler = {
+	scope:side_a_leader = {
+		if = {
+			limit = {
+				NOT = { agot_multi_duelist_cant_continue = yes }
+			}
+			add_character_flag = {
+				flag = duel_starting_soon
+				days = 5
+			}
+		}
+	}
+	scope:side_a_leader = {
+		if = {
+			limit = {
+				has_character_flag = check_for_dead_leader
+				scope:duelist_in_side_b = scope:side_b_leader
+				scope:side_b_leader = {
+					agot_multi_duelist_cant_continue = yes
+				}
+			}
+			add_character_flag = {
+				flag = dead_every_note
+				days = 3
+			}
+			trigger_event = {
+				id = agot_multi_duel.0100
+				days = 1
+			}
+		}
+	}
+	scope:side_b_leader = {
+		if = {
+			limit = {
+				has_character_flag = check_for_dead_leader
+				scope:duelist_in_side_a = scope:side_a_leader
+				scope:side_a_leader = {
+					agot_multi_duelist_cant_continue = yes
+				}
+			}
+			add_character_flag = {
+				flag = dead_every_note
+				days = 3
+			}
+			trigger_event = {
+				id = agot_multi_duel.0100
+				days = 1
+			}
+		}
+	}
+	if = {
+		limit = {
+			scope:duelist_in_side_b = scope:side_b_leader
+			scope:side_b_leader = {
+				agot_multi_duelist_cant_continue = yes
+			}
+		}
+		scope:side_a_leader = {
+			if = {
+				limit = { NOT = { has_character_flag = dead_every_note } }
+				trigger_event = {
+					id = agot_multi_duel.0100
+					days = 1
+				}
+			}
+		}
+		if = {
+			limit = { scope:side_b_leader = scope:side_a_leader.var:opponent_multi_duel_leader }
+			send_duel_story_events_effect = yes
+		}
+	}
+	else_if = {
+		limit = {
+			scope:duelist_in_side_a = scope:side_a_leader
+			scope:side_a_leader = {
+				agot_multi_duelist_cant_continue = yes
+			}
+		}
+		scope:side_b_leader = {
+			if = {
+				limit = { NOT = { has_character_flag = dead_every_note } }
+				trigger_event = {
+					id = agot_multi_duel.0100
+					days = 1
+				}
+			}
+		}
+		if = {
+			limit = { scope:side_a_leader = scope:side_b_leader.var:opponent_multi_duel_leader }
+			send_duel_story_events_effect = yes
+		}
+	}
+	else = {
+		send_duel_story_events_effect = yes
+	}
+}
+
+multi_duel_every_participants = {
+	scope:side_a_leader = {
+		random_owned_story = {
+			limit = { story_type = multi_duel_leader_story }
+			save_scope_as = leader_a_story
+		}
+	}
+	scope:side_b_leader = {
+		random_owned_story = {
+			limit = { story_type = multi_duel_leader_story }
+			save_scope_as = leader_b_story
+		}
+	}
+	scope:leader_a_story = {
+		every_in_list = {
+			variable = side_a_duelists
+			save_scope_as = side_a_duelists
+			scope:leader_a_story = {
+				add_to_variable_list = {
+					name = every_multi_duel_participant
+					target = prev
+				}
+			}
+			scope:leader_b_story = {
+				add_to_variable_list = {
+					name = every_multi_duel_participant
+					target = prev
+				}
+			}
+		}
+	}
+	scope:leader_b_story = {
+		every_in_list = {
+			variable = side_b_duelists
+			scope:leader_b_story = {
+				add_to_variable_list = {
+					name = every_multi_duel_participant
+					target = prev
+				}
+			}
+			scope:leader_a_story = {
+				add_to_variable_list = {
+					name = every_multi_duel_participant
+					target = prev
+				}
+			}
+		}
+	}
+}
+
+###################
+### DUEL EVENTS ###
+###################
+
+random_flavor_event_effect = {
+	scope:this_multi_duel_participant = { save_scope_as = current_character }
+
+	random_list = {
+		1 = { trigger_event = agot_multi_duel.0021 }
+		1 = { trigger_event = agot_multi_duel.0022 }
+		1 = { trigger_event = agot_multi_duel.0023 }
+	}
+}
+
+random_flavor_event_for_player_effect = {
+	save_scope_as = current_character
+	random_list = {
+		1 = { trigger_event = agot_multi_duel.0031 }
+		1 = { trigger_event = agot_multi_duel.0032 }
+		1 = { trigger_event = agot_multi_duel.0033 }
+	}
+}
+
+multi_duel_camera_bg_characters_effect = {
+	scope:side_a_leader = {
+		if = {
+			limit = {
+				any_owned_story = {
+					story_type = multi_duel_leader_story
+					any_in_list = {
+						variable = side_a_duelists
+						NOT = { agot_multi_duelist_cant_continue = yes }
+						NOT = { this = scope:duelist_in_side_a }
+					}
+				}
+			}
+			random_owned_story = {
+				limit = { story_type = multi_duel_leader_story }
+				random_in_list = {
+					variable = side_a_duelists
+					limit = {
+						NOT = { agot_multi_duelist_cant_continue = yes }
+						NOT = { this = scope:duelist_in_side_a }
+					}
+					save_scope_as = side_a_bg_warrior
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:side_a_bg_warrior
+				any_owned_story = {
+					story_type = multi_duel_leader_story
+					any_in_list = {
+						variable = side_a_duelists
+						NOT = { agot_multi_duelist_cant_continue = yes }
+						NOT = { this = scope:duelist_in_side_a }
+						NOT = { this = scope:side_a_bg_warrior }
+					}
+				}
+			}
+			random_owned_story = {
+				limit = { story_type = multi_duel_leader_story }
+				random_in_list = {
+					variable = side_a_duelists
+					limit = {
+						NOT = { agot_multi_duelist_cant_continue = yes }
+						NOT = { this = scope:duelist_in_side_a }
+						NOT = { this = scope:side_a_bg_warrior }
+					}
+					save_scope_as = side_a_bg_warrior_2
+				}
+			}
+		}
+	}
+	scope:side_b_leader = {
+		if = {
+			limit = {
+				any_owned_story = {
+					story_type = multi_duel_leader_story
+					any_in_list = {
+						variable = side_b_duelists
+						NOT = { agot_multi_duelist_cant_continue = yes }
+						NOT = { this = scope:duelist_in_side_b }
+					}
+				}
+			}
+			random_owned_story = {
+				limit = { story_type = multi_duel_leader_story }
+				random_in_list = {
+					variable = side_b_duelists
+					limit = {
+						NOT = { agot_multi_duelist_cant_continue = yes }
+						NOT = { this = scope:duelist_in_side_b }
+					}
+					save_scope_as = side_b_bg_warrior
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:side_b_bg_warrior
+				any_owned_story = {
+					story_type = multi_duel_leader_story
+					any_in_list = {
+						variable = side_b_duelists
+						NOT = { agot_multi_duelist_cant_continue = yes }
+						NOT = { this = scope:duelist_in_side_b }
+						NOT = { this = scope:side_b_bg_warrior }
+					}
+				}
+			}
+			random_owned_story = {
+				limit = { story_type = multi_duel_leader_story }
+				random_in_list = {
+					variable = side_b_duelists
+					limit = {
+						NOT = { agot_multi_duelist_cant_continue = yes }
+						NOT = { this = scope:duelist_in_side_b }
+						NOT = { this = scope:side_b_bg_warrior }
+					}
+					save_scope_as = side_b_bg_warrior_2
+				}
+			}
+		}
+	}
+}
+
+######################
+### EVENTS EFFECTS ###
+######################
+
+observer_flags_for_conclusion = {
+	#Background Flags
+	if = {
+		limit = {
+			exists = scope:winner_leader.var:duel_background
+			scope:winner_leader.var:duel_background = flag:terrain_type
+		}
+		add_character_flag = {
+			flag = md_0101_bg_terrain_scope
+			days = 3
+		}
+	}
+	else_if = {
+		limit = {
+			exists = scope:winner_leader.var:duel_background
+			scope:winner_leader.var:duel_background = flag:army_camp
+		}
+		add_character_flag = {
+			flag = md_0101_bg_army_camp
+			days = 3
+		}
+	}
+	else_if = {
+		limit = {
+			exists = scope:winner_leader.var:duel_background
+			scope:winner_leader.var:duel_background = flag:battlefield
+		}
+		add_character_flag = {
+			flag = md_0101_bg_battlefield
+			days = 3
+		}
+	}
+	else_if = {
+		limit = {
+			exists = scope:winner_leader.var:duel_background
+			scope:winner_leader.var:duel_background = flag:tos_bg
+		}
+		add_character_flag = {
+			flag = md_0101_bg_courtyard
+			days = 3
+		}
+	}
+}
+
+agot_multi_duel_add_martial_flags = {
+	if = {
+		limit = { NOT = { has_character_flag = wear_armor } }
+		add_character_flag = wear_armor
+	}
+	if = {
+		limit = { NOT = { has_character_flag = no_hat } }
+		add_character_flag = no_hat
+	}
+}
+
+agot_multi_duel_remove_martial_flags = {
+	if = {
+		limit = { has_character_flag = wear_armor }
+		remove_character_flag = wear_armor
+	}
+	if = {
+		limit = { has_character_flag = no_hat }
+		remove_character_flag = no_hat
+	}
+}
+
+agot_multi_duel_set_weapon_for_new_char = {
+	set_signature_weapon_effect = yes
+	if = {
+		limit = {
+			NOT = { has_character_flag = swordshield_person }
+			NOT = { has_character_flag = maceshield_person }
+			NOT = { has_character_flag = spearshield_person }
+			NOT = { has_character_flag = sword_person }
+			NOT = { has_character_flag = axe_person }
+			NOT = { has_character_flag = spear_person }
+			NOT = { has_character_flag = mace_person }
+			NOT = { has_character_flag = hammer_person }
+			NOT = { has_character_flag = dagger_person }
+		}
+		random_list = {
+			1 = {
+				trigger = {
+					exists = var:signature_weapon
+					var:signature_weapon = flag:sword
+				}
+				add_character_flag = swordshield_person
+			}
+			1 = {
+				trigger = {
+					exists = var:signature_weapon
+					var:signature_weapon = flag:sword
+				}
+				add_character_flag = sword_person
+			}
+			1 = {
+				trigger = {
+					exists = var:signature_weapon
+					var:signature_weapon = flag:mace
+				}
+				add_character_flag = maceshield_person
+			}
+			1 = {
+				trigger = {
+					exists = var:signature_weapon
+					var:signature_weapon = flag:mace
+				}
+				add_character_flag = mace_person
+			}
+			1 = {
+				trigger = {
+					exists = var:signature_weapon
+					var:signature_weapon = flag:spear
+				}
+				add_character_flag = spearshield_person
+			}
+			1 = {
+				trigger = {
+					exists = var:signature_weapon
+					var:signature_weapon = flag:spear
+				}
+				add_character_flag = spear_person
+			}
+			1 = {
+				trigger = {
+					exists = var:signature_weapon
+					var:signature_weapon = flag:axe
+				}
+				add_character_flag = axe_person
+			}
+			1 = {
+				trigger = {
+					exists = var:signature_weapon
+					var:signature_weapon = flag:hammer
+				}
+				add_character_flag = hammer_person
+			}
+		}
+	}
+}
+
+############################## ############################### #############################
+############################## ############################### #############################
+################################## TRIAL OF SEVEN EFFECTS ##################################
+############################## ############################### #############################
+############################## ############################### #############################
+
+agot_save_tos_usurpation_outcome_variables = {
+	if = {
+		limit = { has_variable_list = usurpation_titles }
+		save_scope_as = claim_keeper
+		every_in_list = {
+			variable = usurpation_titles
+			scope:claim_keeper = {
+				add_to_variable_list = {
+					name = final_usurpation_titles
+					target = prev
+					years = 1
+				}
+			}
+		}
+		if = {
+			limit = { exists = var:usurpation_primary_title }
+			set_variable = {
+				name = final_usurpation_primary_title
+				value = var:usurpation_primary_title
+				years = 1
+			}
+		}
+		if = {
+			limit = { exists = var:og_side_b_leader }
+			set_variable = {
+				name = succession_crisis_legit_heir
+				value = var:og_side_b_leader
+				years = 1
+			}
+		}
+		if = {
+			limit = { exists = var:og_side_a_leader }
+			set_variable = {
+				name = succession_crisis_usurper
+				value = var:og_side_a_leader
+				years = 1
+			}
+		}
+		if = {
+			limit = { exists = var:tos_accuser }
+			set_variable = {
+				name = final_tos_accuser
+				value = var:tos_accuser
+				years = 1
+			}
+		}
+		if = {
+			limit = { exists = var:tos_accused }
+			set_variable = {
+				name = final_tos_accused
+				value = var:tos_accused
+				years = 1
+			}
+		}
+	}
+}
+
+agot_save_tos_imprisonment_outcome_variables = {
+	save_scope_as = claim_keeper
+	if = {
+		limit = { exists = var:tos_accuser }
+		set_variable = {
+			name = final_tos_accuser
+			value = var:tos_accuser
+			years = 1
+		}
+	}
+	if = {
+		limit = { exists = var:tos_accused }
+		set_variable = {
+			name = final_tos_accused
+			value = var:tos_accused
+			years = 1
+		}
+	}
+	if = {
+		limit = { exists = var:tos_accuser_ruler }
+		set_variable = {
+			name = final_tos_accuser_ruler
+			value = var:tos_accuser_ruler
+			years = 1
+		}
+	}
+	if = {
+		limit = { exists = var:tos_accuser_ruler_title }
+		set_variable = {
+			name = final_tos_accuser_ruler_title
+			value = var:tos_accuser_ruler_title
+			years = 1
+		}
+	}
+}
+
+agot_trial_of_seven_outcome = {
+	if = {
+		limit = {
+			exists = var:og_side_a_leader
+			exists = var:og_side_b_leader
+			exists = var:match_rule
+			exists = var:duelist_side
+			var:match_rule = flag:dead_leader
+			exists = var:tos_accuser
+			exists = var:tos_accused
+			exists = var:unqiue_story_name
+			var:unqiue_story_name = flag:tos_story
+		}
+		if = {
+			limit = { var:duelist_side = flag:side_a }
+			var:og_side_a_leader = { save_scope_as = main_winner_leader }
+			var:og_side_b_leader = { save_scope_as = main_loser_leader }
+			var:og_side_a_leader = { save_scope_as = left_side_character }
+		}
+		else_if = {
+			limit = { var:duelist_side = flag:side_b }
+			var:og_side_b_leader = { save_scope_as = main_winner_leader }
+			var:og_side_a_leader = { save_scope_as = main_loser_leader }
+			var:og_side_b_leader = { save_scope_as = left_side_character }
+		}
+		#ToS Outcome
+		if = {
+			limit = {
+				exists = scope:main_winner_leader
+				exists = scope:main_loser_leader
+				exists = scope:left_side_character
+			}
+			if = {
+				limit = {
+					OR = {
+						scope:main_loser_leader = var:tos_accuser
+						trigger_if = {
+							limit = {
+								exists = var:story_variant
+								var:story_variant = flag:usurpation
+							}
+							scope:main_loser_leader = var:og_side_b_leader
+						}
+						trigger_if = {
+							limit = {
+								exists = var:story_variant
+								var:story_variant = flag:dishonorable_imprisonment
+							}
+							scope:main_loser_leader = var:og_side_a_leader
+						}
+					}
+				}
+				if = {
+					limit = { scope:main_loser_leader = { has_character_flag = agot_multi_duel_downed } }
+					scope:main_loser_leader = { save_scope_as = loser_accuser_downed }
+				}
+				else_if = {
+					limit = { scope:main_loser_leader = { has_character_flag = agot_multi_duel_yielded } }
+					scope:main_loser_leader = { save_scope_as = loser_accuser_yielded }
+				}
+				else = { scope:main_loser_leader = { save_scope_as = loser_accuser_dead } }
+			}
+			else_if = {
+				limit = {
+					OR = {
+						scope:main_loser_leader = var:tos_accused
+						trigger_if = {
+							limit = {
+								exists = var:story_variant
+								var:story_variant = flag:usurpation
+							}
+							scope:main_loser_leader = var:og_side_a_leader
+						}
+						trigger_if = {
+							limit = {
+								exists = var:story_variant
+								var:story_variant = flag:dishonorable_imprisonment
+							}
+							scope:main_loser_leader = var:og_side_b_leader
+						}
+					}
+				}
+				if = {
+					limit = { scope:main_loser_leader = { has_character_flag = agot_multi_duel_downed } }
+					scope:main_loser_leader = { save_scope_as = loser_accused_downed }
+				}
+				else = { scope:main_loser_leader = { save_scope_as = loser_accused_dead } }
+			}
+			#ToS - SUCCESSION CRISIS Outcome
+			if = {
+				limit = {
+					exists = var:story_variant
+					var:story_variant = flag:usurpation
+					OR = {
+						scope:main_winner_leader = var:tos_accuser
+						scope:main_winner_leader = var:og_side_b_leader
+					}
+				}
+				#Helper accuser pushed ToS for the Legit Heir
+				if = {
+					limit = { exists = var:tos_true_heir }
+					if = {
+						limit = { var:tos_true_heir = { is_alive = yes } }
+						save_scope_as = tos_story_usurpation_legit_heir_helper_won
+					}
+					else = { save_scope_as = tos_story_usurpation_legit_heir_helper_won_need_new_heir }
+				}
+				#Legit Heir was the accuser
+				else = { save_scope_as = tos_story_usurpation_legit_heir_won }
+
+				agot_save_tos_usurpation_outcome_variables = yes
+			}
+			else_if = {
+				limit = {
+					exists = var:story_variant
+					var:story_variant = flag:usurpation
+					OR = {
+						scope:main_winner_leader = var:tos_accused
+						scope:main_winner_leader = var:og_side_a_leader
+					}
+				}
+				save_scope_as = tos_story_usurpation_usurper_won
+
+				agot_save_tos_usurpation_outcome_variables = yes
+			}
+			#ToS - DISHONORABLE IMPRISONMENT Outcome
+			else_if = {
+				limit = {
+					exists = var:story_variant
+					var:story_variant = flag:dishonorable_imprisonment
+					OR = {
+						scope:main_winner_leader = var:tos_accused
+						scope:main_winner_leader = var:og_side_b_leader
+					}
+				}
+				save_scope_as = tos_story_dishonorable_imprisonment_defender_won
+
+				agot_save_tos_imprisonment_outcome_variables = yes
+			}
+			else_if = {
+				limit = {
+					exists = var:story_variant
+					var:story_variant = flag:dishonorable_imprisonment
+					OR = {
+						scope:main_winner_leader = var:tos_accuser
+						scope:main_winner_leader = var:og_side_a_leader
+					}
+				}
+				save_scope_as = tos_story_dishonorable_imprisonment_accuser_won
+
+				agot_save_tos_imprisonment_outcome_variables = yes
+			}
+		}
+	}
+}
+
+agot_tos_remove_selection_pool_flags = {
+	agot_tos_remove_personality_flags = yes
+	if = {
+		limit = { has_character_flag = agot_tos_has_helper_knight }
+		remove_character_flag = agot_tos_has_helper_knight
+	}
+}
+
+agot_tos_remove_personality_flags = {
+	if = {
+		limit = { has_character_flag = tos_honorable_knight }
+		remove_character_flag = tos_honorable_knight
+	}
+	if = {
+		limit = { has_character_flag = tos_greedy_knight }
+		remove_character_flag = tos_greedy_knight
+	}
+	if = {
+		limit = { has_character_flag = tos_dishonorable_knight }
+		remove_character_flag = tos_dishonorable_knight
+	}
+	if = {
+		limit = { has_character_flag = tos_non_royal_sellsword_gained }
+		remove_character_flag = tos_non_royal_sellsword_gained
+	}
+	if = {
+		limit = { has_character_flag = tos_non_royal_sellsword_blocker }
+		remove_character_flag = tos_non_royal_sellsword_blocker
+	}
+}
+
+agot_tos_champion_selection_friends_lovers_family = {
+	$ROYAL$ = { save_scope_as = the_royal_leader }
+	$OTHER$ = { save_scope_as = the_other_leader }
+	$CURRENT_LEADER$ = { save_scope_as = duel_leader }
+
+	#Friends
+	if = {
+		limit = {
+			any_relation = {
+				type = friend
+				agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+		}
+		every_relation = {
+			type = friend
+			limit = { agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+			scope:duel_leader = {
+				add_to_variable_list = {
+					name = possible_characters_temp
+					target = prev
+				}
+			}
+		}
+	}
+	#Lovers
+	if = {
+		limit = {
+			any_relation = {
+				type = lover
+				agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+		}
+		every_relation = {
+			type = lover
+			limit = { agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+			scope:duel_leader = {
+				add_to_variable_list = {
+					name = possible_characters_temp
+					target = prev
+				}
+			}
+		}
+	}
+	#Family
+	if = {
+		limit = {
+			exists = house
+			house = {
+				any_house_member = {
+					agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+			}
+		}
+		house = {
+			every_house_member = {
+				limit = {
+					agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+				scope:duel_leader = {
+					add_to_variable_list = {
+						name = possible_characters_temp
+						target = prev
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_tos_champion_selection_every_vassal_or_below = {
+	$ROYAL$ = { save_scope_as = the_royal_leader }
+	$OTHER$ = { save_scope_as = the_other_leader }
+	$CURRENT_LEADER$ = { save_scope_as = duel_leader }
+
+	#Add Courtiers, Vassals and Courtiers of Direct Vassals
+	if = {
+		limit = {
+			OR = {
+				any_courtier = {
+					agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+				any_vassal_or_below = {
+					agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+				any_vassal = {
+					any_courtier = { agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+				}
+			}
+		}
+		#Courtiers
+		if = {
+			limit = {
+				any_courtier = {
+					agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+			}
+			every_courtier = {
+				limit = {
+					agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+				scope:duel_leader = {
+					add_to_variable_list = {
+						name = possible_characters_temp
+						target = prev
+					}
+				}
+			}
+		}
+		#Vassals
+		if = {
+			limit = {
+				any_vassal_or_below = {
+					agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+			}
+			every_vassal_or_below = {
+				limit = {
+					agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+				scope:duel_leader = {
+					add_to_variable_list = {
+						name = possible_characters_temp
+						target = prev
+					}
+				}
+			}
+		}
+		#Courtiers of Direct Vassals
+		if = {
+			limit = {
+				any_vassal = {
+					any_courtier = { agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+				}
+			}
+			every_vassal = {
+				every_courtier = {
+					limit = {
+						agot_can_be_trial_of_seven_duelist = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+					}
+					scope:duel_leader = {
+						add_to_variable_list = {
+							name = possible_characters_temp
+							target = prev
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_tos_champion_selection_random_vassal_or_below = {
+	$ROYAL$ = { save_scope_as = the_royal_leader }
+	$OTHER$ = { save_scope_as = the_other_leader }
+	$CURRENT_LEADER$ = { save_scope_as = duel_leader }
+
+	#Courtiers
+	if = {
+		limit = {
+			any_courtier = {
+				agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+		}
+		random_courtier = {
+			limit = {
+				agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+			scope:duel_leader = {
+				add_to_variable_list = {
+					name = temp_possible_characters
+					target = prev
+				}
+				add_character_flag = agot_tos_has_helper_knight
+			}
+		}
+	}
+	#Vassals
+	if = {
+		limit = {
+			any_vassal_or_below = {
+				agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+		}
+		random_vassal_or_below = {
+			limit = {
+				agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+			scope:duel_leader = {
+				add_to_variable_list = {
+					name = temp_possible_characters
+					target = prev
+				}
+				add_character_flag = agot_tos_has_helper_knight
+			}
+		}
+	}
+	#Courtiers of Direct Vassals
+	if = {
+		limit = {
+			any_vassal = {
+				any_courtier = { agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+			}
+		}
+		every_vassal = {
+			random_courtier = {
+				limit = {
+					agot_can_be_trial_of_seven_duelist_extended_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+				scope:duel_leader = {
+					add_to_variable_list = {
+						name = temp_possible_characters
+						target = prev
+					}
+					add_character_flag = agot_tos_has_helper_knight
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			scope:duel_leader = {
+				has_variable_list = temp_possible_characters
+				any_in_list = {
+					variable = temp_possible_characters
+					count > 0
+				}
+			}
+		}
+		scope:duel_leader = {
+			random_in_list = {
+				variable = temp_possible_characters
+				save_scope_as = helper_knight
+				scope:duel_leader = {
+					add_to_variable_list = {
+						name = possible_characters_temp
+						target = prev
+					}
+				}
+			}
+			add_character_flag = {
+				flag = tos_a_knight_steps_forward
+				days = 90
+			}
+			clear_variable_list = temp_possible_characters
+		}
+	}
+}
+
+agot_tos_squire_selection_random_vassal_or_below = {
+	$ROYAL$ = { save_scope_as = the_royal_leader }
+	$OTHER$ = { save_scope_as = the_other_leader }
+	$CURRENT_LEADER$ = { save_scope_as = duel_leader }
+
+	#Courtiers
+	if = {
+		limit = {
+			any_courtier = {
+				agot_can_be_trial_of_seven_duelist_squire_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+		}
+		random_courtier = {
+			limit = {
+				agot_can_be_trial_of_seven_duelist_squire_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+			scope:duel_leader = {
+				add_to_variable_list = {
+					name = temp_possible_squires
+					target = prev
+				}
+				add_character_flag = agot_tos_has_helper_knight
+			}
+		}
+	}
+	#Vassals
+	if = {
+		limit = {
+			any_vassal_or_below = {
+				agot_can_be_trial_of_seven_duelist_squire_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+		}
+		random_vassal_or_below = {
+			limit = {
+				agot_can_be_trial_of_seven_duelist_squire_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+			}
+			scope:duel_leader = {
+				add_to_variable_list = {
+					name = temp_possible_squires
+					target = prev
+				}
+				add_character_flag = agot_tos_has_helper_knight
+			}
+		}
+	}
+	#Courtiers of Direct Vassals
+	if = {
+		limit = {
+			any_vassal = {
+				any_courtier = { agot_can_be_trial_of_seven_duelist_squire_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader } }
+			}
+		}
+		every_vassal = {
+			random_courtier = {
+				limit = {
+					agot_can_be_trial_of_seven_duelist_squire_pool = { ROYAL = scope:the_royal_leader OTHER = scope:the_other_leader CURRENT_LEADER = scope:duel_leader }
+				}
+				scope:duel_leader = {
+					add_to_variable_list = {
+						name = temp_possible_squires
+						target = prev
+					}
+					add_character_flag = agot_tos_has_helper_knight
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			scope:duel_leader = {
+				has_variable_list = temp_possible_squires
+				any_in_list = {
+					variable = temp_possible_squires
+					count > 0
+				}
+			}
+		}
+		scope:duel_leader = {
+			random_in_list = {
+				variable = temp_possible_squires
+				save_scope_as = helper_knight
+				scope:duel_leader = {
+					add_to_variable_list = {
+						name = possible_characters_temp
+						target = prev
+					}
+				}
+			}
+			add_character_flag = {
+				flag = tos_squire_wants_to_be_knighted
+				days = 90
+			}
+			add_character_flag = {
+				flag = tos_squire_wants_to_be_knighted_sellsword_blocker
+				days = 90
+			}
+			if = {
+				limit = { has_character_flag = tos_non_royal_sellsword_gained }
+				remove_character_flag = tos_non_royal_sellsword_gained
+			}
+			clear_variable_list = temp_possible_squires
+		}
+	}
+}
+
+agot_multiduel_betrayer_kingsguard_pre_tos = {
+	if = {
+		limit = {
+			scope:defender_leader = {
+				NOT = { has_character_flag = agot_tos_royal_side }
+				has_variable_list = multi_duel_tos_temp_list
+				any_in_list = {
+					variable = multi_duel_tos_temp_list
+					is_alive = yes
+					has_trait = kingsguard
+				}
+			}
+		}
+		scope:defender_leader = {
+			every_in_list = {
+				variable = multi_duel_tos_temp_list
+				limit = {
+					is_alive = yes
+					has_trait = kingsguard
+				}
+				add_character_flag = tos_betrayer_kingsguard
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			scope:accuser_leader = {
+				NOT = { has_character_flag = agot_tos_royal_side }
+				has_variable_list = multi_duel_tos_temp_list
+				any_in_list = {
+					variable = multi_duel_tos_temp_list
+					is_alive = yes
+					has_trait = kingsguard
+				}
+			}
+		}
+		scope:accuser_leader = {
+			every_in_list = {
+				variable = multi_duel_tos_temp_list
+				limit = {
+					is_alive = yes
+					has_trait = kingsguard
+				}
+				add_character_flag = tos_betrayer_kingsguard
+			}
+		}
+	}
+}
+
+agot_multiduel_betrayer_kingsguard_post_tos = {
+	$IMPRISONER$ = { save_scope_as = the_imprisoner }
+	hidden_effect = {
+		if = {
+			limit = {
+				OR = {
+					exists = scope:tos_story_usurpation_usurper_won
+					trigger_if = {
+						limit = { exists = scope:tos_story_usurpation_legit_heir_helper_won_need_new_heir }
+						NOT = { exists = scope:heir_of_legit_heir }
+					}
+				}
+			}
+			if = {
+				limit = {
+					any_courtier = {
+						has_trait = kingsguard
+						has_character_flag = tos_betrayer_kingsguard
+					}
+				}
+				every_courtier = {
+					limit = {
+						has_trait = kingsguard
+						has_character_flag = tos_betrayer_kingsguard
+					}
+					scope:the_imprisoner = {
+						add_opinion = {
+							target = prev
+							modifier = betrayal_opinion
+							opinion = -100
+						}
+					}
+					hard_imprison_character_effect = {
+						TARGET = this
+						IMPRISONER = scope:the_imprisoner
+					}
+				}
+
+			}
+			if = {
+				limit = {
+					exists = title:d_kingsguard.holder
+					title:d_kingsguard.holder = {
+						has_trait = kingsguard
+						has_character_flag = tos_betrayer_kingsguard
+					}
+				}
+				title:d_kingsguard.holder = {
+					scope:the_imprisoner = {
+						add_opinion = {
+							target = prev
+							modifier = betrayal_opinion
+							opinion = -100
+						}
+					}
+					hard_imprison_character_effect = {
+						TARGET = this
+						IMPRISONER = scope:the_imprisoner
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				exists = scope:tos_story_dishonorable_imprisonment_accuser_won
+			}
+			if = {
+				limit = {
+					any_courtier = {
+						has_trait = kingsguard
+						has_character_flag = tos_betrayer_kingsguard
+					}
+				}
+				every_courtier = {
+					limit = {
+						has_trait = kingsguard
+						has_character_flag = tos_betrayer_kingsguard
+					}
+					scope:the_imprisoner = {
+						add_opinion = {
+							target = prev
+							modifier = betrayal_opinion
+							opinion = -100
+						}
+					}
+					hard_imprison_character_effect = {
+						TARGET = this
+						IMPRISONER = scope:the_imprisoner
+					}
+				}
+
+			}
+			if = {
+				limit = {
+					exists = title:d_kingsguard.holder
+					title:d_kingsguard.holder = {
+						has_trait = kingsguard
+						has_character_flag = tos_betrayer_kingsguard
+					}
+				}
+				title:d_kingsguard.holder = {
+					scope:the_imprisoner = {
+						add_opinion = {
+							target = prev
+							modifier = betrayal_opinion
+							opinion = -100
+						}
+					}
+					hard_imprison_character_effect = {
+						TARGET = this
+						IMPRISONER = scope:the_imprisoner
+					}
+				}
+			}
+		}
+	}
+}
+
+agot_trial_of_seven_cooldown_effect = {
+	if = {
+		limit = { exists = primary_title }
+		primary_title = {
+			set_variable = {
+				name = trial_of_seven_cooldown
+				years = 100
+			}
+		}
+	}
+}
+
+agot_tos_bonding_effect = {
+	save_scope_as = this_leader
+	if = {
+		limit = {
+			has_variable_list = potential_multi_duel_bonding_list
+			any_in_list = {
+				variable = potential_multi_duel_bonding_list
+				is_alive = yes
+				NOT = { this = scope:this_leader }
+				count > 0
+			}
+		}
+		hidden_effect = {
+			every_in_list = {
+				variable = potential_multi_duel_bonding_list
+				limit = {
+					is_alive = yes
+					NOT = { this = scope:this_leader }
+				}
+				add_opinion = {
+					target = scope:this_leader
+					modifier = agot_trial_of_seven_mate
+					opinion = 25
+				}
+				scope:this_leader = {
+					add_opinion = {
+						target = prev
+						modifier = agot_trial_of_seven_mate
+						opinion = 25
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				any_in_list = {
+					variable = potential_multi_duel_bonding_list
+					is_alive = yes
+					NOT = { this = scope:this_leader }
+					can_set_relation_friend_trigger = { CHARACTER = scope:this_leader }
+				}
+			}
+			random_in_list = {
+				variable = potential_multi_duel_bonding_list
+				limit = {
+					is_alive = yes
+					NOT = { this = scope:this_leader }
+					can_set_relation_friend_trigger = { CHARACTER = scope:this_leader }
+				}
+				random = {
+					chance = scope:this_leader.ai_sociability
+					save_scope_as = new_friend
+					set_variable = {
+						name = my_new_friend
+						value = scope:this_leader
+						days = 7
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:claim_keeper.var:final_tos_accused
+				exists = scope:claim_keeper.var:final_tos_accuser
+				this = scope:claim_keeper.var:final_tos_accused
+				scope:claim_keeper.var:final_tos_accuser = { is_alive = yes }
+			}
+			hidden_effect = {
+				every_in_list = {
+					variable = potential_multi_duel_bonding_list
+					limit = {
+						is_alive = yes
+						NOT = { this = scope:this_leader }
+					}
+					add_opinion = {
+						target = scope:claim_keeper.var:final_tos_accuser
+						modifier = agot_trial_of_seven_enemy
+						opinion = -25
+					}
+				}
+			}
+			scope:this_leader = {
+				add_opinion = {
+					target = scope:claim_keeper.var:final_tos_accuser
+					modifier = agot_trial_of_seven_enemy
+					opinion = -25
+				}
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:claim_keeper.var:final_tos_accused
+				exists = scope:claim_keeper.var:final_tos_accuser
+				this = scope:claim_keeper.var:final_tos_accuser
+				scope:claim_keeper.var:final_tos_accused = { is_alive = yes }
+			}
+			hidden_effect = {
+				every_in_list = {
+					variable = potential_multi_duel_bonding_list
+					limit = {
+						is_alive = yes
+						NOT = { this = scope:this_leader }
+					}
+					add_opinion = {
+						target = scope:claim_keeper.var:final_tos_accused
+						modifier = agot_trial_of_seven_enemy
+						opinion = -25
+					}
+				}
+			}
+			scope:this_leader = {
+				add_opinion = {
+					target = scope:claim_keeper.var:final_tos_accused
+					modifier = agot_trial_of_seven_enemy
+					opinion = -25
+				}
+			}
+		}
+
+		#Prestige
+		if = {
+			limit = { has_character_flag = we_won_the_tos }
+			hidden_effect = {
+				every_in_list = {
+					variable = potential_multi_duel_bonding_list
+					limit = {
+						is_alive = yes
+						NOT = { this = scope:this_leader }
+					}
+					add_prestige = 250
+				}
+			}
+		}
+
+		#Memories
+		if = {
+			limit = {
+				has_character_flag = we_won_the_tos
+				exists = scope:claim_keeper.var:final_tos_accused
+				exists = scope:claim_keeper.var:final_tos_accuser
+				this = scope:claim_keeper.var:final_tos_accuser
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_list
+				limit = {
+					is_alive = yes
+					NOT = { this = scope:this_leader }
+				}
+				create_character_memory = {
+					type = agot_trial_of_seven_winner
+					participants = {
+						leader = scope:claim_keeper.var:final_tos_accuser
+						opponent_leader = scope:claim_keeper.var:final_tos_accused
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				NOT = { has_character_flag = we_won_the_tos }
+				exists = scope:claim_keeper.var:final_tos_accused
+				exists = scope:claim_keeper.var:final_tos_accuser
+				this = scope:claim_keeper.var:final_tos_accuser
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_list
+				limit = {
+					is_alive = yes
+					NOT = { this = scope:this_leader }
+				}
+				create_character_memory = {
+					type = agot_trial_of_seven_loser
+					participants = {
+						leader = scope:claim_keeper.var:final_tos_accuser
+						opponent_leader = scope:claim_keeper.var:final_tos_accused
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_character_flag = we_won_the_tos
+				exists = scope:claim_keeper.var:final_tos_accused
+				exists = scope:claim_keeper.var:final_tos_accuser
+				this = scope:claim_keeper.var:final_tos_accused
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_list
+				limit = {
+					is_alive = yes
+					NOT = { this = scope:this_leader }
+				}
+				create_character_memory = {
+					type = agot_trial_of_seven_winner
+					participants = {
+						leader = scope:claim_keeper.var:final_tos_accused
+						opponent_leader = scope:claim_keeper.var:final_tos_accuser
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				NOT = { has_character_flag = we_won_the_tos }
+				exists = scope:claim_keeper.var:final_tos_accused
+				exists = scope:claim_keeper.var:final_tos_accuser
+				this = scope:claim_keeper.var:final_tos_accused
+			}
+			every_in_list = {
+				variable = potential_multi_duel_bonding_list
+				limit = {
+					is_alive = yes
+					NOT = { this = scope:this_leader }
+				}
+				create_character_memory = {
+					type = agot_trial_of_seven_loser
+					participants = {
+						leader = scope:claim_keeper.var:final_tos_accused
+						opponent_leader = scope:claim_keeper.var:final_tos_accuser
+					}
+				}
+			}
+		}
+		#Opponent team memories if their leader is dead
+		hidden_effect = {
+			if = {
+				limit = {
+					has_character_flag = we_won_the_tos
+					exists = scope:claim_keeper.var:final_tos_accused
+					exists = scope:claim_keeper.var:final_tos_accuser
+					this = scope:claim_keeper.var:final_tos_accuser
+					scope:claim_keeper.var:final_tos_accused = { NOT = { is_alive = yes } }
+				}
+				every_in_list = {
+					variable = potential_multi_duel_bonding_opponent_list
+					limit = {
+						is_alive = yes
+					}
+					create_character_memory = {
+						type = agot_trial_of_seven_loser
+						participants = {
+							leader = scope:claim_keeper.var:final_tos_accused
+							opponent_leader = scope:claim_keeper.var:final_tos_accuser
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					NOT = { has_character_flag = we_won_the_tos }
+					exists = scope:claim_keeper.var:final_tos_accused
+					exists = scope:claim_keeper.var:final_tos_accuser
+					this = scope:claim_keeper.var:final_tos_accuser
+					scope:claim_keeper.var:final_tos_accused = { NOT = { is_alive = yes } }
+				}
+				every_in_list = {
+					variable = potential_multi_duel_bonding_opponent_list
+					limit = {
+						is_alive = yes
+					}
+					create_character_memory = {
+						type = agot_trial_of_seven_winner
+						participants = {
+							leader = scope:claim_keeper.var:final_tos_accused
+							opponent_leader = scope:claim_keeper.var:final_tos_accuser
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					has_character_flag = we_won_the_tos
+					exists = scope:claim_keeper.var:final_tos_accused
+					exists = scope:claim_keeper.var:final_tos_accuser
+					this = scope:claim_keeper.var:final_tos_accused
+					scope:claim_keeper.var:final_tos_accuser = { NOT = { is_alive = yes } }
+				}
+				every_in_list = {
+					variable = potential_multi_duel_bonding_opponent_list
+					limit = {
+						is_alive = yes
+					}
+					create_character_memory = {
+						type = agot_trial_of_seven_loser
+						participants = {
+							leader = scope:claim_keeper.var:final_tos_accuser
+							opponent_leader = scope:claim_keeper.var:final_tos_accused
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					NOT = { has_character_flag = we_won_the_tos }
+					exists = scope:claim_keeper.var:final_tos_accused
+					exists = scope:claim_keeper.var:final_tos_accuser
+					this = scope:claim_keeper.var:final_tos_accused
+					scope:claim_keeper.var:final_tos_accuser = { NOT = { is_alive = yes } }
+				}
+				every_in_list = {
+					variable = potential_multi_duel_bonding_opponent_list
+					limit = {
+						is_alive = yes
+					}
+					create_character_memory = {
+						type = agot_trial_of_seven_winner
+						participants = {
+							leader = scope:claim_keeper.var:final_tos_accuser
+							opponent_leader = scope:claim_keeper.var:final_tos_accused
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+tos_accuser_cry_effect = {
+	$ACCUSER$ = { save_scope_as = cry_accuser }
+	$ACCUSED$ = { save_scope_as = cry_accused }
+	scope:cry_accuser = {
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = plotting_against_me_opinion target = scope:cry_accused }
+					has_opinion_modifier = { modifier = schemed_against_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = scheming_against_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = fabricate_hook_threatened_me target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_plotting days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = abducted_me_opinion target = scope:cry_accused }
+					has_opinion_modifier = { modifier = abducted_me_crime target = scope:cry_accused }
+					has_opinion_modifier = { modifier = attempted_abduct_me_crime target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_abduction days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = attempted_murder_me_crime target = scope:cry_accused }
+					has_opinion_modifier = { modifier = tried_to_poison_me_opinion target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_murder days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = tortured_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = wounded_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = tutored_me_opinion target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_torture days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = maimed_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = disfigured_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = blinded_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = castrated_me target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_maimed days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = stole_artifact_from_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = fp3_stole_from_me target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_stole days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = fp3_sabotaged_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = betrayed_me_opinion target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_sabotage days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = fp3_denounced_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = slandered_me_opinion target = scope:cry_accused }
+					has_opinion_modifier = { modifier = shamed_me_opinion target = scope:cry_accused }
+					has_opinion_modifier = { modifier = ruined_me_opinion target = scope:cry_accused }
+					has_opinion_modifier = { modifier = blamed_me_unjustly target = scope:cry_accused }
+					has_opinion_modifier = { modifier = rival_insult_opinion target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_slander days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = imprisoned_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = imprisoned_me_dungeon target = scope:cry_accused }
+					has_opinion_modifier = { modifier = imprisoned_me_past target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_imprison days = 3 }
+		}
+		if = {
+			limit = {
+				has_opinion_modifier = { modifier = banished_me target = scope:cry_accused }
+			}
+			add_character_flag = { flag = accuser_kin_banished days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = challenged_authority_opinion target = scope:cry_accused }
+					has_opinion_modifier = { modifier = usurped_title target = scope:cry_accused }
+					has_opinion_modifier = { modifier = deposed_me_opinion target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_deposed days = 3 }
+		}
+		if = {
+			limit = {
+				has_opinion_modifier = { modifier = killed_my_child target = scope:cry_accused }
+			}
+			add_character_flag = { flag = accuser_kin_child_kill days = 3 }
+		}
+		if = {
+			limit = {
+				OR = {
+					has_opinion_modifier = { modifier = mw_wanted_to_execute_me target = scope:cry_accused }
+					has_opinion_modifier = { modifier = mw_evaded_execution target = scope:cry_accused }
+				}
+			}
+			add_character_flag = { flag = accuser_kin_execute days = 3 }
+		}
+		if = {
+			limit = {
+				has_opinion_modifier = { modifier = muted_me target = scope:cry_accused }
+			}
+			add_character_flag = { flag = accuser_kin_mute days = 3 }
+		}
+		if = {
+			limit = {
+				has_opinion_modifier = { modifier = tried_to_eat_me_opinion target = scope:cry_accused }
+			}
+			add_character_flag = { flag = accuser_kin_tried_to_aith_me days = 3 }
+		}
+		if = {
+			limit = {
+				has_opinion_modifier = { modifier = agot_tried_to_sacrifice_me target = scope:cry_accused }
+			}
+			add_character_flag = { flag = accuser_kin_sacrifice days = 3 }
+		}
+		if = {
+			limit = {
+				has_opinion_modifier = { modifier = tournament_savagely_beaten_opinion target = scope:cry_accused }
+			}
+			add_character_flag = { flag = accuser_kin_beaten days = 3 }
+		}
+		if = {
+			limit = {
+				AND = {
+					has_relation_rival = scope:cry_accused
+					scope:cry_accuser.ai_rationality = -100
+					OR = {
+						has_trait = lunatic_1
+						has_trait = lunatic_genetic
+						has_trait = possessed_1
+						has_trait = possessed_genetic
+					}
+				}
+			}
+			add_character_flag = { flag = accuser_kin_insane days = 3 }
+		}
+	}
+}
+
+tos_sudden_death_succession_crisis_effect = {
+	$OG_USURPER$ = { save_scope_as = og_usurper }
+	$CURRENT_USURPER$ = { save_scope_as = current_usurper }
+	$THE_LEGIT_HEIR$ = { save_scope_as = the_legit_heir }
+	$THE_LEGIT_COMBATANT$ = { save_scope_as = the_legit_combatant }
+
+	agot_save_tos_usurpation_outcome_variables = yes
+
+	#LEGITIMATE SIDE WON
+	if = {
+		limit = {
+			scope:og_usurper = { NOT = { is_alive = yes } }
+		}
+		if = {
+			limit = {
+				NOT = { scope:current_usurper = scope:the_legit_heir }
+				scope:the_legit_heir = { is_alive = yes }
+			}
+			#Titles and Artifacts
+			scope:current_usurper = {
+				create_title_and_vassal_change = {
+					type = conquest_claim
+					save_scope_as = change
+					add_claim_on_loss = yes
+				}
+				every_held_title = {
+					limit = {
+						tier > tier_barony
+						save_temporary_scope_as = t_title
+						scope:claim_keeper = { is_target_in_variable_list = { name = final_usurpation_titles target = scope:t_title } }
+					}
+					change_title_holder_include_vassals = {
+						holder = scope:the_legit_heir
+						change = scope:change
+						take_baronies = yes
+					}
+				}
+				resolve_title_and_vassal_change = scope:change
+
+				agot_new_house_head_effect = { NEW_HOUSE_HEAD = scope:the_legit_heir }
+				save_scope_as = wos_usurper
+				scope:the_legit_heir = { save_scope_as = wos_king }
+				usurper_gives_back_artifacts = yes
+				unsave_usurper_artifact_after_war = yes
+				if = {
+					limit = { agot_is_independent_ruler = yes }
+					create_title_and_vassal_change = {
+						type = swear_fealty
+						save_scope_as = change
+						add_claim_on_loss = no
+					}
+					change_liege = {
+						liege = scope:the_legit_heir
+						change = scope:change
+					}
+					resolve_title_and_vassal_change = scope:change
+				}
+			}
+		}
+		if = {
+			limit = { scope:the_legit_heir = { is_alive = yes } }
+			scope:the_legit_heir = {
+				add_prestige = 500
+				add_legitimacy = 500
+			}
+		}
+
+		#Memories
+		if = {
+			limit = {
+				scope:the_legit_combatant = { is_alive = yes }
+			}
+			scope:the_legit_combatant = {
+				create_character_memory = {
+					type = agot_trial_of_seven_winner_leader
+					participants = {
+						opponent = scope:og_usurper
+					}
+				}
+			}
+		}
+
+		#Bonding
+		if = {
+			limit = { scope:the_legit_combatant = { is_alive = yes } }
+			scope:the_legit_combatant = {
+				add_character_flag = { flag = we_won_the_tos days = 3 }
+			}
+			scope:the_legit_combatant = {
+				add_character_flag = {
+					flag = tos_bonding_effect_received
+					days = 40
+				}
+				agot_tos_bonding_effect = yes
+			}
+		}
+	}
+	#USURPER SIDE WON
+	else_if = {
+		limit = {
+			scope:the_legit_combatant = { NOT = { is_alive = yes } }
+		}
+		if = {
+			limit = {
+				NOT = { scope:current_usurper = scope:the_legit_heir }
+			}
+			if = {
+				limit = {
+					exists = scope:the_legit_combatant
+					scope:the_legit_combatant = { NOT = { is_imprisoned = yes } }
+				}
+				scope:og_usurper = {
+					hard_imprison_character_effect = {
+						TARGET = scope:the_legit_combatant
+						IMPRISONER = scope:og_usurper
+					}
+				}
+			}
+			add_prestige = 500
+			add_legitimacy = 500
+		}
+
+		#Memories
+		if = {
+			limit = {
+				scope:og_usurper = { is_alive = yes }
+			}
+			scope:og_usurper = {
+				create_character_memory = {
+					type = agot_trial_of_seven_winner_leader
+					participants = {
+						opponent = scope:the_legit_combatant
+					}
+				}
+			}
+		}
+
+		#Bonding
+		if = {
+			limit = { scope:og_usurper = { is_alive = yes } }
+			scope:og_usurper = {
+				add_character_flag = { flag = we_won_the_tos days = 3 }
+			}
+			scope:og_usurper = { agot_tos_bonding_effect = yes }
+		}
+	}
+}
+
+tos_sudden_death_imprisonment_effect = {
+	$ROYAL_RULER$ = { save_scope_as = royal_ruler }
+	$ACCUSER$ = { save_scope_as = the_accuser }
+	$ACCUSED$ = { save_scope_as = the_accused }
+
+	agot_save_tos_imprisonment_outcome_variables = yes
+
+	#ACCUSED SIDE WON
+	if = {
+		limit = {
+			scope:the_accuser = { NOT = { is_alive = yes } }
+		}
+		#Memories
+		if = {
+			limit = {
+				scope:the_accused = { is_alive = yes }
+			}
+			scope:the_accused = {
+				create_character_memory = {
+					type = agot_trial_of_seven_winner_leader
+					participants = {
+						opponent = scope:the_accuser
+					}
+				}
+			}
+		}
+
+		#Bonding
+		if = {
+			limit = { scope:the_accused = { is_alive = yes } }
+			scope:the_accused = {
+				add_character_flag = { flag = we_won_the_tos days = 3 }
+			}
+			scope:the_accused = { agot_tos_bonding_effect = yes }
+		}
+
+		#Presige
+		add_prestige = 500
+	}
+	#ACCUSER SIDE WON
+	else_if = {
+		limit = {
+			scope:the_accused = { NOT = { is_alive = yes } }
+		}
+		#Memories
+		if = {
+			limit = {
+				scope:the_accuser = { is_alive = yes }
+			}
+			scope:the_accused = {
+				create_character_memory = {
+					type = agot_trial_of_seven_winner_leader
+					participants = {
+						opponent = scope:the_accused
+					}
+				}
+			}
+		}
+
+		#Bonding
+		if = {
+			limit = { scope:the_accuser = { is_alive = yes } }
+			scope:the_accuser = {
+				add_character_flag = { flag = we_won_the_tos days = 3 }
+			}
+			scope:the_accuser = { agot_tos_bonding_effect = yes }
+		}
+
+		#Presige
+		add_prestige = 500
+	}
+}
+
+agot_remove_from_activity_and_travel_effect = {
+	save_scope_as = activity_owner
+	if = {
+		limit = {
+			exists = involved_activity
+			involved_activity = { NOT = { has_activity_type = activity_wedding } }
+			involved_activity.activity_host = scope:activity_owner
+		}
+		invalidate_activity = scope:activity_owner.involved_activity
+	}
+	else_if = {
+		limit = {
+			exists = involved_activity
+			involved_activity = { NOT = { has_activity_type = activity_wedding } }
+		}
+		remove_from_activity = involved_activity
+	}
+
+	current_travel_plan ?= {
+		if = {
+			limit = {
+				travel_plan_owner = scope:activity_owner
+			}
+			abort_travel_plan = yes
+		}
+		else = {
+			remove_character = scope:activity_owner
+		}
+	}
+}
+
+agot_remove_imprisonment_flags = {
+	if = {
+		limit = {
+			has_character_flag = flag_hostile_actions_disabled_delay
+		}
+		remove_character_flag = flag_hostile_actions_disabled_delay
+	}
+	if = {
+		limit = {
+			has_character_flag = keep_imprisoned
+		}
+		remove_character_flag = keep_imprisoned
+	}
+}

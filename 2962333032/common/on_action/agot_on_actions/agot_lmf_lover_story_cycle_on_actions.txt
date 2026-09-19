@@ -1,0 +1,325 @@
+﻿# for lover events setup
+on_set_relation_lover = {
+	on_actions = {
+		on_lmf_lover_setup
+	}
+}
+
+on_set_relation_soulmate = {
+	on_actions = {
+		on_lmf_lover_setup
+	}
+}
+
+on_lmf_lover_setup = {
+	trigger = {
+		is_alive = yes
+		OR = {
+			game_rule_permits_lover_events = yes
+			scope:target = { game_rule_permits_lover_events = yes }
+		}
+		NOR = {
+			# not for spouses/concubines who happen to also be lovers
+			is_consort_of = scope:target
+			# no story_cycle for two player lovers
+			AND = {
+				is_ai = no
+				scope:target = { is_ai = no }
+			}
+			# just in case they already have a story (relation can change mid-story)
+			any_owned_story = {
+				story_type = lmf_lover_story_cycle
+				var:lover_target ?= scope:target
+			}
+			scope:target = {
+				any_owned_story = {
+					story_type = lmf_lover_story_cycle
+					var:lover_target ?= root
+				}
+			}
+		}
+	}
+	effect = {
+		determine_primary_story_effect_lover = { LOVER_1 = root LOVER_2 = scope:target }
+		scope:primary_lover = {
+			create_story = {
+				type = lmf_lover_story_cycle
+				save_scope_as = story
+			}
+		}
+		scope:story = {
+			set_variable = { name = lover_target value = scope:secondary_lover }
+			if = {
+				limit = {
+					scope:primary_lover = { has_relation_soulmate = scope:secondary_lover }
+				}
+				set_variable = { name = lover_rating value = 5 } # starting soulmate value
+			}
+			else = {
+				set_variable = { name = lover_rating value = 3 } # starting lover value
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					has_character_flag = lmf_lover_gained_title
+					scope:target = { has_character_flag = lmf_lover_gained_title }
+				}
+			}
+			scope:story = {
+				set_variable = { name = had_kickoff_event value = yes }
+				set_variable = { name = relationship_is_serious value = 0 }
+			}
+		}
+	}
+}
+
+# to add story when a ruler assumes their title
+on_lmf_new_ruler_lover_check = {
+	trigger = {
+		is_alive = yes
+		NOT = { has_game_rule = lmf_lover_event_frequency_none }
+		num_of_relation_lover > 0
+		any_relation = {
+			type = lover
+			OR = {
+				game_rule_permits_lover_events = yes
+				root = { game_rule_permits_lover_events = yes }
+			}
+		}
+	}
+	effect = {
+		root = {
+			save_scope_as = target
+			add_character_flag = { flag = lmf_lover_gained_title days = 1 }
+		}
+		every_relation = {
+			type = lover
+			trigger_event = { on_action = on_lmf_lover_setup }
+		}
+	}
+}
+
+# to end the story when the lover who isn't the story owner dies
+on_death_relation_lover = {
+	on_actions = {
+		on_lmf_lover_death_check
+	}
+}
+
+on_lmf_lover_death_check = {
+	trigger = {
+		scope:target = {
+			any_owned_story = {
+				story_type = lmf_lover_story_cycle
+				var:lover_target ?= root
+			}
+		}
+	}
+	effect = {
+		scope:target = {
+			random_owned_story = {
+				limit = {
+					story_type = lmf_lover_story_cycle
+					var:lover_target ?= root
+				}
+				end_story = yes
+			}
+		}
+	}
+}
+
+# to end the story when the lovers break up
+on_remove_relation_lover = {
+	on_actions = {
+		on_lmf_lover_end_check
+	}
+}
+
+on_remove_relation_soulmate = {
+	on_actions = {
+		on_lmf_lover_end_check
+	}
+}
+
+on_lmf_lover_end_check = {
+	trigger = {
+		NOR = {
+			has_character_flag = lmf_lover_skip_end_check
+			scope:target = { has_character_flag = lmf_lover_skip_end_check }
+		}
+		OR = {
+			any_owned_story = {
+				story_type = lmf_lover_story_cycle
+				var:lover_target ?= scope:target
+			}
+			scope:target = {
+				any_owned_story = {
+					story_type = lmf_lover_story_cycle
+					var:lover_target ?= root
+				}
+			}
+		}
+	}
+	effect = {
+		if = {
+			limit = {
+				any_owned_story = {
+					story_type = lmf_lover_story_cycle
+					var:lover_target ?= scope:target
+				}
+			}
+			random_owned_story = {
+				limit = {
+					story_type = lmf_lover_story_cycle
+					var:lover_target ?= scope:target
+				}
+				end_story = yes
+			}
+		}
+		else = {
+			scope:target = {
+				random_owned_story = {
+					limit = {
+						story_type = lmf_lover_story_cycle
+						var:lover_target ?= root
+					}
+					end_story = yes
+				}
+			}
+		}
+	}
+}
+
+# for random events triggered by the lover story cycle
+ongoing_lmf_lover_events = {
+	trigger = {
+		is_playable_character = yes
+		exists = location
+		scope:lover = { exists = location }
+		NOR = {
+			has_character_flag = lover_event_player_delay
+			has_game_rule = lmf_lover_event_frequency_none
+		}
+	}
+	random_events = {
+		chance_of_no_event = {
+			value = 65
+			if = {
+				limit = { has_game_rule = lmf_lover_event_frequency_less }
+				add = 35
+			}
+			if = {
+				limit = { has_game_rule = lmf_lover_event_frequency_more }
+				add = -35
+			}
+			if = {
+				limit = { scope:story.var:relationship_years >= 5 }
+				add = lover_relationship_years_counter
+			}
+			if = {
+				limit = { scope:story.var:has_not_had_lover_event > 1 }
+				add = no_lover_event_counter
+			}
+			if = {
+				limit = { num_of_relation_lover > 1 }
+				add = too_many_lovers_counter
+			}
+			min = 10
+			max = 100
+		}
+		10 = 0 # Fallback in case all of the below events are invalid
+		50 = lmf_lover.1000 # The bliss of having a soulmate
+		50 = lmf_lover.1005 # Soulmate influences you to change a trait
+		50 = lmf_lover.1010 # You influence soulmate to change a trait
+		25 = lmf_lover.1015 # Soulmate suggests the two of you elope
+		100 = lmf_lover.1020 # Lover might upgrade into a soulmate
+		50 = lmf_lover.1025 # Lover at court reveals a secret they’ve learned
+		50 = lmf_lover.1030 # Skilled courtier lover offers support
+		50 = lmf_lover.1035 # Wealthy and generous lover offers you a gift
+		50 = lmf_lover.1036 # Lover is in debt - should you help out?
+		50 = lmf_lover.1040 # Lover ruler asks for advice, if your skill is higher than theirs
+		50 = lmf_lover.1045 # Lover gives advice, if skill higher than yours
+		100 = lmf_lover.1050 # Lover looks after you while you’re sick
+		50 = lmf_lover.1055 # Lover learns a secret of yours
+		50 = lmf_lover.1060 # You learn a lover's secret
+		500 = lmf_lover.1065 # Lover demands that the two of you get married
+		500 = lmf_lover.1070 # Lover is single - should you get married?
+		50 = lmf_lover.1075 # Bold lover shows up at court
+		100 = lmf_lover.1080 # Lover writes to you while you're far away
+		50 = lmf_lover.1085 # Ambitious lover demands role at court
+		100 = lmf_lover.1090 # Lover writes to you while you're imprisoned
+		200 = lmf_lover.1095 # Love for soulmate has cooled
+		50 = lmf_lover.1098 # Lover wants to reveal secret bastard
+		50 = lmf_lover.1100 # Greedy lover demands an expensive gift
+		50 = lmf_lover.1105 # Known lover demands that you do something about courtier insult
+		50 = lmf_lover.1110 # Needy lover proves to be a distraction
+		50 = lmf_lover.1115 # Lover makes a surprise visit to court
+		100 = lmf_lover.1120 # Spending the day with courtier lover
+		100 = lmf_lover.1130 # Knight lover comes to you when the army camps
+		100 = lmf_lover.1135 # Spending time with lover while travelling
+		100 = lmf_lover.1140 # Lover asks to come to your court
+		50 = lmf_lover.1145 # Irrational or hateful lover is jealous of spouse
+		200 = lmf_lover.1150 # Love for soulmate has cooled (automatic)
+		100 = lmf_lover.1155 # Malicious/Greedy lover sells a secret of yours to a rival
+		50 = lmf_lover.1160 # Opportunity to increase lover rating
+		50 = lmf_lover.1165 # Lover and you are so much alike
+		50 = lmf_lover.1170 # Courtier lover is sick - do you take time to care for them?
+		50 = lmf_lover.1175 # Spouse demands that you end the affair
+		50 = lmf_lover.1180 # Lover stressed over keeping affair secret
+		50 = lmf_lover.1185 # Lover stressed about sinful affair
+		50 = lmf_lover.1190 # Lover can’t handle affair being publicly known
+		50 = lmf_lover.1195 # Stressed over keeping affair secret
+		50 = lmf_lover.1200 # Stressed over sinful affair
+		50 = lmf_lover.1205 # Stressed over publicly known affair
+		50 = lmf_lover.1210 # Whispers at court threaten to reveal secret affair
+		100 = lmf_lover.1215 # Lover is jealous of your other lover and demands you choose
+		50 = lmf_lover.1220 # Lover brings secret bastard child to see you
+		100 = lmf_lover.1225 # Lover asks for bastard child to be given a guardian at court
+		50 = lmf_lover.1230 # Lover asks for adult bastard to be given role at court
+		50 = lmf_lover.1235 # Public lover wants you to legitimize known bastard
+		50 = lmf_lover.1240 # Long-time casual affair starts to lose its intensity
+		50 = lmf_lover.1245 # Lover's opinion of you drops too low
+		50 = lmf_lover.1250 # Accidental blunder could hurt relationship
+		50 = lmf_lover.1255 # Lover and you are fundamentally very different
+		50 = lmf_lover.1260 # Lover is also a ruler who is very busy
+		50 = lmf_lover.1265 # Courtier walks in right after your lover leaves
+		50 = lmf_lover.1270 # Courtier child witnesses your secret affair
+		50 = lmf_lover.1275 # You learn lover has another secret lover
+		100 = lmf_lover.1280 # You can't stop thinking about lover's other lover
+		50 = lmf_lover.1285 # We seem to see each other less and less...
+	}
+}
+
+ongoing_lmf_lover_far_off_events = {
+	trigger = {
+		exists = location
+		scope:lover = { exists = location }
+		NOR = {
+			has_character_flag = lover_event_player_delay
+			has_game_rule = lmf_lover_event_frequency_none
+		}
+	}
+	random_events = {
+		10 = 0 # Fallback in case all of the below events are invalid
+		200 = lmf_lover.1150 # Love for soulmate has cooled (automatic)
+		50 = lmf_lover.1500 # Lover is outside of diplomatic range
+		50 = lmf_lover.1505 # Send someone to bring back far off lover?
+	}
+}
+
+ongoing_lmf_lover_simplified_events = {
+	trigger = {
+		NOT = { has_game_rule = lmf_lover_event_frequency_none }
+	}
+	random_events = {
+		chance_of_no_event = {
+			value = 65
+		}
+		10 = 0 # Fallback in case all of the below events are invalid
+		50 = lmf_lover.2000 # Lover rating goes up
+		50 = lmf_lover.2005 # Lover rating goes down
+		50 = lmf_lover.2010 # Lose stress from lover
+		50 = lmf_lover.2015 # Gain stress from lover
+	}
+}

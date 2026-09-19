@@ -1,0 +1,1461 @@
+﻿### Choose stance values - used in 00_agot_scripted_modifiers_mega_wars.txt
+
+mw_base_loyalist_value = {
+	value = 0
+
+	if = { # Fetch base value by checking legitimate house.
+		limit = {
+			any_in_list = {
+				list = target_titles
+				NOT = { scope:mw_rebel_leader.house = scope:mw_crown.house } # If both sides are of the same house this value is kinda outta place, so don't use it
+				OR = {
+					var:legitimate_house ?= scope:mw_crown.house
+					var:current_house ?= scope:mw_crown.house
+				}
+			}
+		}
+
+		add = {
+			if = {
+				limit = {
+					scope:mw_crown = { save_temporary_scope_as = target_scope }
+				}
+				every_in_list = {
+					list = target_titles
+					add = mw_legitimate_house_base_value # Honour is considered in the value!
+				}
+			}
+			multiply = { # How much do we want to reduce the impact: if rebel has relations to root, lower legitimate house impact.
+				value = 1
+				if = {
+					limit = {
+						scope:mw_ruler_scope.var:mw_is_loyal_to ?= scope:mw_rebel_leader
+					}
+					add = -0.1
+				}
+				if = {
+					limit = {
+						agot_mw_has_alliance_with_rebel_leader_trigger = yes
+					}
+					add = -0.25
+				}
+				if = {
+					limit = {
+						scope:s_relation_t_rebel_leader = yes
+					}
+					add = -0.5
+				}
+			}
+		}
+	}
+	else_if = { # In some instances honour needs to be applied to the rebel side as the rebel leader is considered legitimate.
+		limit = {
+			scope:mw_ruler_scope ?= {
+				OR = {
+					scope:mw_rebel_story.var:mw_war_cb ?= flag:succession_war
+					#AND = {
+					#	NOT = { scope:s_relation_t_crown = yes }
+					#	scope:s_relation_t_rebel_leader = yes
+					#}
+					agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_rebel_leader.house }
+				}
+			}
+		}
+		add = -100
+	}
+	else = { add = 100 }
+
+	# Consider honour
+	if = { # In some instances honour needs to be applied to the rebel side as the rebel leader is considered legitimate.
+		limit = {
+			scope:mw_ruler_scope ?= {
+				NOR = {
+					scope:mw_rebel_story.var:mw_war_cb ?= flag:succession_war
+					#AND = {
+					#	NOT = { scope:s_relation_t_crown = yes }
+					#	scope:s_relation_t_rebel_leader = yes
+					#}
+					agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_rebel_leader.house }
+				}
+			}
+		}
+
+		multiply = {
+			add = 1
+
+			if = { # base factor is 1; here we increase that factor by by positive honour
+				limit = { scope:mw_ruler_scope.ai_honor > 0 }
+				add = {
+					add = scope:mw_ruler_scope.ai_honor
+					multiply = 0.09
+				}
+			}
+		}
+	}
+	else = { multiply = 0.5 }
+
+	add = {
+		add = scope:mw_crown.dread
+		multiply = mw_dread_factor
+	}
+	add = {
+		subtract = scope:mw_crown.tyranny
+		multiply = mw_tyranny_factor
+	}
+	if = { # # If you already are in loyalist list, you are less likely to switch; apply only, if crown is not direct liege
+		limit = {
+			NOT = { scope:mw_ruler_scope.liege ?= scope:mw_crown }
+			scope:mw_crown_story = { is_target_in_variable_list = { name = mw_loyalist_list target = scope:mw_ruler_scope } }
+		}
+
+		add = mw_stay_loyalist_value
+	}
+
+	# At the end to avoid factors
+	if = { # if mw lite: there is no neutral stance to favour --> boost loyal stance
+		limit = { scope:mw_crown_story.var:mw_mode ?= flag:mw_lite }
+		add = 250
+	}
+}
+mw_base_neutral_value = {
+	value = 75 # increased weight on this one since it being 0 lead to rulers only staying neutral if they had a reason; they should also have a chance to stay neutral if they do not care enough
+
+	if = { # If you have a historical loyalty to one of the sides, don't stay neutral
+		limit = {
+			OR = {
+				AND = {
+					agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_crown.house }
+					NOT = { agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_rebel_leader.house } }
+				}
+				AND = {
+					NOT = { agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_crown.house } }
+					agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_rebel_leader.house }
+				}
+				agot_mw_is_in_another_rebel_list_trigger = { RULER = scope:mw_ruler_scope }
+			}
+		}
+
+		add = -75
+	}
+	else_if = { # external wars should incentivise everyone to pick a side
+		limit = { scope:mw_rebel_story.var:mw_source ?= flag:mw_external }
+
+		add = -50
+	}
+
+
+	subtract = { # depending on your energy you want more or less to actually choose a side, "move yourself"
+		add = scope:mw_ruler_scope.ai_energy
+		multiply = 0.5
+	}
+	#add = scope:mw_ruler_scope.ai_greed # staying neutral might open new opportunities to gain something out of this # AGOT TODO enable this once can actually get something for your support
+	subtract = { # joining rebel side is always more risky than staying loyal
+		add = scope:mw_ruler_scope.ai_boldness
+		#multiply = 0.5
+	}
+	add = {
+		add = scope:mw_crown.tyranny
+		multiply = 1.5
+	}
+	if = { # Fallback if no stance is valid --> if you can't decide what to do you stay neutral
+		limit = {
+			scope:mw_ruler_scope ?= {
+				NOT = { has_character_flag = mw_fallback_checker }
+				NOR = {
+					has_character_flag = mw_loyalist
+					has_character_flag = mw_neutral
+					has_character_flag = mw_rebel
+					has_character_flag = mw_independence
+				}
+			}
+		}
+		add = 10000
+	}
+}
+mw_base_rebel_value = {
+	value = 0
+
+	if = { # Fetch base value by checking legitimate house.
+		limit = {
+			any_in_list = {
+				list = target_titles
+				NOT = { scope:mw_rebel_leader.house = scope:mw_crown.house } # If both sides are of the same house this value is kinda outta place, so don't use it
+				OR = {
+					var:legitimate_house ?= scope:mw_rebel_leader.house
+					var:current_house ?= scope:mw_rebel_leader.house
+				}
+			}
+		}
+
+		add = {
+			if = {
+				limit = {
+					scope:mw_rebel_leader = { save_temporary_scope_as = target_scope }
+				}
+				every_in_list = {
+					list = target_titles
+					add = mw_legitimate_house_base_value
+				}
+			}
+			multiply = {
+				value = 1
+				if = {
+					limit = {
+						scope:mw_ruler_scope.var:mw_is_loyal_to ?= scope:mw_crown
+					}
+					add = -0.1
+				}
+				if = {
+					limit = {
+						agot_mw_has_alliance_with_crown_trigger = yes
+					}
+					add = -0.25
+				}
+				if = {
+					limit = {
+						scope:s_relation_t_crown = yes
+					}
+					add = -0.5
+				}
+			}
+		}
+	}
+	else_if = { # There are some cases where we want a character's honour to apply for rebel instead of crown; e. g.: succession wars (rebel leader is legit heir)
+		limit = {
+			scope:mw_ruler_scope ?= {
+				OR = {
+					scope:mw_rebel_story.var:mw_war_cb ?= flag:succession_war
+					#AND = {
+					#	NOT = { scope:s_relation_t_crown = yes }
+					#	scope:s_relation_t_rebel_leader = yes
+					#}
+					agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_rebel_leader.house }
+				}
+			}
+		}
+		add = 100
+	}
+	else_if = { # if rebel leader is claimant, give him bonus!
+		limit = {
+			any_in_list = {
+				list = target_titles
+				scope:mw_rebel_leader = { has_claim_on = prev }
+			}
+		}
+
+		every_in_list = {
+			list = target_titles
+			limit = { scope:mw_rebel_leader = { has_claim_on = prev } }
+			if = {
+				limit = { tier = tier_empire }
+				add = 50
+			}
+			else_if = {
+				limit = { tier = tier_kingdom }
+				add = 40
+			}
+			else_if = {
+				limit = { tier = tier_duchy }
+				add = 30
+			}
+			else = {
+				add = 20
+			}
+		}
+	}
+	else = { # else there is no real reason to have a good base value
+		add = -100
+	}
+
+	# Consider honour
+	if = { # There are some cases where we want a character's honour to apply for rebel instead of crown; e. g.: succession wars (rebel leader is legit heir)
+		limit = {
+			NOT = { scope:war ?= { using_cb = agot_independence_war } } # there is no justice in supporting someone else's independence
+			scope:mw_ruler_scope ?= {
+				OR = {
+					scope:mw_rebel_story.var:mw_war_cb ?= flag:succession_war
+					#scope:s_relation_t_rebel_leader = yes
+					agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_rebel_leader.house }
+				}
+			}
+		}
+
+		multiply = {
+			add = 1
+
+			if = { # Base factor is 1; here we increase that factor by by positive honour
+				limit = { scope:mw_ruler_scope.ai_honor > 0 }
+				add = {
+					add = scope:mw_ruler_scope.ai_honor
+					multiply = 0.05
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = { NOT = { scope:war ?= { using_cb = agot_independence_war } } }
+		add = {
+			add = scope:mw_crown.tyranny
+			multiply = mw_tyranny_factor
+		}
+	}
+}
+mw_seek_independence_base_value = {
+	value = -400
+
+	add = scope:mw_ruler_scope.ai_boldness # Joining rebel side is always more risky than staying loyal.
+	add = {
+		add = scope:mw_crown.tyranny
+		multiply = mw_tyranny_factor
+	}
+}
+mw_dread_factor = 1.75
+mw_tyranny_factor = {
+	value = 2
+	scope:mw_ruler_scope ?= {
+		if = {
+			limit = { ai_honor > 0 }
+			multiply = {
+				add = ai_honor
+				divide = 6
+			}
+		}
+	}
+}
+mw_stay_loyalist_value = 100
+mw_liege_is_indepen_leader_value = 500
+mw_seeks_independence_value = 100
+mw_follow_lieges_choice_value = {
+	value = 300 # base value
+	multiply = {
+		value = 1
+
+		scope:mw_ruler_scope ?= {
+			if = { # If you have no special relation to one of the sides, increase follow liege factor.
+				limit = {
+					NOR = {
+						has_relation_friend = scope:mw_crown
+						has_relation_lover = scope:mw_crown
+						has_relation_friend = scope:mw_rebel_leader
+						has_relation_lover = scope:mw_rebel_leader
+						scope:s_relation_t_crown = yes
+						scope:s_relation_t_rebel_leader = yes
+						agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_crown.house }
+						agot_mw_house_has_historical_loyality_to_tigger = { TO_HOUSE = scope:mw_rebel_leader.house }
+					}
+				}
+
+				## Add base multipliers
+				if = { # Additional bonus if liege is independence leader
+					limit = {
+						OR = {
+							# War triggered by declaing independence war or faction demand
+							AND = {
+								scope:mw_rebel_story.var:mw_war_cb ?= flag:independence_war
+								OR = {
+									top_liege ?= scope:mw_rebel_leader
+									liege.var:agot_pwl_direct ?= scope:mw_rebel_leader
+								}
+							}
+							# War triggered by demand independence during mega war
+							scope:mw_crown_story = { is_target_in_variable_list = { name = mw_independence_rebel_leader_list target = scope:mw_ruler_scope.liege } }
+							scope:mw_ruler_scope = { any_liege_or_above = { is_target_in_variable_list = { name = mw_independence_rebels_list target = scope:mw_ruler_scope.liege } } }
+						}
+					}
+					add = 1
+				}
+				if = { # Counts are more likely to follow their liege.
+					limit = { highest_held_title_tier = tier_county }
+					add = {
+						add = 8
+						if = {
+							limit = { NOT = { scope:mw_crown_story.var:mw_mode ?= flag:mw_lite } }
+							multiply = 0.5
+						}
+					}
+				}
+				else_if = { # Dukes are still inclined to follow liege, but not as much as counts
+					limit = { highest_held_title_tier = tier_duchy }
+					add = 2
+				}
+				else_if = { # Kings are still inclined to follow liege, but not as much as counts or dukes
+					limit = { highest_held_title_tier = tier_kingdom }
+					add = 1.5
+				}
+
+				# Character based multipliers
+				if = { # If your liege's legitimacy level is lower than the expected level, you care less about his choice or position # AGOT TODO rework dis as it basically means that count joins loyalists just because his duke liege is a stupid asshole and has no legitimacy.
+					limit = {
+						liege = { save_temporary_scope_as = liege }
+						default_ai_legitimacy_expectation != scope:liege.legitimacy_level
+						default_ai_legitimacy_expectation != 0
+					}
+					add = {
+						add = scope:liege.legitimacy_level
+						divide = default_ai_legitimacy_expectation
+					}
+				}
+				if = { # consider character's opinion of his liege
+					limit = {
+						save_temporary_opinion_value_as = { name = opinion_of_liege target = liege }
+						NOR = { # only non side-lieges
+							liege = scope:mw_crown
+							liege = scope:mw_rebel_leader
+						}
+					}
+
+					add = { # e.g. opinion +50, compassion -100 --> -50 --> -0.5
+						add = scope:opinion_of_liege
+						add = ai_compassion
+						divide = 100
+					}
+				}
+				if = { # consider leverage liege has over ruler based on diplomacy and stewardship skill of rulers and castellans and chancellors
+					limit = {
+						NOR = {
+							liege = scope:mw_crown
+							liege = scope:mw_rebel_leader
+						}
+					}
+
+					add = {
+						if = {
+							limit = {
+								mw_leverage_value < liege.mw_leverage_value
+								mw_leverage_value != 0
+							}
+							add = liege.mw_leverage_value
+							divide = mw_leverage_value
+						}
+						else_if = {
+							limit = { liege.mw_leverage_value != 0 }
+							subtract = mw_leverage_value
+							divide = liege.mw_leverage_value
+						}
+						if = {
+							limit = {
+								highest_held_title_tier = tier_duchy
+							}
+							multiply = 1.6
+						}
+						else = { multiply = 0.5 }
+					}
+				}
+
+				# consider level of dread
+				if = { # ruler is intimidated by liege
+					limit = {
+						has_dread_level_towards = {
+							target = scope:mw_ruler_scope.liege
+							level = 1
+						}
+					}
+					add = 3
+				}
+				else_if = { # ruler is cowed by liege
+					limit = {
+						has_dread_level_towards = {
+							target = scope:mw_ruler_scope.liege
+							level = 2
+						}
+					}
+					add = 5
+				}
+			}
+			else = { add = -0.75 } # Else, reduce incentive as you prefer joining your relation target.
+		}
+	}
+	if = { # increased border gore
+		limit = { has_game_rule = agot_mw_gore_increased_1 }
+		multiply = 0.7
+	}
+	else_if = { # heavy border gore
+		limit = { has_game_rule = agot_mw_gore_increased_2 }
+		multiply = 0.5
+	}
+	else_if = { # brutal border gore
+		limit = { has_game_rule = agot_mw_gore_increased_3 }
+		multiply = 0.1
+	}
+}
+mw_leverage_value = {
+	if = {
+		limit = { exists = diarch }
+		add = diarch.diplomacy
+		add = diarch.stewardship
+	}
+	else = {
+		add = diplomacy
+		add = stewardship
+	}
+	if = {
+		limit = {
+			exists = cp:councillor_chancellor
+			NOT = { cp:councillor_chancellor ?= scope:mw_ruler_scope }
+		}
+		cp:councillor_chancellor ?= {
+			add = {
+				add = diplomacy
+				multiply = 0.25
+			}
+		}
+	}
+	if = {
+		limit = {
+			exists = cp:councillor_castellan
+			NOT = { cp:councillor_castellan ?= scope:mw_ruler_scope }
+		}
+		cp:councillor_castellan ?= {
+			add = {
+				add = stewardship
+				multiply = 0.25
+			}
+		}
+	}
+}
+mw_leverage_unlock_value = {
+	value = 0
+	add = mw_leverage_value
+	subtract = liege.mw_leverage_value
+}
+mw_lieges_liege_choice_value = 100
+
+### Opinions and relations
+mw_opinion_value_factor_crown = {
+	value = 1
+	if = {
+		limit = {
+			scope:mw_crown = { save_temporary_scope_as = target_scope }
+		}
+		multiply = mw_opinion_value_factor_base
+	}
+}
+mw_opinion_value_factor_rebel_leader = {
+	value = 1
+	if = {
+		limit = {
+			scope:mw_rebel_leader = { save_temporary_scope_as = target_scope }
+		}
+		multiply = mw_opinion_value_factor_base
+	}
+}
+mw_opinion_value_factor_base = {
+	value = 2.5
+	if = { # Ruler has positive opinion of target.
+		limit = { opinion = { target = scope:target_scope value > 0 } }
+
+		if = {
+			limit = {
+				scope:mw_ruler_scope = {
+					OR = {
+						has_relation_soldier_friend = scope:target_scope
+						has_relation_friend = scope:target_scope
+					}
+				}
+			}
+			add = 2
+		}
+		if = {
+			limit = { scope:mw_ruler_scope = { has_relation_best_friend = scope:target_scope } }
+			add = 3
+		}
+		if = {
+			limit = { scope:mw_ruler_scope = { has_relation_lover = scope:target_scope } }
+			add = 5
+		}
+		if = {
+			limit = { scope:mw_ruler_scope = { has_relation_soulmate = scope:target_scope } }
+			add = 7
+		}
+	}
+	else_if = { # Ruler has negative opinion of target.
+		limit = { opinion = { target = scope:target_scope value < 0 } }
+
+		if = {
+			limit = { scope:mw_ruler_scope = { has_relation_rival = scope:target_scope } }
+			add = 4
+		}
+		if = {
+			limit = { scope:mw_ruler_scope = { has_relation_nemesis = scope:target_scope } }
+			add = 7
+		}
+	}
+	if = { # You care less about whether you like the leader, if he is not your direct liege.
+		limit = { NOT = { scope:mw_rebel_story.var:mw_war_cb ?= flag:succession_war } } # only if we want opinion not matter that much.
+
+		if = { # e.g.: you are a duke, your liege is a kingdom --> TARGET is emperor
+			limit = {
+				NOT = { scope:mw_ruler_scope.liege = scope:target_scope }
+				OR = {
+					scope:mw_ruler_scope.liege.liege = scope:target_scope
+					scope:mw_ruler_scope.liege.var:agot_pwl_direct ?= scope:target_scope
+				}
+			}
+			multiply = 0.5
+		}
+		else_if = { # e.g.: you are a count, your liege is duke, then kingdom --> TARGET is emperor
+			limit = {
+				NOT = {
+					scope:mw_ruler_scope.liege = scope:target_scope
+					OR = {
+						scope:mw_ruler_scope.liege.liege = scope:target_scope
+						scope:mw_ruler_scope.liege.var:agot_pwl_direct ?= scope:target_scope
+					}
+				}
+				OR = {
+					scope:mw_ruler_scope.liege.liege.liege = scope:target_scope
+					scope:mw_ruler_scope.liege.liege.var:agot_pwl_direct ?= scope:target_scope # scope:target_scope.holder
+					scope:mw_ruler_scope.liege.var:agot_pwl_direct.liege ?= scope:target_scope
+					scope:mw_ruler_scope.liege.var:agot_pwl_direct.var:agot_pwl_direct ?= scope:target_scope
+				}
+			}
+			multiply = 0.25
+		}
+	}
+	else = { # In case of a succession war, sligthly increase the opinion impact.
+		add = 1.5
+	}
+}
+mw_close_family_value = {
+	value = 0
+
+	# From ruler scope's perspective: are there close family members that are related/married to target scope ir his family?
+	scope:mw_ruler_scope = {
+		every_close_family_member = {
+			limit = {
+				save_temporary_scope_as = check_scope
+				agot_mw_family_relations_trigger = yes
+			}
+
+			save_temporary_scope_as = check_scope
+
+			scope:target_scope ?= {
+				if = { # target is close family of ruler
+					limit = {
+						this = scope:check_scope
+						is_close_family_of = scope:mw_ruler_scope
+					}
+					add = 1000
+				}
+				else_if = { # target is extended family of ruler
+					limit = {
+						this = scope:check_scope
+						is_close_or_extended_family_of = scope:mw_ruler_scope
+					}
+					add = 500
+				}
+
+				if = {
+					limit = {
+						scope:check_scope = {
+							is_child_of = scope:target_scope
+							is_close_family_of = scope:mw_ruler_scope
+						}
+					}
+					add = 1200
+				}
+				else_if = {
+					limit = {
+						scope:check_scope = {
+							is_child_of = scope:target_scope
+							is_close_or_extended_family_of = scope:mw_ruler_scope
+						}
+					}
+					add = 800
+				}
+
+				if = { # spouse of target is close family of ruler
+					limit = {
+						is_spouse_of = scope:check_scope
+						scope:check_scope = { is_close_family_of = scope:mw_ruler_scope }
+					}
+					add = 1000
+				}
+				else_if = { # spouse of target is extended family of ruler
+					limit = {
+						is_spouse_of = scope:check_scope
+						scope:check_scope = { is_close_or_extended_family_of = scope:mw_ruler_scope }
+					}
+					add = 800
+				}
+
+				if = { # close family of target is child of ruler
+					limit = {
+						is_close_family_of = scope:check_scope
+						scope:check_scope = { is_child_of = scope:mw_ruler_scope }
+
+						### Filter corss relations between crown and rebel
+						trigger_if = {
+							limit = { this ?= scope:mw_crown }
+							NOT = { scope:check_scope = { is_child_of = scope:mw_rebel_leader } }
+						}
+						trigger_else_if = {
+							limit = { this ?= scope:mw_rebel_leader }
+							NOT = { scope:check_scope = { is_child_of = scope:mw_crown } }
+						}
+						trigger_else = { always = yes }
+					}
+					add = 1000
+				}
+				else_if = { # extended family of target is child of ruler
+					limit = {
+						is_close_or_extended_family_of = scope:check_scope
+						scope:check_scope = { is_child_of = scope:mw_ruler_scope }
+
+						### Filter corss relations between crown and rebel
+						trigger_if = {
+							limit = { this ?= scope:mw_crown }
+							NOT = { scope:check_scope = { is_child_of = scope:mw_rebel_leader } }
+						}
+						trigger_else_if = {
+							limit = { this ?= scope:mw_rebel_leader }
+							NOT = { scope:check_scope = { is_child_of = scope:mw_crown } }
+						}
+						trigger_else = { always = yes }
+					}
+					add = 600
+				}
+
+				if = { # close family of target is spouse of ruler
+					limit = {
+						is_close_family_of = scope:check_scope
+						scope:check_scope = { is_spouse_of = scope:mw_ruler_scope }
+					}
+					add = 800
+				}
+				else_if = { # extended family of target is spouse of ruler
+					limit = {
+						is_close_or_extended_family_of = scope:check_scope
+						scope:check_scope = { is_spouse_of = scope:mw_ruler_scope }
+					}
+					add = 500
+				}
+
+				if = { # close family of target is close family of ruler
+					limit = {
+						is_close_family_of = scope:check_scope
+						scope:check_scope = { is_close_family_of = scope:mw_ruler_scope }
+
+						### Filter corss relations between crown and rebel
+						trigger_if = {
+							limit = { this ?= scope:mw_crown }
+							NOT = { scope:check_scope = { is_close_family_of = scope:mw_rebel_leader } }
+						}
+						trigger_else_if = {
+							limit = { this ?= scope:mw_rebel_leader }
+							NOT = { scope:check_scope = { is_close_family_of = scope:mw_crown } }
+						}
+						trigger_else = { always = yes }
+					}
+					add = 800
+				}
+				else_if = { # extended family of target is close family of ruler
+					limit = {
+						is_close_or_extended_family_of = scope:check_scope
+						scope:check_scope = { is_close_family_of = scope:mw_ruler_scope }
+
+						### Filter corss relations between crown and rebel
+						trigger_if = {
+							limit = { this ?= scope:mw_crown }
+							NOT = { scope:check_scope = { is_close_family_of = scope:mw_rebel_leader } }
+						}
+						trigger_else_if = {
+							limit = { this ?= scope:mw_rebel_leader }
+							NOT = { scope:check_scope = { is_close_family_of = scope:mw_crown } }
+						}
+						trigger_else = { always = yes }
+					}
+					add = 500
+				}
+
+				if = { # target's primary heir is close family of ruler
+					limit = {
+						primary_heir ?= scope:check_scope
+						primary_heir ?= { is_close_family_of = scope:mw_ruler_scope }
+					}
+					add = 800
+				}
+
+				if = { # target's primary heir's spouse is close family of ruler
+					limit = {
+						primary_heir ?= {
+							is_spouse_of = scope:check_scope
+							any_spouse = { is_close_family_of = scope:mw_ruler_scope }
+						}
+					}
+					add = 600
+				}
+			}
+		}
+	}
+
+	# From target scope's perspective: are there cousin relations (which are excluded from above secction) or marriages to ruler scope
+	scope:target_scope = {
+		every_child = {
+			limit = {
+				OR = {
+					is_close_or_extended_family_of = scope:mw_ruler_scope
+					is_spouse_of = scope:mw_ruler_scope
+				}
+			}
+			if = {
+				limit = { is_close_family_of = scope:mw_ruler_scope }
+				add = 1200
+			}
+			if = {
+				limit = { is_close_or_extended_family_of = scope:mw_ruler_scope }
+				add = 600
+			}
+			if = {
+				limit = { is_spouse_of = scope:mw_ruler_scope }
+				add = 400
+			}
+		}
+	}
+}
+mw_same_dynasty_value = 75
+mw_historical_loyality_value = 750
+
+mw_has_hostage_crown_value = {
+	value = 0
+	if = {
+		limit = {
+			scope:mw_crown = { save_temporary_scope_as = target_scope }
+		}
+		add = mw_has_hostage_value
+	}
+}
+mw_has_hostage_rebel_leader_value = {
+	value = 0
+	if = {
+		limit = {
+			scope:mw_rebel_leader = { save_temporary_scope_as = target_scope }
+		}
+		add = mw_has_hostage_value
+	}
+}
+mw_has_hostage_value = {
+	scope:mw_ruler_scope ?= {
+		every_home_court_hostage = {
+			limit = {
+				warden ?= scope:target_scope
+				is_close_or_extended_family_of = scope:mw_ruler_scope
+			}
+			if = {
+				limit = { is_child_of = scope:mw_ruler_scope }
+				add = 1000
+			}
+			else_if = {
+				limit = { is_close_family_of = scope:mw_ruler_scope }
+				add = 800
+			}
+			else_if = {
+				limit = { is_close_or_extended_family_of = scope:mw_ruler_scope }
+				add = 400
+			}
+		}
+		multiply = mw_has_hostage_multiplier
+	}
+}
+mw_has_hostage_multiplier = {
+	value = 1
+	add = ai_compassion
+	divide = 80
+	min = 0.5
+}
+mw_has_alliance_with_side = 400
+mw_torn_between_sides_value = {
+	value = 0
+
+	if = {
+		limit = { exists = scope:s_relations_to_crown }
+		add = scope:s_relations_to_crown
+	}
+	if = {
+		limit = { exists = scope:s_relations_to_rebel_leader }
+		add = scope:s_relations_to_rebel_leader
+	}
+}
+mw_torn_between_sides_delta_value = {
+	value = 0
+
+	if = {
+		limit = { exists = scope:s_relations_to_crown }
+		add = scope:s_relations_to_crown
+	}
+	if = {
+		limit = { exists = scope:s_relations_to_rebel_leader }
+		subtract = scope:s_relations_to_rebel_leader
+	}
+}
+mw_relations_to_crown_value = {
+	scope:mw_crown = { save_temporary_scope_as = target_scope }
+	add = mw_relations_base
+}
+mw_relations_to_rebel_leader_value = {
+	scope:mw_rebel_leader = { save_temporary_scope_as = target_scope }
+	add = mw_relations_base
+}
+mw_relations_base = {
+	value = 0
+
+	scope:mw_ruler_scope ?= {
+		if = {
+			limit = { has_relation_best_friend = scope:target_scope }
+			add = 400
+		}
+		else_if = {
+			limit = { has_relation_friend = scope:target_scope }
+			add = 200
+		}
+
+		if = {
+			limit = { has_relation_soulmate = scope:target_scope }
+			add = 400
+		}
+		else_if = {
+			limit = { has_relation_lover = scope:target_scope }
+			add = 200
+		}
+
+		if = {
+			limit = {
+				is_allied_to = scope:target_scope
+				#agot_mw_loyality_value > 0 # you only care about the other side if you care about loyalty
+			}
+			add = mw_has_alliance_with_side
+		}
+		if = {
+			limit = {
+				var:mw_is_loyal_to ?= scope:target_scope
+				#agot_mw_loyality_value > 0 # you only care about the other side if you care about loyalty
+			}
+			add = agot_mw_oath_of_loyalty
+		}
+
+		add = mw_has_hostage_value
+
+		add = mw_close_family_value
+	}
+
+	multiply = mw_alliance_honour_factor
+}
+mw_alliance_honour_factor = {
+	value = 1
+
+	#add = scope:mw_ruler_scope.ai_compassion
+	add = {
+		value = scope:mw_ruler_scope.ai_honor
+		divide = 80
+	}
+	add = {
+		value = scope:mw_ruler_scope.ai_zeal
+		divide = 80
+	}
+	min = 0.3
+	max = 8
+}
+mw_is_heir_to_side_factor = 0.3
+mw_ally_has_alliance_with_side = 50
+agot_mw_oath_of_loyalty = {
+	value = 200
+}
+
+mw_oath_to_crown_value = {
+	scope:mw_crown = { save_temporary_scope_as = target_scope }
+	add = agot_mw_oath_of_loyalty
+	multiply = mw_alliance_honour_factor
+}
+mw_oath_to_rebel_leader_value = {
+	scope:mw_rebel_leader = { save_temporary_scope_as = target_scope }
+	add = agot_mw_oath_of_loyalty
+	multiply = mw_alliance_honour_factor
+}
+mw_legitimate_house_base_value = {
+	value = 100
+	multiply = {
+		value = 0
+		# If you are legitimate house you start with a base factor of 1, decreasing depending on progress
+		# --> e.g. at 0 progress you will get 1000 weight for your stance. at 40% you get 600
+		if = {
+			limit = {
+				var:legitimate_house ?= scope:target_scope.house
+			}
+			add = 1 # Base factor
+			if = {
+				limit = { var:current_house ?= scope:target_scope.house }
+				add = 1
+			}
+			# You are legitimate_house, but not current_house --> contested
+			else_if = {
+				limit = {
+					exists = var:new_house_progress
+					#var:new_house_progress < 60
+				}
+				subtract = { # @ 100% progress add 2; e.g: 10% = 0.2, 50% = 1
+					add = 3
+					multiply = {
+						add = var:new_house_progress
+						multiply = 0.01
+					}
+				}
+			}
+		}
+		# If you are not legitimate but current house you start with a base factor of -1, growing depending on progress
+		# --> e.g. at 0 progress you will get -1000 weight for your stance. at 50% you get -500
+		else = {
+			limit = {
+				var:current_house ?= scope:target_scope.house
+			}
+			add = -2
+			if = { # if very low house legitimacy extra malus!
+				limit = {
+					exists = var:new_house_progress
+					#var:new_house_progress < 35
+				}
+				add = { # @ 100% progress add 2; e.g: 10% = 0.2, 50% = 1
+					add = 2
+					multiply = {
+						add = var:new_house_progress
+						multiply = 0.01
+					}
+				}
+			}
+		}
+	}
+	if = {
+		limit = { tier = tier_kingdom }
+		multiply = 0
+	}
+	if = {
+		limit = { tier < tier_kingdom }
+		multiply = 0 #0.75
+	}
+	if = {
+		limit = {
+			OR = {
+				NOT = { holder.liege = scope:mw_crown }
+				NOT = { holder.liege = scope:mw_rebel_leader }
+			}
+		}
+		multiply = 0.25
+	}
+}
+mw_is_faction_member_value = 200
+mw_loyalist_faction_value = 200
+mw_different_faith_base_value = {
+	value = 100
+
+	# consider char's zeal
+	if = {
+		limit = { scope:mw_ruler_scope.ai_zeal > 0 }
+
+		multiply = { # at 100 zeal multiply by 3
+			add = scope:mw_ruler_scope.ai_zeal
+			multiply = 0.03
+		}
+	}
+	else = { multiply = 0 } # no zeal, no care about religion
+}
+mw_different_faith_value = {
+	value = mw_different_faith_base_value
+
+	if = {
+		limit = {
+			scope:mw_ruler_scope.faith = {
+				OR = {
+					this = scope:target_scope.faith
+					faith_hostility_level = {
+						target = scope:target_scope.faith
+						value = faith_fully_accepted_level
+					}
+				}
+			}
+		}
+		multiply = 0
+	}
+	if = {
+		limit = {
+			scope:mw_ruler_scope.faith = {
+				faith_hostility_level = {
+					target = scope:target_scope.faith
+					value = faith_astray_level
+				}
+			}
+		}
+		multiply = -0.5
+	}
+	if = {
+		limit = {
+			scope:mw_ruler_scope.faith = {
+				faith_hostility_level = {
+					target = scope:target_scope.faith
+					value = faith_hostile_level
+				}
+			}
+		}
+		multiply = -1
+	}
+	if = {
+		limit = {
+			scope:mw_ruler_scope.faith = {
+				faith_hostility_level = {
+					target = scope:target_scope.faith
+					value = faith_evil_level
+				}
+			}
+		}
+		multiply = -2
+	}
+}
+mw_different_faith_crown_value = {
+	value = 0
+	if = {
+		limit = {
+			scope:mw_crown = { save_temporary_scope_as = target_scope }
+		}
+		add = mw_different_faith_value
+	}
+}
+mw_different_faith_rebel_value = {
+	value = 0
+	if = {
+		limit = {
+			scope:mw_rebel_leader = { save_temporary_scope_as = target_scope }
+		}
+		add = mw_different_faith_value
+	}
+}
+mw_different_culture_value = {
+	value = 300
+	if = { # So High Valyrians (e.g. Targaryens) don't always have bad bad score here
+		limit = { scope:mw_target.culture ?= { has_cultural_tradition = tradition_agot_high_valyrian } }
+		scope:mw_target.title_capital_county.culture ?= { save_temporary_scope_as = target_culture }
+	}
+	else = {
+		scope:mw_target.title_capital_county.culture ?= { save_temporary_scope_as = target_culture } # we now always check for capital county culture for code simplification; I just didn't want to delete this code, that's ehy it is duplicate for now, hihi
+	}
+	scope:mw_ruler_scope.culture ?= {
+		multiply = {
+			value = 1
+
+			# Consider cultural acceptance
+			if = {
+				limit = { cultural_acceptance = { target = scope:target_culture value < 10 } }
+				subtract = 0.1
+			}
+			else_if = {
+				limit = { cultural_acceptance = { target = scope:target_culture value < 20 } }
+				subtract = 0.2
+			}
+			else_if = {
+				limit = { cultural_acceptance = { target = scope:target_culture value < 40 } }
+				subtract = 0.4
+			}
+			else_if = {
+				limit = { cultural_acceptance = { target = scope:target_culture value < 60 } }
+				subtract = 0.6
+			}
+			else_if = {
+				limit = { cultural_acceptance = { target = scope:target_culture value < 80 } }
+				subtract = 0.8
+			}
+			else_if = {
+				limit = { cultural_acceptance = { target = scope:target_culture value < 100 } }
+				subtract = 1
+			}
+		}
+	}
+}
+mw_protect_demesne_target_titles_value = 300
+mw_independence_war_reluctance = 300
+mw_old_stance_value = 400
+
+
+
+mw_diarch_target_is_imprisoned_value = 100
+
+
+mw_penal_coins_value = {
+	value = 0
+
+	if = {
+		limit = { var:mw_punishment_mode = flag:soft }
+		add = 50
+	}
+	else_if = {
+		limit = { var:mw_punishment_mode = flag:medium }
+		add = 100
+	}
+	else_if = {
+		limit = { var:mw_punishment_mode = flag:hard }
+		add = 150
+	}
+	else_if = {
+		limit = { var:mw_punishment_mode = flag:very_hard }
+		add = 200
+	}
+}
+
+# AI punishment acceptance values
+agot_mw_acceptance_base = 50
+
+agot_mw_accept_indic_humble = 10
+agot_mw_accept_indic_just = 10
+agot_mw_accept_indic_craven = 5
+agot_mw_accept_indic_trusting = 5
+agot_mw_accept_indic_vengeful = -10
+agot_mw_accept_indic_stubborn = -10
+agot_mw_accept_indic_arrogant = -7
+agot_mw_accept_indic_ambitious = -6
+
+agot_mw_accept_indic_sent_to_wall = -15
+
+agot_mw_accept_indic_execution = -65
+
+agot_mw_accept_indic_expel = -20
+
+agot_mw_accept_indic_take_main_titles = -10
+agot_mw_accept_indic_take_entire_demesne = -40
+agot_mw_accept_indic_take_entire_demesne_except_capital = -20
+agot_mw_accept_indic_take_half_demesne = -10
+agot_mw_accept_indic_take_artifact = -5
+
+agot_mw_acceptance_indicator_script_value = {
+	value = agot_mw_acceptance_base
+
+	root.var:selected_traitor ?= {
+		if = { # if there is no punishment AI always accepts
+			limit = {
+				NOT = { agot_mw_has_any_punishment_variable_trigger = yes }
+			}
+			add = 500
+		}
+
+		if = {
+			limit = {
+				has_trait = humble
+			}
+			add = agot_mw_accept_indic_humble
+		}
+		if = {
+			limit = {
+				has_trait = just
+			}
+			add = agot_mw_accept_indic_just
+		}
+		if = {
+			limit = {
+				has_trait = craven
+			}
+			add = agot_mw_accept_indic_craven
+		}
+		if = {
+			limit = {
+				has_trait = trusting
+			}
+			add = agot_mw_accept_indic_trusting
+		}
+
+		if = {
+			limit = {
+				has_trait = vengeful
+			}
+			add = agot_mw_accept_indic_vengeful
+		}
+		if = {
+			limit = {
+				has_trait = stubborn
+			}
+			add = agot_mw_accept_indic_stubborn
+		}
+		if = {
+			limit = {
+				has_trait = arrogant
+			}
+			add = agot_mw_accept_indic_arrogant
+		}
+		if = {
+			limit = {
+				has_trait = ambitious
+			}
+			add = agot_mw_accept_indic_ambitious
+		}
+
+		if = {
+			limit = {
+				has_variable = sent_to_wall
+			}
+			add = agot_mw_accept_indic_sent_to_wall
+		}
+
+		if = {
+			limit = {
+				has_variable = execution_traitor
+			}
+			add = agot_mw_accept_indic_execution
+		}
+		if = {
+			limit = {
+				has_variable = execution_family
+			}
+			add = { # base value is -50
+				value = -50
+				if = { # add 30
+					limit = {
+						OR = {
+							has_trait = callous
+							has_trait = sadistic
+						}
+					}
+					add = 30
+				}
+				if = { # add -30
+					limit = { has_trait = compassionate }
+					add = -30
+				}
+			}
+		}
+		if = {
+			limit = {
+				has_variable = execution_house
+			}
+			add = { # base value is -60
+				value = -60
+				if = { # add 40
+					limit = {
+						OR = {
+							has_trait = callous
+							has_trait = sadistic
+						}
+					}
+					add = 40
+				}
+				if = { # add -20
+					limit = { has_trait = compassionate }
+					add = -20
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_variable = expel_traitor
+			}
+			add = agot_mw_accept_indic_expel
+		}
+		if = {
+			limit = {
+				has_variable = expel_family
+			}
+			add = { # base value is -30
+				if = { # add 10
+					limit = {
+						OR = {
+							has_trait = callous
+							has_trait = sadistic
+						}
+					}
+					add = -20
+				}
+				if = { # add -20
+					limit = { has_trait = compassionate }
+					add = -50
+				}
+			}
+		}
+		if = {
+			limit = {
+				has_variable = expel_house
+			}
+			add = { # base value is -40
+				if = { # add 20
+					limit = {
+						OR = {
+							has_trait = callous
+							has_trait = sadistic
+						}
+					}
+					add = -20
+				}
+				if = { # add -10
+					limit = { has_trait = compassionate }
+					add = -40
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				has_variable = take_main_titles
+			}
+			add = agot_mw_accept_indic_take_main_titles
+		}
+		if = {
+			limit = {
+				has_variable = take_entire_demesne
+			}
+			add = agot_mw_accept_indic_take_entire_demesne
+		}
+		if = {
+			limit = {
+				has_variable = take_entire_demesne_except_capital
+			}
+			add = agot_mw_accept_indic_take_entire_demesne_except_capital
+		}
+		if = {
+			limit = {
+				has_variable = take_half_demesne
+				NOT = { has_variable = take_entire_demesne_except_capital }
+			}
+			add = agot_mw_accept_indic_take_half_demesne
+		}
+
+		if = {
+			limit = {
+				has_variable = take_artifact
+			}
+			add = agot_mw_accept_indic_take_artifact
+		}
+
+		if = {
+			limit = {
+				has_relation_rival = var:crown_target
+			}
+			add = -15
+		}
+		if = {
+			limit = {
+				has_relation_nemesis = var:crown_target
+			}
+			add = -20
+		}
+	}
+}
+
+# Other
+agot_mw_half_demesne_size = {
+	value = 0
+
+	root.var:selected_traitor = {
+		if = {
+			limit = { always = yes }
+			add = domain_size
+		}
+		if = {
+			limit = { always = yes }
+			divide = 2
+		}
+	}
+}
+
+agot_mw_get_attacker_war_score_value = {
+	add = scope:mw_war_scope.attacker_war_score
+}
+
+agot_mw_get_defender_war_score_value = {
+	add = scope:mw_war_scope.defender_war_score
+}
+
+agot_mw_tier_difference = -3

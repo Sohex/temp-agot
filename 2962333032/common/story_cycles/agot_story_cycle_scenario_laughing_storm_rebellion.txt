@@ -1,0 +1,1390 @@
+﻿#by #Relok
+
+story_agot_laughing_storm_rebellion = {
+	##The Iron Throne
+	#Aegon V - Targaryen_122
+	#Duncan Targaryen - Targaryen_126
+	#Jaehaerys Targaryen - Targaryen_127
+	#Shaera Targaryen - Targaryen_128
+	#Daeron Targaryen - Targaryen_129
+	#Rhaelle Targaryen - Targaryen_130
+	#Duncan Tall - Tall_1
+
+	##The Stormlands
+	#Lyonel Baratheon - Baratheon_71
+	#Cassandra Baratheon - Baratheon_76
+	#Ormund Baratheon - Baratheon_75
+
+	##The Reach
+	#Garlan Tyrell - Tyrell_1
+	#Luthor Tyrell - Tyrell_4
+
+	##The Arbor
+	#Runceford Redwyne - Redwyne_43
+	#Olenna Redwyne - Redwyne_2
+
+	##The Riverlands
+	#Steffon Tully - Tully_66
+	#Celia Tully - Tully_68
+
+	on_setup = {
+		debug_log = "The Laughing Storm Rebellion initialized"
+		##################################
+		#Initialise Events
+
+		#The Laughing Storm Rebellion
+		character:Baratheon_71 = {
+			trigger_event = agot_laughing_storm_rebellion.0001
+			add_character_flag = single_combat_duel_armor
+			add_character_flag = no_hat
+		}
+		character:Targaryen_122 = {
+			trigger_event = agot_laughing_storm_rebellion.0002
+		}
+	}
+	on_end = {
+		character:Reyne_46 = {
+			if = {
+				limit = { has_trait = refusing_marriage }
+				remove_trait = refusing_marriage
+			}
+		}
+	}
+	on_owner_death = {
+		if = {
+			limit = {
+				exists = title:d_shipbreaker_bay.holder
+				exists = title:d_shipbreaker_bay.holder.primary_heir
+				title:h_the_iron_throne.holder = { is_at_war_with = title:d_shipbreaker_bay.holder }
+			}
+			make_story_owner = title:d_shipbreaker_bay.holder.primary_heir
+			title:d_shipbreaker_bay.holder.primary_heir = { add_character_flag = the_laughing_storm_rebellion_war }
+		}
+	}
+
+	#Check for the end
+	effect_group = {
+		days = 1
+
+		triggered_effect = {
+			trigger = {
+				AND = {
+					title:d_shipbreaker_bay.holder = { is_at_war = no }
+					character:Tyrell_4 = {
+						OR = {
+							is_married = yes
+							NOT = { is_alive = yes }
+						}
+					}
+					character:Redwyne_2 = {
+						OR = {
+							is_married = yes
+							NOT = { is_alive = yes }
+						}
+					}
+					character:Tully_68 = {
+						OR = {
+							is_married = yes
+							NOT = { is_alive = yes }
+						}
+					}
+				}
+			}
+			effect = { end_story = yes }
+		}
+	}
+
+	#War Ended
+	effect_group = {
+		days = 7
+
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				title:d_shipbreaker_bay.holder = {
+					has_character_flag = the_laughing_storm_rebellion_war
+					NOT = { is_at_war_with = title:h_the_iron_throne.holder }
+				}
+			}
+			effect = {
+				if = {
+					limit = {
+						title:d_shipbreaker_bay.holder = {
+							is_independent_ruler = yes
+							has_character_flag = the_laughing_storm_rebellion_war
+						}
+					}
+					title:d_shipbreaker_bay.holder = {
+						save_scope_as = lyonel
+						remove_character_flag = the_laughing_storm_rebellion_war
+					}
+					title:h_the_iron_throne.holder = { save_scope_as = aegonv }
+					scope:lyonel = {
+						add_character_flag = {
+							flag = laughing_cycle_trigger
+							days = 60
+						}
+						trigger_event = agot_laughing_storm_rebellion.0026
+					}
+				}
+				if = {
+					limit = {
+						title:d_shipbreaker_bay.holder = {
+							is_independent_ruler = no
+							has_character_flag = the_laughing_storm_rebellion_war
+						}
+					}
+					title:d_shipbreaker_bay.holder = {
+						save_scope_as = lyonel
+						remove_character_flag = the_laughing_storm_rebellion_war
+					}
+					title:h_the_iron_throne.holder = { save_scope_as = aegonv }
+					every_player = {
+						limit = { location ?= { geographical_region = world_westeros_seven_kingdoms } }
+						trigger_event = {
+							id = agot_laughing_storm_rebellion.0030
+							days = 3
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+story_agot_targaryen_children_lsr = {
+	on_setup = {
+		debug_log = "Laughing Storm - Targaryen Children initialized"
+		##################################
+		if = {
+			limit = { has_game_rule = agot_story_historical_events_historical_outcomes }
+			character:Targaryen_127 = { add_character_flag = divorce_is_canon }
+			character:Targaryen_128 = { add_character_flag = divorce_is_canon }
+			character:Targaryen_129 = { add_character_flag = divorce_is_canon }
+		}
+		else = {
+			character:Targaryen_127 = { #Jaehaerys & Shaera
+				random_list = {
+					1 = {
+						add_character_flag = no_divorce
+						character:Targaryen_128 = { add_character_flag = no_divorce }
+
+						modifier = { add = agot_nonhistoric_outcome_3 }
+					}
+					1 = {
+						add_character_flag = divorce_is_instant
+						character:Targaryen_128 = { add_character_flag = divorce_is_instant }
+
+						modifier = { add = agot_nonhistoric_outcome_3 }
+					}
+					1 = {
+						add_character_flag = divorce_is_canon
+						character:Targaryen_128 = { add_character_flag = divorce_is_canon }
+
+						modifier = { add = agot_historic_outcome_3 }
+					}
+				}
+			}
+			character:Targaryen_129 = { #Daeron
+				random_list = {
+					1 = {
+						add_character_flag = no_divorce
+
+						modifier = { add = agot_nonhistoric_outcome_3 }
+					}
+					1 = {
+						add_character_flag = divorce_is_instant
+
+						modifier = { add = agot_nonhistoric_outcome_3 }
+					}
+					1 = {
+						add_character_flag = divorce_is_canon
+
+						modifier = { add = agot_historic_outcome_3 }
+					}
+				}
+			}
+		}
+	}
+	on_end = {
+		character:Targaryen_127 = {
+			if = {
+				limit = { has_character_flag = instant_divorce }
+				remove_character_flag = instant_divorce
+			}
+			if = {
+				limit = { has_character_flag = no_divorce }
+				remove_character_flag = no_divorce
+			}
+		}
+		character:Targaryen_128 = {
+			if = {
+				limit = { has_character_flag = instant_divorce }
+				remove_character_flag = instant_divorce
+			}
+			if = {
+				limit = { has_character_flag = no_divorce }
+				remove_character_flag = no_divorce
+			}
+		}
+		character:Targaryen_129 = {
+			if = {
+				limit = { has_character_flag = instant_divorce }
+				remove_character_flag = instant_divorce
+			}
+			if = {
+				limit = { has_character_flag = no_divorce }
+				remove_character_flag = no_divorce
+			}
+		}
+	}
+	on_owner_death = {
+		if = {
+			limit = { character:Targaryen_128 = { is_alive = yes } }
+			make_story_owner = character:Targaryen_128
+		}
+		else_if = {
+			limit = { character:Targaryen_129 = { is_alive = yes } }
+			make_story_owner = character:Targaryen_129
+		}
+		else = { end_story = yes }
+	}
+
+	#Jaehaerys & Shaera Canon Marriage
+	effect_group = {
+		days = 360
+
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				character:Targaryen_127 = { has_character_flag = divorce_is_canon }
+				character:Targaryen_128 = { has_character_flag = divorce_is_canon }
+			}
+			effect = {
+				laughing_storm_rebellion_scopes_effect = yes
+				character:Targaryen_127 = {
+					remove_character_flag = divorce_is_canon
+					trigger_event = agot_laughing_storm_rebellion.0011
+				}
+				character:Targaryen_128 = { remove_character_flag = divorce_is_canon }
+			}
+		}
+	}
+
+	#Daeron's Canon Breakup
+	effect_group = {
+		days = 1700
+
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				character:Targaryen_129 = { has_character_flag = divorce_is_canon }
+			}
+			effect = {
+				laughing_storm_rebellion_scopes_effect = yes
+				character:Targaryen_129 = {
+					remove_character_flag = divorce_is_canon
+					trigger_event = agot_laughing_storm_rebellion.0012
+				}
+			}
+		}
+	}
+
+	#Check for the end
+	effect_group = {
+		days = 1
+
+		triggered_effect = {
+			trigger = {
+				OR = {
+					AND = {
+						character:Targaryen_127 = { NOT = { is_alive = yes } }
+						character:Targaryen_128 = { NOT = { is_alive = yes } }
+						character:Targaryen_129 = { NOT = { is_alive = yes } }
+					}
+					AND = {
+						character:Targaryen_127 = { is_married = yes }
+						character:Targaryen_128 = { is_married = yes }
+						character:Targaryen_129 = {
+							OR = {
+								is_married = yes
+								has_trait = refusing_marriage
+							}
+						}
+					}
+				}
+			}
+			effect = { end_story = yes }
+		}
+	}
+}
+
+story_agot_reconquest_of_the_stormlands = {
+
+	on_setup = { debug_log = "Reconquest of The Stormlands initialized" }
+	on_end = {}
+	on_owner_death = {
+		if = {
+			limit = {
+				exists = title:e_the_stormlands.holder
+				title:e_the_stormlands.holder = { agot_is_independent_ruler = yes }
+				exists = title:h_the_iron_throne.holder
+				title:h_the_iron_throne.holder.primary_heir = {
+					OR = {
+						this = character:Targaryen_127 #Jaehaerys
+						this = character:Targaryen_129 #Daeron
+						this = character:Targaryen_126 #Duncan
+					}
+				}
+			}
+			make_story_owner = title:h_the_iron_throne.holder.primary_heir
+		}
+	}
+
+	effect_group = {
+		days = 1
+
+		#Reconquest
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				exists = title:e_the_stormlands.holder
+				title:e_the_stormlands.holder = { agot_is_independent_ruler = yes }
+				exists = title:h_the_iron_throne.holder
+				OR = {
+					title:h_the_iron_throne.holder = character:Targaryen_127 #Jaehaerys
+					title:h_the_iron_throne.holder = character:Targaryen_129 #Daeron
+					title:h_the_iron_throne.holder = character:Targaryen_126 #Duncan
+				}
+				title:h_the_iron_throne.holder = {
+					NOT = { is_at_war_with = title:e_the_stormlands.holder }
+					NOT = { has_character_flag = agot_laughing_storm_rebellion_0033_sent }
+					is_at_war = no
+					is_imprisoned = no
+					is_incapable = no
+					NOT = { exists = involved_activity }
+				}
+			}
+			effect = {
+				title:h_the_iron_throne.holder = {
+					add_character_flag = agot_laughing_storm_rebellion_0033_sent
+					trigger_event = {
+						id = agot_laughing_storm_rebellion.0033
+						days = { 60 90 }
+					}
+				}
+			}
+		}
+
+		#Save other lost kingdoms
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				OR = {
+					AND = {
+						exists = title:e_the_north.holder
+						title:e_the_north.holder = { agot_is_independent_ruler = yes }
+					}
+					AND = {
+						exists = title:e_the_riverlands.holder
+						title:e_the_riverlands.holder = { agot_is_independent_ruler = yes }
+					}
+					AND = {
+						exists = title:e_the_iron_islands.holder
+						title:e_the_iron_islands.holder = { agot_is_independent_ruler = yes }
+					}
+					AND = {
+						exists = title:e_the_westerlands.holder
+						title:e_the_westerlands.holder = { agot_is_independent_ruler = yes }
+					}
+					AND = {
+						exists = title:e_the_reach.holder
+						title:e_the_reach.holder = { agot_is_independent_ruler = yes }
+					}
+					AND = {
+						exists = title:e_dorne.holder
+						title:e_dorne.holder = { agot_is_independent_ruler = yes }
+					}
+					AND = {
+						exists = title:e_the_vale.holder
+						title:e_the_vale.holder = { agot_is_independent_ruler = yes }
+					}
+				}
+				exists = title:h_the_iron_throne.holder
+				exists = title:e_the_stormlands.holder
+				title:e_the_stormlands.holder = { agot_is_independent_ruler = yes }
+				title:h_the_iron_throne.holder = { this = character:Targaryen_122 } #Aegon V
+			}
+			effect = {
+				#North
+				if = {
+					limit = {
+						exists = title:e_the_north.holder
+						title:e_the_north.holder = { agot_is_independent_ruler = yes }
+					}
+					#Aegon V
+					title:h_the_iron_throne.holder = { add_character_flag = laughing_e_the_north }
+					#Jaehaerys
+					if = {
+						limit = { character:Targaryen_127 = { is_alive = yes } }
+						character:Targaryen_127 = { add_character_flag = laughing_e_the_north }
+					}
+					#Daeron
+					if = {
+						limit = { character:Targaryen_129 = { is_alive = yes } }
+						character:Targaryen_129 = { add_character_flag = laughing_e_the_north }
+					}
+					#Duncan
+					if = {
+						limit = { character:Targaryen_126 = { is_alive = yes } }
+						character:Targaryen_126 = { add_character_flag = laughing_e_the_north }
+					}
+				}
+				#Riverlands
+				if = {
+					limit = {
+						exists = title:e_the_riverlands.holder
+						title:e_the_riverlands.holder = { agot_is_independent_ruler = yes }
+					}
+					#Aegon V
+					title:h_the_iron_throne.holder = { add_character_flag = laughing_e_the_riverlands }
+					#Jaehaerys
+					if = {
+						limit = { character:Targaryen_127 = { is_alive = yes } }
+						character:Targaryen_127 = { add_character_flag = laughing_e_the_riverlands }
+					}
+					#Daeron
+					if = {
+						limit = { character:Targaryen_129 = { is_alive = yes } }
+						character:Targaryen_129 = { add_character_flag = laughing_e_the_riverlands }
+					}
+					#Duncan
+					if = {
+						limit = { character:Targaryen_126 = { is_alive = yes } }
+						character:Targaryen_126 = { add_character_flag = laughing_e_the_riverlands }
+					}
+				}
+				#Iron Islands
+				if = {
+					limit = {
+						exists = title:e_the_iron_islands.holder
+						title:e_the_iron_islands.holder = { agot_is_independent_ruler = yes }
+					}
+					#Aegon V
+					title:h_the_iron_throne.holder = { add_character_flag = laughing_e_the_iron_islands }
+					#Jaehaerys
+					if = {
+						limit = { character:Targaryen_127 = { is_alive = yes } }
+						character:Targaryen_127 = { add_character_flag = laughing_e_the_iron_islands }
+					}
+					#Daeron
+					if = {
+						limit = { character:Targaryen_129 = { is_alive = yes } }
+						character:Targaryen_129 = { add_character_flag = laughing_e_the_iron_islands }
+					}
+					#Duncan
+					if = {
+						limit = { character:Targaryen_126 = { is_alive = yes } }
+						character:Targaryen_126 = { add_character_flag = laughing_e_the_iron_islands }
+					}
+				}
+				#Westerlands
+				if = {
+					limit = {
+						exists = title:e_the_westerlands.holder
+						title:e_the_westerlands.holder = { agot_is_independent_ruler = yes }
+					}
+					#Aegon V
+					title:h_the_iron_throne.holder = { add_character_flag = laughing_e_the_westerlands }
+					#Jaehaerys
+					if = {
+						limit = { character:Targaryen_127 = { is_alive = yes } }
+						character:Targaryen_127 = { add_character_flag = laughing_e_the_westerlands }
+					}
+					#Daeron
+					if = {
+						limit = { character:Targaryen_129 = { is_alive = yes } }
+						character:Targaryen_129 = { add_character_flag = laughing_e_the_westerlands }
+					}
+					#Duncan
+					if = {
+						limit = { character:Targaryen_126 = { is_alive = yes } }
+						character:Targaryen_126 = { add_character_flag = laughing_e_the_westerlands }
+					}
+				}
+				#Reach
+				if = {
+					limit = {
+						exists = title:e_the_reach.holder
+						title:e_the_reach.holder = { agot_is_independent_ruler = yes }
+					}
+					#Aegon V
+					title:h_the_iron_throne.holder = { add_character_flag = laughing_e_the_reach }
+					#Jaehaerys
+					if = {
+						limit = { character:Targaryen_127 = { is_alive = yes } }
+						character:Targaryen_127 = { add_character_flag = laughing_e_the_reach }
+					}
+					#Daeron
+					if = {
+						limit = { character:Targaryen_129 = { is_alive = yes } }
+						character:Targaryen_129 = { add_character_flag = laughing_e_the_reach }
+					}
+					#Duncan
+					if = {
+						limit = { character:Targaryen_126 = { is_alive = yes } }
+						character:Targaryen_126 = { add_character_flag = laughing_e_the_reach }
+					}
+				}
+				#Dorne
+				if = {
+					limit = {
+						exists = title:e_dorne.holder
+						title:e_dorne.holder = { agot_is_independent_ruler = yes }
+					}
+					#Aegon V
+					title:h_the_iron_throne.holder = { add_character_flag = laughing_e_dorne }
+					#Jaehaerys
+					if = {
+						limit = { character:Targaryen_127 = { is_alive = yes } }
+						character:Targaryen_127 = { add_character_flag = laughing_e_dorne }
+					}
+					#Daeron
+					if = {
+						limit = { character:Targaryen_129 = { is_alive = yes } }
+						character:Targaryen_129 = { add_character_flag = laughing_e_dorne }
+					}
+					#Duncan
+					if = {
+						limit = { character:Targaryen_126 = { is_alive = yes } }
+						character:Targaryen_126 = { add_character_flag = laughing_e_dorne }
+					}
+				}
+				#Vale
+				if = {
+					limit = {
+						exists = title:e_the_vale.holder
+						title:e_the_vale.holder = { agot_is_independent_ruler = yes }
+					}
+					#Aegon V
+					title:h_the_iron_throne.holder = { add_character_flag = laughing_e_the_vale }
+					#Jaehaerys
+					if = {
+						limit = { character:Targaryen_127 = { is_alive = yes } }
+						character:Targaryen_127 = { add_character_flag = laughing_e_the_vale }
+					}
+					#Daeron
+					if = {
+						limit = { character:Targaryen_129 = { is_alive = yes } }
+						character:Targaryen_129 = { add_character_flag = laughing_e_the_vale }
+					}
+					#Duncan
+					if = {
+						limit = { character:Targaryen_126 = { is_alive = yes } }
+						character:Targaryen_126 = { add_character_flag = laughing_e_the_vale }
+					}
+				}
+			}
+		}
+
+		#End Story
+		triggered_effect = {
+			trigger = {
+				OR = {
+					AND = {
+						NOT = { title:h_the_iron_throne.holder = character:Targaryen_122 } #Aegon V
+						NOT = { title:h_the_iron_throne.holder = character:Targaryen_127 } #Jaehaerys
+						NOT = { title:h_the_iron_throne.holder = character:Targaryen_129 } #Daeron
+						NOT = { title:h_the_iron_throne.holder = character:Targaryen_126 } #Duncan
+					}
+					NOT = { exists = title:e_the_stormlands.holder }
+					title:e_the_stormlands.holder = { NOT = { agot_is_independent_ruler = yes } }
+					NOT = { exists = title:h_the_iron_throne.holder }
+				}
+
+			}
+			effect = { end_story = yes }
+		}
+	}
+}
+
+story_agot_reconquest_of_the_realm = {
+	on_setup = { debug_log = "Laughing Storm: Reconquest of The Realm initialized" }
+	on_end = {
+		character:Targaryen_127 = { #Jaehaerys
+			if = {
+				limit = { is_alive = yes }
+				if = {
+					limit = { has_character_flag = laughing_e_the_north }
+					remove_character_flag = laughing_e_the_north
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_riverlands }
+					remove_character_flag = laughing_e_the_riverlands
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_iron_islands }
+					remove_character_flag = laughing_e_the_iron_islands
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_westerlands }
+					remove_character_flag = laughing_e_the_westerlands
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_reach }
+					remove_character_flag = laughing_e_the_reach
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_dorne }
+					remove_character_flag = laughing_e_dorne
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_vale }
+					remove_character_flag = laughing_e_the_vale
+				}
+			}
+		}
+		character:Targaryen_129 = { #Daeron
+			if = {
+				limit = { is_alive = yes }
+				if = {
+					limit = { has_character_flag = laughing_e_the_north }
+					remove_character_flag = laughing_e_the_north
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_riverlands }
+					remove_character_flag = laughing_e_the_riverlands
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_iron_islands }
+					remove_character_flag = laughing_e_the_iron_islands
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_westerlands }
+					remove_character_flag = laughing_e_the_westerlands
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_reach }
+					remove_character_flag = laughing_e_the_reach
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_dorne }
+					remove_character_flag = laughing_e_dorne
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_vale }
+					remove_character_flag = laughing_e_the_vale
+				}
+			}
+		}
+		character:Targaryen_126 = { #Duncan
+			if = {
+				limit = { is_alive = yes }
+				if = {
+					limit = { has_character_flag = laughing_e_the_north }
+					remove_character_flag = laughing_e_the_north
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_riverlands }
+					remove_character_flag = laughing_e_the_riverlands
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_iron_islands }
+					remove_character_flag = laughing_e_the_iron_islands
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_westerlands }
+					remove_character_flag = laughing_e_the_westerlands
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_reach }
+					remove_character_flag = laughing_e_the_reach
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_dorne }
+					remove_character_flag = laughing_e_dorne
+				}
+				if = {
+					limit = { has_character_flag = laughing_e_the_vale }
+					remove_character_flag = laughing_e_the_vale
+				}
+			}
+		}
+	}
+	on_owner_death = {
+		if = {
+			limit = {
+				exists = title:h_the_iron_throne.holder
+				title:h_the_iron_throne.holder.primary_heir = {
+					OR = {
+						this = character:Targaryen_127 #Jaehaerys
+						this = character:Targaryen_129 #Daeron
+						this = character:Targaryen_126 #Duncan
+					}
+				}
+			}
+			make_story_owner = title:h_the_iron_throne.holder.primary_heir
+		}
+		else = {
+			character:Targaryen_127 = { #Jaehaerys
+				if = {
+					limit = { is_alive = yes }
+					if = {
+						limit = { has_character_flag = laughing_e_the_north }
+						remove_character_flag = laughing_e_the_north
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_riverlands }
+						remove_character_flag = laughing_e_the_riverlands
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_iron_islands }
+						remove_character_flag = laughing_e_the_iron_islands
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_westerlands }
+						remove_character_flag = laughing_e_the_westerlands
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_reach }
+						remove_character_flag = laughing_e_the_reach
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_dorne }
+						remove_character_flag = laughing_e_dorne
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_vale }
+						remove_character_flag = laughing_e_the_vale
+					}
+				}
+			}
+			character:Targaryen_129 = { #Daeron
+				if = {
+					limit = { is_alive = yes }
+					if = {
+						limit = { has_character_flag = laughing_e_the_north }
+						remove_character_flag = laughing_e_the_north
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_riverlands }
+						remove_character_flag = laughing_e_the_riverlands
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_iron_islands }
+						remove_character_flag = laughing_e_the_iron_islands
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_westerlands }
+						remove_character_flag = laughing_e_the_westerlands
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_reach }
+						remove_character_flag = laughing_e_the_reach
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_dorne }
+						remove_character_flag = laughing_e_dorne
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_vale }
+						remove_character_flag = laughing_e_the_vale
+					}
+				}
+			}
+			character:Targaryen_126 = { #Duncan
+				if = {
+					limit = { is_alive = yes }
+					if = {
+						limit = { has_character_flag = laughing_e_the_north }
+						remove_character_flag = laughing_e_the_north
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_riverlands }
+						remove_character_flag = laughing_e_the_riverlands
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_iron_islands }
+						remove_character_flag = laughing_e_the_iron_islands
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_westerlands }
+						remove_character_flag = laughing_e_the_westerlands
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_reach }
+						remove_character_flag = laughing_e_the_reach
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_dorne }
+						remove_character_flag = laughing_e_dorne
+					}
+					if = {
+						limit = { has_character_flag = laughing_e_the_vale }
+						remove_character_flag = laughing_e_the_vale
+					}
+				}
+			}
+		}
+	}
+
+	effect_group = {
+		days = 1
+
+		#Reconquest
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				title:e_the_stormlands.holder = { NOT = { agot_is_independent_ruler = yes } }
+				exists = title:h_the_iron_throne.holder
+				OR = {
+					title:h_the_iron_throne.holder = character:Targaryen_127 #Jaehaerys
+					title:h_the_iron_throne.holder = character:Targaryen_129 #Daeron
+					title:h_the_iron_throne.holder = character:Targaryen_126 #Duncan
+				}
+				title:h_the_iron_throne.holder = {
+					is_imprisoned = no
+					is_incapable = no
+					NOT = { exists = involved_activity }
+				}
+				OR = {
+					AND = {
+						exists = title:e_the_north.holder
+						title:e_the_north.holder = { agot_is_independent_ruler = yes }
+						title:h_the_iron_throne.holder = {
+							has_character_flag = laughing_e_the_north
+							NOT = { is_at_war_with = title:e_the_north.holder }
+							NOT = { has_character_flag = agot_laughing_storm_rebellion_0036_sent }
+							is_at_war = no
+						}
+					}
+					AND = {
+						exists = title:e_the_riverlands.holder
+						title:e_the_riverlands.holder = { agot_is_independent_ruler = yes }
+						title:h_the_iron_throne.holder = {
+							has_character_flag = laughing_e_the_riverlands
+							NOT = { is_at_war_with = title:e_the_riverlands.holder }
+							NOT = { has_character_flag = agot_laughing_storm_rebellion_0036_sent }
+							is_at_war = no
+						}
+					}
+					AND = {
+						exists = title:e_the_iron_islands.holder
+						title:e_the_iron_islands.holder = { agot_is_independent_ruler = yes }
+						title:h_the_iron_throne.holder = {
+							has_character_flag = laughing_e_the_iron_islands
+							NOT = { is_at_war_with = title:e_the_iron_islands.holder }
+							NOT = { has_character_flag = agot_laughing_storm_rebellion_0036_sent }
+							is_at_war = no
+						}
+					}
+					AND = {
+						exists = title:e_the_westerlands.holder
+						title:e_the_westerlands.holder = { agot_is_independent_ruler = yes }
+						title:h_the_iron_throne.holder = {
+							has_character_flag = laughing_e_the_westerlands
+							NOT = { is_at_war_with = title:e_the_westerlands.holder }
+							NOT = { has_character_flag = agot_laughing_storm_rebellion_0036_sent }
+							is_at_war = no
+						}
+					}
+					AND = {
+						exists = title:e_the_reach.holder
+						title:e_the_reach.holder = { agot_is_independent_ruler = yes }
+						title:h_the_iron_throne.holder = {
+							has_character_flag = laughing_e_the_reach
+							NOT = { is_at_war_with = title:e_the_reach.holder }
+							NOT = { has_character_flag = agot_laughing_storm_rebellion_0036_sent }
+							is_at_war = no
+						}
+					}
+					AND = {
+						exists = title:e_dorne.holder
+						title:e_dorne.holder = { agot_is_independent_ruler = yes }
+						title:h_the_iron_throne.holder = {
+							has_character_flag = laughing_e_dorne
+							NOT = { is_at_war_with = title:e_dorne.holder }
+							NOT = { has_character_flag = agot_laughing_storm_rebellion_0036_sent }
+							is_at_war = no
+						}
+					}
+					AND = {
+						exists = title:e_the_vale.holder
+						title:e_the_vale.holder = { agot_is_independent_ruler = yes }
+						title:h_the_iron_throne.holder = {
+							has_character_flag = laughing_e_the_vale
+							NOT = { is_at_war_with = title:e_the_vale.holder }
+							NOT = { has_character_flag = agot_laughing_storm_rebellion_0036_sent }
+							is_at_war = no
+						}
+					}
+				}
+			}
+			effect = {
+				title:h_the_iron_throne.holder = {
+					add_character_flag = agot_laughing_storm_rebellion_0036_sent
+					trigger_event = {
+						id = agot_laughing_storm_rebellion.0036
+						days = { 60 90 }
+					}
+				}
+			}
+		}
+
+		#End Story
+		triggered_effect = {
+			trigger = {
+				OR = {
+					AND = {
+						NOT = { title:h_the_iron_throne.holder = character:Targaryen_127 } #Jaehaerys
+						NOT = { title:h_the_iron_throne.holder = character:Targaryen_129 } #Daeron
+						NOT = { title:h_the_iron_throne.holder = character:Targaryen_126 } #Duncan
+					}
+					NOT = { exists = title:h_the_iron_throne.holder }
+					AND = {
+						OR = {
+							NOT = { exists = title:e_the_north.holder }
+							title:e_the_north.holder = { NOT = { agot_is_independent_ruler = yes } }
+						}
+						OR = {
+							NOT = { exists = title:e_the_riverlands.holder }
+							title:e_the_riverlands.holder = { NOT = { agot_is_independent_ruler = yes } }
+						}
+						OR = {
+							NOT = { exists = title:e_the_iron_islands.holder }
+							title:e_the_iron_islands.holder = { NOT = { agot_is_independent_ruler = yes } }
+						}
+						OR = {
+							NOT = { exists = title:e_the_westerlands.holder }
+							title:e_the_westerlands.holder = { NOT = { agot_is_independent_ruler = yes } }
+						}
+						OR = {
+							NOT = { exists = title:e_the_reach.holder }
+							title:e_the_reach.holder = { NOT = { agot_is_independent_ruler = yes } }
+						}
+						OR = {
+							NOT = { exists = title:e_dorne.holder }
+							title:e_dorne.holder = { NOT = { agot_is_independent_ruler = yes } }
+						}
+						OR = {
+							NOT = { exists = title:e_the_vale.holder }
+							title:e_the_vale.holder = { NOT = { agot_is_independent_ruler = yes } }
+						}
+					}
+					AND = {
+						title:h_the_iron_throne.holder = { NOT = { has_character_flag = laughing_e_the_north } }
+						title:h_the_iron_throne.holder = { NOT = { has_character_flag = laughing_e_the_riverlands } }
+						title:h_the_iron_throne.holder = { NOT = { has_character_flag = laughing_e_the_iron_islands } }
+						title:h_the_iron_throne.holder = { NOT = { has_character_flag = laughing_e_the_westerlands } }
+						title:h_the_iron_throne.holder = { NOT = { has_character_flag = laughing_e_the_reach } }
+						title:h_the_iron_throne.holder = { NOT = { has_character_flag = laughing_e_dorne } }
+						title:h_the_iron_throne.holder = { NOT = { has_character_flag = laughing_e_the_vale } }
+					}
+				}
+			}
+			effect = { end_story = yes }
+		}
+	}
+}
+
+story_maelys_lsr = {
+	on_setup = {
+		debug_log = "Maelys - Laughing Storm Rebellion initialized"
+		##################################
+		#Initialise Events
+
+		#Maelys Story
+		character:Blackfyre_14 = {
+			trigger_event = {
+				id = agot_laughing_storm_rebellion.0100
+				days = 5045
+			}
+		}
+	}
+	on_end = {}
+	on_owner_death = { end_story = yes }
+	effect_group = {
+		days = 1
+
+		#Set Daemon Blackfyre as Bittersteel's heir
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				character:Targaryen_95 = { #Bittersteel
+					is_alive = yes
+					is_landless_adventurer = yes
+					has_title = title:d_laamp_merc_golden_company
+					any_child = {
+						is_alive = yes
+						NOT = { has_trait = bastard }
+						count = 0
+					}
+					NOT = { primary_heir = character:Blackfyre_13 }
+					NOT = { has_character_flag = maelys_duel }
+				}
+				character:Blackfyre_13 = { #Daemon Blackfyre
+					is_alive = yes
+					is_playable_character = no
+					NOT = { has_character_flag = no_forced_inheritence }
+				}
+			}
+			effect = {
+				character:Targaryen_95 = {
+					set_designated_heir_unsafe = character:Blackfyre_13
+				}
+			}
+		}
+
+		#Set Children back
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				character:Targaryen_95 = { #Bittersteel
+					is_alive = yes
+					is_landless_adventurer = yes
+					has_title = title:d_laamp_merc_golden_company
+					any_child = {
+						is_alive = yes
+						NOT = { has_trait = bastard }
+						count > 0
+					}
+					primary_heir = character:Blackfyre_13
+				}
+			}
+			effect = {
+				character:Targaryen_95 = { #Bittersteel
+					random_child = {
+						limit = {
+							is_alive = yes
+							NOT = { has_trait = bastard }
+						}
+						character:Targaryen_95 = { set_designated_heir = prev }
+					}
+				}
+				character:Blackfyre_13 = { add_character_flag = no_forced_inheritence } #Daemon Blackfyre
+			}
+		}
+
+		#End
+		triggered_effect = {
+			trigger = { title:d_laamp_merc_golden_company.holder = character:Blackfyre_14 } #Maelys Blackfyre
+			effect = { end_story = yes }
+		}
+	}
+}
+
+story_bloodraven_lsr = {
+	on_setup = {
+		debug_log = "Bloodraven - Laughing Storm Rebellion initialized"
+		##################################
+		#Initialise Events
+
+		#Bloodraven Story
+		character:Targaryen_96 = {
+			trigger_event = agot_laughing_storm_rebellion.0400
+		}
+	}
+	on_end = {}
+	on_owner_death = { end_story = yes }
+
+	#Monthly
+	effect_group = {
+		months = 1
+
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				character:Targaryen_96 = {
+					NOT = { has_character_flag = bloodraven_vision_event_sent }
+					NOT = { has_character_flag = bloodraven_finished }
+				}
+			}
+			effect = {
+				random = {
+					chance = 10
+
+					random_list = {
+						#Dream: A Tree
+						1 = {
+							trigger = { character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_51 } } }
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_51
+								trigger_event = agot_laughing_storm_rebellion.0451
+							}
+						}
+						#Dream: A Dark Wolf
+						1 = {
+							trigger = { character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_52 } } }
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_52
+								trigger_event = agot_laughing_storm_rebellion.0452
+							}
+						}
+						#Dream: A Crow with three eyes
+						1 = {
+							trigger = { character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_53 } } }
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_53
+								trigger_event = agot_laughing_storm_rebellion.0453
+							}
+						}
+						#Dream: A Climber
+						1 = {
+							trigger = { character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_54 } } }
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_54
+								trigger_event = agot_laughing_storm_rebellion.0454
+							}
+						}
+						#Dream: A Tree Part 2
+						1 = {
+							trigger = {
+								character:Targaryen_96 = {
+									NOT = { has_character_flag = lcbr_event_55 }
+									has_character_flag = lcbr_event_56
+								}
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_55
+								trigger_event = agot_laughing_storm_rebellion.0455
+							}
+						}
+						#Dream: A White Wolf Part 2
+						1 = {
+							trigger = {
+								character:Targaryen_96 = {
+									NOT = { has_character_flag = lcbr_event_56 }
+									has_character_flag = lcbr_event_52
+								}
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_56
+								trigger_event = agot_laughing_storm_rebellion.0456
+							}
+						}
+						#Dream: A Crow with three eyes Part 2
+						1 = {
+							trigger = {
+								character:Targaryen_96 = {
+									NOT = { has_character_flag = lcbr_event_57 }
+									has_character_flag = lcbr_event_53
+								}
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_57
+								trigger_event = agot_laughing_storm_rebellion.0457
+							}
+						}
+						#Dream: A Climber Part 2
+						1 = {
+							trigger = {
+								character:Targaryen_96 = {
+									NOT = { has_character_flag = lcbr_event_58 }
+									has_character_flag = lcbr_event_54
+								}
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_58
+								trigger_event = agot_laughing_storm_rebellion.0458
+							}
+						}
+						#Dream: The Night
+						1 = {
+							trigger = { character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_59 } } }
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_59
+								trigger_event = agot_laughing_storm_rebellion.0459
+							}
+						}
+						#Dream: The Dead
+						1 = {
+							trigger = { character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_60 } } }
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_60
+								trigger_event = agot_laughing_storm_rebellion.0460
+							}
+						}
+						#Aemon: Dragon with three heads
+						1 = {
+							trigger = {
+								character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_61 } }
+								character:Targaryen_120 = { is_alive = yes }
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_61
+								trigger_event = agot_laughing_storm_rebellion.0461
+							}
+						}
+						#Aemon: A Targaryen in a distant land
+						1 = {
+							trigger = {
+								character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_62 } }
+								character:Targaryen_120 = { is_alive = yes }
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_62
+								trigger_event = agot_laughing_storm_rebellion.0462
+							}
+						}
+						#Ranging: A Child
+						1 = {
+							trigger = { character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_63 } } }
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_63
+								trigger_event = agot_laughing_storm_rebellion.0463
+							}
+						}
+						#Ranging: The Children
+						1 = {
+							trigger = {
+								character:Targaryen_96 = {
+									NOT = { has_character_flag = lcbr_event_64 }
+									has_character_flag = lcbr_event_63
+								}
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_64
+								trigger_event = agot_laughing_storm_rebellion.0464
+							}
+						}
+						#Misc: Brothers
+						1 = {
+							trigger = {
+								character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_65 } }
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_65
+								trigger_event = agot_laughing_storm_rebellion.0465
+							}
+						}
+						#Red Dream: A Girl in the Flames
+						1 = {
+							trigger = {
+								character:Targaryen_96 = {
+									NOT = { has_character_flag = lcbr_event_66 }
+									has_character_flag = lcbr_event_61
+									has_character_flag = lcbr_event_62
+								}
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_66
+								trigger_event = agot_laughing_storm_rebellion.0466
+							}
+						}
+						#Red Dream: Wildfire
+						1 = {
+							trigger = {
+								character:Targaryen_96 = {
+									NOT = { has_character_flag = lcbr_event_67 }
+									has_character_flag = lcbr_event_61
+									has_character_flag = lcbr_event_62
+								}
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_67
+								trigger_event = agot_laughing_storm_rebellion.0467
+							}
+						}
+						#Bloodraven: Whispers of the Dragon
+						1 = {
+							trigger = {
+								character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_68 } }
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_68
+								trigger_event = agot_laughing_storm_rebellion.0468
+							}
+						}
+						#Bloodraven: The Cold Dark Night
+						1 = {
+							trigger = {
+								character:Targaryen_96 = { NOT = { has_character_flag = lcbr_event_69 } }
+							}
+							character:Targaryen_96 = {
+								add_character_flag = bloodraven_vision_event_sent
+								add_character_flag = lcbr_event_69
+								trigger_event = agot_laughing_storm_rebellion.0469
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#Yearly
+	effect_group = {
+		years = 1
+
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				current_year = 8252
+			}
+			effect = {
+				character:Targaryen_96 = {
+					add_character_flag = bloodraven_finished
+					trigger_event = {
+						id = agot_laughing_storm_rebellion.0420
+						days = { 3 7 }
+					}
+				}
+			}
+		}
+	}
+}
+
+story_pk_arbor_lsr = {
+	on_setup = {
+		debug_log = "Petty Kingdom of Arbor - Laughing Storm Rebellion initialized"
+	}
+	on_end = {}
+	on_owner_death = { end_story = yes }
+	effect_group = {
+		days = 1
+
+		#Send event to the Reach
+		triggered_effect = {
+			trigger = {
+				NOT = { has_game_rule = agot_story_sandbox }
+				exists = title:e_the_reach.holder
+			}
+			effect = {
+				title:e_the_reach.holder = { save_scope_as = e_reach_holder }
+				title:k_the_arbor.holder = { save_scope_as = k_arbor_holder }
+				scope:e_reach_holder = {
+					trigger_event = agot_laughing_storm_rebellion.0039
+				}
+			}
+		}
+
+		#End
+		triggered_effect = {
+			trigger = {
+				OR = {
+					NOT = { exists = title:k_the_arbor.holder }
+					title:k_the_arbor.holder = { NOT = { agot_is_independent_ruler = yes } }
+				}
+			}
+			effect = { end_story = yes }
+		}
+	}
+}

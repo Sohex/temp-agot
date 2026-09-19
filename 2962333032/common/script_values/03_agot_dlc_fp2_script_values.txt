@@ -1,0 +1,260 @@
+﻿fp2_expel_interloper_ai_targeting_value = {
+	value = 100
+	scope:attacker = {
+		# Weight up religious enemies.
+		if = {
+			limit = {
+				faith = {
+					faith_hostility_level = {
+						target = scope:defender.faith
+						value > faith_astray_level
+					}
+				}
+			}
+			add = 100
+		}
+		# Weight up culture enemies.
+		if = {
+			limit = {
+				culture = {
+					cultural_acceptance = {
+						target = scope:defender.culture
+						value < -25
+					}
+				}
+			}
+			add = 100
+		}
+	}
+	# Weight up with interloper land
+	scope:defender = {
+		every_realm_county = {
+			limit = { target_is_de_jure_liege_or_above = title:e_beyond_the_wall }
+			add = fp2_expel_interloper_county_cost_value
+		}
+	}
+}
+
+##### Struggle Ending Decisions #####
+
+### Common
+
+# Counts every county in region, to check against
+struggle_btw_ending_ending_decision_region_total_value = {
+	value = 0
+	every_county_in_region = {
+		region = world_westeros_beyond_the_wall
+		add = 1
+	}
+}
+
+# Counts independent involved realms in Beyond the Wall, to compare
+struggle_btw_ending_ending_decision_foreign_realm_total_value = {
+	value = 0
+	struggle:btw_struggle = {
+		every_involved_ruler = {
+			limit = {
+				NOT = { this = root }
+				agot_is_independent_ruler = yes
+				is_landless_adventurer = no
+				primary_title = { is_holy_order = no }
+				primary_title = { is_mercenary_company = no }
+			}
+			add = 1
+		}
+	}
+}
+
+# Counts completely controlled de jure kingdoms beyond the wall
+fp2_struggle_ending_kingdom_counter_value = {
+	every_held_title = {
+		limit = {
+			tier = tier_kingdom
+			de_jure_liege = title:e_beyond_the_wall
+			root = { completely_controls = prev }
+		}
+		add = 1
+	}
+}
+
+# Counter for other rulers who own too much of Beyond the Wall
+fp2_struggle_hostility_region_counter_value = {
+	struggle:btw_struggle = {
+		every_involved_ruler = {
+			limit = {
+				NOT = { this = root }
+				agot_is_independent_ruler = yes
+				primary_title = { is_holy_order = no }
+				primary_title = { is_mercenary_company = no }
+				any_county_in_region = {
+					region = world_westeros_beyond_the_wall
+					percent > fp2_struggle_hostility_region_percent_decimal_value # set by fp2_struggle_hostility_region_percent_value
+					holder.top_liege = prev
+				}
+			}
+			add = 1
+		}
+	}
+}
+
+# Counter for controlled counties in Beyond the Wall
+struggle_btw_ending_compromise_decision_region_owned_value = {
+	value = 0
+	every_county_in_region = {
+		region = world_westeros_beyond_the_wall
+		limit = { holder.top_liege = root }
+		add = 1
+	}
+}
+
+# Percentage of Beyond the Wall counties owned
+struggle_btw_ending_compromise_decision_region_owned_percent_value = {
+	value = struggle_btw_ending_compromise_decision_region_owned_value
+	divide = struggle_btw_ending_ending_decision_region_total_value
+	multiply = 100
+}
+
+# Parameter for mininmum opinion
+struggle_btw_ending_compromise_decision_opinion_value = {
+	value = 60
+}
+
+# Counter for hooked and friendly rulers
+struggle_btw_ending_compromise_decision_opinion_counter_value = {
+	value = 0
+	struggle:btw_struggle = {
+		every_involved_ruler = {
+			limit = {
+				NOT = { this = root }
+				agot_is_independent_ruler = yes
+				is_landless_adventurer = no
+				primary_title = { is_holy_order = no }
+				primary_title = { is_mercenary_company = no }
+				save_temporary_scope_as = this_character
+				OR = {
+					root = { has_strong_hook = scope:this_character }
+					opinion = {
+						target = root
+						value >= struggle_btw_ending_compromise_decision_opinion_value
+					}
+				}
+			}
+			add = 1
+		}
+	}
+}
+
+# Counter for Beyond the Wall counties owned by non-Involved
+struggle_btw_ending_compromise_decision_region_interloper_value = {
+	value = 0
+	every_county_in_region = {
+		region = world_westeros_beyond_the_wall
+		limit = {
+			holder.top_liege = { fp2_character_involved_in_struggle_trigger = no }
+		}
+		add = 1
+	}
+}
+
+# Percentage of Beyond the Wall counties owned by non-Involved
+struggle_btw_ending_compromise_decision_region_interloper_percent_value = {
+	value = struggle_btw_ending_compromise_decision_region_interloper_value
+	divide = struggle_btw_ending_ending_decision_region_total_value
+	multiply = 100
+}
+
+# Counter for independent king or higher Involved rulers
+struggle_btw_ending_compromise_decision_independent_counter_value = {
+	value = 0
+	struggle:btw_struggle = {
+		every_involved_ruler = {
+			limit = {
+				NOT = { this = root }
+				agot_is_independent_ruler = yes
+				primary_title = {
+					is_mercenary_company = no
+					is_holy_order = no
+					tier >= tier_kingdom
+				}
+			}
+			add = 1
+		}
+	}
+}
+
+#Counter for inter-Involved character wars
+struggle_btw_ending_compromise_decision_war_counter_value = {
+	struggle:btw_struggle = {
+		every_involved_ruler = {
+			limit = {
+				is_independent_ruler = yes
+				primary_title = { is_mercenary_company = no }
+				primary_title = { is_holy_order = no }
+				any_primary_war_enemy = {
+					is_independent_ruler = yes
+					any_character_struggle = {
+						involvement = involved
+						is_struggle_type = btw_struggle
+					}
+					primary_title = { is_holy_order = no }
+					primary_title = { is_mercenary_company = no }
+				}
+			}
+			add =  {
+				value = 0
+				if = {
+					 limit = {
+					 	any_character_war = {
+							OR = {
+								AND = {
+									primary_attacker = prev
+									primary_defender = {
+										any_character_struggle = {
+											involvement = involved
+											is_struggle_type = btw_struggle
+										}
+										is_independent_ruler = yes
+										primary_title = { is_mercenary_company = no }
+									}
+								}
+								AND = {
+									primary_defender = prev
+									primary_attacker = {
+										any_character_struggle = {
+											involvement = involved
+											is_struggle_type = btw_struggle
+										}
+										is_independent_ruler = yes
+										primary_title = { is_mercenary_company = no }
+									}
+								}
+							}
+						}
+					 }
+					add = 0.5 # they are both primary participant so they will add 0.5 each
+				}
+				else = {
+					add = 1 # only one of them is primary participant, so we need to add 1
+				}
+			}
+		}
+	}
+}
+
+# Counter for allied Involved rulers
+struggle_btw_ending_conciliation_decision_alliance_counter_value = {
+	value = 0
+	struggle:btw_struggle = {
+		every_involved_ruler = {
+			limit = {
+				NOT = { this = root }
+				is_independent_ruler = yes
+				is_landless_adventurer = no
+				primary_title = { is_holy_order = no }
+				primary_title = { is_mercenary_company = no }
+				is_allied_to = root
+			}
+			add = 1
+		}
+	}
+}

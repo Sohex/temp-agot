@@ -1,0 +1,1083 @@
+﻿rv_rescue_war = {
+	group = personal
+	icon = rv_rescue
+	#ai_only_against_neighbors = yes
+	target_titles = none
+	target_top_liege_if_outside_realm = no
+	#target_de_jure_regions_above = yes
+
+	allowed_for_character = {
+		scope:attacker = {
+			is_playable_character = yes
+			NOT = { government_has_flag = government_is_nw }
+			OR = {
+				AND = {
+					#is_local_player = yes
+					is_ai = no
+					OR = {
+						any_heir = {
+							is_imprisoned = yes
+						}
+						any_relation = {
+							type = lover
+							is_imprisoned = yes
+						}
+						any_relation = {
+							type = friend
+							is_imprisoned = yes
+						}
+						any_relation = {
+							type = esr_family_friend
+							is_imprisoned = yes
+						}
+						any_spouse = {
+							is_imprisoned = yes
+						}
+						any_close_family_member = {
+							OR = {
+								is_imprisoned = yes
+								any_consort = {
+									reverse_has_opinion_modifier = {
+										modifier = forced_me_concubine_marriage_opinion
+										target = prev
+									}
+								}
+							}
+						}
+						any_extended_family_member = {
+							OR = {
+								is_imprisoned = yes
+								any_consort = {
+									reverse_has_opinion_modifier = {
+										modifier = forced_me_concubine_marriage_opinion
+										target = prev
+									}
+								}
+							}
+						}
+						any_former_spouse = {
+							any_consort = {
+								reverse_has_opinion_modifier = {
+									modifier = forced_me_concubine_marriage_opinion
+									target = prev
+								}
+							}
+						}
+						any_in_list = {
+							variable = rv_declined_prisoner_list
+							is_alive = yes
+							is_imprisoned = yes
+						}
+					}
+					NOT= {
+						any_owned_story = {
+							has_variable_list = rv_currently_rescuing
+						}
+					}
+				}
+
+				AND = {
+					is_ai = yes
+					any_owned_story = {
+						story_type = rv_rescue_war_story
+						has_variable_list = rv_rescue_list
+						NOT = {has_variable_list = rv_currently_rescuing}
+						any_in_list = {
+							variable = rv_rescue_list
+							is_alive = yes
+							OR = {
+								is_imprisoned = yes
+								is_concubine = yes
+							}
+						}
+					}
+				}
+			}
+			is_landed = yes
+			highest_held_title_tier >= tier_county
+		}
+	}
+	allowed_against_character = {
+		is_playable_character = yes
+		NOT = { government_has_flag = government_is_nw }
+		OR = {
+			AND = {
+				#is_local_player = yes
+				scope:attacker = {
+					is_ai = no
+				}
+				scope:defender = {
+					OR = {
+						any_prisoner = {
+							custom_tooltip = rv_error_suppression
+							OR = {
+								is_heir_of = scope:attacker
+								is_spouse_of = scope:attacker
+								has_relation_lover = scope:attacker
+								has_relation_soulmate = scope:attacker
+								has_relation_friend = scope:attacker
+								has_relation_best_friend = scope:attacker
+								is_close_or_extended_family_of = scope:attacker
+								scope:attacker = {
+									has_relation_esr_family_friend = prev
+								}
+								any_in_list = {
+									variable = rv_demanded_me_list
+									this = scope:attacker
+								}
+							}
+						}
+						any_consort = {
+							OR = {
+								AND = {
+									any_former_spouse = {
+										this = scope:attacker
+									}
+									has_opinion_modifier = {
+										modifier = forced_me_concubine_marriage_opinion
+										target = prev
+									}
+									prev = {
+										reverse_has_opinion_modifier = {
+											modifier = forced_spouse_concubine_marriage_opinion
+											target = scope:attacker
+										}
+									}
+								}
+
+								AND = {
+									is_close_or_extended_family_of = scope:attacker
+									prev = {
+										reverse_has_opinion_modifier = {
+											modifier = forced_family_concubine_marriage_opinion
+											target = scope:attacker
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			AND = {
+				scope:attacker = {
+					is_ai = yes
+					any_owned_story = {
+						story_type = rv_rescue_war_story
+						has_variable_list = rv_rescue_list
+						any_in_list = {
+							variable = rv_rescue_list
+							is_alive = yes
+							OR = {
+								AND = {
+									is_imprisoned = yes
+									is_imprisoned_by = scope:defender
+								}
+								AND = {
+									is_concubine = yes
+									is_concubine_of = scope:defender
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		is_landed = yes
+		highest_held_title_tier >= tier_county
+	}
+
+	on_declaration = {
+		on_declared_war = yes
+		debug_log = "rv_rescue_war_declared"
+
+		scope:attacker = {
+			random_owned_story = {
+				limit = {
+					story_type = rv_rescue_war_story
+					has_variable_list = rv_rescue_list
+				}
+				save_scope_as = rv_rescue_story
+				every_in_list = {
+					variable = rv_rescue_list
+					limit = {
+						OR = {
+							AND = {
+								is_alive = yes
+								is_imprisoned = yes
+								is_imprisoned_by = scope:defender
+							}
+
+							AND = {
+								is_alive = yes
+								is_concubine = yes
+								is_concubine_of = scope:defender
+							}
+						}
+					}
+					scope:rv_rescue_story = {
+						add_to_variable_list = {
+							name = rv_currently_rescuing
+							target = prev
+						}
+					}
+					if = {
+						limit = {
+							has_variable = rv_is_former_spouse
+						}
+						scope:attacker = {
+							set_variable = {
+								name = rv_block_ai_marriage
+								value = yes
+							}
+						}
+						remove_variable = rv_is_former_spouse
+					}
+				}
+			}
+		}
+
+		scope:defender = {
+			if = {
+				limit = {
+					any_owned_story = {
+						story_type = rv_rescue_war_defender_story
+						count = 0
+					}
+				}
+				create_story = {
+					type = rv_rescue_war_defender_story
+					save_scope_as = rv_rescue_defender_story
+				}
+			}
+
+			else = {
+				random_owned_story = {
+					limit = {
+						story_type = rv_rescue_war_defender_story
+					}
+					save_scope_as = rv_rescue_defender_story
+				}
+			}
+
+			if = {
+				limit = {exists = scope:rv_rescue_defender_story}
+				scope:rv_rescue_defender_story = {
+					add_to_variable_list = {
+						name = rv_attacking_rescuers
+						target = scope:attacker
+					}
+				}
+			}
+			add_to_variable_list = {
+				name = rv_attacking_rescuers_temp
+				target = scope:attacker
+			}
+			### Opinion maul for trying to free a criminal
+			if = {
+				limit = {
+					scope:attacker = {
+						has_variable_list = rv_rescue_list_temp
+						any_in_list = {
+							variable = rv_rescue_list_temp
+							is_alive = yes
+							is_imprisoned = yes
+							is_imprisoned_by = scope:defender
+							scope:defender = {
+								has_imprisonment_reason = prev
+							}
+						}
+					}
+				}
+				add_opinion = {
+					target = scope:attacker
+					modifier = rv_attempt_free_my_criminal
+				}
+				hidden_effect = {
+					if = {
+						limit = { can_set_relation_rival_if_adult_trigger = { CHARACTER = scope:attacker } }
+						progress_towards_rival_effect = {
+							CHARACTER = scope:attacker
+							REASON = rv_attempt_free_my_criminal
+							OPINION = 0
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = {
+					target_is_vassal_or_below = scope:attacker
+				}
+				add_opinion = {
+					target = scope:attacker
+					modifier = rebellious_vassal_opinion
+				}
+			}
+		}
+
+		scope:attacker = {
+			clear_variable_list = rv_rescue_list_temp
+			remove_variable = rv_defender_temp
+		}
+
+		#add_defender = scope:defender.liege
+
+		### workaround for primary heir not working in any_killed_character
+		scope:attacker = {
+			random_owned_story = {
+				limit = {
+					story_type = rv_rescue_war_story
+					has_variable_list = rv_currently_rescuing
+				}
+				every_in_list = {
+					variable = rv_currently_rescuing
+					limit = {
+						is_primary_heir_of = scope:attacker
+					}
+					scope:attacker = {
+						set_variable = {
+							name = rv_rescuing_primary_heir
+							value = prev
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = { exists = war }
+			war = {
+				if = {
+					limit = {
+						exists = scope:defender
+						scope:defender = { is_independent_ruler = no}
+						scope:defender.top_liege = scope:attacker.top_liege
+						NOR = {
+							scope:defender.liege = scope:defender.top_liege
+							scope:defender.liege = scope:attacker.liege
+						}
+					}
+					add_defender = scope:defender.liege
+				}
+				else_if = {
+					limit = {
+						exists = scope:defender
+						scope:defender = { is_independent_ruler = no }
+						NOT = {scope:defender.top_liege = scope:attacker.top_liege}
+					}
+					add_defender = scope:defender.top_liege
+				}
+			}
+		}
+	}
+
+	cost = {
+		prestige = {
+			value = 0
+			add = {
+				value = medium_prestige_value
+				desc = CB_BASE_COST
+			}
+			if = {
+				limit = {
+					always = yes
+				}
+				add = rv_rescue_cost
+			}
+			if = {
+				limit = {
+					always = yes
+				}
+				add = rv_rescue_criminal_cost
+			}
+			multiply = common_cb_prestige_cost_multiplier
+		}
+	}
+
+	on_victory_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:defender = { is_local_player = yes }
+				}
+				desc = rescue_war_victory_desc_defender
+			}
+			desc = rescue_war_victory_desc
+		}
+	}
+
+	on_victory = {
+		scope:attacker = { show_pow_release_message_effect = yes }
+
+		hidden_effect = {
+			debug_log = "rv_rescue_war_won"
+
+			remove_attacking_rescuer_for_defender = yes
+
+			create_failed_rescue_memory = yes
+		}
+
+		# release prisoner
+		scope:attacker = {
+			random_owned_story = {
+				limit = {
+					story_type = rv_rescue_war_story
+					has_variable_list = rv_currently_rescuing
+				}
+
+				save_scope_as = rv_rescue_war_story
+
+				### Add house unity for freed house members
+				scope:attacker = {
+					if = {
+						limit = {
+							government_has_flag = government_is_clan
+						}
+						house = {
+							add_unity_value = {
+								value = scope:rv_rescue_war_story.rv_rescue_house_members_cb_house_unity_gain
+								character = scope:attacker
+								desc = clan_unity_generic_unified.notarget # Used to use clan_unity_released_from_prison.desc
+							}
+						}
+					}
+				}
+
+				every_in_list = {
+					variable = rv_currently_rescuing
+					limit = {
+						is_alive = yes
+						### Some chars will be auto released upon war end
+						#is_imprisoned = yes
+						#is_imprisoned_by = scope:defender
+					}
+
+					save_scope_as = rv_target_prisoner
+
+					if = {
+						limit = {
+							is_imprisoned = yes
+							OR = {
+								is_imprisoned_by = scope:defender
+								is_imprisoned_by = scope:attacker
+							}
+							NOT = {
+								any_in_list = {
+									variable = rv_demanded_me_list
+									this = scope:attacker
+								}
+							}
+						}
+						release_from_prison = yes
+					}
+
+					if = {
+						limit = {
+							has_global_variable = gm1_is_loaded
+							is_imprisoned_by = scope:defender
+							any_in_list = {
+								variable = rv_demanded_me_list
+								this = scope:attacker
+							}
+						}
+						transfer_prisoner_interaction_effect = {
+							PRISONER = scope:rv_target_prisoner
+							SENDER = scope:defender
+							RECEIVER = scope:attacker
+						}
+					}
+
+					if = {
+						limit = {
+							scope:attacker = {is_ai = no}
+							is_concubine = yes
+							#is_concubine_of = scope:defender
+							NOT = {is_concubine_of = scope:attacker}
+							any_former_spouse = {
+								this = scope:attacker
+							}
+							any_consort = {
+								reverse_has_opinion_modifier = {
+									modifier = forced_me_concubine_marriage_opinion
+									target = prev
+								}
+							}
+						}
+						every_consort = {
+							remove_concubine = prev
+						}
+						hidden_effect = {
+							scope:attacker = {
+								add_courtier = prev
+							}
+							add_opinion = {
+								target = scope:attacker
+								modifier = rv_rescued_former_spouse
+							}
+						}
+					}
+
+					else_if = {
+						limit = {
+							scope:attacker = {
+								is_ai = yes
+								is_married = no
+								is_male = yes
+							}
+							is_concubine = yes
+							#is_concubine_of = scope:defender
+							NOT = {is_concubine_of = scope:attacker}
+							any_former_spouse = {
+								this = scope:attacker
+							}
+							any_consort = {
+								reverse_has_opinion_modifier = {
+									modifier = forced_me_concubine_marriage_opinion
+									target = prev
+								}
+							}
+						}
+						every_consort = {
+							remove_concubine = prev
+						}
+						hidden_effect = {
+							scope:attacker = {
+								marry = prev
+							}
+							add_opinion = {
+								target = scope:attacker
+								modifier = rv_rescued_former_spouse
+							}
+						}
+					}
+
+					else_if = {
+						limit = {
+							scope:attacker = {
+								is_ai = yes
+								is_married = no
+								is_female = yes
+							}
+							is_concubine = yes
+							#is_concubine_of = scope:defender
+							NOT = {is_concubine_of = scope:attacker}
+							any_former_spouse = {
+								this = scope:attacker
+							}
+							any_consort = {
+								reverse_has_opinion_modifier = {
+									modifier = forced_me_concubine_marriage_opinion
+									target = prev
+								}
+							}
+						}
+						every_consort = {
+							remove_concubine = prev
+						}
+						hidden_effect = {
+							scope:attacker = {
+								marry_matrilineal = prev
+							}
+							add_opinion = {
+								target = scope:attacker
+								modifier = rv_rescued_former_spouse
+							}
+						}
+					}
+
+					else_if = {
+						limit = {
+							is_concubine = yes
+							#is_concubine_of = scope:defender
+							NOT = {is_concubine_of = scope:attacker}
+							any_consort = {
+								reverse_has_opinion_modifier = {
+									modifier = forced_me_concubine_marriage_opinion
+									target = prev
+								}
+							}
+						}
+						every_consort = {
+							remove_concubine = prev
+						}
+						hidden_effect = {
+							scope:attacker = {
+								add_courtier = prev
+							}
+						}
+					}
+
+					hidden_effect = {
+						if = {
+							limit = {
+								NOT = {
+									any_in_list = {
+										variable = rv_demanded_me_list
+										this = scope:attacker
+									}
+								}
+							}
+							rv_rescue_relation_boost = yes
+						}
+						remove_list_variable = {
+							name = rv_demanded_me_list
+							target = scope:attacker
+						}
+						scope:attacker = {
+							remove_list_variable = {
+								name = rv_declined_prisoner_list
+								target = prev
+							}
+						}
+					}
+				}
+
+				if = {
+					limit = {
+						scope:defender = {
+							is_alive = yes
+							#is_imprisoned = no
+						}
+						any_in_list = {
+							variable = rv_currently_rescuing
+							save_temporary_scope_as = rescue_target
+							OR = {
+								scope:defender = {
+									any_killed_character = {
+										this = scope:rescue_target
+									}
+								}
+								AND = {
+									is_alive = no
+									exists = scope:attacker.var:rv_rescuing_primary_heir
+									this = scope:attacker.var:rv_rescuing_primary_heir
+								}
+							}
+						}
+					}
+					scope:attacker= {
+						trigger_event = {
+							on_action = rv_hard_imprison
+							days = 1
+						}
+					}
+				}
+				end_story = yes
+			}
+			remove_variable = rv_rescuing_primary_heir
+			remove_variable = rv_block_ai_marriage
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Truce
+		add_truce_attacker_victory_effect = yes
+
+		agot_war_victory_effects = yes
+	}
+
+	on_white_peace_desc = {
+		desc = rv_rescue_war_white_peace_desc
+	}
+
+	on_white_peace = {
+		scope:attacker = {
+			random_owned_story = {
+				limit = {
+					story_type = rv_rescue_war_story
+					has_variable_list = rv_currently_rescuing
+				}
+				#save_scope_as = rv_rescue_story
+				every_in_list = {
+					variable = rv_currently_rescuing
+					limit = {
+						is_alive = yes
+						is_imprisoned = no
+						is_concubine = no
+					}
+					hidden_effect = {
+						if = {
+							limit = {
+								NOT = {
+									any_in_list = {
+										variable = rv_demanded_me_list
+										this = scope:attacker
+									}
+								}
+							}
+							rv_attempted_rescue_relation_boost = yes
+						}
+						remove_list_variable = {
+							name = rv_demanded_me_list
+							target = scope:attacker
+						}
+						scope:attacker = {
+							remove_list_variable = {
+								name = rv_declined_prisoner_list
+								target = prev
+							}
+						}
+					}
+				}
+			}
+		}
+
+		hidden_effect = {
+			debug_log = "rv_rescue_war_white_peace"
+
+			create_failed_rescue_memory = yes
+
+			end_rescue_story_for_attacker = yes
+
+			remove_attacking_rescuer_for_defender = yes
+
+			scope:attacker = {
+				remove_variable = rv_rescuing_primary_heir
+				remove_variable = rv_block_ai_marriage
+			}
+		}
+
+		scope:attacker = { show_pow_release_message_effect = yes }
+		# Prestige loss for the attacker
+		scope:attacker = {
+			add_prestige = {
+				value = minor_prestige_value
+				multiply = -1.5
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Truce
+		add_truce_white_peace_effect = yes
+	}
+
+	on_defeat_desc = {
+		desc = rv_rescue_war_defeat_desc
+	}
+
+	on_defeat = {
+		scope:attacker = {
+			random_owned_story = {
+				limit = {
+					story_type = rv_rescue_war_story
+					has_variable_list = rv_currently_rescuing
+				}
+				#save_scope_as = rv_rescue_story
+				every_in_list = {
+					variable = rv_currently_rescuing
+					limit = {
+						is_alive = yes
+						is_imprisoned = no
+						is_concubine = no
+					}
+					hidden_effect = {
+						if = {
+							limit = {
+								NOT = {
+									any_in_list = {
+										variable = rv_demanded_me_list
+										this = scope:attacker
+									}
+								}
+							}
+							rv_attempted_rescue_relation_boost = yes
+						}
+						remove_list_variable = {
+							name = rv_demanded_me_list
+							target = scope:attacker
+						}
+						scope:attacker = {
+							remove_list_variable = {
+								name = rv_declined_prisoner_list
+								target = prev
+							}
+						}
+					}
+				}
+			}
+		}
+
+		hidden_effect = {
+			debug_log = "rv_rescue_war_defeated"
+
+			create_failed_rescue_memory = yes
+
+			end_rescue_story_for_attacker = yes
+
+			remove_attacking_rescuer_for_defender = yes
+
+			scope:attacker = {
+				remove_variable = rv_rescuing_primary_heir
+				remove_variable = rv_block_ai_marriage
+			}
+		}
+
+		scope:attacker = {
+			show_pow_release_message_effect = yes
+		}
+
+		# Prestige loss for the attacker
+		scope:attacker = {
+			pay_short_term_gold_reparations_effect = {
+				GOLD_VALUE = 4.5
+			}
+			add_prestige = {
+				value = major_prestige_value
+				multiply = -1.5
+			}
+		}
+
+		# Prestige for Defender
+		scope:defender = {
+			add_prestige_war_defender_effect = {
+				PRESTIGE_VALUE = major_prestige_value
+			}
+		}
+
+		# Prestige for the attacker's war allies
+		add_from_contribution_attackers = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Prestige for the defender's war allies
+		add_from_contribution_defenders = {
+			prestige = medium_prestige_value
+			opinion = {
+				modifier = contributed_in_war
+			}
+		}
+
+		# Truce
+		add_truce_attacker_defeat_effect = yes
+	}
+
+	should_invalidate = {
+		OR = {
+			scope:attacker = {
+				any_owned_story = {
+					story_type = rv_rescue_war_story
+					has_variable_list = rv_currently_rescuing
+					any_in_list = {
+						variable = rv_currently_rescuing
+						count = all
+						save_temporary_scope_as = rescue_target
+						OR = {
+							NOT ={
+								OR = { # Status Check
+									AND = {
+										is_alive = yes
+										is_imprisoned = yes
+										is_imprisoned_by = scope:defender
+									}
+
+									AND = {
+										is_alive = yes
+										is_concubine = yes
+										is_concubine_of = scope:defender
+									}
+
+									#had_gruesome_death_trigger = yes
+									scope:defender = {
+										any_killed_character = {
+											this = scope:rescue_target
+										}
+									}
+									### workaround for primary heir
+									AND = {
+										is_alive = no
+										exists = scope:attacker.var:rv_rescuing_primary_heir
+										this = scope:attacker.var:rv_rescuing_primary_heir
+										###To be tested replacement
+										#exists = killer
+										#killer = $VICTIM$
+									}
+								}
+							}
+							NOT = {
+								OR = { # Relationship with attacker check
+									#always = yes
+									is_alive = no
+									is_heir_of = scope:attacker
+									is_spouse_of = scope:attacker
+									has_relation_lover = scope:attacker
+									has_relation_soulmate = scope:attacker
+									has_relation_friend = scope:attacker
+									has_relation_best_friend = scope:attacker
+									is_close_or_extended_family_of = scope:attacker
+									scope:attacker = {
+										has_relation_esr_family_friend = prev
+									}
+									any_former_spouse = {
+										this = scope:attacker
+									}
+									any_in_list = {
+										variable = rv_demanded_me_list
+										this = scope:attacker
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			scope:attacker = {
+				OR = {
+					is_landed = no
+					highest_held_title_tier < tier_county
+				}
+			}
+
+			scope:defender = {
+				OR = {
+					is_landed = no
+					highest_held_title_tier < tier_county
+				}
+			}
+		}
+	}
+
+	on_invalidated = {
+		hidden_effect = {
+			debug_log = "rv_rescue_war_invalidated"
+
+			scope:attacker = {
+				random_owned_story = {
+					limit = {
+						story_type = rv_rescue_war_story
+						has_variable_list = rv_currently_rescuing
+					}
+					#save_scope_as = rv_rescue_story
+					every_in_list = {
+						variable = rv_currently_rescuing
+						limit = {
+							is_alive = yes
+							is_imprisoned = no
+							is_concubine = no
+						}
+						hidden_effect = {
+							if = {
+								limit = {
+									NOT = {
+										any_in_list = {
+											variable = rv_demanded_me_list
+											this = scope:attacker
+										}
+									}
+								}
+								rv_attempted_rescue_relation_boost = yes
+							}
+							remove_list_variable = {
+								name = rv_demanded_me_list
+								target = scope:attacker
+							}
+							scope:attacker = {
+								remove_list_variable = {
+									name = rv_declined_prisoner_list
+									target = prev
+								}
+							}
+						}
+					}
+				}
+			}
+
+			create_failed_rescue_memory = yes
+
+			end_rescue_story_for_attacker = yes
+
+			remove_attacking_rescuer_for_defender = yes
+
+			scope:attacker = {
+				remove_variable = rv_rescuing_primary_heir
+				remove_variable = rv_block_ai_marriage
+			}
+		}
+	}
+
+	on_invalidated_desc = {
+		desc = rv_rescue_war_invalidated_desc
+	}
+	on_primary_attacker_death = invalidate
+	on_primary_defender_death = inherit
+
+	transfer_behavior = transfer
+
+	attacker_allies_inherit = yes
+	defender_allies_inherit = yes
+
+	allow_hostages = no
+
+	war_name = "RESCUE_WAR_NAME"
+	cb_name_no_target = "RESCUE_WAR_NAME"
+
+	interface_priority = 1002
+
+	ticking_war_score_targets_entire_realm = yes
+	attacker_ticking_warscore = 0
+	defender_ticking_warscore = 0.1
+	attacker_wargoal_percentage = 0.75
+	defender_wargoal_percentage = 1
+	max_attacker_score_from_battles = 150
+	max_defender_score_from_battles = 150
+	max_attacker_score_from_occupation = 150
+	max_defender_score_from_occupation = 150
+	full_occupation_by_defender_gives_victory = yes
+	full_occupation_by_attacker_gives_victory = yes
+	attacker_capital_gives_war_score = yes
+	defender_capital_gives_war_score = yes
+	imprisonment_by_attacker_give_war_score = yes
+	imprisonment_by_defender_give_war_score = yes
+
+	attacker_score_from_occupation_scale = 150
+	attacker_score_from_battles_scale = 150
+	defender_score_from_battles_scale = 150
+	landless_attacker_needs_armies = yes
+	#full_occupation_by_attacker_gives_victory = yes
+	#full_occupation_by_defender_gives_victory = yes
+
+	#max_ai_diplo_distance_to_title = 500
+
+	should_show_war_goal_subview = no
+
+	#target_de_jure_regions_above = yes
+	ai = no
+
+	#ai_score = {
+		#value = rv_rescue_war_ai_score_value_extreme
+	#}
+}

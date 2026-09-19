@@ -1,0 +1,789 @@
+﻿### Shared Activity Intents
+
+reduce_stress_intent = {
+	icon = reduce_stress_intent
+
+	auto_complete = yes
+
+	on_invalidated = { trigger_event = activity_system.0090 }
+
+	ai_will_do = {
+		value = stress
+	}
+
+	scripted_animation = {
+		animation = happiness
+	}
+}
+
+murder_attendee_intent = {
+	icon = murder_intent
+
+	is_shown = {
+		has_dlc_feature = advanced_activities
+		is_alive = yes
+		is_adult = yes
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:special_option ?= flag:hunt_type_standard
+					scope:special_option ?= flag:hunt_type_falconry
+					scope:special_option ?= flag:hunt_type_nerge
+				}
+			}
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+		}
+		NOT = { scope:special_option ?= flag:hunt_type_legendary }
+	}
+
+	on_invalidated = {
+		trigger_event = activity_system.0090
+	}
+
+	ai_targets = {
+		ai_recipients = scheme_targets
+		ai_recipients = scripted_relations
+	}
+
+	# Handle target character invalidation
+	is_target_valid = {
+		scope:target = {
+			is_ai = yes
+		}
+		OR = {
+			can_start_scheme = {
+				type = murder
+				target_character = scope:target
+			}
+			is_scheming_against = {
+				type = murder
+				target = scope:target
+			}
+		}
+	}
+
+	on_target_invalidated = {
+		trigger_event = activity_system.0091
+	}
+
+	ai_will_do = {
+		value = 0
+		add = {
+			value = root.ai_honor
+			multiply = -1
+		}
+		add = {
+			value = root.ai_compassion
+			multiply = -1
+		}
+		if = {
+			limit = {
+				ai_honor >= high_positive_ai_value
+			}
+			add = -1000
+		}
+	}
+
+	ai_target_score = {
+		value = 0
+		if = {
+			limit = {
+				has_relation_rival = scope:target
+			}
+			add = 25
+		}
+		if = {
+			limit = {
+				any_scheme = {
+					type = murder
+					scheme_target_character = scope:target
+				}
+			}
+			add = 150
+		}
+	}
+
+	scripted_animation = {
+		animation = spymaster
+	}
+}
+
+woo_attendee_intent = {
+	icon = romance_intent
+
+	is_shown = {
+		has_dlc_feature = advanced_activities
+		NOT = { scope:special_option ?= flag:hunt_type_legendary }
+	}
+
+	#AGOT Modified
+	# is_valid = { is_adult = yes }
+	is_valid = {
+		is_adult = yes
+		NOR = {
+			has_trait = celibate
+			has_trait = infirm
+			has_sexuality = asexual
+		}
+	}
+
+	on_invalidated = {
+		trigger_event = activity_system.0090
+	}
+
+	ai_targets = {
+		ai_recipients = scheme_targets
+		ai_recipients = activity_host
+	}
+	ai_targets = {
+		ai_recipients = courtiers
+		max = 10
+	}
+	ai_targets = {
+		ai_recipients = activity_guests
+		max = 10
+	}
+	ai_target_quick_trigger = {
+		adult = yes
+		attracted_to_owner = yes
+		owner_attracted = yes
+	}
+
+	# Handle target character invalidation
+	is_target_valid = {
+		is_adult = yes
+		scope:target = {
+			is_adult = yes
+			is_ai = yes
+		}
+		NOR = {
+			this = scope:target
+			has_relation_lover = scope:target
+			has_relation_rival = scope:target
+		}
+		OR = {
+			has_perk = unshackled_lust_perk
+			is_attracted_to_gender_of = scope:target
+		}
+
+		# Just opt out anyone who has a partner they'd never cheat on.
+		## It's possible for someone to still reach this state _after_ they become a woo target, but at least we're cutting it down to edge cases.
+		#AGOT Modified, Cheating Logic
+		#OR = {
+		#	scope:target = { might_cheat_on_every_partner_trigger = yes }
+		#	is_consort_of = scope:target
+		#}
+		trigger_if = {
+			limit = { is_ai = yes }
+			OR = {
+				scope:target = { might_cheat_on_every_partner_trigger = yes }
+				is_consort_of = scope:target
+			}
+			NOR = {
+				# too honorable to become adulterer (even if they might otherwise cheat )
+				AND = {
+					trait_is_criminal_in_faith_trigger = { TRAIT = trait:adulterer FAITH = root.faith GENDER_CHARACTER = root }
+					is_married = yes
+					NOR = {
+						is_consort_of = scope:target
+						has_trait = adulterer
+					}
+					OR = {
+						ai_honor > 0
+						ai_boldness < 0
+					}
+				}
+				AND = {
+					trait_is_shunned_in_faith_trigger = { TRAIT = trait:adulterer FAITH = root.faith GENDER_CHARACTER = root }
+					is_married = yes
+					NOR = {
+						is_consort_of = scope:target
+						has_trait = adulterer
+					}
+					ai_honor > 0
+				}
+			}
+		}
+	}
+
+	on_target_invalidated = {
+		trigger_event = activity_system.0092
+	}
+
+	ai_will_do = {
+		value = 50
+		#AGOT Disabled, refactored AI logic
+		#if = {
+		#	limit = {
+		#		OR = {
+		#			has_trait = lustful
+		#			has_trait = rakish
+		#			is_deviant_trigger = yes
+		#		}
+		#	}
+		#	add = 50
+		#}
+		#if = {
+		#	limit = {
+		#		might_cheat_on_every_partner_trigger = no
+		#	}
+		#	add = -1000
+		#}
+		#AGOT Added
+		if = {
+			limit = { has_focus = intrigue_temptation_focus }
+			add = 25
+		}
+		if = {
+			limit = { likely_to_take_lover_trigger = yes }
+			add = 50
+		}
+		if = {
+			limit = {
+				num_of_relation_soulmate = 0
+				num_of_relation_lover = 1
+				has_trait = chaste
+			}
+			add = -25
+		}
+		if = {
+			limit = { is_unattractive_trigger = yes }
+			add = -40
+		}
+		if = {
+			limit = {
+				ai_boldness > 0
+				has_sexuality = homosexual
+			}
+			add = 10
+		}
+		if = {
+			limit = { ai_boldness < medium_negative_ai_value }
+			add = -50
+		}
+		# seduction is for the young, excepting only deviants and the lustful
+		if = {
+			limit = {
+				is_old_age_or_not_have_children = yes
+				NOR = {
+					is_deviant_trigger = yes
+					has_focus = intrigue_temptation_focus
+					faith = { has_doctrine = tenet_carnal_exaltation }
+				}
+			}
+			add = -50
+		}
+		if = {
+			limit = {
+				OR = {
+					num_of_relation_soulmate > 0
+					is_below_ai_lover_soft_cap_trigger = no
+					is_malformed_trigger = yes
+					# too honorable to become fornicator
+					AND = {
+						trait_is_criminal_in_faith_trigger = { TRAIT = trait:fornicator FAITH = root.faith GENDER_CHARACTER = root }
+						is_married = no
+						OR = {
+							ai_honor > 0
+							ai_boldness < 0
+						}
+						NOT = { has_trait = fornicator }
+					}
+					AND = {
+						trait_is_shunned_in_faith_trigger = { TRAIT = trait:fornicator FAITH = root.faith GENDER_CHARACTER = root }
+						is_married = no
+						ai_honor > 0
+						NOT = { has_trait = fornicator }
+					}
+					# clergy who either isn't lustful or too faithful to take a lover
+					AND = {
+						OR = {
+							is_clergy = yes
+							agot_has_religious_trait = yes
+							has_council_position = councillor_court_chaplain
+						}
+						ai_zeal >= 0
+						faith = {
+							NOR = {
+								has_doctrine_parameter = clergy_can_marry
+								trait_is_virtue = lustful
+							}
+						}
+					}
+					# wouldn't cheat on their partner ever
+					might_cheat_on_every_partner_trigger = no
+				}
+			}
+			add = -1000
+		}
+	}
+
+	ai_target_score = {
+		value = 50
+
+		#AGOT Modified, Age Considerations
+		#if = {
+		#	limit = {
+		#		OR = {
+		#			scope:target.age >= root.age_plus_10
+		#			scope:target.age <= root.age_minus_10
+		#		}
+		#		NOT = { is_deviant_trigger = yes }
+		#	}
+		#	add = -1000
+		#}
+		if = {
+			limit = {
+				is_female = yes
+				age < 25
+				OR = {
+					scope:target.age > root.age_plus_25
+					scope:target.age < root.age_minus_10
+				}
+			}
+			add = -1000
+		}
+		if = {
+			limit = {
+				is_female = yes
+				age >= 25
+				OR = {
+					scope:target.age > root.age_plus_10
+					scope:target.age < root.age_minus_10
+					age >= marriage_female_fertility_cutoff_age_value
+				}
+			}
+			add = -1000
+		}
+		if = {
+			limit = {
+				is_male = yes
+				OR = {
+					scope:target.age > root.age
+					scope:target.age < root.age_minus_25
+				}
+			}
+			add = -1000
+		}
+		if = {
+			limit = {
+				is_close_or_extended_family_of = scope:target
+				#AGOT Modified
+				# NOT = { is_deviant_trigger = yes }
+				NOR = {
+					AND = {
+						sexually_liberal_trigger = yes
+						OR = {
+							# Doesn't care much about social taboo
+							has_trait = callous
+							has_trait = cynical
+							has_trait = eccentric
+							# Lack of contact with other members of their attracted sex
+							has_trait = reclusive
+							has_trait = shy
+							# They think they can get away with it
+							has_trait = deceitful
+						}
+					}
+					# A bit of a weirdo
+					is_deviant_trigger = yes
+					# I've incested before, I will incest again!
+					is_incestuous_trigger = yes
+					# Trauma
+					stress_level >= 2
+				}
+			}
+			add = -1000
+		}
+		if = {
+			limit = {
+				is_male = yes
+				scope:target = { is_female = yes }
+				#AGOT Modified, Vanilla Bug
+				#scope:target.age <= scope:target.marriage_female_fertility_cutoff_age_value
+				scope:target.age >= scope:target.marriage_female_fertility_cutoff_age_value
+				NOT = { is_deviant_trigger = yes }
+			}
+			add = -1000
+		}
+		if = {
+			limit = {
+				any_scheme = {
+					type = seduce
+					scheme_target_character = scope:target
+				}
+			}
+			add = 150
+		}
+		if = {
+			limit = {
+				any_scheme = {
+					type = courting
+					scheme_target_character = scope:target
+				}
+			}
+			#AGOT Modified, we're not trying to sleep with courtship targets
+			# add = 150
+			add = -1000
+		}
+		if = {
+			limit = {
+				has_opinion_modifier = {
+					modifier = childhood_crush
+					target = scope:target
+				}
+			}
+			add = 150
+		}
+
+		#AGOT Added, LMF
+		# tendencies
+		if = {
+			limit = {
+				scope:target = { likely_to_take_lover_trigger = yes }
+			}
+			add = 25
+		}
+		if = {
+			limit = {
+				scope:target = {
+					NOT = {
+						willing_to_take_character_as_lover = { LOVER = root }
+					}
+				}
+			}
+			add = -1000
+		}
+		if = {
+			limit = {
+				ai_boldness < 20
+				scope:target = {
+					OR = {
+						primary_spouse ?= { is_liege_or_above_of = root }
+						any_parent = { is_liege_or_above_of = root }
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:target = { is_malformed_trigger = yes }
+			}
+			add = -1000
+		}
+		if = {
+			limit = {
+				scope:target = { is_unattractive_trigger = yes }
+			}
+			add = -50
+		}
+		if = {
+			limit = { scope:target.attraction < root.attraction }
+			add = -10
+		}
+		if = {
+			limit = {
+				is_married = no
+				scope:target = { is_married = no }
+				can_marry_character_trigger = { CHARACTER = scope:target }
+			}
+			add = 10
+		}
+
+		# relationship considerations
+		if = {
+			limit = {
+				number_of_opposing_personality_traits = { target = scope:target value = 1 }
+			}
+			add = -10
+		}
+		if = {
+			limit = {
+				number_of_opposing_personality_traits = { target = scope:target value > 1 }
+			}
+			add = -50
+		}
+		if = {
+			limit = {
+				number_of_personality_traits_in_common = { target = scope:target value > 0 }
+			}
+			add = 10
+		}
+		if = {
+			limit = {
+				OR = {
+					opinion = { target = scope:target value < -5 }
+					reverse_opinion = { target = scope:target value < -15 }
+				}
+			}
+			add = -25
+		}
+		if = {
+			limit = {
+				OR = {
+					has_relation_potential_lover = scope:target
+					has_relation_crush = scope:target
+				}
+			}
+			add = 50
+		}
+		if = {
+			limit = {
+				ai_honor > 0
+				scope:target = {
+					is_married = yes
+					NOT = { is_spouse_of = root }
+				}
+			}
+			add = -50
+		}
+		if = {
+			limit = {
+				scope:target = {
+					exists = primary_spouse
+					primary_spouse = {
+						OR = {
+							has_relation_rival = root
+							has_relation_nemesis = root
+						}
+					}
+				}
+			}
+			add = 50
+		}
+
+		# other considerations
+		if = {
+			limit = {
+				scope:target = {
+					OR = {
+						is_clergy = yes
+						has_council_position = councillor_court_chaplain
+						agot_has_religious_trait = yes
+					}
+				}
+				NOR = {
+					is_deviant_trigger = yes
+					ai_zeal <= low_negative_ai_value
+					faith = { has_doctrine = tenet_carnal_exaltation }
+					faith = { has_doctrine = doctrine_clerical_marriage_allowed }
+				}
+			}
+			add = -50
+		}
+		#AGOT Added, LMF End
+	}
+
+	scripted_animation = {
+		animation = flirtation
+	}
+}
+
+befriend_attendee_intent = {
+	icon = befriend_intent
+
+	is_shown = {
+		has_dlc_feature = advanced_activities
+		NOT = { scope:special_option ?= flag:hunt_type_legendary }
+	}
+
+	on_invalidated = {
+		trigger_event = activity_system.0090
+	}
+
+	ai_targets = {
+		ai_recipients = liege
+		ai_recipients = head_of_faith
+	}
+	ai_targets = {
+		ai_recipients = courtiers
+		max = 10
+	}
+	ai_targets = {
+		ai_recipients = vassals
+		max = 10
+	}
+	ai_targets = {
+		ai_recipients = activity_guests
+		max = 5
+	}
+
+	# Handle target character invalidation
+	is_target_valid = {
+		this != scope:target
+		scope:target = {
+			is_ai = yes
+			is_adult = yes
+		}
+		NOR = {
+			has_relation_friend = scope:target
+			has_relation_rival = scope:target
+		}
+		can_set_relation_friend_trigger = { CHARACTER = scope:target }
+	}
+
+	on_target_invalidated = {
+		trigger_event = activity_system.0091
+	}
+
+	ai_will_do = {
+		value = 50
+		if = {
+			limit = {
+				has_trait = paranoid
+			}
+			add = -1000
+		}
+	}
+
+	ai_target_score = {
+		value = 1
+		if = {
+			limit = {
+				any_scheme = {
+					type = befriend
+					scheme_target_character = scope:target
+				}
+			}
+			add = 150
+		}
+	}
+
+	scripted_animation = {
+		animation = admiration
+	}
+}
+
+spread_legend_intent = {
+	icon = intent_spread_legend
+
+	auto_complete = yes
+
+	is_valid = {
+		custom_tooltip = {
+			text = spread_legend_intent_not_valid_desc
+			exists = promoted_legend
+		}
+	}
+	
+	is_shown = {
+		has_dlc_feature = advanced_activities
+		has_dlc_feature = legends_of_the_dead 
+	}
+
+	on_invalidated = { trigger_event = activity_system.0090 }
+
+	ai_will_do = {
+		value = 50
+		if = {
+			limit = {
+				has_trait = arrogant
+			}
+			add = 100
+		}
+	}
+
+	scripted_animation = {
+		animation = happiness
+	}
+}
+
+legitimacy_intent = {
+	icon = intent_legitimacy
+
+	auto_complete = yes
+
+	is_valid = {
+		custom_tooltip = {
+			text = has_legit_intent_access_tt
+			dynasty ?= { ce1_legitimacy_legacy_track_perks >= 3 }
+		}
+	}
+	
+	is_shown = {
+		has_dlc_feature = advanced_activities
+		has_dlc_feature = legends_of_the_dead
+	}
+
+	on_invalidated = { trigger_event = activity_system.0090 }
+
+	ai_will_do = {
+		value = 50
+		if = {
+			limit = {
+				has_trait = arrogant
+			}
+			add = 100
+		}
+	}
+
+	scripted_animation = {
+		animation = personality_bold
+	}
+}
+
+impose_obedience_intent = {
+	icon = impose_obedience_intent
+
+	is_shown = {
+		has_dlc_feature = advanced_activities
+		has_mpo_dlc_trigger = yes
+		government_has_flag = government_is_nomadic
+		is_alive = yes
+		is_adult = yes
+	}
+
+	on_invalidated = {
+		trigger_event = activity_system.0090
+	}
+
+	ai_targets = {
+		ai_recipients = courtiers
+		max = 10
+	}
+	ai_targets = {
+		ai_recipients = vassals
+		max = 10
+	}
+
+	# Handle target character invalidation
+	is_target_valid = {
+		scope:target = {
+			is_ai = yes
+			obedience_target = root
+			NOT = { is_obedient_to = root }
+		}
+	}
+
+	on_target_invalidated = {
+		trigger_event = activity_system.0092
+	}
+
+	ai_will_do = {
+		value = 0
+		add = {
+			value = root.ai_compassion
+			multiply = -1
+		}
+	}
+
+	ai_target_score = {
+		value = 0
+		if = {
+			limit = {
+				scope:target = { is_kurultai_trigger = yes }
+			}
+			add = 25
+		}
+		if = {
+			limit = {
+				scope:target = { is_powerful_vassal_of = root }
+			}
+			add = 25
+		}
+	}
+
+	scripted_animation = {
+		animation = menacing
+	}
+}
